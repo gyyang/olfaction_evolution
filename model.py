@@ -93,7 +93,7 @@ class SingleLayerModel(Model):
         input_config = task.smallConfig()
         y_dim = input_config.N_ORN
 
-        self.logits = tf.layers.dense(x, y_dim, name='orn')
+        self.logits = tf.layers.dense(x, y_dim, name='layer1')
         self.predictions = tf.sigmoid(self.logits)
         xe_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = y, logits = self.logits)
         self.loss = tf.reduce_mean(xe_loss)
@@ -116,9 +116,9 @@ class FullModel(Model):
         super(FullModel, self).__init__(save_path)
         self.config = modelConfig()
 
-        glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu)
-        kc = tf.layers.dense(glo, N_KC, activation=tf.nn.relu)
-        logits = tf.layers.dense(kc, N_CLASS)
+        glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu, name='layer1')
+        kc = tf.layers.dense(glo, N_KC, activation=tf.nn.relu, name='layer2')
+        logits = tf.layers.dense(kc, N_CLASS, name='layer3')
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         features, labels = task.generate_proto()
         CurrentModel = FullModel
         save_freq = 1
-        max_epoch = 10
+        max_epoch = 5
         save_path = './files/robert_tmp'
     else:
         raise NotImplementedError
