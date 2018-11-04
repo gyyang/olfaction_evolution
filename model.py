@@ -27,7 +27,51 @@ def make_input(x, y, batch_size):
     return train_iter, next_element
 
 
-class SingleLayerModel(object):
+class Model(object):
+    """Abstract Model class."""
+
+    def __init__(self, save_path):
+        """Make model.
+
+        Args:
+            x: tf placeholder or iterator element (batch_size, N_ORN)
+            y: tf placeholder or iterator element (batch_size, N_GLO)
+        """
+        if save_path is None:
+            save_path = os.getcwd()
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        self.save_path = save_path
+        self.saver = None
+
+    def save(self, epoch=None):
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, str(epoch))
+        save_path = os.path.join(save_path, 'model.ckpt')
+        save_path = self.saver.save(sess, save_path)
+        print("Model saved in path: %s" % save_path)
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, str(epoch))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, 'model.pkl')
+
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        with open(fname, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Model weights saved in path: %s" % save_path)
+
+
+class SingleLayerModel(Model):
     """Model."""
 
     def __init__(self, x, y, save_path=None):
@@ -37,6 +81,7 @@ class SingleLayerModel(object):
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
         """
+        super(SingleLayerModel, self).__init__(save_path)
         if save_path is None:
             save_path = os.getcwd()
         if not os.path.exists(save_path):
@@ -55,43 +100,20 @@ class SingleLayerModel(object):
 
         optimizer = tf.train.AdamOptimizer(self.config.lr)
         self.train_op = optimizer.minimize(self.loss)
-
         self.saver = tf.train.Saver()
 
-    def save(self, epoch=None):
-        save_path = self.save_path
-        if epoch is not None:
-            save_path = os.path.join(save_path, str(epoch))
-        save_path = os.path.join(save_path, 'model.ckpt')
-        save_path = self.saver.save(sess, save_path)
-        print("Model saved in path: %s" % save_path)
 
-    def save_pickle(self, epoch=None):
-        """Save model using pickle.
-
-        This is quite space-inefficient. But it's easier to read out.
-        """
-        save_path = self.save_path
-        if epoch is not None:
-            save_path = os.path.join(save_path, str(epoch))
-        save_path = os.path.join(save_path, 'model.pkl')
-
-        sess = tf.get_default_session()
-        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
-        with open(save_path, 'wb') as f:
-            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-class FullModel(object):
+class FullModel(Model):
     """Model."""
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, save_path=None):
         """Make model.
 
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
         """
+        super(FullModel, self).__init__(save_path)
         self.config = modelConfig()
 
         glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu)
@@ -107,25 +129,28 @@ class FullModel(object):
 
         optimizer = tf.train.AdamOptimizer(self.config.lr)
         self.train_op = optimizer.minimize(self.loss)
+        self.saver = tf.train.Saver()
 
 
 if __name__ == '__main__':
-    experiment = 'peter'
+    experiment = 'robert'
     if experiment == 'peter':
         features, labels = task.generate_repeat()
-        Model = SingleLayerModel
+        CurrentModel = SingleLayerModel
+        save_freq = 10
+        max_epoch = 100
+        save_path = './files/peter_tmp'
     elif experiment == 'robert':
         features, labels = task.generate_proto()
-        Model = FullModel
+        CurrentModel = FullModel
+        save_freq = 1
+        max_epoch = 10
+        save_path = './files/robert_tmp'
     else:
         raise NotImplementedError
 
     config = modelConfig()
-    save_path = config.save_path
     batch_size = config.batch_size
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-
     n_batch = features.shape[0] // batch_size
 
     features_placeholder = tf.placeholder(features.dtype, features.shape)
@@ -133,7 +158,7 @@ if __name__ == '__main__':
 
     train_iter, next_element = make_input(features_placeholder, labels_placeholder, batch_size)
 
-    model = Model(next_element[0], next_element[1], save_path='./files/tmp')
+    model = CurrentModel(next_element[0], next_element[1], save_path=save_path)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -143,14 +168,14 @@ if __name__ == '__main__':
                             labels_placeholder: labels})
 
         loss = 0
-        for ep in range(config.epoch):
+        for ep in range(max_epoch):
             for b in range(n_batch):
                 loss, _ = sess.run([model.loss, model.train_op])
 
             # TODO: do validation here
             print('[*] Epoch %d  total_loss=%.2f' % (ep, loss))
 
-            if ep % 10 ==0:
+            if ep % save_freq ==0:
                 # model.save(epoch=ep)
                 model.save_pickle(epoch=ep)
 
