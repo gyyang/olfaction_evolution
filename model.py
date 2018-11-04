@@ -2,9 +2,6 @@
 
 import os
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import tensorflow as tf
 
 import task
@@ -32,25 +29,41 @@ def make_input(x, y, batch_size):
 class SingleLayerModel(object):
     """Model."""
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, save_path=None):
         """Make model.
 
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
         """
+        if save_path is None:
+            save_path = os.getcwd()
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        self.save_path = save_path
+
         self.config = modelConfig()
 
         input_config = task.smallConfig()
         y_dim = input_config.N_ORN
 
-        self.logits = tf.layers.dense(x, y_dim)
+        self.logits = tf.layers.dense(x, y_dim, name='orn')
         self.predictions = tf.sigmoid(self.logits)
         xe_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = y, logits = self.logits)
         self.loss = tf.reduce_mean(xe_loss)
 
         optimizer = tf.train.AdamOptimizer(self.config.lr)
         self.train_op = optimizer.minimize(self.loss)
+
+        self.saver = tf.train.Saver()
+
+    def save(self, epoch=None):
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, str(epoch))
+        save_path = os.path.join(save_path, 'model.ckpt')
+        save_path = self.saver.save(sess, save_path)
+        print("Model saved in path: %s" % save_path)
 
 
 class FullModel(object):
@@ -104,10 +117,11 @@ if __name__ == '__main__':
 
     train_iter, next_element = make_input(features_placeholder, labels_placeholder, batch_size)
 
-    model = Model(next_element[0], next_element[1])
+    model = Model(next_element[0], next_element[1], save_path='./files/tmp')
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+        # sess.run(tf.local_variables_initializer())
         sess.run(train_iter.initializer,
                  feed_dict={features_placeholder: features,
                             labels_placeholder: labels})
@@ -115,30 +129,15 @@ if __name__ == '__main__':
         loss = 0
         for ep in range(config.epoch):
             for b in range(n_batch):
-                # cur_inputs, cur_labels = sess.run(next_element)
-                # feed_dict = {self.x: cur_inputs, self.y: cur_labels}
-                # output, loss, _ = sess.run([self.predictions, self.loss, self.train_op], feed_dict)
                 loss, _ = sess.run([model.loss, model.train_op])
 
-            if (ep % 2 == 0 and ep != 0):
-                print('[*] Epoch %d  total_loss=%.2f' % (ep, loss))
+            # TODO: do validation here
+            print('[*] Epoch %d  total_loss=%.2f' % (ep, loss))
 
-            # if (ep%10 ==0 and ep != 0):
-            #     w = sess.run(self.w)
-            #     path_name = os.path.join(save_path, 'W.pkl')
-            #     with open(path_name,'wb') as f:
-            #         pkl.dump(w, f)
-            #     fig = plt.figure(figsize=(10, 10))
-            #     ax = plt.axes()
-            #     plt.imshow(w, cmap= 'RdBu_r', vmin= -.5, vmax= .5)
-            #     plt.colorbar()
-            #     plt.axis('tight')
-            #     ax.yaxis.set_major_locator(ticker.MultipleLocator(input_config.NEURONS_PER_ORN))
-            #     ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
-            #     name = './W_ep_' + format(ep, '02d') + '.png'
-            #     path_name = os.path.join(save_path, name)
-            #     fig.savefig(path_name, bbox_inches='tight',dpi=300)
-            #     plt.close(fig)
+            if ep % 10 ==0:
+                model.save(epoch=ep)
+
+
 
 
 
