@@ -3,6 +3,7 @@
 import os
 import pickle
 
+import numpy as np
 import tensorflow as tf
 
 import task
@@ -91,6 +92,30 @@ class SingleLayerModel(Model):
         self.train_op = optimizer.minimize(self.loss)
         self.saver = tf.train.Saver()
 
+        for v in tf.trainable_variables():
+            print(v)
+
+
+def get_sparse_mask(nx, ny, non):
+    """Generate a binary mask.
+
+    The mask will be of size (nx, ny)
+    For all the nx connections to each 1 of the ny units, only non connections are 1.
+
+    Args:
+        nx: int
+        ny: int
+        non: int, must not be larger than nx
+
+    Return:
+        mask: numpy array (nx, ny)
+    """
+    mask = np.zeros((nx, ny))
+    mask[:non] = 1
+    for i in range(ny):
+        np.random.shuffle(mask[:, i])  # shuffling in-place
+    return mask.astype(np.float32)
+
 
 class FullModel(Model):
     """Model."""
@@ -106,7 +131,16 @@ class FullModel(Model):
         self.config = config
 
         glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu, name='layer1')
-        kc = tf.layers.dense(glo, N_KC, activation=tf.nn.relu, name='layer2')
+        if config.sparse_pn2kc:
+            with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+                w = tf.get_variable('kernel', shape=(N_GLO, N_KC), dtype=tf.float32)
+                w_mask = get_sparse_mask(N_GLO, N_KC, 7)
+                w_mask = tf.constant(w_mask, dtype=tf.float32)
+                b = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+                                    initializer=tf.zeros_initializer())
+                kc = tf.nn.relu(tf.matmul(glo, tf.multiply(w, w_mask)) + b)
+        else:
+            kc = tf.layers.dense(glo, N_KC, activation=tf.nn.relu, name='layer2')
         logits = tf.layers.dense(kc, N_CLASS, name='layer3')
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
@@ -117,8 +151,19 @@ class FullModel(Model):
         self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
 
         optimizer = tf.train.AdamOptimizer(self.config.lr)
-        self.train_op = optimizer.minimize(self.loss)
+
+        if config.train_pn2kc:
+            var_list = tf.trainable_variables()
+        else:
+            excludes = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='layer2')
+            var_list = [v for v in tf.trainable_variables() if v not in excludes]
+
+        self.train_op = optimizer.minimize(self.loss, var_list=var_list)
         self.saver = tf.train.Saver()
+
+        print('Training variables')
+        for v in var_list:
+            print(v)
 
 
 if __name__ == '__main__':
@@ -144,6 +189,8 @@ if __name__ == '__main__':
             batch_size = 256
             save_path = './files/robert_tmp'
             save_freq = 1
+            sparse_pn2kc = True
+            train_pn2kc = False
     else:
         raise NotImplementedError
 
