@@ -12,12 +12,6 @@ N_GLO = 50
 N_KC = 2500
 N_CLASS = 1000
 
-class modelConfig():
-    lr = .001
-    epoch = 100
-    batch_size = 100
-    save_path = './files'
-
 
 def make_input(x, y, batch_size):
     data = tf.data.Dataset.from_tensor_slices((x, y))
@@ -97,6 +91,7 @@ class SingleLayerModel(Model):
         self.predictions = tf.sigmoid(self.logits)
         xe_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = y, logits = self.logits)
         self.loss = tf.reduce_mean(xe_loss)
+        self.acc = tf.constant(0.)
 
         optimizer = tf.train.AdamOptimizer(self.config.lr)
         self.train_op = optimizer.minimize(self.loss)
@@ -137,15 +132,24 @@ if __name__ == '__main__':
     if experiment == 'peter':
         features, labels = task.generate_repeat()
         CurrentModel = SingleLayerModel
-        save_freq = 10
-        max_epoch = 100
-        save_path = './files/peter_tmp'
+
+        class modelConfig():
+            lr = .001
+            max_epoch = 100
+            batch_size = 256
+            save_path = './files/peter_tmp'
+            save_freq = 10
+
     elif experiment == 'robert':
         features, labels = task.generate_proto()
         CurrentModel = FullModel
-        save_freq = 1
-        max_epoch = 5
-        save_path = './files/robert_tmp'
+
+        class modelConfig():
+            lr = .001
+            max_epoch = 5
+            batch_size = 256
+            save_path = './files/robert_tmp'
+            save_freq = 1
     else:
         raise NotImplementedError
 
@@ -158,7 +162,7 @@ if __name__ == '__main__':
 
     train_iter, next_element = make_input(features_placeholder, labels_placeholder, batch_size)
 
-    model = CurrentModel(next_element[0], next_element[1], save_path=save_path)
+    model = CurrentModel(next_element[0], next_element[1], save_path=config.save_path)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -168,14 +172,14 @@ if __name__ == '__main__':
                             labels_placeholder: labels})
 
         loss = 0
-        for ep in range(max_epoch):
+        for ep in range(config.max_epoch):
             for b in range(n_batch):
                 loss, _ = sess.run([model.loss, model.train_op])
 
             # TODO: do validation here
             print('[*] Epoch %d  total_loss=%.2f' % (ep, loss))
 
-            if ep % save_freq ==0:
+            if ep % config.save_freq ==0:
                 # model.save(epoch=ep)
                 model.save_pickle(epoch=ep)
 
