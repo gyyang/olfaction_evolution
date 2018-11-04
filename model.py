@@ -9,11 +9,6 @@ import tensorflow as tf
 import task
 
 
-N_GLO = 50
-N_KC = 2500
-N_CLASS = 1000
-
-
 def make_input(x, y, batch_size):
     data = tf.data.Dataset.from_tensor_slices((x, y))
     data = data.shuffle(int(1E6)).batch(tf.cast(batch_size, tf.int64)).repeat()
@@ -132,6 +127,10 @@ class FullModel(Model):
         super(FullModel, self).__init__(config.save_path)
         self.config = config
 
+        N_GLO = config.N_GLO
+        N_KC = config.N_KC
+        N_CLASS = config.N_CLASS
+
         glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu, name='layer1')
         if config.sparse_pn2kc:
             with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
@@ -186,6 +185,9 @@ if __name__ == '__main__':
         CurrentModel = FullModel
 
         class modelConfig():
+            N_GLO = 50
+            N_KC = 2500
+            N_CLASS = 1000
             lr = .001
             max_epoch = 10
             batch_size = 256
@@ -202,7 +204,6 @@ if __name__ == '__main__':
 
     features_placeholder = tf.placeholder(features.dtype, features.shape)
     labels_placeholder = tf.placeholder(labels.dtype, labels.shape)
-
     train_iter, next_element = make_input(features_placeholder, labels_placeholder, batch_size)
 
     model = CurrentModel(next_element[0], next_element[1], config=config)
