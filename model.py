@@ -68,21 +68,15 @@ class Model(object):
 class SingleLayerModel(Model):
     """Model."""
 
-    def __init__(self, x, y, save_path=None):
+    def __init__(self, x, y, config):
         """Make model.
 
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
         """
-        super(SingleLayerModel, self).__init__(save_path)
-        if save_path is None:
-            save_path = os.getcwd()
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-        self.save_path = save_path
-
-        self.config = modelConfig()
+        super(SingleLayerModel, self).__init__(config.save_path)
+        self.config = config
 
         input_config = task.smallConfig()
         y_dim = input_config.N_ORN
@@ -101,15 +95,15 @@ class SingleLayerModel(Model):
 class FullModel(Model):
     """Model."""
 
-    def __init__(self, x, y, save_path=None):
+    def __init__(self, x, y, config):
         """Make model.
 
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
         """
-        super(FullModel, self).__init__(save_path)
-        self.config = modelConfig()
+        super(FullModel, self).__init__(config.save_path)
+        self.config = config
 
         glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu, name='layer1')
         kc = tf.layers.dense(glo, N_KC, activation=tf.nn.relu, name='layer2')
@@ -162,7 +156,7 @@ if __name__ == '__main__':
 
     train_iter, next_element = make_input(features_placeholder, labels_placeholder, batch_size)
 
-    model = CurrentModel(next_element[0], next_element[1], save_path=config.save_path)
+    model = CurrentModel(next_element[0], next_element[1], config=config)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
