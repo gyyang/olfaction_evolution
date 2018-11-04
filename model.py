@@ -67,7 +67,7 @@ class Model(object):
 
 
 class SingleLayerModel(Model):
-    """Model."""
+    """Single layer model."""
 
     def __init__(self, x, y, config):
         """Make model.
@@ -75,6 +75,7 @@ class SingleLayerModel(Model):
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
+            config: configuration class
         """
         super(SingleLayerModel, self).__init__(config.save_path)
         self.config = config
@@ -118,7 +119,7 @@ def get_sparse_mask(nx, ny, non):
 
 
 class FullModel(Model):
-    """Model."""
+    """Full 3-layer model."""
 
     def __init__(self, x, y, config):
         """Make model.
@@ -126,6 +127,7 @@ class FullModel(Model):
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
+            config: configuration class
         """
         super(FullModel, self).__init__(config.save_path)
         self.config = config
@@ -185,7 +187,7 @@ if __name__ == '__main__':
 
         class modelConfig():
             lr = .001
-            max_epoch = 5
+            max_epoch = 10
             batch_size = 256
             save_path = './files/robert_tmp'
             save_freq = 1
