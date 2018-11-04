@@ -47,23 +47,31 @@ def compute_glo_score(w_orn):
     return avg_glo_score, glo_scores
 
 
+def load_w_orn(model_dir):
+    model_dir = os.path.join(save_path, model_dir, 'model.pkl')
+    with open(model_dir, 'rb') as f:
+        var_dict = pickle.load(f)
+        w_orn = var_dict['orn/kernel:0']
+    return w_orn
+
 save_path = './files/tmp'
 
-model_dirs = os.listdir(save_path)
+model_dirs = os.listdir(save_path)  # should be the epoch name
+epochs = np.sort([int(m) for m in model_dirs])
+model_dirs = [str(m) for m in epochs]
 
+w_orns = [load_w_orn(m) for m in model_dirs]
+glo_score_list = [compute_glo_score(w)[0] for w in w_orns]
 
-print(model_dirs)
+plt.figure()
+plt.plot(epochs, glo_score_list)
+plt.xlabel('Epochs')
+plt.ylabel('Glo Score')
 
-model_dir = os.path.join(save_path, model_dirs[0], 'model.pkl')
-with open(model_dir, 'rb') as f:
-    var_dict = pickle.load(f)
-    w_orn = var_dict['orn/kernel:0']
-
-print(w_orn.shape)
 
 fig = plt.figure(figsize=(10, 10))
 ax = plt.axes()
-plt.imshow(w_orn, cmap= 'RdBu_r', vmin= -.5, vmax= .5)
+plt.imshow(w_orns[-1], cmap= 'RdBu_r', vmin= -.5, vmax= .5)
 plt.colorbar()
 plt.axis('tight')
 # ax.yaxis.set_major_locator(ticker.MultipleLocator(input_config.NEURONS_PER_ORN))
@@ -72,9 +80,3 @@ plt.axis('tight')
 # path_name = os.path.join(save_path, name)
 # fig.savefig(path_name, bbox_inches='tight',dpi=300)
 # plt.close(fig)
-
-avg_glo_score, glo_scores = compute_glo_score(w_orn)
-plt.figure()
-plt.hist(glo_scores)
-
-
