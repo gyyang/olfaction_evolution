@@ -1,6 +1,7 @@
 """Model file."""
 
 import os
+import pickle
 
 import tensorflow as tf
 
@@ -64,6 +65,21 @@ class SingleLayerModel(object):
         save_path = os.path.join(save_path, 'model.ckpt')
         save_path = self.saver.save(sess, save_path)
         print("Model saved in path: %s" % save_path)
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, str(epoch))
+        save_path = os.path.join(save_path, 'model.pkl')
+
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        with open(save_path, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 class FullModel(object):
@@ -135,7 +151,8 @@ if __name__ == '__main__':
             print('[*] Epoch %d  total_loss=%.2f' % (ep, loss))
 
             if ep % 10 ==0:
-                model.save(epoch=ep)
+                # model.save(epoch=ep)
+                model.save_pickle(epoch=ep)
 
 
 
