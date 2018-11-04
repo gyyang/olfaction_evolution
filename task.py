@@ -6,16 +6,16 @@ def generate_proto():
     N_CLASS = 1000
     N_ORN = 50
 
-    prototypes = np.random.rand(N_CLASS, N_ORN)
+    prototypes = np.random.rand(N_CLASS, N_ORN).astype(np.float32)
 
     N_TRAIN = 100000
     N_VAL = 1000
-    train_odors = np.random.rand(N_TRAIN, N_ORN)
-    val_odors = np.random.rand(N_VAL, N_ORN)
+    train_odors = np.random.rand(N_TRAIN, N_ORN).astype(np.float32)
+    val_odors = np.random.rand(N_VAL, N_ORN).astype(np.float32)
 
     def get_labels(odors):
         dist = euclidean_distances(prototypes, odors)
-        return np.argmax(dist, axis=0)
+        return np.argmax(dist, axis=0).astype(np.int32)
 
     train_labels = get_labels(train_odors)
     val_labels = get_labels(val_odors)
