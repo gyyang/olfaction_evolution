@@ -27,7 +27,7 @@ def generate():
     x = np.repeat(y, repeats = neurons_per_orn, axis = 1)
     n = np.random.normal(loc=0, scale= noise_std, size= x.shape)
     x += n
-    return x, y
+    return x.astype(np.float32), y.astype(np.float32)
 
 
 if __name__ is "__main__":
