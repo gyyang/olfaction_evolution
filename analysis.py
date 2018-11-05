@@ -17,7 +17,7 @@ def compute_glo_score(w_orn):
     For one glomeruli neuron, first we compute the average connections from
     each ORN group. Then we sort the absolute connection weights by ORNs.
     The glomeruli score is simply:
-        (Max weight - Second max weight) / (Max weight )
+        (Max weight - Second max weight) / (Max weight + Second max weight)
 
     Args:
         w_orn: numpy array (n_neuron, n_orn). This matrix has to be organized
@@ -54,7 +54,9 @@ def load_w_orn(model_dir):
         w_orn = var_dict['w_orn']
     return w_orn
 
-save_path = './files/robert_dev'
+# save_path = './files/robert_dev'
+save_path = './files/robert_bio'
+# save_path = './files/peter_tmp'
 
 model_dirs = os.listdir(save_path)  # should be the epoch name
 epochs = np.sort([int(m) for m in model_dirs])
@@ -76,7 +78,8 @@ w_plot = w_orn[:, ind_sort]
 
 fig = plt.figure(figsize=(10, 10))
 ax = plt.axes()
-plt.imshow(w_plot, cmap= 'RdBu_r', vmin= -1.0, vmax= 1.0)
+vlim = np.max(abs(w_plot))
+plt.imshow(w_plot, cmap= 'RdBu_r', vmin= -vlim, vmax= vlim)
 plt.colorbar()
 plt.axis('tight')
 # ax.yaxis.set_major_locator(ticker.MultipleLocator(input_config.NEURONS_PER_ORN))
