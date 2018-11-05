@@ -50,8 +50,9 @@ def train(config):
 
         loss = 0
         for ep in range(config.max_epoch):
-            for b in range(n_batch):
-                loss, _ = sess.run([model.loss, model.train_op])
+            if ep % config.save_freq ==0:
+                # model.save(epoch=ep)
+                model.save_pickle(epoch=ep)
 
             # Validation
             val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
@@ -59,9 +60,8 @@ def train(config):
             print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
             print('Validation accuracy', val_acc)
 
-            if ep % config.save_freq ==0:
-                # model.save(epoch=ep)
-                model.save_pickle(epoch=ep)
+            for b in range(n_batch):
+                loss, _ = sess.run([model.loss, model.train_op])
 
 
 if __name__ == '__main__':
@@ -88,7 +88,7 @@ if __name__ == '__main__':
             N_KC = 2500
             N_CLASS = task.PROTO_N_CLASS
             lr = .001
-            max_epoch = 15
+            max_epoch = 5
             batch_size = 256
             save_freq = 1
             # Whether PN --> KC connections are sparse
