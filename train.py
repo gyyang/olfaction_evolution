@@ -12,57 +12,24 @@ def make_input(x, y, batch_size):
     return train_iter, next_element
 
 
-if __name__ == '__main__':
-    experiment = 'robert'
-    # experiment = 'peter'
-    if experiment == 'peter':
+def train(config):
+    if config.dataset == 'proto':
+        train_x, train_y, val_x, val_y = task.load_proto()
+    elif config.dataset == 'repeat':
         train_x, train_y = task.generate_repeat()
         val_x, val_y = task.generate_repeat()
-        CurrentModel = SingleLayerModel
-
-        class modelConfig():
-            N_ORN = 30
-            lr = .001
-            max_epoch = 100
-            batch_size = 256
-            save_path = './files/peter_tmp'
-            save_freq = 10
-
-    elif experiment == 'robert':
-        train_x, train_y, val_x, val_y = task.load_proto()
-        CurrentModel = FullModel
-
-        class modelConfig():
-            N_ORN = train_x.shape[1]
-            N_GLO = 50
-            N_KC = 2500
-            N_CLASS = task.PROTO_N_CLASS
-            lr = .001
-            max_epoch = 15
-            batch_size = 256
-            save_path = './files/robert_bio'
-            save_freq = 1
-            # Whether PN --> KC connections are sparse
-            sparse_pn2kc = True
-            # Whether PN --> KC connections are trainable
-            train_pn2kc = False
-            # Whether to have direct glomeruli-like connections
-            direct_glo = True
-            # Whether the coefficient of the direct glomeruli-like connection
-            # motif is trainable
-            train_direct_glo = True
-            # Whether to tradeoff the direct and random connectivity
-            tradeoff_direct_random = False
-            # Whether to impose all cross area connections are positive
-            sign_constraint = True
-            # dropout
-            kc_dropout = True
     else:
-        raise NotImplementedError
+        raise ValueError('Unknown dataset type ' + str(config.dataset))
 
-    config = modelConfig()
     batch_size = config.batch_size
     n_batch = train_x.shape[0] // batch_size
+
+    if config.model == 'full':
+        CurrentModel = FullModel
+    elif config.model == 'singlelayer':
+        CurrentModel = SingleLayerModel
+    else:
+        raise ValueError('Unknown model type ' + str(config.model))
 
     # Build train model
     train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
@@ -95,4 +62,54 @@ if __name__ == '__main__':
             if ep % config.save_freq ==0:
                 # model.save(epoch=ep)
                 model.save_pickle(epoch=ep)
+
+
+if __name__ == '__main__':
+    experiment = 'robert'
+    # experiment = 'peter'
+    if experiment == 'peter':
+        class modelConfig():
+            dataset = 'repeat'
+            model = 'singlelayer'
+            N_ORN = 30
+            lr = .001
+            max_epoch = 100
+            batch_size = 256
+            save_path = './files/peter_tmp'
+            save_freq = 10
+
+    elif experiment == 'robert':
+        class modelConfig():
+            dataset = 'proto'
+            model = 'full'
+            save_path = './files/robert_bio'
+            N_ORN = task.PROTO_N_ORN
+            N_GLO = 50
+            N_KC = 2500
+            N_CLASS = task.PROTO_N_CLASS
+            lr = .001
+            max_epoch = 15
+            batch_size = 256
+            save_freq = 1
+            # Whether PN --> KC connections are sparse
+            sparse_pn2kc = True
+            # Whether PN --> KC connections are trainable
+            train_pn2kc = False
+            # Whether to have direct glomeruli-like connections
+            direct_glo = True
+            # Whether the coefficient of the direct glomeruli-like connection
+            # motif is trainable
+            train_direct_glo = True
+            # Whether to tradeoff the direct and random connectivity
+            tradeoff_direct_random = False
+            # Whether to impose all cross area connections are positive
+            sign_constraint = True
+            # dropout
+            kc_dropout = True
+    else:
+        raise NotImplementedError
+
+    config = modelConfig()
+    train(config)
+
 
