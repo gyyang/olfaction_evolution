@@ -68,10 +68,15 @@ plt.plot(epochs, glo_score_list)
 plt.xlabel('Epochs')
 plt.ylabel('Glo Score')
 
+# Sort for visualization
+w_orn = w_orns[-1]
+ind_max = np.argmax(w_orn, axis=0)
+ind_sort = np.argsort(ind_max)
+w_plot = w_orn[:, ind_sort]
 
 fig = plt.figure(figsize=(10, 10))
 ax = plt.axes()
-plt.imshow(w_orns[-1], cmap= 'RdBu_r', vmin= -.5, vmax= .5)
+plt.imshow(w_plot, cmap= 'RdBu_r', vmin= -1.0, vmax= 1.0)
 plt.colorbar()
 plt.axis('tight')
 # ax.yaxis.set_major_locator(ticker.MultipleLocator(input_config.NEURONS_PER_ORN))
