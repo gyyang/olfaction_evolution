@@ -49,7 +49,7 @@ def _generate_proto_threshold():
     1:N_CLASS)"""
     N_CLASS = PROTO_N_CLASS
     N_ORN = PROTO_N_ORN
-    PERCENTILE = 50
+    PERCENTILE = 20
 
     seed = 0
     rng = np.random.RandomState(seed)
@@ -60,15 +60,15 @@ def _generate_proto_threshold():
 
     def get_labels(odors):
         dist = euclidean_distances(prototypes, odors)
-        highest_match = np.max(dist, axis=0)
-        threshold = np.percentile(highest_match.flatten(), PERCENTILE)
+        highest_match = np.min(dist, axis=0)
+        threshold = np.percentile(highest_match.flatten(), 100 - PERCENTILE)
         default_class = threshold * np.ones((1, dist.shape[1]))
         dist = np.vstack((default_class, dist))
         return np.argmin(dist, axis=0).astype(np.int32)
 
     train_labels = get_labels(train_odors)
-    # hist, bin_edges = np.histogram(train_labels, bins= N_CLASS, range=(0,N_CLASS-1))
-    # plt.hist(train_labels, bins= N_CLASS, range=(1,N_CLASS), normed=True)
+    hist, bin_edges = np.histogram(train_labels, bins= N_CLASS, range=(0,N_CLASS-1))
+    plt.hist(train_labels, bins= N_CLASS, range=(1,N_CLASS), normed=True)
     val_labels = get_labels(val_odors)
     return train_odors, train_labels, val_odors, val_labels
 
@@ -142,7 +142,7 @@ def generate_sparse_active():
 
     def get_labels(odors):
         dist = euclidean_distances(prototypes, odors)
-        return np.argmax(dist, axis=0).astype(np.int32)
+        return np.argmin(dist, axis=0).astype(np.int32)
 
     train_labels = get_labels(train_odors)
     val_labels = get_labels(val_odors)
@@ -179,3 +179,4 @@ if __name__ == '__main__':
     proto_path = os.path.join(os.getcwd(), 'datasets', 'proto', '_threshold_combinatorial')
     save_proto_hard(1, 1)
     train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
+
