@@ -6,34 +6,32 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-import tools
-
-
-def load_w_orn(model_dir):
-    model_dir = os.path.join(save_path, model_dir, 'model.pkl')
-    with open(model_dir, 'rb') as f:
-        var_dict = pickle.load(f)
-        w_orn = var_dict['w_orn']
-    return w_orn
 
 # save_path = './files/robert_dev'
 save_path = './files/robert_bio'
 # save_path = './files/peter_tmp'
 
-model_dirs = os.listdir(save_path)  # should be the epoch name
-epochs = np.sort([int(m) for m in model_dirs])
-model_dirs = [str(m) for m in epochs]
-
-w_orns = [load_w_orn(m) for m in model_dirs]
-glo_score_list = [tools.compute_glo_score(w)[0] for w in w_orns]
+log_name = os.path.join(save_path, 'log.pkl')
+with open(log_name, 'rb') as f:
+    log = pickle.load(f)
 
 plt.figure()
-plt.plot(epochs, glo_score_list)
+plt.plot(log['epoch'], log['val_acc'])
+plt.xlabel('Epochs')
+plt.ylabel('Validation accuracy')
+
+plt.figure()
+plt.plot(log['epoch'], log['glo_score'])
 plt.xlabel('Epochs')
 plt.ylabel('Glo Score')
 
+# Load network at the end of training
+model_dir = os.path.join(save_path, 'model.pkl')
+with open(model_dir, 'rb') as f:
+    var_dict = pickle.load(f)
+    w_orn = var_dict['w_orn']
+
 # Sort for visualization
-w_orn = w_orns[-1]
 ind_max = np.argmax(w_orn, axis=0)
 ind_sort = np.argsort(ind_max)
 w_plot = w_orn[:, ind_sort]
