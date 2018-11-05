@@ -9,6 +9,8 @@ PROTO_N_CLASS = 50
 PROTO_N_ORN = 50
 PROTO_PATH = os.path.join(os.getcwd(), 'datasets', 'proto')
 
+N_COMBINATORIAL_CLASSES = 20
+COMBINATORIAL_DENSITY = .3
 
 def _generate_proto():
     """Activate all ORNs randomly."""
@@ -45,7 +47,7 @@ def _generate_proto_threshold():
     1:N_CLASS)"""
     N_CLASS = PROTO_N_CLASS
     N_ORN = PROTO_N_ORN
-    PERCENTILE = 0
+    PERCENTILE = 50
 
     seed = 0
     rng = np.random.RandomState(seed)
@@ -67,12 +69,21 @@ def _generate_proto_threshold():
 
     train_labels = get_labels(train_odors)
     # hist, bin_edges = np.histogram(train_labels, bins= N_CLASS, range=(0,N_CLASS-1))
-    # plt.hist(train_labels, bins= N_CLASS, range=(0,N_CLASS-1), normed=True)
+    # plt.hist(train_labels, bins= N_CLASS, range=(1,N_CLASS), normed=True)
     val_labels = get_labels(val_odors)
     return train_odors, train_labels, val_odors, val_labels
 
-def convert_to_combinatorial_onehot(labels, n_output):
-    label_range = np.max(labels)
+def generate_combinatorial_label(label_range, n_classes, density):
+    masks = np.random.rand(label_range+1, n_classes)
+    label_to_combinatorial = masks < density
+
+    X = euclidean_distances(label_to_combinatorial)
+    np.fill_diagonal(X, 1)
+    assert np.any(X.flatten() == 0) == 0, "at least 2 combinatorial labels are the same"
+    return label_to_combinatorial
+
+def convert_to_combinatorial(labels, label_to_combinatorial_encoding):
+    return label_to_combinatorial_encoding[labels, :]
 
 
 def save_proto():
@@ -138,4 +149,11 @@ def generate_repeat():
 if __name__ == '__main__':
     # save_proto()
     # train_odors, train_labels, val_odors, val_labels = load_proto()
+
     train_odors, train_labels, val_odors, val_labels = _generate_proto_threshold()
+
+    key = generate_combinatorial_label(PROTO_N_CLASS,
+                                       N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
+    train_combinatorial_label = convert_to_combinatorial(train_labels, key)
+    val_combinatorial_label = convert_to_combinatorial(val_labels, key)
+    plt.imshow(train_combinatorial_label)
