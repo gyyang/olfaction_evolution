@@ -18,6 +18,7 @@ def varying_config(i):
         N_GLO = 50
         N_KC = 2500
         N_CLASS = task.PROTO_N_CLASS
+        N_COMBINATORIAL_CLASS = task.N_COMBINATORIAL_CLASSES
         lr = .001
         max_epoch = 10
         batch_size = 256
@@ -26,7 +27,7 @@ def varying_config(i):
         # Whether PN --> KC connections are trainable
         train_pn2kc = False
         # Whether to have direct glomeruli-like connections
-        direct_glo = True
+        direct_glo = False
         # Whether the coefficient of the direct glomeruli-like connection
         # motif is trainable
         train_direct_glo = True
@@ -36,6 +37,9 @@ def varying_config(i):
         sign_constraint = True
         # dropout
         kc_dropout = True
+        # label type can be either combinatorial, one_hot, sparse
+        label_type = 'combinatorial'
+
 
     config = modelConfig()
     config.save_path = './files/vary_config/' + str(i)

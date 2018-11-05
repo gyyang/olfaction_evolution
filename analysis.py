@@ -16,9 +16,10 @@ with open(log_name, 'rb') as f:
     log = pickle.load(f)
 
 plt.figure()
-plt.plot(log['epoch'], log['val_acc'])
+plt.plot(log['epoch'], log['val_loss'])
+plt.plot(log['epoch'], log['train_loss'])
 plt.xlabel('Epochs')
-plt.ylabel('Validation accuracy')
+plt.ylabel('Train / Val Loss')
 
 plt.figure()
 plt.plot(log['epoch'], log['glo_score'])

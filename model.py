@@ -147,6 +147,7 @@ class FullModel(Model):
         N_GLO = config.N_GLO
         N_KC = config.N_KC
         N_CLASS = config.N_CLASS
+        N_COMBINATORIAL_CLASS = config.N_COMBINATORIAL_CLASS
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             w1 = tf.get_variable('kernel', shape=(config.N_ORN, N_GLO),
@@ -204,12 +205,24 @@ class FullModel(Model):
         if config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=is_training)
 
-        logits = tf.layers.dense(kc, N_CLASS, name='layer3',
-                                 reuse=tf.AUTO_REUSE)
 
-        self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
+        if config.label_type == 'combinatorial':
+            logits = tf.layers.dense(kc, N_COMBINATORIAL_CLASS, name='layer3',
+                                     reuse=tf.AUTO_REUSE)
+            self.loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits= logits)
+        elif config.label_type == 'one_hot':
+            logits = tf.layers.dense(kc, N_CLASS, name='layer3',
+                                     reuse=tf.AUTO_REUSE)
+            self.loss = tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
+        elif config.label_type == 'sparse':
+            logits = tf.layers.dense(kc, N_CLASS, name='layer3',
+                                     reuse=tf.AUTO_REUSE)
+            self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
+        else:
+            raise Exception('labels are in any of the following formats: combinatorial, one_hot, sparse')
+
         pred = tf.argmax(logits, axis=-1)
         # pred = tf.cast(pred, tf.int32)
         # acc = tf.reduce_mean(tf.equal(y_target, pred))
-        self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
+        # self.acc = tf.metrics.accuracy(labels=y, predictions=pred)

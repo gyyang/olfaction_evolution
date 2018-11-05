@@ -115,10 +115,6 @@ def save_proto_hard(argThreshold = 1, argCombinatorial = 0):
                             ['train_x', 'train_y', 'val_x', 'val_y']):
         np.save(os.path.join(path, name), result)
 
-def load_proto_peter(path):
-    names = ['train_x', 'train_y', 'val_x', 'val_y']
-    return [np.load(os.path.join(path, name+'.npy')) for name in names]
-
 def save_proto():
     """Save dataset in numpy format."""
     results = _generate_proto()
