@@ -17,7 +17,7 @@ def varying_config(i):
         N_ORN = task.PROTO_N_ORN
         N_GLO = 50
         N_KC = 2500
-        N_CLASS = task.PROTO_N_CLASS
+        N_CLASS = 1000
         lr = .001
         max_epoch = 10
         batch_size = 256
@@ -67,6 +67,6 @@ def varying_config(i):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     for i in range(100):
         varying_config(i)

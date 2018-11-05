@@ -126,16 +126,17 @@ if __name__ == '__main__':
             N_ORN = task.PROTO_N_ORN
             N_GLO = 50
             N_KC = 2500
-            N_CLASS = task.PROTO_N_CLASS
+            # N_CLASS = task.PROTO_N_CLASS
+            N_CLASS = 1000
             lr = .001
-            max_epoch = 5
+            max_epoch = 10
             batch_size = 256
             # Whether PN --> KC connections are sparse
             sparse_pn2kc = True
             # Whether PN --> KC connections are trainable
             train_pn2kc = False
             # Whether to have direct glomeruli-like connections
-            direct_glo = True
+            direct_glo = False
             # Whether the coefficient of the direct glomeruli-like connection
             # motif is trainable
             train_direct_glo = True
