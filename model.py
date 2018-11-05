@@ -131,17 +131,27 @@ class FullModel(Model):
         N_KC = config.N_KC
         N_CLASS = config.N_CLASS
 
-        glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu, name='layer1')
-        if config.sparse_pn2kc:
-            with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-                w = tf.get_variable('kernel', shape=(N_GLO, N_KC), dtype=tf.float32)
+        with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
+            w1 = tf.get_variable('kernel', shape=(config.N_ORN, N_GLO),
+                                dtype=tf.float32)
+            b1 = tf.get_variable('bias', shape=(N_GLO,), dtype=tf.float32,
+                                initializer=tf.zeros_initializer())
+
+            glo = tf.nn.relu(tf.matmul(x, w1) + b1)
+
+        with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+            w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
+                                dtype=tf.float32)
+            b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+                                initializer=tf.zeros_initializer())
+            if config.sparse_pn2kc:
                 w_mask = get_sparse_mask(N_GLO, N_KC, 7)
                 w_mask = tf.constant(w_mask, dtype=tf.float32)
-                b = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.zeros_initializer())
-                kc = tf.nn.relu(tf.matmul(glo, tf.multiply(w, w_mask)) + b)
-        else:
-            kc = tf.layers.dense(glo, N_KC, activation=tf.nn.relu, name='layer2')
+                w_glo = tf.multiply(w2, w_mask)
+            else:
+                w_glo = w2
+            kc = tf.nn.relu(tf.matmul(glo, w_glo) + b_glo)
+
         logits = tf.layers.dense(kc, N_CLASS, name='layer3')
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
@@ -185,16 +195,19 @@ if __name__ == '__main__':
         CurrentModel = FullModel
 
         class modelConfig():
+            N_ORN = features.shape[1]
             N_GLO = 50
             N_KC = 2500
-            N_CLASS = 1000
+            N_CLASS = 30
             lr = .001
             max_epoch = 10
             batch_size = 256
-            save_path = './files/robert_tmp'
+            save_path = './files/robert_dev'
             save_freq = 1
-            sparse_pn2kc = True
-            train_pn2kc = False
+            sparse_pn2kc = False
+            train_pn2kc = True
+            # Whether to have direct glomeruli-like connections
+            direct_glo = False
     else:
         raise NotImplementedError
 
