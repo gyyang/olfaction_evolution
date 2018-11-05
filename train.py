@@ -1,7 +1,12 @@
+import os
+from collections import defaultdict
+import pickle
+
 import tensorflow as tf
 
 import task
 from model import SingleLayerModel, FullModel
+import tools
 
 
 def make_input(x, y, batch_size):
@@ -13,6 +18,7 @@ def make_input(x, y, batch_size):
 
 
 def train(config):
+    # TODO: Add save config
     if config.dataset == 'proto':
         train_x, train_y, val_x, val_y = task.load_proto()
     elif config.dataset == 'repeat':
@@ -42,6 +48,10 @@ def train(config):
     val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
     val_model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
 
+    # Make custom logger
+    log = defaultdict(list)
+    log_name = os.path.join(config.save_path, 'log.pkl')  # Consider json instead of pickle
+
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
@@ -50,18 +60,30 @@ def train(config):
 
         loss = 0
         for ep in range(config.max_epoch):
-            if ep % config.save_freq ==0:
-                # model.save(epoch=ep)
-                model.save_pickle(epoch=ep)
-
             # Validation
             val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
                                          {val_x_ph: val_x, val_y_ph: val_y})
             print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
             print('Validation accuracy', val_acc)
+            w_orn = sess.run(model.w_orn)
+            glo_score, _ = tools.compute_glo_score(w_orn)
+            print('Glo score ' + str(glo_score))
 
+            # Logging
+            log['epoch'].append(ep)
+            log['glo_score'].append(glo_score)
+            log['train_loss'].append(loss)
+            log['val_loss'].append(val_loss)
+            log['val_acc'].append(val_acc[1])
+            with open(log_name, 'wb') as f:
+                pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            # Train
             for b in range(n_batch):
                 loss, _ = sess.run([model.loss, model.train_op])
+
+        print('Training finished')
+        model.save_pickle()
 
 
 if __name__ == '__main__':
@@ -76,7 +98,6 @@ if __name__ == '__main__':
             max_epoch = 100
             batch_size = 256
             save_path = './files/peter_tmp'
-            save_freq = 10
 
     elif experiment == 'robert':
         class modelConfig():
@@ -90,7 +111,6 @@ if __name__ == '__main__':
             lr = .001
             max_epoch = 5
             batch_size = 256
-            save_freq = 1
             # Whether PN --> KC connections are sparse
             sparse_pn2kc = True
             # Whether PN --> KC connections are trainable
