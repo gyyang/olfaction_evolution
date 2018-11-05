@@ -89,7 +89,7 @@ def _generate_combinatorial_label(label_range, n_classes, density):
 def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
     return label_to_combinatorial_encoding[labels, :]
 
-def save_proto_peter(argThreshold = 0, argCombinatorial = 1):
+def save_proto_hard(argThreshold = 1, argCombinatorial = 0):
     folder_name = ''
     if argThreshold:
         folder_name += '_threshold'
@@ -126,10 +126,10 @@ def save_proto():
         np.save(os.path.join(PROTO_PATH, name), result)
 
 
-def load_proto():
+def load_proto(path=PROTO_PATH):
     """Load dataset from numpy format."""
     names = ['train_x', 'train_y', 'val_x', 'val_y']
-    return [np.load(os.path.join(PROTO_PATH, name+'.npy')) for name in names]
+    return [np.load(os.path.join(path, name+'.npy')) for name in names]
 
 
 def generate_sparse_active():
@@ -180,5 +180,5 @@ def generate_repeat():
 
 
 if __name__ == '__main__':
-    # save_proto_peter()
-    train_odors, train_labels, val_odors, val_labels = load_proto_peter('.\datasets\proto\_threshold_combinatorial')
+    save_proto_hard()
+    train_odors, train_labels, val_odors, val_labels = load_proto('.\datasets\proto\_threshold_combinatorial')
