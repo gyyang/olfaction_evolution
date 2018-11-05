@@ -42,6 +42,7 @@ vlim = np.max(abs(w_plot))
 plt.imshow(w_plot, cmap= 'RdBu_r', vmin= -vlim, vmax= vlim)
 plt.colorbar()
 plt.axis('tight')
+plt.show()
 # ax.yaxis.set_major_locator(ticker.MultipleLocator(input_config.NEURONS_PER_ORN))
 # ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
 # name = './W_ep_' + format(ep, '02d') + '.png'
