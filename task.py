@@ -2,11 +2,13 @@ import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 
 
-def generate_proto():
+PROTO_N_CLASS = 1000
+PROTO_N_ORN = 50
+
+def _generate_proto():
     """Activate all ORNs randomly."""
-    N_CLASS = 1000
-    # N_CLASS = 60
-    N_ORN = 50
+    N_CLASS = PROTO_N_CLASS
+    N_ORN = PROTO_N_ORN
 
     prototypes = np.random.rand(N_CLASS, N_ORN).astype(np.float32)
 
@@ -21,6 +23,22 @@ def generate_proto():
 
     train_labels = get_labels(train_odors)
     val_labels = get_labels(val_odors)
+    return train_odors, train_labels, val_odors, val_labels
+
+
+def save_proto():
+    train_odors, train_labels, val_odors, val_labels = _generate_proto()
+    np.save('./datasets/proto/train_x', train_odors)
+    np.save('./datasets/proto/train_y', train_labels)
+    np.save('./datasets/proto/val_x', val_odors)
+    np.save('./datasets/proto/val_y', val_labels)
+
+
+def load_proto():
+    train_odors = np.load('./datasets/proto/train_x.npy')
+    train_labels = np.load('./datasets/proto/train_y.npy')
+    val_odors = np.load('./datasets/proto/val_x.npy')
+    val_labels = np.load('./datasets/proto/val_y.npy')
     return train_odors, train_labels, val_odors, val_labels
 
 
@@ -69,3 +87,8 @@ def generate_repeat():
     n = np.random.normal(loc=0, scale= noise_std, size= x.shape)
     x += n
     return x.astype(np.float32), y.astype(np.float32)
+
+
+if __name__ == '__main__':
+    # save_proto()
+    train_odors, train_labels, val_odors, val_labels = load_proto()
