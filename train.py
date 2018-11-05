@@ -76,13 +76,10 @@ def train(config):
         total_time, start_time = 0, time.time()
         for ep in range(config.max_epoch):
             # Validation
-            val_loss = sess.run(val_model.loss,
+            val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
                                          {val_x_ph: val_x, val_y_ph: val_y})
-
-            # val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
-            #                              {val_x_ph: val_x, val_y_ph: val_y})
             print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
-            # print('Validation accuracy', val_acc[1])
+            print('Validation accuracy', val_acc[1])
             w_orn = sess.run(model.w_orn)
             glo_score, _ = tools.compute_glo_score(w_orn)
             print('Glo score ' + str(glo_score))
@@ -99,7 +96,7 @@ def train(config):
             log['glo_score'].append(glo_score)
             log['train_loss'].append(loss)
             log['val_loss'].append(val_loss)
-            # log['val_acc'].append(val_acc[1])
+            log['val_acc'].append(val_acc[1])
             with open(log_name, 'wb') as f:
                 pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
 
