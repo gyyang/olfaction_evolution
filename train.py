@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 import pickle
 import json
+import time
 
 import tensorflow as tf
 
@@ -69,6 +70,7 @@ def train(config):
                                                     train_y_ph: train_y})
 
         loss = 0
+        total_time, start_time = 0, time.time()
         for ep in range(config.max_epoch):
             # Validation
             val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
@@ -78,6 +80,13 @@ def train(config):
             w_orn = sess.run(model.w_orn)
             glo_score, _ = tools.compute_glo_score(w_orn)
             print('Glo score ' + str(glo_score))
+
+            if ep > 0:
+                time_spent = time.time() - start_time
+                total_time += time_spent
+                print('Time taken {:0.1f}s'.format(total_time))
+                print('Examples/second {:d}'.format(train_x.shape[0]/time_spent))
+            start_time = time.time()
 
             # Logging
             log['epoch'].append(ep)
