@@ -66,7 +66,7 @@ class Model(object):
 class SingleLayerModel(Model):
     """Single layer model."""
 
-    def __init__(self, x, y, config):
+    def __init__(self, x, y, config, is_training=True):
         """Make model.
 
         Args:
@@ -77,21 +77,24 @@ class SingleLayerModel(Model):
         super(SingleLayerModel, self).__init__(config.save_path)
         self.config = config
 
-        input_config = task.smallConfig()
-        y_dim = input_config.N_ORN
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, config)
 
-        self.logits = tf.layers.dense(x, y_dim, name='layer1')
+        if is_training:
+            optimizer = tf.train.AdamOptimizer(self.config.lr)
+            self.train_op = optimizer.minimize(self.loss)
+            self.saver = tf.train.Saver()
+
+            for v in tf.trainable_variables():
+                print(v)
+
+    def _build(self, x, y, config):
+        self.logits = tf.layers.dense(x, config.N_ORN, name='layer1')
         self.predictions = tf.sigmoid(self.logits)
-        xe_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels = y, logits = self.logits)
+        xe_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=y,
+                                                          logits=self.logits)
         self.loss = tf.reduce_mean(xe_loss)
         self.acc = tf.constant(0.)
-
-        optimizer = tf.train.AdamOptimizer(self.config.lr)
-        self.train_op = optimizer.minimize(self.loss)
-        self.saver = tf.train.Saver()
-
-        for v in tf.trainable_variables():
-            print(v)
 
 
 def get_sparse_mask(nx, ny, non):
@@ -118,36 +121,60 @@ def get_sparse_mask(nx, ny, non):
 class FullModel(Model):
     """Full 3-layer model."""
 
-    def __init__(self, x, y, config):
+    def __init__(self, x, y, config, is_training=True):
         """Make model.
 
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
             config: configuration class
+            is_training: bool
         """
         super(FullModel, self).__init__(config.save_path)
         self.config = config
 
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, config)
+
+        if is_training:
+            optimizer = tf.train.AdamOptimizer(self.config.lr)
+
+            if config.train_pn2kc:
+                var_list = tf.trainable_variables()
+            else:
+                excludes = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='layer2')
+                var_list = [v for v in tf.trainable_variables() if v not in excludes]
+
+            self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+            self.saver = tf.train.Saver()
+
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+    def _build(self, x, y, config):
         N_GLO = config.N_GLO
         N_KC = config.N_KC
         N_CLASS = config.N_CLASS
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             w1 = tf.get_variable('kernel', shape=(config.N_ORN, N_GLO),
-                                dtype=tf.float32)
+                                 dtype=tf.float32)
             b_orn = tf.get_variable('bias', shape=(N_GLO,), dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
 
             if config.direct_glo:
                 if config.train_direct_glo:
                     if config.tradeoff_direct_random:
-                        alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
+                        alpha = tf.get_variable('alpha', shape=(1,),
+                                                dtype=tf.float32,
                                                 initializer=tf.zeros_initializer())
                         alpha_gate = tf.nn.sigmoid(alpha)
-                        w_orn = (1 - alpha_gate) * w1 + alpha_gate * tf.eye(N_GLO)
+                        w_orn = (1 - alpha_gate) * w1 + alpha_gate * tf.eye(
+                            N_GLO)
                     else:
-                        alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
+                        alpha = tf.get_variable('alpha', shape=(1,),
+                                                dtype=tf.float32,
                                                 initializer=tf.ones_initializer())
                         w_orn = w1 + alpha * tf.eye(N_GLO)
                 else:
@@ -162,9 +189,9 @@ class FullModel(Model):
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
-                                dtype=tf.float32)
+                                 dtype=tf.float32)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                initializer=tf.zeros_initializer())
+                                    initializer=tf.zeros_initializer())
             if config.sparse_pn2kc:
                 w_mask = get_sparse_mask(N_GLO, N_KC, 7)
                 w_mask = tf.constant(w_mask, dtype=tf.float32)
@@ -173,7 +200,8 @@ class FullModel(Model):
                 w_glo = w2
             kc = tf.nn.relu(tf.matmul(glo, w_glo) + b_glo)
 
-        logits = tf.layers.dense(kc, N_CLASS, name='layer3')
+        logits = tf.layers.dense(kc, N_CLASS, name='layer3',
+                                 reuse=tf.AUTO_REUSE)
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
@@ -182,29 +210,17 @@ class FullModel(Model):
         # acc = tf.reduce_mean(tf.equal(y_target, pred))
         self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
 
-        optimizer = tf.train.AdamOptimizer(self.config.lr)
-
-        if config.train_pn2kc:
-            var_list = tf.trainable_variables()
-        else:
-            excludes = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='layer2')
-            var_list = [v for v in tf.trainable_variables() if v not in excludes]
-
-        self.train_op = optimizer.minimize(self.loss, var_list=var_list)
-        self.saver = tf.train.Saver()
-
-        print('Training variables')
-        for v in var_list:
-            print(v)
-
 
 if __name__ == '__main__':
     experiment = 'robert'
+    # experiment = 'peter'
     if experiment == 'peter':
-        features, labels = task.generate_repeat()
+        train_x, train_y = task.generate_repeat()
+        val_x, val_y = task.generate_repeat()
         CurrentModel = SingleLayerModel
 
         class modelConfig():
+            N_ORN = 30
             lr = .001
             max_epoch = 100
             batch_size = 256
@@ -212,14 +228,14 @@ if __name__ == '__main__':
             save_freq = 10
 
     elif experiment == 'robert':
-        features, labels = task.generate_proto()
+        train_x, train_y, val_x, val_y = task.generate_proto()
         CurrentModel = FullModel
 
         class modelConfig():
-            N_ORN = features.shape[1]
+            N_ORN = train_x.shape[1]
             N_GLO = 50
             N_KC = 2500
-            N_CLASS = 30
+            N_CLASS = 60
             lr = .001
             max_epoch = 10
             batch_size = 256
@@ -241,28 +257,37 @@ if __name__ == '__main__':
 
     config = modelConfig()
     batch_size = config.batch_size
-    n_batch = features.shape[0] // batch_size
+    n_batch = train_x.shape[0] // batch_size
 
-    features_placeholder = tf.placeholder(features.dtype, features.shape)
-    labels_placeholder = tf.placeholder(labels.dtype, labels.shape)
-    train_iter, next_element = make_input(features_placeholder, labels_placeholder, batch_size)
-
+    train_x_placeholder = tf.placeholder(train_x.dtype, train_x.shape)
+    train_y_placeholder = tf.placeholder(train_y.dtype, train_y.shape)
+    train_iter, next_element = make_input(train_x_placeholder, train_y_placeholder, batch_size)
     model = CurrentModel(next_element[0], next_element[1], config=config)
+
+    val_x_placeholder = tf.placeholder(val_x.dtype,
+                                          val_x.shape)
+    val_y_placeholder = tf.placeholder(val_y.dtype, val_y.shape)
+    val_model = CurrentModel(val_x_placeholder, val_y_placeholder, config=config, is_training=False)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        # sess.run(tf.local_variables_initializer())
+        sess.run(tf.local_variables_initializer())
         sess.run(train_iter.initializer,
-                 feed_dict={features_placeholder: features,
-                            labels_placeholder: labels})
+                 feed_dict={train_x_placeholder: train_x,
+                            train_y_placeholder: train_y})
 
         loss = 0
         for ep in range(config.max_epoch):
             for b in range(n_batch):
                 loss, _ = sess.run([model.loss, model.train_op])
 
-            # TODO: do validation here
-            print('[*] Epoch %d  total_loss=%.2f' % (ep, loss))
+            # Validation
+            val_loss, val_acc = sess.run(
+                [val_model.loss, val_model.acc],
+                {val_x_placeholder: val_x,
+                 val_y_placeholder: val_y})
+            print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
+            print('Validation accuracy', val_acc)
 
             if ep % config.save_freq ==0:
                 # model.save(epoch=ep)

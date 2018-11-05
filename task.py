@@ -5,13 +5,13 @@ from sklearn.metrics.pairwise import euclidean_distances
 def generate_proto():
     """Activate all ORNs randomly."""
     # N_CLASS = 1000
-    N_CLASS = 30
+    N_CLASS = 60
     N_ORN = 50
 
     prototypes = np.random.rand(N_CLASS, N_ORN).astype(np.float32)
 
     N_TRAIN = 100000
-    N_VAL = 1000
+    N_VAL = 4096
     train_odors = np.random.rand(N_TRAIN, N_ORN).astype(np.float32)
     val_odors = np.random.rand(N_VAL, N_ORN).astype(np.float32)
 
@@ -21,7 +21,7 @@ def generate_proto():
 
     train_labels = get_labels(train_odors)
     val_labels = get_labels(val_odors)
-    return train_odors, train_labels
+    return train_odors, train_labels, val_odors, val_labels
 
 
 def generate_sparse_active():
