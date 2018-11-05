@@ -85,7 +85,7 @@ def train(config):
                 time_spent = time.time() - start_time
                 total_time += time_spent
                 print('Time taken {:0.1f}s'.format(total_time))
-                print('Examples/second {:d}'.format(train_x.shape[0]/time_spent))
+                print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
             start_time = time.time()
 
             # Logging
