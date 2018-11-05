@@ -38,7 +38,8 @@ def varying_config(i):
         # dropout
         kc_dropout = True
         # label type can be either combinatorial, one_hot, sparse
-        label_type = 'combinatorial'
+        label_type = 'sparse'
+        data_dir = None
 
 
     config = modelConfig()
