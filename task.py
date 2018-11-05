@@ -11,8 +11,8 @@ PROTO_PATH = os.path.join(os.getcwd(), 'datasets', 'proto')
 if not os.path.exists(PROTO_PATH):
     os.makedirs(PROTO_PATH)
 
-N_TRAIN = 1000
-N_VAL = 91
+N_TRAIN = 1000000
+N_VAL = 9192
 
 N_COMBINATORIAL_CLASSES = 20
 COMBINATORIAL_DENSITY = .3
