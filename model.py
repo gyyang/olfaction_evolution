@@ -33,6 +33,7 @@ class Model(object):
             os.makedirs(save_path)
         self.save_path = save_path
         self.saver = None
+        self.w_orn = tf.constant(0.)
 
     def save(self, epoch=None):
         save_path = self.save_path
@@ -56,6 +57,7 @@ class Model(object):
 
         sess = tf.get_default_session()
         var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        var_dict['w_orn'] = sess.run(self.w_orn)
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
@@ -134,10 +136,29 @@ class FullModel(Model):
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             w1 = tf.get_variable('kernel', shape=(config.N_ORN, N_GLO),
                                 dtype=tf.float32)
-            b1 = tf.get_variable('bias', shape=(N_GLO,), dtype=tf.float32,
-                                initializer=tf.zeros_initializer())
+            b_orn = tf.get_variable('bias', shape=(N_GLO,), dtype=tf.float32,
+                                    initializer=tf.zeros_initializer())
 
-            glo = tf.nn.relu(tf.matmul(x, w1) + b1)
+            if config.direct_glo:
+                if config.train_direct_glo:
+                    if config.tradeoff_direct_random:
+                        alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
+                                                initializer=tf.zeros_initializer())
+                        alpha_gate = tf.nn.sigmoid(alpha)
+                        w_orn = (1 - alpha_gate) * w1 + alpha_gate * tf.eye(N_GLO)
+                    else:
+                        alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
+                                                initializer=tf.ones_initializer())
+                        w_orn = w1 + alpha * tf.eye(N_GLO)
+                else:
+                    # TODO: Make this work when using more than one neuron per ORN
+                    w_orn = w1 + tf.eye(N_GLO)
+            else:
+                w_orn = w1
+
+            glo = tf.nn.relu(tf.matmul(x, w_orn) + b_orn)
+
+        self.w_orn = w_orn
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
@@ -204,10 +225,17 @@ if __name__ == '__main__':
             batch_size = 256
             save_path = './files/robert_dev'
             save_freq = 1
-            sparse_pn2kc = False
-            train_pn2kc = True
+            sparse_pn2kc = True
+            train_pn2kc = False
             # Whether to have direct glomeruli-like connections
-            direct_glo = False
+            direct_glo = True
+            # Whether the coefficient of the direct glomeruli-like connection
+            # motif is trainable
+            train_direct_glo = True
+            # Whether to tradeoff the direct and random connectivity
+            tradeoff_direct_random = False
+            # Whether to impose all cross area connections are positive
+            sign_constraint = False
     else:
         raise NotImplementedError
 

@@ -51,10 +51,10 @@ def load_w_orn(model_dir):
     model_dir = os.path.join(save_path, model_dir, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
-        w_orn = var_dict['layer1/kernel:0']
+        w_orn = var_dict['w_orn']
     return w_orn
 
-save_path = './files/robert_tmp'
+save_path = './files/robert_dev'
 
 model_dirs = os.listdir(save_path)  # should be the epoch name
 epochs = np.sort([int(m) for m in model_dirs])
