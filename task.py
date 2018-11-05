@@ -4,14 +4,14 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 def generate_proto():
     """Activate all ORNs randomly."""
-    # N_CLASS = 1000
-    N_CLASS = 60
+    N_CLASS = 1000
+    # N_CLASS = 60
     N_ORN = 50
 
     prototypes = np.random.rand(N_CLASS, N_ORN).astype(np.float32)
 
-    N_TRAIN = 100000
-    N_VAL = 4096
+    N_TRAIN = 1000000
+    N_VAL = 9192
     train_odors = np.random.rand(N_TRAIN, N_ORN).astype(np.float32)
     val_odors = np.random.rand(N_VAL, N_ORN).astype(np.float32)
 
