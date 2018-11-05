@@ -1,0 +1,98 @@
+import tensorflow as tf
+
+import task
+from model import SingleLayerModel, FullModel
+
+
+def make_input(x, y, batch_size):
+    data = tf.data.Dataset.from_tensor_slices((x, y))
+    data = data.shuffle(int(1E6)).batch(tf.cast(batch_size, tf.int64)).repeat()
+    train_iter = data.make_initializable_iterator()
+    next_element = train_iter.get_next()
+    return train_iter, next_element
+
+
+if __name__ == '__main__':
+    experiment = 'robert'
+    # experiment = 'peter'
+    if experiment == 'peter':
+        train_x, train_y = task.generate_repeat()
+        val_x, val_y = task.generate_repeat()
+        CurrentModel = SingleLayerModel
+
+        class modelConfig():
+            N_ORN = 30
+            lr = .001
+            max_epoch = 100
+            batch_size = 256
+            save_path = './files/peter_tmp'
+            save_freq = 10
+
+    elif experiment == 'robert':
+        train_x, train_y, val_x, val_y = task.load_proto()
+        CurrentModel = FullModel
+
+        class modelConfig():
+            N_ORN = train_x.shape[1]
+            N_GLO = 50
+            N_KC = 2500
+            N_CLASS = task.PROTO_N_CLASS
+            lr = .001
+            max_epoch = 15
+            batch_size = 256
+            save_path = './files/robert_bio'
+            save_freq = 1
+            # Whether PN --> KC connections are sparse
+            sparse_pn2kc = True
+            # Whether PN --> KC connections are trainable
+            train_pn2kc = False
+            # Whether to have direct glomeruli-like connections
+            direct_glo = True
+            # Whether the coefficient of the direct glomeruli-like connection
+            # motif is trainable
+            train_direct_glo = True
+            # Whether to tradeoff the direct and random connectivity
+            tradeoff_direct_random = False
+            # Whether to impose all cross area connections are positive
+            sign_constraint = True
+            # dropout
+            kc_dropout = True
+    else:
+        raise NotImplementedError
+
+    config = modelConfig()
+    batch_size = config.batch_size
+    n_batch = train_x.shape[0] // batch_size
+
+    # Build train model
+    train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
+    train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)
+    train_iter, next_element = make_input(train_x_ph, train_y_ph, batch_size)
+    model = CurrentModel(next_element[0], next_element[1], config=config)
+
+    # Build validation model
+    val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
+    val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
+    val_model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
+        sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
+                                                    train_y_ph: train_y})
+
+        loss = 0
+        for ep in range(config.max_epoch):
+            for b in range(n_batch):
+                loss, _ = sess.run([model.loss, model.train_op])
+
+            # Validation
+            val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
+                                         {val_x_ph: val_x, val_y_ph: val_y})
+            print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
+            print('Validation accuracy', val_acc)
+
+            if ep % config.save_freq ==0:
+                # model.save(epoch=ep)
+                model.save_pickle(epoch=ep)
+

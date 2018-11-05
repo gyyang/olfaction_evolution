@@ -17,7 +17,7 @@ def compute_glo_score(w_orn):
     For one glomeruli neuron, first we compute the average connections from
     each ORN group. Then we sort the absolute connection weights by ORNs.
     The glomeruli score is simply:
-        (Max weight - Second max weight) / (Max weight )
+        (Max weight - Second max weight) / (Max weight + Second max weight)
 
     Args:
         w_orn: numpy array (n_neuron, n_orn). This matrix has to be organized
@@ -51,10 +51,12 @@ def load_w_orn(model_dir):
     model_dir = os.path.join(save_path, model_dir, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
-        w_orn = var_dict['layer1/kernel:0']
+        w_orn = var_dict['w_orn']
     return w_orn
 
-save_path = './files/robert_tmp'
+# save_path = './files/robert_dev'
+save_path = './files/robert_bio'
+# save_path = './files/peter_tmp'
 
 model_dirs = os.listdir(save_path)  # should be the epoch name
 epochs = np.sort([int(m) for m in model_dirs])
@@ -68,10 +70,16 @@ plt.plot(epochs, glo_score_list)
 plt.xlabel('Epochs')
 plt.ylabel('Glo Score')
 
+# Sort for visualization
+w_orn = w_orns[-1]
+ind_max = np.argmax(w_orn, axis=0)
+ind_sort = np.argsort(ind_max)
+w_plot = w_orn[:, ind_sort]
 
 fig = plt.figure(figsize=(10, 10))
 ax = plt.axes()
-plt.imshow(w_orns[-1], cmap= 'RdBu_r', vmin= -.5, vmax= .5)
+vlim = np.max(abs(w_plot))
+plt.imshow(w_plot, cmap= 'RdBu_r', vmin= -vlim, vmax= vlim)
 plt.colorbar()
 plt.axis('tight')
 plt.show()
