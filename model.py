@@ -134,7 +134,7 @@ class FullModel(Model):
         self.config = config
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
-            self._build(x, y, config)
+            self._build(x, y, config, is_training)
 
         if is_training:
             optimizer = tf.train.AdamOptimizer(self.config.lr)
@@ -152,7 +152,7 @@ class FullModel(Model):
             for v in var_list:
                 print(v)
 
-    def _build(self, x, y, config):
+    def _build(self, x, y, config, is_training):
         N_GLO = config.N_GLO
         N_KC = config.N_KC
         N_CLASS = config.N_CLASS
@@ -194,11 +194,17 @@ class FullModel(Model):
                                     initializer=tf.zeros_initializer())
             if config.sparse_pn2kc:
                 w_mask = get_sparse_mask(N_GLO, N_KC, 7)
-                w_mask = tf.constant(w_mask, dtype=tf.float32)
+                w_mask = tf.get_variable(
+                    'mask', shape=(N_GLO, N_KC), dtype=tf.float32,
+                    initializer=tf.constant_initializer(w_mask),
+                    trainable=False)
                 w_glo = tf.multiply(w2, w_mask)
             else:
                 w_glo = w2
             kc = tf.nn.relu(tf.matmul(glo, w_glo) + b_glo)
+
+        if config.kc_dropout:
+            kc = tf.layers.dropout(kc, 0.5, training=is_training)
 
         logits = tf.layers.dense(kc, N_CLASS, name='layer3',
                                  reuse=tf.AUTO_REUSE)
@@ -242,7 +248,7 @@ if __name__ == '__main__':
             save_path = './files/robert_dev'
             save_freq = 1
             sparse_pn2kc = True
-            train_pn2kc = False
+            train_pn2kc = True
             # Whether to have direct glomeruli-like connections
             direct_glo = True
             # Whether the coefficient of the direct glomeruli-like connection
@@ -251,7 +257,9 @@ if __name__ == '__main__':
             # Whether to tradeoff the direct and random connectivity
             tradeoff_direct_random = False
             # Whether to impose all cross area connections are positive
-            sign_constraint = False
+            sign_constraint = False  # TODO: TBF
+            # dropout
+            kc_dropout = False
     else:
         raise NotImplementedError
 
@@ -259,22 +267,20 @@ if __name__ == '__main__':
     batch_size = config.batch_size
     n_batch = train_x.shape[0] // batch_size
 
-    train_x_placeholder = tf.placeholder(train_x.dtype, train_x.shape)
-    train_y_placeholder = tf.placeholder(train_y.dtype, train_y.shape)
-    train_iter, next_element = make_input(train_x_placeholder, train_y_placeholder, batch_size)
+    train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
+    train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)
+    train_iter, next_element = make_input(train_x_ph, train_y_ph, batch_size)
     model = CurrentModel(next_element[0], next_element[1], config=config)
 
-    val_x_placeholder = tf.placeholder(val_x.dtype,
-                                          val_x.shape)
-    val_y_placeholder = tf.placeholder(val_y.dtype, val_y.shape)
-    val_model = CurrentModel(val_x_placeholder, val_y_placeholder, config=config, is_training=False)
+    val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
+    val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
+    val_model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
-        sess.run(train_iter.initializer,
-                 feed_dict={train_x_placeholder: train_x,
-                            train_y_placeholder: train_y})
+        sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
+                                                    train_y_ph: train_y})
 
         loss = 0
         for ep in range(config.max_epoch):
@@ -282,10 +288,8 @@ if __name__ == '__main__':
                 loss, _ = sess.run([model.loss, model.train_op])
 
             # Validation
-            val_loss, val_acc = sess.run(
-                [val_model.loss, val_model.acc],
-                {val_x_placeholder: val_x,
-                 val_y_placeholder: val_y})
+            val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
+                                         {val_x_ph: val_x, val_y_ph: val_y})
             print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
             print('Validation accuracy', val_acc)
 
