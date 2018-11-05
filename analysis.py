@@ -74,6 +74,7 @@ ax = plt.axes()
 plt.imshow(w_orns[-1], cmap= 'RdBu_r', vmin= -.5, vmax= .5)
 plt.colorbar()
 plt.axis('tight')
+plt.show()
 # ax.yaxis.set_major_locator(ticker.MultipleLocator(input_config.NEURONS_PER_ORN))
 # ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
 # name = './W_ep_' + format(ep, '02d') + '.png'

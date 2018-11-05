@@ -132,6 +132,9 @@ class FullModel(Model):
         N_CLASS = config.N_CLASS
 
         glo = tf.layers.dense(x, N_GLO, activation=tf.nn.relu, name='layer1')
+        weights = tf.get_default_graph().get_tensor_by_name(
+            os.path.split(glo.name)[0] + '/kernel:0')
+
         if config.sparse_pn2kc:
             with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
                 w = tf.get_variable('kernel', shape=(N_GLO, N_KC), dtype=tf.float32)
@@ -144,8 +147,11 @@ class FullModel(Model):
             kc = tf.layers.dense(glo, N_KC, activation=tf.nn.relu, name='layer2')
         logits = tf.layers.dense(kc, N_CLASS, name='layer3')
 
-        self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
+        xe_loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
+        # weight_loss = tf.reduce_mean(tf.square(weights))
+        # activity_loss = tf.reduce_mean(glo)
+        self.loss = xe_loss
         pred = tf.argmax(logits, axis=-1)
         # pred = tf.cast(pred, tf.int32)
         # acc = tf.reduce_mean(tf.equal(y_target, pred))
