@@ -19,6 +19,8 @@ def make_input(x, y, batch_size):
 
 
 def train(config):
+    if not os.path.exists(config.save_path):
+        os.makedirs(config.save_path)
     # Save config (first convert to dictionary)
     config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
     with open(os.path.join(config.save_path, 'config.json'), 'w') as f:
