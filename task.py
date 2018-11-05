@@ -73,6 +73,11 @@ def _generate_proto_threshold():
     val_labels = get_labels(val_odors)
     return train_odors, train_labels, val_odors, val_labels
 
+def convert_one_hot_label(labels, label_range):
+    label_one_hot = np.zeros((labels.size, label_range))
+    label_one_hot[np.arange(labels.size), labels] = 1
+    return label_one_hot
+
 def generate_combinatorial_label(label_range, n_classes, density):
     masks = np.random.rand(label_range+1, n_classes)
     label_to_combinatorial = masks < density
@@ -82,9 +87,8 @@ def generate_combinatorial_label(label_range, n_classes, density):
     assert np.any(X.flatten() == 0) == 0, "at least 2 combinatorial labels are the same"
     return label_to_combinatorial
 
-def convert_to_combinatorial(labels, label_to_combinatorial_encoding):
+def convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
     return label_to_combinatorial_encoding[labels, :]
-
 
 def save_proto():
     """Save dataset in numpy format."""
@@ -151,9 +155,10 @@ if __name__ == '__main__':
     # train_odors, train_labels, val_odors, val_labels = load_proto()
 
     train_odors, train_labels, val_odors, val_labels = _generate_proto_threshold()
+    one_hot_labels = convert_one_hot_label(train_labels, PROTO_N_CLASS)
 
     key = generate_combinatorial_label(PROTO_N_CLASS,
                                        N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
-    train_combinatorial_label = convert_to_combinatorial(train_labels, key)
-    val_combinatorial_label = convert_to_combinatorial(val_labels, key)
+    train_combinatorial_label = convert_to_combinatorial_label(train_labels, key)
+    val_combinatorial_label = convert_to_combinatorial_label(val_labels, key)
     plt.imshow(train_combinatorial_label)
