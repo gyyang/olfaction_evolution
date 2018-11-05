@@ -183,6 +183,9 @@ class FullModel(Model):
             else:
                 w_orn = w1
 
+            if config.sign_constraint:
+                w_orn = tf.abs(w_orn)
+
             glo = tf.nn.relu(tf.matmul(x, w_orn) + b_orn)
 
         self.w_orn = w_orn
@@ -201,6 +204,10 @@ class FullModel(Model):
                 w_glo = tf.multiply(w2, w_mask)
             else:
                 w_glo = w2
+
+            if config.sign_constraint:
+                w_glo = tf.abs(w_glo)
+
             kc = tf.nn.relu(tf.matmul(glo, w_glo) + b_glo)
 
         if config.kc_dropout:
@@ -247,8 +254,10 @@ if __name__ == '__main__':
             batch_size = 256
             save_path = './files/robert_dev'
             save_freq = 1
+            # Whether PN --> KC connections are sparse
             sparse_pn2kc = True
-            train_pn2kc = True
+            # Whether PN --> KC connections are trainable
+            train_pn2kc = False
             # Whether to have direct glomeruli-like connections
             direct_glo = True
             # Whether the coefficient of the direct glomeruli-like connection
@@ -257,7 +266,7 @@ if __name__ == '__main__':
             # Whether to tradeoff the direct and random connectivity
             tradeoff_direct_random = False
             # Whether to impose all cross area connections are positive
-            sign_constraint = False  # TODO: TBF
+            sign_constraint = True
             # dropout
             kc_dropout = False
     else:
