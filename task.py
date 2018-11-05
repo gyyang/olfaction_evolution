@@ -29,7 +29,7 @@ def _generate_proto():
 
     def get_labels(odors):
         dist = euclidean_distances(prototypes, odors)
-        return np.argmax(dist, axis=0).astype(np.int32)
+        return np.argmin(dist, axis=0).astype(np.int32)
 
     train_labels = get_labels(train_odors)
     val_labels = get_labels(val_odors)
@@ -151,14 +151,14 @@ def generate_repeat():
 
 
 if __name__ == '__main__':
-    # save_proto()
-    # train_odors, train_labels, val_odors, val_labels = load_proto()
+    save_proto()
+    train_odors, train_labels, val_odors, val_labels = load_proto()
 
-    train_odors, train_labels, val_odors, val_labels = _generate_proto_threshold()
-    one_hot_labels = convert_one_hot_label(train_labels, PROTO_N_CLASS)
-
-    key = generate_combinatorial_label(PROTO_N_CLASS,
-                                       N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
-    train_combinatorial_label = convert_to_combinatorial_label(train_labels, key)
-    val_combinatorial_label = convert_to_combinatorial_label(val_labels, key)
-    plt.imshow(train_combinatorial_label)
+    # train_odors, train_labels, val_odors, val_labels = _generate_proto_threshold()
+    # one_hot_labels = convert_one_hot_label(train_labels, PROTO_N_CLASS)
+    #
+    # key = generate_combinatorial_label(PROTO_N_CLASS,
+    #                                    N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
+    # train_combinatorial_label = convert_to_combinatorial_label(train_labels, key)
+    # val_combinatorial_label = convert_to_combinatorial_label(val_labels, key)
+    # plt.imshow(train_combinatorial_label)
