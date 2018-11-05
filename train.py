@@ -19,6 +19,8 @@ def make_input(x, y, batch_size):
 
 
 def train(config):
+    tf.reset_default_graph()
+
     if not os.path.exists(config.save_path):
         os.makedirs(config.save_path)
     # Save config (first convert to dictionary)
