@@ -8,6 +8,11 @@ import matplotlib.pyplot as plt
 PROTO_N_CLASS = 50
 PROTO_N_ORN = 50
 PROTO_PATH = os.path.join(os.getcwd(), 'datasets', 'proto')
+if not os.path.exists(PROTO_PATH):
+    os.makedirs(PROTO_PATH)
+
+N_TRAIN = 1000000
+N_VAL = 9192
 
 N_COMBINATORIAL_CLASSES = 20
 COMBINATORIAL_DENSITY = .3
@@ -21,9 +26,6 @@ def _generate_proto():
     rng = np.random.RandomState(seed)
 
     prototypes = rng.rand(N_CLASS, N_ORN).astype(np.float32)
-
-    N_TRAIN = 1000000
-    N_VAL = 9192
     train_odors = rng.rand(N_TRAIN, N_ORN).astype(np.float32)
     val_odors = rng.rand(N_VAL, N_ORN).astype(np.float32)
 
@@ -53,9 +55,6 @@ def _generate_proto_threshold():
     rng = np.random.RandomState(seed)
 
     prototypes = rng.rand(N_CLASS-1, N_ORN).astype(np.float32)
-
-    N_TRAIN = 10000
-    N_VAL = 100
     train_odors = rng.rand(N_TRAIN, N_ORN).astype(np.float32)
     val_odors = rng.rand(N_VAL, N_ORN).astype(np.float32)
 
@@ -65,7 +64,7 @@ def _generate_proto_threshold():
         threshold = np.percentile(highest_match.flatten(), PERCENTILE)
         default_class = threshold * np.ones((1, dist.shape[1]))
         dist = np.vstack((default_class, dist))
-        return np.argmax(dist, axis=0).astype(np.int32)
+        return np.argmin(dist, axis=0).astype(np.int32)
 
     train_labels = get_labels(train_odors)
     # hist, bin_edges = np.histogram(train_labels, bins= N_CLASS, range=(0,N_CLASS-1))
@@ -73,12 +72,12 @@ def _generate_proto_threshold():
     val_labels = get_labels(val_odors)
     return train_odors, train_labels, val_odors, val_labels
 
-def convert_one_hot_label(labels, label_range):
+def _convert_one_hot_label(labels, label_range):
     label_one_hot = np.zeros((labels.size, label_range))
     label_one_hot[np.arange(labels.size), labels] = 1
     return label_one_hot
 
-def generate_combinatorial_label(label_range, n_classes, density):
+def _generate_combinatorial_label(label_range, n_classes, density):
     masks = np.random.rand(label_range+1, n_classes)
     label_to_combinatorial = masks < density
 
@@ -87,8 +86,38 @@ def generate_combinatorial_label(label_range, n_classes, density):
     assert np.any(X.flatten() == 0) == 0, "at least 2 combinatorial labels are the same"
     return label_to_combinatorial
 
-def convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
+def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
     return label_to_combinatorial_encoding[labels, :]
+
+def save_proto_peter(argThreshold = 0, argCombinatorial = 1):
+    folder_name = ''
+    if argThreshold:
+        folder_name += '_threshold'
+        train_x, train_y, val_x, val_y = _generate_proto_threshold()
+    else:
+        folder_name += '_no-threshold'
+        train_x, train_y, val_x, val_y = _generate_proto()
+
+    if argCombinatorial:
+        folder_name += '_combinatorial'
+        key = _generate_combinatorial_label(PROTO_N_CLASS, N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
+        train_y_modified = _convert_to_combinatorial_label(train_y, key)
+        val_y_modified = _convert_to_combinatorial_label(val_y, key)
+    else:
+        folder_name += '_one-hot'
+        train_y_modified = _convert_one_hot_label(train_y, PROTO_N_CLASS)
+        val_y_modified = _convert_one_hot_label(val_y, PROTO_N_CLASS)
+
+    path = os.path.join(PROTO_PATH, folder_name)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    for result, name in zip([train_x, train_y_modified, val_x, val_y_modified],
+                            ['train_x', 'train_y', 'val_x', 'val_y']):
+        np.save(os.path.join(path, name), result)
+
+def load_proto_peter(path):
+    names = ['train_x', 'train_y', 'val_x', 'val_y']
+    return [np.load(os.path.join(path, name+'.npy')) for name in names]
 
 def save_proto():
     """Save dataset in numpy format."""
@@ -151,14 +180,5 @@ def generate_repeat():
 
 
 if __name__ == '__main__':
-    save_proto()
-    train_odors, train_labels, val_odors, val_labels = load_proto()
-
-    # train_odors, train_labels, val_odors, val_labels = _generate_proto_threshold()
-    # one_hot_labels = convert_one_hot_label(train_labels, PROTO_N_CLASS)
-    #
-    # key = generate_combinatorial_label(PROTO_N_CLASS,
-    #                                    N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
-    # train_combinatorial_label = convert_to_combinatorial_label(train_labels, key)
-    # val_combinatorial_label = convert_to_combinatorial_label(val_labels, key)
-    # plt.imshow(train_combinatorial_label)
+    # save_proto_peter()
+    train_odors, train_labels, val_odors, val_labels = load_proto_peter('.\datasets\proto\_threshold_combinatorial')
