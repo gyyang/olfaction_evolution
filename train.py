@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 import pickle
+import json
 
 import tensorflow as tf
 
@@ -18,7 +19,12 @@ def make_input(x, y, batch_size):
 
 
 def train(config):
-    # TODO: Add save config
+    # Save config (first convert to dictionary)
+    config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
+    with open(os.path.join(config.save_path, 'config.json'), 'w') as f:
+        json.dump(config_dict, f)
+
+    # Load dataset
     if config.dataset == 'proto':
         train_x, train_y, val_x, val_y = task.load_proto()
     elif config.dataset == 'repeat':
@@ -64,7 +70,7 @@ def train(config):
             val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
                                          {val_x_ph: val_x, val_y_ph: val_y})
             print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
-            print('Validation accuracy', val_acc)
+            print('Validation accuracy', val_acc[1])
             w_orn = sess.run(model.w_orn)
             glo_score, _ = tools.compute_glo_score(w_orn)
             print('Glo score ' + str(glo_score))
