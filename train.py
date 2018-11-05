@@ -31,7 +31,10 @@ def train(config):
 
     # Load dataset
     if config.dataset == 'proto':
-        train_x, train_y, val_x, val_y = task.load_proto()
+        if config.data_dir is None:
+            train_x, train_y, val_x, val_y = task.load_proto()
+        else:
+            train_x, train_y, val_x, val_y = task.load_proto(config.data_dir)
     elif config.dataset == 'repeat':
         train_x, train_y = task.generate_repeat()
         val_x, val_y = task.generate_repeat()
@@ -73,10 +76,13 @@ def train(config):
         total_time, start_time = 0, time.time()
         for ep in range(config.max_epoch):
             # Validation
-            val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
+            val_loss = sess.run(val_model.loss,
                                          {val_x_ph: val_x, val_y_ph: val_y})
+
+            # val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
+            #                              {val_x_ph: val_x, val_y_ph: val_y})
             print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
-            print('Validation accuracy', val_acc[1])
+            # print('Validation accuracy', val_acc[1])
             w_orn = sess.run(model.w_orn)
             glo_score, _ = tools.compute_glo_score(w_orn)
             print('Glo score ' + str(glo_score))
@@ -93,7 +99,7 @@ def train(config):
             log['glo_score'].append(glo_score)
             log['train_loss'].append(loss)
             log['val_loss'].append(val_loss)
-            log['val_acc'].append(val_acc[1])
+            # log['val_acc'].append(val_acc[1])
             with open(log_name, 'wb') as f:
                 pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -126,8 +132,8 @@ if __name__ == '__main__':
             N_ORN = task.PROTO_N_ORN
             N_GLO = 50
             N_KC = 2500
-            # N_CLASS = task.PROTO_N_CLASS
-            N_CLASS = 1000
+            N_CLASS = task.PROTO_N_CLASS
+            N_COMBINATORIAL_CLASS = task.N_COMBINATORIAL_CLASSES
             lr = .001
             max_epoch = 10
             batch_size = 256
@@ -146,6 +152,9 @@ if __name__ == '__main__':
             sign_constraint = True
             # dropout
             kc_dropout = True
+            # label type can be either combinatorial, one_hot, sparse
+            label_type = 'one_hot'
+            data_dir = './datasets/proto/_threshold_one-hot'
     else:
         raise NotImplementedError
 
