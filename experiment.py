@@ -44,6 +44,9 @@ def varying_config(i):
     hp_ranges = OrderedDict()
     hp_ranges['sparse_pn2kc'] = [True, False]
     hp_ranges['train_pn2kc'] = [True, False]
+    hp_ranges['direct_glo'] = [True, False]
+    hp_ranges['sign_constraint'] = [True, False]
+
 
     # Unravel the input index
     keys = hp_ranges.keys()
