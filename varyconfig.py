@@ -35,3 +35,15 @@ plt.figure()
 plt.scatter(final_accs, glo_scores)
 plt.xlabel('Final accuracy')
 plt.ylabel('Glo score')
+
+# Analyzing all models, while showing relevant configs
+keys = ['sparse_pn2kc', 'train_pn2kc', 'direct_glo', 'sign_constraint']
+for config, log in zip(configs, logs):
+    title_txt = '\n'.join([key + ' : ' + str(config[key]) for key in keys])
+    fig = plt.figure(figsize=(2, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    ax.plot(log['epoch'], log['glo_score'])
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel('Glo score')
+    ax.set_title(title_txt)
+    plt.ylim([0, 1])
