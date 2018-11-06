@@ -3,6 +3,7 @@ import os
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
+import shutil
 
 
 PROTO_N_CLASS = 50
@@ -14,6 +15,7 @@ if not os.path.exists(PROTO_PATH):
 N_TRAIN = 1000000
 N_VAL = 9192
 
+PERCENT_GENERALIZATION = 20
 N_COMBINATORIAL_CLASSES = 20
 COMBINATORIAL_DENSITY = .3
 
@@ -38,7 +40,7 @@ def _generate_proto():
     return train_odors, train_labels, val_odors, val_labels
 
 
-def _generate_proto_threshold():
+def _generate_proto_threshold(percent_generalization = PERCENT_GENERALIZATION):
     """Activate all ORNs randomly.
     Only a fraction (as defined by variable PERCENTILE) of odors will
     generalize. If the similarity index (currently euclidean distance) is
@@ -49,11 +51,9 @@ def _generate_proto_threshold():
     1:N_CLASS)"""
     N_CLASS = PROTO_N_CLASS
     N_ORN = PROTO_N_ORN
-    PERCENTILE = 20
 
     seed = 0
     rng = np.random.RandomState(seed)
-
     prototypes = rng.rand(N_CLASS-1, N_ORN).astype(np.float32)
     train_odors = rng.rand(N_TRAIN, N_ORN).astype(np.float32)
     val_odors = rng.rand(N_VAL, N_ORN).astype(np.float32)
@@ -61,7 +61,7 @@ def _generate_proto_threshold():
     def get_labels(odors):
         dist = euclidean_distances(prototypes, odors)
         highest_match = np.min(dist, axis=0)
-        threshold = np.percentile(highest_match.flatten(), 100 - PERCENTILE)
+        threshold = np.percentile(highest_match.flatten(), percent_generalization)
         default_class = threshold * np.ones((1, dist.shape[1]))
         dist = np.vstack((default_class, dist))
         return np.argmin(dist, axis=0).astype(np.int32)
@@ -89,11 +89,11 @@ def _generate_combinatorial_label(label_range, n_classes, density):
 def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
     return label_to_combinatorial_encoding[labels, :]
 
-def save_proto_hard(argThreshold = 1, argCombinatorial = 0):
+def save_proto_hard(argThreshold = 1, argCombinatorial = 0, percent_generalization = PERCENT_GENERALIZATION):
     folder_name = ''
     if argThreshold:
         folder_name += '_threshold'
-        train_x, train_y, val_x, val_y = _generate_proto_threshold()
+        train_x, train_y, val_x, val_y = _generate_proto_threshold(percent_generalization)
     else:
         folder_name += '_no-threshold'
         train_x, train_y, val_x, val_y = _generate_proto()
@@ -111,6 +111,10 @@ def save_proto_hard(argThreshold = 1, argCombinatorial = 0):
     path = os.path.join(PROTO_PATH, folder_name)
     if not os.path.exists(path):
         os.makedirs(path)
+    else:
+        shutil.rmtree(path)
+        os.makedirs(path)
+
     for result, name in zip([train_x, train_y_modified, val_x, val_y_modified],
                             ['train_x', 'train_y', 'val_x', 'val_y']):
         np.save(os.path.join(path, name), result)

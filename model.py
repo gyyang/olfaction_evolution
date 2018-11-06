@@ -214,7 +214,7 @@ class FullModel(Model):
             logits = tf.layers.dense(kc, N_CLASS, name='layer3',
                                      reuse=tf.AUTO_REUSE)
             self.loss = tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
-            self.acc = tf.metrics.accuracy(labels=y, predictions=logits)
+            self.acc = tf.metrics.accuracy(labels=tf.argmax(y, axis=-1), predictions=tf.argmax(logits,axis=-1))
         elif config.label_type == 'sparse':
             logits = tf.layers.dense(kc, N_CLASS, name='layer3',
                                      reuse=tf.AUTO_REUSE)
@@ -224,8 +224,3 @@ class FullModel(Model):
             self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
         else:
             raise Exception('labels are in any of the following formats: combinatorial, one_hot, sparse')
-
-        pred = tf.argmax(logits, axis=-1)
-        # pred = tf.cast(pred, tf.int32)
-        # acc = tf.reduce_mean(tf.equal(y_target, pred))
-        # self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
