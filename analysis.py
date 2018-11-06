@@ -9,7 +9,7 @@ import matplotlib as mpl
 
 mpl.rcParams['font.size'] = 7
 
-save_name = 'robert_bio'
+save_name = 'no_threshold_onehot'
 
 save_path = './files/' + save_name
 
@@ -18,7 +18,7 @@ with open(log_name, 'rb') as f:
     log = pickle.load(f)
 
 fig = plt.figure(figsize=(2, 2))
-ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
 ax.plot(log['epoch'], log['val_acc'])
 ax.set_xlabel('Epochs')
 ax.set_ylabel('Validation accuracy')
@@ -26,12 +26,12 @@ ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
-ax.xaxis.set_ticks([0, 5, 10])
+ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
 ax.set_ylim([0, 1])
 plt.savefig('figures/' + save_name + '_valacc.pdf', transparent=True)
 
 fig = plt.figure(figsize=(2, 2))
-ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
 ax.plot(log['epoch'], log['glo_score'])
 ax.set_xlabel('Epochs')
 ax.set_ylabel('Glo score')
@@ -39,7 +39,7 @@ ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
-ax.xaxis.set_ticks([0, 5, 10])
+ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
 ax.set_ylim([0, 1])
 plt.savefig('figures/' + save_name + '_gloscore.pdf', transparent=True)
 
