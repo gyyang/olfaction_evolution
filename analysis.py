@@ -44,7 +44,6 @@ ax.set_ylim([0, 1])
 plt.savefig('figures/' + save_name + '_gloscore.pdf', transparent=True)
 
 
-
 # Load network at the end of training
 model_dir = os.path.join(save_path, 'model.pkl')
 with open(model_dir, 'rb') as f:

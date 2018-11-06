@@ -132,7 +132,7 @@ if __name__ == '__main__':
             N_CLASS = task.PROTO_N_CLASS
             N_COMBINATORIAL_CLASS = task.N_COMBINATORIAL_CLASSES
             lr = .001
-            max_epoch = 10
+            max_epoch = 30
             batch_size = 256
             # Whether PN --> KC connections are sparse
             sparse_pn2kc = True
