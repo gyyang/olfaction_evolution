@@ -44,7 +44,7 @@ def varying_config(i):
 
 
     config = modelConfig()
-    config.save_path = './files/vary_config_peter/' + str(i)
+    config.save_path = './files/generalization_experiment/' + str(i).zfill(2)
 
     # Ranges of hyperparameters to loop over
 
