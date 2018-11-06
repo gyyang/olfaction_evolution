@@ -1,12 +1,12 @@
 import os
+import shutil
 
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
-import shutil
 
 
-PROTO_N_CLASS = 50
+PROTO_N_CLASS = 50  # TODO: make this dependent on dataset
 PROTO_N_ORN = 50
 PROTO_PATH = os.path.join(os.getcwd(), 'datasets', 'proto')
 if not os.path.exists(PROTO_PATH):
@@ -18,6 +18,7 @@ N_VAL = 9192
 PERCENT_GENERALIZATION = 20
 N_COMBINATORIAL_CLASSES = 20
 COMBINATORIAL_DENSITY = .3
+
 
 def _generate_proto():
     """Activate all ORNs randomly."""
@@ -40,15 +41,17 @@ def _generate_proto():
     return train_odors, train_labels, val_odors, val_labels
 
 
-def _generate_proto_threshold(percent_generalization = PERCENT_GENERALIZATION):
+def _generate_proto_threshold(percent_generalization=PERCENT_GENERALIZATION):
     """Activate all ORNs randomly.
+
     Only a fraction (as defined by variable PERCENTILE) of odors will
     generalize. If the similarity index (currently euclidean distance) is
     below the distance value at the percentile, the test class will not be
     any of the prototypes, but rather an additional 'default' label.
 
     default label will be labels(0), prototype classes will be labels(a
-    1:N_CLASS)"""
+    1:N_CLASS)
+    """
     N_CLASS = PROTO_N_CLASS
     N_ORN = PROTO_N_ORN
 
@@ -72,10 +75,12 @@ def _generate_proto_threshold(percent_generalization = PERCENT_GENERALIZATION):
     val_labels = get_labels(val_odors)
     return train_odors, train_labels, val_odors, val_labels
 
+
 def _convert_one_hot_label(labels, label_range):
     label_one_hot = np.zeros((labels.size, label_range))
     label_one_hot[np.arange(labels.size), labels] = 1
     return label_one_hot
+
 
 def _generate_combinatorial_label(label_range, n_classes, density):
     masks = np.random.rand(label_range+1, n_classes)
@@ -86,10 +91,13 @@ def _generate_combinatorial_label(label_range, n_classes, density):
     assert np.any(X.flatten() == 0) == 0, "at least 2 combinatorial labels are the same"
     return label_to_combinatorial
 
+
 def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
     return label_to_combinatorial_encoding[labels, :]
 
-def save_proto_hard(argThreshold = 1, argCombinatorial = 0, percent_generalization = PERCENT_GENERALIZATION):
+
+def save_proto_hard(argThreshold = 1, argCombinatorial = 0,
+                    percent_generalization = PERCENT_GENERALIZATION):
     folder_name = ''
     if argThreshold:
         folder_name += '_threshold'
@@ -100,7 +108,8 @@ def save_proto_hard(argThreshold = 1, argCombinatorial = 0, percent_generalizati
 
     if argCombinatorial:
         folder_name += '_combinatorial'
-        key = _generate_combinatorial_label(PROTO_N_CLASS, N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
+        key = _generate_combinatorial_label(
+            PROTO_N_CLASS, N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
         train_y_modified = _convert_to_combinatorial_label(train_y, key)
         val_y_modified = _convert_to_combinatorial_label(val_y, key)
     else:
@@ -118,6 +127,7 @@ def save_proto_hard(argThreshold = 1, argCombinatorial = 0, percent_generalizati
     for result, name in zip([train_x, train_y_modified, val_x, val_y_modified],
                             ['train_x', 'train_y', 'val_x', 'val_y']):
         np.save(os.path.join(path, name), result)
+
 
 def save_proto():
     """Save dataset in numpy format."""
@@ -153,34 +163,27 @@ def generate_sparse_active():
     return train_odors, train_labels
 
 
-class smallConfig():
-    N_SAMPLES = 1000
-
-    N_ORN = 30
-    NEURONS_PER_ORN = 50
-    NOISE_STD = .2
-
 def generate_repeat():
     '''
     :return:
     x = noisy ORN channels. n_samples X n_orn * neurons_per_orn
     y = noiseless PN channels
     '''
-    config = smallConfig()
-    n_samples = config.N_SAMPLES
-    neurons_per_orn = config.NEURONS_PER_ORN
-    n_orn = config.N_ORN
-    noise_std = config.NOISE_STD
+    N_SAMPLES = 1000
 
-    y = np.random.uniform(low=0, high=1, size= (n_samples, n_orn))
-    x = np.repeat(y, repeats = neurons_per_orn, axis = 1)
-    n = np.random.normal(loc=0, scale= noise_std, size= x.shape)
+    N_ORN = 30
+    NEURONS_PER_ORN = 50
+    NOISE_STD = .2
+
+    y = np.random.uniform(low=0, high=1, size= (N_SAMPLES, N_ORN))
+    x = np.repeat(y, repeats=NEURONS_PER_ORN, axis=1)
+    n = np.random.normal(loc=0, scale=NOISE_STD, size=x.shape)
     x += n
     return x.astype(np.float32), y.astype(np.float32)
 
 
 if __name__ == '__main__':
-    proto_path = os.path.join(os.getcwd(), 'datasets', 'proto', '_threshold_combinatorial')
+    proto_path = os.path.join(PROTO_PATH, '_threshold_combinatorial')
     save_proto_hard(1, 1)
     train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
 
