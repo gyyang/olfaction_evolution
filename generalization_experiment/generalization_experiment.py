@@ -46,10 +46,9 @@ def varying_config(i):
 
 
     config = modelConfig()
-    config.save_path = './files/generalization_experiment/' + str(i).zfill(2)
+    config.save_path = './files_' + str(i).zfill(2)
 
     # Ranges of hyperparameters to loop over
-
     generalization_interval = 10
     generalization_percent = generalization_interval * i
     config.generalization_percent = generalization_percent
@@ -61,5 +60,5 @@ def varying_config(i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(1,11,3):
+    for i in range(4,11,3):
         varying_config(i)
