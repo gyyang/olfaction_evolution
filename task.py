@@ -6,10 +6,10 @@ from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 
 
-PROTO_N_CLASS = 100  # TODO: make this dependent on dataset
+PROTO_N_CLASS = 50  # TODO: make this dependent on dataset
 PROTO_N_ORN = 50
 PROTO_N_ORN_PER_PN = 10
-PROTO_ORN_NOISE_STD = 0
+PROTO_ORN_NOISE_STD = 0.5
 PROTO_PATH = os.path.join(os.getcwd(), 'datasets', 'proto')
 if not os.path.exists(PROTO_PATH):
     os.makedirs(PROTO_PATH)

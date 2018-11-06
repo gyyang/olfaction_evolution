@@ -126,14 +126,14 @@ if __name__ == '__main__':
         class modelConfig():
             dataset = 'proto'
             model = 'full'
-            save_path = './files/robert_debug'
+            save_path = './files/peter_duplicate'
             N_ORN = task.PROTO_N_ORN * task.PROTO_N_ORN_PER_PN
             N_GLO = 50
             N_KC = 2500
             N_CLASS = task.PROTO_N_CLASS
             N_COMBINATORIAL_CLASS = task.N_COMBINATORIAL_CLASSES
             lr = .001
-            max_epoch = 30
+            max_epoch = 12
             batch_size = 256
             # Whether PN --> KC connections are sparse
             sparse_pn2kc = True

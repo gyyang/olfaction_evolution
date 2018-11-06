@@ -18,31 +18,20 @@ log_name = os.path.join(save_path, 'log.pkl')
 with open(log_name, 'rb') as f:
     log = pickle.load(f)
 
-fig = plt.figure(figsize=(2, 2))
-ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
-ax.plot(log['epoch'], log['val_acc'])
-ax.set_xlabel('Epochs')
-ax.set_ylabel('Validation accuracy')
-ax.spines["right"].set_visible(False)
-ax.spines["top"].set_visible(False)
-ax.xaxis.set_ticks_position('bottom')
-ax.yaxis.set_ticks_position('left')
-ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
-ax.set_ylim([0, 1])
-plt.savefig('figures/' + save_name + '_valacc.pdf', transparent=True)
-
-fig = plt.figure(figsize=(2, 2))
-ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
-ax.plot(log['epoch'], log['glo_score'])
-ax.set_xlabel('Epochs')
-ax.set_ylabel('Glo score')
-ax.spines["right"].set_visible(False)
-ax.spines["top"].set_visible(False)
-ax.xaxis.set_ticks_position('bottom')
-ax.yaxis.set_ticks_position('left')
-ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
-ax.set_ylim([0, 1])
-plt.savefig('figures/' + save_name + '_gloscore.pdf', transparent=True)
+data_str = ['glo_score', 'val_acc', 'train_loss', 'val_loss']
+ylabels = ['Glo Score', 'Validation Acc', 'Train Loss', 'Val Loss']
+fig, ax = plt.subplots(figsize=(8, 8), nrows = 2, ncols= 2)
+for curax, curylabel in zip(ax, ylabels):
+    ax.plot(log['epoch'], log['val_acc'])
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel(curylabel)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
+    ax.set_ylim([0, 1])
+plt.savefig('figures/' + save_name + '_summary', transparent=True)
 
 
 # Load network at the end of training
@@ -55,7 +44,7 @@ with open(model_dir, 'rb') as f:
 ind_max = np.argmax(w_orn, axis=0)
 ind_sort = np.argsort(ind_max)
 w_plot = w_orn[:, ind_sort]
-w_plot = w_orn
+# w_plot = w_orn
 
 rect = [0.15, 0.15, 0.7, 0.7]
 rect_cb = [0.87, 0.15, 0.02, 0.7]
