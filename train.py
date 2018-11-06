@@ -116,7 +116,7 @@ if __name__ == '__main__':
             dataset = 'proto'
             model = 'full'
             save_path = './files/robert_debug'
-            N_ORN = task.PROTO_N_ORN
+            N_ORN = task.PROTO_N_ORN * task.PROTO_N_ORN_PER_PN
             N_GLO = 50
             N_KC = 2500
             N_CLASS = task.PROTO_N_CLASS
@@ -143,7 +143,7 @@ if __name__ == '__main__':
             kc_dropout = True
             # label type can be either combinatorial, one_hot, sparse
             label_type = 'one_hot'
-            data_dir = './datasets/proto/_no_threshold_onehot'
+            data_dir = './datasets/proto/_threshold_onehot'
     else:
         raise NotImplementedError
 

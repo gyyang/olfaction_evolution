@@ -39,7 +39,9 @@ def varying_config(i):
         kc_dropout = True
         # label type can be either combinatorial, one_hot, sparse
         label_type = 'one_hot'
-        data_dir = './datasets/proto/_threshold_one-hot'
+        # layer norm
+        kc_layernorm = False
+        data_dir = './datasets/proto/_threshold_onehot'
         generalization_percent = 100
 
 
@@ -53,11 +55,11 @@ def varying_config(i):
     config.generalization_percent = generalization_percent
     if generalization_percent > 100:
         return
-    task.save_proto_hard(argThreshold=1, argCombinatorial=0, percent_generalization=generalization_percent)
+    task.save_proto(use_threshold=1, use_combinatorial=0, percent_generalization=generalization_percent)
     train.train(config)
 
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(100):
+    for i in range(1,11,3):
         varying_config(i)
