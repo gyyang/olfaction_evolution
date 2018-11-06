@@ -77,6 +77,7 @@ def _generate_proto_threshold(percent_generalization=PERCENT_GENERALIZATION):
 
 
 def _convert_one_hot_label(labels, label_range):
+    """Convert labels to one-hot labels."""
     label_one_hot = np.zeros((labels.size, label_range))
     label_one_hot[np.arange(labels.size), labels] = 1
     return label_one_hot
@@ -96,26 +97,28 @@ def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
     return label_to_combinatorial_encoding[labels, :]
 
 
-def save_proto_hard(argThreshold = 1, argCombinatorial = 0,
-                    percent_generalization = PERCENT_GENERALIZATION):
+def save_proto(use_threshold=True, use_combinatorial=False,
+               percent_generalization=PERCENT_GENERALIZATION):
+    """Save dataset in numpy format."""
+
     folder_name = ''
-    if argThreshold:
+    if use_threshold:
         folder_name += '_threshold'
         train_x, train_y, val_x, val_y = _generate_proto_threshold(percent_generalization)
     else:
         folder_name += '_no-threshold'
         train_x, train_y, val_x, val_y = _generate_proto()
 
-    if argCombinatorial:
+    if use_combinatorial:
         folder_name += '_combinatorial'
         key = _generate_combinatorial_label(
             PROTO_N_CLASS, N_COMBINATORIAL_CLASSES, COMBINATORIAL_DENSITY)
-        train_y_modified = _convert_to_combinatorial_label(train_y, key)
-        val_y_modified = _convert_to_combinatorial_label(val_y, key)
+        train_y = _convert_to_combinatorial_label(train_y, key)
+        val_y = _convert_to_combinatorial_label(val_y, key)
     else:
         folder_name += '_one-hot'
-        train_y_modified = _convert_one_hot_label(train_y, PROTO_N_CLASS)
-        val_y_modified = _convert_one_hot_label(val_y, PROTO_N_CLASS)
+        train_y = _convert_one_hot_label(train_y, PROTO_N_CLASS)
+        val_y = _convert_one_hot_label(val_y, PROTO_N_CLASS)
 
     path = os.path.join(PROTO_PATH, folder_name)
     if not os.path.exists(path):
@@ -124,16 +127,9 @@ def save_proto_hard(argThreshold = 1, argCombinatorial = 0,
         shutil.rmtree(path)
         os.makedirs(path)
 
-    for result, name in zip([train_x, train_y_modified, val_x, val_y_modified],
+    for result, name in zip([train_x, train_y, val_x, val_y],
                             ['train_x', 'train_y', 'val_x', 'val_y']):
         np.save(os.path.join(path, name), result)
-
-
-def save_proto():
-    """Save dataset in numpy format."""
-    results = _generate_proto()
-    for result, name in zip(results, ['train_x', 'train_y', 'val_x', 'val_y']):
-        np.save(os.path.join(PROTO_PATH, name), result)
 
 
 def load_proto(path=PROTO_PATH):
@@ -184,6 +180,6 @@ def generate_repeat():
 
 if __name__ == '__main__':
     proto_path = os.path.join(PROTO_PATH, '_threshold_combinatorial')
-    save_proto_hard(1, 1)
+    save_proto(use_threshold=True, use_combinatorial=True)
     train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
 
