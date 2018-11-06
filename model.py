@@ -201,7 +201,8 @@ class FullModel(Model):
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
 
-            if config.kc_layernorm:
+
+            if 'kc_layernorm' in dir(config) and config.kc_layernorm:
                 # Apply layer norm before activation function
                 kc_in = tf.contrib.layers.layer_norm(kc_in)
 
