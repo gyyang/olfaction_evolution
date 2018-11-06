@@ -1,4 +1,27 @@
+import os
+import json
+
 import numpy as np
+
+
+def save_config(config, save_path):
+    # Save config (first convert to dictionary)
+    config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
+    with open(os.path.join(save_path, 'config.json'), 'w') as f:
+        json.dump(config_dict, f)
+
+
+def load_config(save_path):
+    with open(os.path.join(save_path, 'config.json'), 'r') as f:
+        config_dict = json.load(f)
+
+    class Config():
+        pass
+
+    config = Config()
+    for key, val in config_dict.items():
+        setattr(config, key, val)
+    return config
 
 
 def compute_glo_score(w_orn):

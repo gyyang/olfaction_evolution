@@ -25,21 +25,10 @@ def train(config):
     if not os.path.exists(config.save_path):
         os.makedirs(config.save_path)
     # Save config (first convert to dictionary)
-    config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
-    with open(os.path.join(config.save_path, 'config.json'), 'w') as f:
-        json.dump(config_dict, f)
+    tools.save_config(config, save_path=config.save_path)
 
     # Load dataset
-    if config.dataset == 'proto':
-        if config.data_dir is None:
-            train_x, train_y, val_x, val_y = task.load_proto()
-        else:
-            train_x, train_y, val_x, val_y = task.load_proto(config.data_dir)
-    elif config.dataset == 'repeat':
-        train_x, train_y = task.generate_repeat()
-        val_x, val_y = task.generate_repeat()
-    else:
-        raise ValueError('Unknown dataset type ' + str(config.dataset))
+    train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
 
     batch_size = config.batch_size
     n_batch = train_x.shape[0] // batch_size

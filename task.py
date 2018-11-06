@@ -176,6 +176,21 @@ def generate_repeat():
     return x.astype(np.float32), y.astype(np.float32)
 
 
+def load_data(dataset, data_dir=None):
+    """Load dataset."""
+    if dataset == 'proto':
+        if data_dir is None:
+            train_x, train_y, val_x, val_y = load_proto()
+        else:
+            train_x, train_y, val_x, val_y = load_proto(data_dir)
+    elif dataset == 'repeat':
+        train_x, train_y = generate_repeat()
+        val_x, val_y = generate_repeat()
+    else:
+        raise ValueError('Unknown dataset type ' + str(dataset))
+    return train_x, train_y, val_x, val_y
+
+
 if __name__ == '__main__':
     save_proto(use_threshold=True, use_combinatorial=False,
                percent_generalization=PERCENT_GENERALIZATION)
