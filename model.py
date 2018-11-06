@@ -165,7 +165,7 @@ class FullModel(Model):
                     else:
                         alpha = tf.get_variable('alpha', shape=(1,),
                                                 dtype=tf.float32,
-                                                initializer=tf.ones_initializer())
+                                                initializer=tf.constant_initializer(0.5))
                         w_orn = w1 + alpha * tf.eye(N_GLO)
                 else:
                     # TODO: Make this work when using more than one neuron per ORN

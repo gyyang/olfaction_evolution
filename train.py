@@ -106,6 +106,7 @@ def train(config):
 
         print('Training finished')
         model.save_pickle()
+        model.save()
 
 
 if __name__ == '__main__':
@@ -125,7 +126,7 @@ if __name__ == '__main__':
         class modelConfig():
             dataset = 'proto'
             model = 'full'
-            save_path = './files/robert_bio'
+            save_path = './files/robert_debug'
             N_ORN = task.PROTO_N_ORN
             N_GLO = 50
             N_KC = 2500
@@ -139,7 +140,7 @@ if __name__ == '__main__':
             # Whether PN --> KC connections are trainable
             train_pn2kc = False
             # Whether to have direct glomeruli-like connections
-            direct_glo = False
+            direct_glo = True
             # Whether the coefficient of the direct glomeruli-like connection
             # motif is trainable
             train_direct_glo = True
@@ -151,7 +152,7 @@ if __name__ == '__main__':
             kc_dropout = True
             # label type can be either combinatorial, one_hot, sparse
             label_type = 'one_hot'
-            data_dir = './datasets/proto/_threshold_one-hot'
+            data_dir = './datasets/proto/_no_threshold_onehot'
     else:
         raise NotImplementedError
 
