@@ -187,8 +187,6 @@ class FullModel(Model):
 
             glo = tf.nn.relu(tf.matmul(x, w_orn) + b_orn)
 
-        self.w_orn = w_orn
-
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
                                  dtype=tf.float32)
@@ -240,3 +238,8 @@ class FullModel(Model):
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
+
+        self.w_orn = w_orn
+        self.glo = glo
+        self.kc = kc
+        self.logits = logits
