@@ -9,20 +9,20 @@ import matplotlib as mpl
 
 mpl.rcParams['font.size'] = 7
 
-experiment_path = os.path.join(os.getcwd(), 'vary_config_peter')
+experiment_path = os.path.join(os.getcwd(), 'files', 'generalization_experiment')
 dirs = [os.path.join(experiment_path, n) for n in os.listdir(experiment_path)]
-percentages = [str(10 * i) for i in range(11)]
+percentages = [str(10 * i) for i in range(1,11,3)]
 glo_score, val_acc, val_loss, train_loss, legends = [], [], [], [],[]
 for i, d in enumerate(dirs):
-    if i%2 == 1:
-        log_name = os.path.join(d, 'log.pkl')
-        with open(log_name, 'rb') as f:
-            log = pickle.load(f)
-        glo_score.append(log['glo_score'])
-        val_acc.append(log['val_acc'])
-        val_loss.append(log['val_loss'])
-        train_loss.append(log['train_loss'])
-        legends.append(percentages[i])
+    # if i == 1:
+    log_name = os.path.join(d, 'log.pkl')
+    with open(log_name, 'rb') as f:
+        log = pickle.load(f)
+    glo_score.append(log['glo_score'])
+    val_acc.append(log['val_acc'])
+    val_loss.append(log['val_loss'])
+    train_loss.append(log['train_loss'])
+    legends.append(percentages[i])
 
 fig, ax = plt.subplots(nrows=2, ncols =2, figsize=(10,10))
 fig.suptitle('Training as a function of percent of odors that generalize')
