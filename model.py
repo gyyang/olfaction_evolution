@@ -34,6 +34,13 @@ class Model(object):
         save_path = self.saver.save(sess, save_path)
         print("Model saved in path: %s" % save_path)
 
+    def load(self):
+        save_path = self.save_path
+        save_path = os.path.join(save_path, 'model.ckpt')
+        sess = tf.get_default_session()
+        self.saver.restore(sess, save_path)
+        print("Model restored from path: {:s}".format(save_path))
+
     def save_pickle(self, epoch=None):
         """Save model using pickle.
 
@@ -74,10 +81,11 @@ class SingleLayerModel(Model):
         if is_training:
             optimizer = tf.train.AdamOptimizer(self.config.lr)
             self.train_op = optimizer.minimize(self.loss)
-            self.saver = tf.train.Saver()
 
             for v in tf.trainable_variables():
                 print(v)
+
+        self.saver = tf.train.Saver()
 
     def _build(self, x, y, config):
         self.logits = tf.layers.dense(x, config.N_ORN, name='layer1')
@@ -137,11 +145,12 @@ class FullModel(Model):
                 var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
             self.train_op = optimizer.minimize(self.loss, var_list=var_list)
-            self.saver = tf.train.Saver()
 
             print('Training variables')
             for v in var_list:
                 print(v)
+
+        self.saver = tf.train.Saver()
 
     def _build(self, x, y, config, is_training):
         N_GLO = config.N_GLO
