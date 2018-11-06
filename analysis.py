@@ -9,8 +9,8 @@ import matplotlib as mpl
 
 mpl.rcParams['font.size'] = 7
 
-# save_name = 'no_threshold_onehot'
-save_name = 'robert_debug'
+save_name = 'no_threshold_onehot'
+# save_name = 'robert_debug'
 
 save_path = './files/' + save_name
 

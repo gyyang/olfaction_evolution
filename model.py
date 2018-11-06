@@ -198,7 +198,14 @@ class FullModel(Model):
             if config.sign_constraint:
                 w_glo = tf.abs(w_glo)
 
-            kc = tf.nn.relu(tf.matmul(glo, w_glo) + b_glo)
+            # KC input before activation function
+            kc_in = tf.matmul(glo, w_glo) + b_glo
+
+            if config.kc_layernorm:
+                # Apply layer norm before activation function
+                kc_in = tf.contrib.layers.layer_norm(kc_in)
+
+            kc = tf.nn.relu(kc_in)
 
         if config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=is_training)

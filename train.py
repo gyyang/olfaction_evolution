@@ -140,7 +140,7 @@ if __name__ == '__main__':
             # Whether PN --> KC connections are trainable
             train_pn2kc = False
             # Whether to have direct glomeruli-like connections
-            direct_glo = True
+            direct_glo = False
             # Whether the coefficient of the direct glomeruli-like connection
             # motif is trainable
             train_direct_glo = True
@@ -148,6 +148,8 @@ if __name__ == '__main__':
             tradeoff_direct_random = False
             # Whether to impose all cross area connections are positive
             sign_constraint = True
+            # Whether to have layer-norm for KC
+            kc_layernorm = True
             # dropout
             kc_dropout = True
             # label type can be either combinatorial, one_hot, sparse
