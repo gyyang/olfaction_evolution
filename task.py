@@ -134,6 +134,13 @@ def save_proto(use_threshold=True, use_combinatorial=False,
         np.save(os.path.join(path, name), result)
 
 
+def save_proto_all():
+    """Generate all datasets."""
+    for use_threshold in [True, False]:
+        for use_combinatorial in [True, False]:
+            save_proto(use_threshold, use_combinatorial)
+
+
 def load_proto(path=PROTO_PATH):
     """Load dataset from numpy format."""
     names = ['train_x', 'train_y', 'val_x', 'val_y']
@@ -160,7 +167,7 @@ def generate_repeat():
 
 
 if __name__ == '__main__':
-    save_proto(use_threshold=True, use_combinatorial=True)
-    proto_path = os.path.join(PROTO_PATH, '_threshold_combinatorial')
+    # save_proto_all()
+    proto_path = os.path.join(PROTO_PATH, '_threshold_onehot')
     train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
 
