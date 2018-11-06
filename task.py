@@ -180,5 +180,7 @@ def generate_repeat():
 
 
 if __name__ == '__main__':
-    save_proto_hard()
-    train_odors, train_labels, val_odors, val_labels = load_proto('.\datasets\proto\_threshold_one-hot')
+    proto_path = os.path.join(os.getcwd(), 'datasets', 'proto', '_threshold_combinatorial')
+    save_proto_hard(1, 1)
+    train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
+
