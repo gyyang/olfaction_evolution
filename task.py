@@ -76,15 +76,17 @@ def _generate_proto_threshold(percent_generalization=PERCENT_GENERALIZATION):
     return train_odors, train_labels, val_odors, val_labels
 
 
-def _convert_one_hot_label(labels, label_range):
+def _convert_one_hot_label(labels, n_label):
     """Convert labels to one-hot labels."""
-    label_one_hot = np.zeros((labels.size, label_range))
+    label_one_hot = np.zeros((labels.size, n_label))
     label_one_hot[np.arange(labels.size), labels] = 1
     return label_one_hot
 
 
 def _generate_combinatorial_label(label_range, n_classes, density):
-    masks = np.random.rand(label_range+1, n_classes)
+    seed = 100
+    rng = np.random.RandomState(seed)
+    masks = rng.rand(label_range+1, n_classes)
     label_to_combinatorial = masks < density
 
     X = euclidean_distances(label_to_combinatorial)
@@ -106,7 +108,7 @@ def save_proto(use_threshold=True, use_combinatorial=False,
         folder_name += '_threshold'
         train_x, train_y, val_x, val_y = _generate_proto_threshold(percent_generalization)
     else:
-        folder_name += '_no-threshold'
+        folder_name += '_no_threshold'
         train_x, train_y, val_x, val_y = _generate_proto()
 
     if use_combinatorial:
@@ -116,7 +118,7 @@ def save_proto(use_threshold=True, use_combinatorial=False,
         train_y = _convert_to_combinatorial_label(train_y, key)
         val_y = _convert_to_combinatorial_label(val_y, key)
     else:
-        folder_name += '_one-hot'
+        folder_name += '_onehot'
         train_y = _convert_one_hot_label(train_y, PROTO_N_CLASS)
         val_y = _convert_one_hot_label(val_y, PROTO_N_CLASS)
 
@@ -136,27 +138,6 @@ def load_proto(path=PROTO_PATH):
     """Load dataset from numpy format."""
     names = ['train_x', 'train_y', 'val_x', 'val_y']
     return [np.load(os.path.join(path, name+'.npy')) for name in names]
-
-
-def generate_sparse_active():
-    # TODO: TBF
-    N_CLASS = 1000
-    N_ORN = 50
-
-    prototypes = np.random.rand(N_CLASS, N_ORN).astype(np.float32)
-
-    N_TRAIN = 100000
-    N_VAL = 1000
-    train_odors = np.random.rand(N_TRAIN, N_ORN).astype(np.float32)
-    val_odors = np.random.rand(N_VAL, N_ORN).astype(np.float32)
-
-    def get_labels(odors):
-        dist = euclidean_distances(prototypes, odors)
-        return np.argmin(dist, axis=0).astype(np.int32)
-
-    train_labels = get_labels(train_odors)
-    val_labels = get_labels(val_odors)
-    return train_odors, train_labels
 
 
 def generate_repeat():
@@ -179,7 +160,7 @@ def generate_repeat():
 
 
 if __name__ == '__main__':
-    proto_path = os.path.join(PROTO_PATH, '_threshold_combinatorial')
     save_proto(use_threshold=True, use_combinatorial=True)
+    proto_path = os.path.join(PROTO_PATH, '_threshold_combinatorial')
     train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
 
