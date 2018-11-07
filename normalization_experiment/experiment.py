@@ -17,7 +17,7 @@ def varying_config(i):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['pn_norm_post_nonlinearity'] = ['batch_norm', 'sparse_norm', None]
+    hp_ranges['pn_norm_pre_nonlinearity'] = ['batch_norm', 'subtract_norm', None]
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -40,4 +40,4 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     # for i in range(1,100):
     #     varying_config(i)
-    varying_config(1)
+    varying_config(2)

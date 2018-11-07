@@ -57,7 +57,7 @@ class FullConfig(input_ProtoConfig):
         # Whether to have PN norm before non_linearity
         self.pn_norm_pre_nonlinearity = None
         # Whether to have PN norm after non_linearity
-        self.pn_norm_post_nonlinearity = 'sparse_norm'
+        self.pn_norm_post_nonlinearity = None
 
         # Whether to have layer-norm for KC
         self.kc_layernorm = False
