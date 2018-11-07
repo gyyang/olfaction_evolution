@@ -60,3 +60,31 @@ class FullConfig(input_ProtoConfig):
         self.kc_dropout = True
         # label type can be either combinatorial, one_hot, sparse
         self.label_type = 'one_hot'
+
+class SimpleConfig(input_ProtoConfig):
+    def __init__(self):
+        super(SimpleConfig, self).__init__()
+        self.dataset = 'proto'
+        self.data_dir = './datasets/proto/_100_generalization_onehot'
+        self.model = 'full'
+        self.save_path = './files/test'
+        self.N_GLO = self.N_ORN * self.N_PN_PER_ORN
+        self.N_KC = 2500
+
+        self.lr = .001
+        self.max_epoch = 10
+        self.batch_size = 256
+        # Whether PN --> KC connections are sparse
+        self.sparse_pn2kc = True
+        # Whether PN --> KC connections are trainable
+        self.train_pn2kc = False
+        # Whether to have direct glomeruli-like connections
+        self.direct_glo = False
+        # Whether to impose all cross area connections are positive
+        self.sign_constraint = True
+        # Whether to have layer-norm for KC
+        self.kc_layernorm = False
+        # dropout
+        self.kc_dropout = True
+        # label type can be either combinatorial, one_hot, sparse
+        self.label_type = 'one_hot'
