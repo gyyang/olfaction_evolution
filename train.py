@@ -56,7 +56,9 @@ def train(config):
     log = defaultdict(list)
     log_name = os.path.join(config.save_path, 'log.pkl')  # Consider json instead of pickle
 
-    with tf.Session() as sess:
+    tf_config = tf.ConfigProto()
+    tf_config.gpu_options.allow_growth = True
+    with tf.Session(config=tf_config) as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
