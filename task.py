@@ -173,6 +173,7 @@ def save_proto(config=None):
     with open(save_name, 'w') as f:
         for k, v in cur_dict.items():
             f.write('%s: %s \n' % (k, v))
+    return folder_path
 
 def save_proto_all():
     """Generate all datasets."""

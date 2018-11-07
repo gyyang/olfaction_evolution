@@ -10,7 +10,7 @@ import matplotlib as mpl
 mpl.rcParams['font.size'] = 7
 
 dirs = [os.path.join(os.getcwd(), n) for n in os.listdir(os.getcwd()) if n[:4] == 'file']
-percentages = [10, 40, 70]
+percentages = [10, 40, 70, 100]
 fig_dir = os.path.join(os.getcwd(), 'figures')
 if not os.path.exists(fig_dir):
     os.mkdir(fig_dir)

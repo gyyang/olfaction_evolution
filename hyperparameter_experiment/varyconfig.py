@@ -1,4 +1,4 @@
-"""Analyzing the resuts of varying configuration experiment."""
+"""Analyzing the resluts of varying configuration experiment."""
 
 import os
 import pickle
