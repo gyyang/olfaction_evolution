@@ -119,6 +119,25 @@ def get_sparse_mask(nx, ny, non):
     return mask.astype(np.float32)
 
 
+def _normalize(inputs, norm_type, is_training=True):
+    """Summarize different forms of normalization."""
+    if norm_type is not None:
+        if norm_type == 'layer_norm':
+            # Apply layer norm before activation function
+            outputs = tf.contrib.layers.layer_norm(
+                inputs, center=True, scale=True)
+        elif norm_type == 'batch_norm':
+            # Apply layer norm before activation function
+            outputs = tf.layers.batch_normalization(
+                inputs, center=True, scale=True, training=is_training)
+        else:
+            raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
+    else:
+        outputs = inputs
+
+    return outputs
+
+
 class FullModel(Model):
     """Full 3-layer model."""
 
@@ -196,31 +215,13 @@ class FullModel(Model):
 
             glo_in_pre = tf.matmul(x, w_orn) + b_orn
 
-            if self.config.pn_norm_pre_nonlinearity is not None:
-                if self.config.pn_norm_pre_nonlinearity == 'layer_norm':
-                    # Apply layer norm before activation function
-                    glo_in = tf.contrib.layers.layer_norm(
-                        glo_in_pre, center=True, scale=True)
-                elif self.config.pn_norm_pre_nonlinearity == 'batch_norm':
-                    # Apply layer norm before activation function
-                    glo_in = tf.layers.batch_normalization(
-                        glo_in_pre, center=True, scale=True, training=is_training)
-                else:
-                    raise ValueError('Unknown pn_norm type {:s}'.format(
-                        self.config.pn_norm_pre_nonlinearity))
-            else:
-                glo_in = glo_in_pre
+            glo_in = _normalize(
+                glo_in_pre, self.config.pn_norm_pre_nonlinearity, is_training)
 
             glo = tf.nn.relu(glo_in)
 
-            if self.config.pn_norm_post_nonlinearity is not None:
-                if self.config.pn_norm_post_nonlinearity == 'batch_norm':
-                    glo = tf.layers.batch_normalization(
-                        glo, center=True, scale=True, training=is_training)
-                else:
-                    raise ValueError('Unknown pn_norm_post_normalization type {:s}'.format(
-                        self.config.pn_norm_pre_nonlinearity))
-
+            glo_in = _normalize(
+                glo_in, self.config.pn_norm_post_nonlinearity, is_training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
