@@ -22,7 +22,6 @@ def varying_config(i):
     hp_ranges['direct_glo'] = [True, False]
     hp_ranges['sign_constraint'] = [True, False]
 
-
     # Unravel the input index
     keys = hp_ranges.keys()
     dims = [len(hp_ranges[k]) for k in keys]
