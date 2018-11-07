@@ -149,7 +149,9 @@ class FullModel(Model):
                 excludes = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='layer2')
                 var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
-            self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
 
             print('Training variables')
             for v in var_list:
@@ -191,11 +193,22 @@ class FullModel(Model):
             if self.config.sign_constraint:
                 w_orn = tf.abs(w_orn)
 
-            glo_in = tf.matmul(x, w_orn) + b_orn
+            glo_in_pre = tf.matmul(x, w_orn) + b_orn
 
-            if 'pn_layernorm' in dir(self.config) and self.config.pn_layernorm:
-                # Apply layer norm before activation function
-                glo_in = tf.contrib.layers.layer_norm(glo_in)
+            if self.config.pn_norm:
+                if self.config.pn_norm == 'layer_norm':
+                    # Apply layer norm before activation function
+                    glo_in = tf.contrib.layers.layer_norm(
+                        glo_in_pre, center=True, scale=True)
+                elif self.config.pn_norm == 'batch_norm':
+                    # Apply layer norm before activation function
+                    glo_in = tf.layers.batch_normalization(
+                        glo_in_pre, center=False, scale=False, training=is_training)
+                else:
+                    raise ValueError('Unknown pn_norm type {:s}'.format(
+                        self.config.pn_norm))
+            else:
+                glo_in = glo_in_pre
 
             glo = tf.nn.relu(glo_in)
 
@@ -252,6 +265,7 @@ class FullModel(Model):
 
         self.w_orn = w_orn
         self.glo_in = glo_in
+        self.glo_in_pre = glo_in_pre
         self.glo = glo
         self.kc_in = kc_in
         self.kc = kc
