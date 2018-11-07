@@ -9,9 +9,12 @@ import matplotlib as mpl
 
 mpl.rcParams['font.size'] = 7
 
-experiment_path = os.path.join(os.getcwd(), 'files', 'generalization_experiment')
-dirs = [os.path.join(experiment_path, n) for n in os.listdir(experiment_path)]
-percentages = [str(10 * i) for i in range(1,11,3)]
+dirs = [os.path.join(os.getcwd(), n) for n in os.listdir(os.getcwd()) if n[:4] == 'file']
+percentages = [10, 40, 70]
+fig_dir = os.path.join(os.getcwd(), 'figures')
+if not os.path.exists(fig_dir):
+    os.mkdir(fig_dir)
+
 glo_score, val_acc, val_loss, train_loss, legends = [], [], [], [],[]
 for i, d in enumerate(dirs):
     # if i == 1:
@@ -51,6 +54,4 @@ cur_ax.legend(legends)
 cur_ax.set_xlabel('Epochs')
 cur_ax.set_ylabel('Validation Loss')
 
-
-plt.savefig(os.getcwd() + '/figures/' + 'summary.png', transparent=True)
-plt.show()
+plt.savefig(os.path.join(fig_dir, 'summary.png'))

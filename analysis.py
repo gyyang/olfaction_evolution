@@ -70,6 +70,7 @@ ax = fig.add_axes(rect)
 vlim = np.round(np.max(abs(w_plot)), decimals=1)
 im = ax.imshow(w_plot, cmap= 'RdBu_r', vmin=-vlim, vmax=vlim,
                interpolation='nearest')
+plt.axis('tight')
 for loc in ['bottom','top','left','right']:
     ax.spines[loc].set_visible(False)
 ax.tick_params('both', length=0)
