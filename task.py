@@ -2,25 +2,8 @@ import os
 import shutil
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
+from configs import input_ProtoConfig
 import matplotlib.pyplot as plt
-
-class input_ProtoConfig(object):
-    def __init__(self):
-        self.path = os.path.join(os.getcwd(), 'datasets', 'proto')
-
-        self.n_train = 1000000
-        self.n_val = 9192
-
-        self.N_CLASS = 50
-        self.N_ORN = 50
-        self.N_ORN_PER_PN = 1
-        self.N_PN_PER_ORN = 1
-        self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_PER_PN = 1
-
-        self.percent_generalization = 50
-        self.use_combinatorial = False
-        self.n_combinatorial_classes = 20
-        self.combinatorial_density = .3
 
 def _generate_repeat(config=None):
     '''

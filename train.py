@@ -7,7 +7,8 @@ from task import input_ProtoConfig
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, FullConfig, SingleLayerConfig
+from model import SingleLayerModel, FullModel
+from configs import FullConfig, SingleLayerConfig
 import tools
 
 

@@ -4,13 +4,13 @@ import os
 from collections import OrderedDict
 
 import numpy as np
-import model
-import task
+import configs
 import train
 
 
+
 def varying_config(i):
-    config = model.FullConfig()
+    config = configs.FullConfig()
     config.data_dir = '../datasets/proto/_100_generalization_onehot'
     config.save_path = './files/vary_config/' + str(i)
     config.max_epoch = 10
@@ -21,7 +21,6 @@ def varying_config(i):
     hp_ranges['train_pn2kc'] = [True, False]
     hp_ranges['direct_glo'] = [True, False]
     hp_ranges['sign_constraint'] = [True, False]
-
 
     # Unravel the input index
     keys = hp_ranges.keys()
