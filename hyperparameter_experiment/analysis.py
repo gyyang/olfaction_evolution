@@ -1,5 +1,6 @@
 """Analyze the trained models."""
 
+import sys
 import os
 import pickle
 
@@ -8,6 +9,9 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import tensorflow as tf
 
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)  # This is hacky, should be fixed
+
 import tools
 import task
 from model import SingleLayerModel, FullModel
@@ -15,9 +19,10 @@ from model import SingleLayerModel, FullModel
 mpl.rcParams['font.size'] = 7
 
 # save_name = 'no_threshold_onehot'
-save_name = 'robert_debug'
+save_name = 'test_pnlayernorm'
 
-save_path = './files/' + save_name
+save_path = os.path.join(rootpath, 'files', save_name)
+figpath = os.path.join(rootpath, 'figures')
 
 log_name = os.path.join(save_path, 'log.pkl')
 with open(log_name, 'rb') as f:
@@ -35,7 +40,7 @@ ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
 ax.set_ylim([0, 1])
-plt.savefig('figures/' + save_name + '_valacc.pdf', transparent=True)
+plt.savefig(os.path.join(figpath, save_name + '_valacc.pdf'), transparent=True)
 
 # Glo score
 fig = plt.figure(figsize=(2, 2))
@@ -49,7 +54,7 @@ ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
 ax.set_ylim([0, 1])
-plt.savefig('figures/' + save_name + '_gloscore.pdf', transparent=True)
+plt.savefig(os.path.join(figpath, save_name+'_gloscore.pdf'), transparent=True)
 
 
 # Load network at the end of training
@@ -82,7 +87,7 @@ cb.outline.set_linewidth(0.5)
 cb.set_label('Weight', fontsize=7, labelpad=-10)
 plt.tick_params(axis='both', which='major', labelsize=7)
 plt.axis('tight')
-plt.savefig('figures/' + save_name + '_worn.pdf', transparent=True)
+plt.savefig(os.path.join(figpath, save_name + '_worn.pdf'), transparent=True)
 plt.show()
 
 # Plot distribution of various connections
@@ -100,7 +105,8 @@ config = tools.load_config(save_path)
 tf.reset_default_graph()
 
 # Load dataset
-train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
+data_dir = rootpath + config.data_dir[1:]  # this is a hack as well
+train_x, train_y, val_x, val_y = task.load_data(config.dataset, data_dir)
 
 if config.model == 'full':
     CurrentModel = FullModel
@@ -112,19 +118,22 @@ else:
 # Build validation model
 val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
 val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
-val_model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
+model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
+model.save_path = rootpath + model.save_path[1:]
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     sess.run(tf.local_variables_initializer())
-    val_model.load()
+    model.load()
 
     # Validation
-    val_loss, val_acc, glo_act = sess.run(
-        [val_model.loss, val_model.acc, val_model.glo],
+    val_loss, val_acc, glo_act, glo_in = sess.run(
+        [model.loss, model.acc, model.glo, model.glo_in],
         {val_x_ph: val_x, val_y_ph: val_y})
 
 
 plt.figure()
 plt.hist(glo_act.flatten(), bins=100)
 plt.title('Glo activity distribution')
+plt.savefig(os.path.join(figpath, save_name + '_pn_activity.pdf'), transparent=True)
+plt.show()
