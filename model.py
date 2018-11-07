@@ -217,13 +217,6 @@ class FullModel(Model):
                 if self.config.pn_norm_post_nonlinearity == 'batch_norm':
                     glo = tf.layers.batch_normalization(
                         glo, center=True, scale=True, training=is_training)
-                elif self.config.pn_norm_post_nonlinearity == 'sparse_norm':
-                    beta = 10
-                    sparse_fraction = .15
-                    self.sparse_loss = beta * tf.abs(
-                        (tf.count_nonzero(glo, dtype=tf.int64) / tf.cast(tf.size(glo),dtype=tf.int64))
-                                         - sparse_fraction)
-                    self.loss += tf.cast(self.sparse_loss, dtype=tf.float32)
                 else:
                     raise ValueError('Unknown pn_norm_post_normalization type {:s}'.format(
                         self.config.pn_norm_pre_nonlinearity))

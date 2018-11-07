@@ -50,7 +50,7 @@ for i, d in enumerate(dirs):
     fig, ax = plt.subplots(nrows=2, ncols=2)
     ax[0,0].hist(glo_act.flatten(), bins=100)
     ax[0,0].set_title('Glo activity distribution')
-    sparsity = np.count_nonzero(glo_act, axis= 1) / glo_act.shape[1]
+    sparsity = np.count_nonzero(glo_act >0, axis= 1) / glo_act.shape[1]
     ax[0,1].hist(sparsity, bins=100)
     ax[0,1].set_title('Activity Sparseness distribution')
     plt.savefig(os.path.join(fig_dir, str(i) + '_pn_activity.png'))
