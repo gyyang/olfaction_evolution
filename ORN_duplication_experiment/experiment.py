@@ -24,5 +24,5 @@ def varying_config(i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(100):
+    for i in range(1,100):
         varying_config(i)
