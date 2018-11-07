@@ -163,6 +163,7 @@ class FullModel(Model):
         N_ORN = self.config.N_ORN * self.config.N_ORN_PER_PN
         N_GLO = self.config.N_GLO
         N_KC = self.config.N_KC
+        self.loss = 0
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_GLO),
@@ -195,22 +196,38 @@ class FullModel(Model):
 
             glo_in_pre = tf.matmul(x, w_orn) + b_orn
 
-            if self.config.pn_norm:
-                if self.config.pn_norm == 'layer_norm':
+            if self.config.pn_norm_pre_nonlinearity is not None:
+                if self.config.pn_norm_pre_nonlinearity == 'layer_norm':
                     # Apply layer norm before activation function
                     glo_in = tf.contrib.layers.layer_norm(
                         glo_in_pre, center=True, scale=True)
-                elif self.config.pn_norm == 'batch_norm':
+                elif self.config.pn_norm_pre_nonlinearity == 'batch_norm':
                     # Apply layer norm before activation function
                     glo_in = tf.layers.batch_normalization(
                         glo_in_pre, center=True, scale=True, training=is_training)
                 else:
                     raise ValueError('Unknown pn_norm type {:s}'.format(
-                        self.config.pn_norm))
+                        self.config.pn_norm_pre_nonlinearity))
             else:
                 glo_in = glo_in_pre
 
             glo = tf.nn.relu(glo_in)
+
+            if self.config.pn_norm_post_nonlinearity is not None:
+                if self.config.pn_norm_post_nonlinearity == 'batch_norm':
+                    glo = tf.layers.batch_normalization(
+                        glo, center=True, scale=True, training=is_training)
+                elif self.config.pn_norm_post_nonlinearity == 'sparse_norm':
+                    beta = 10
+                    sparse_fraction = .15
+                    self.sparse_loss = beta * tf.abs(
+                        (tf.count_nonzero(glo, dtype=tf.int64) / tf.cast(tf.size(glo),dtype=tf.int64))
+                                         - sparse_fraction)
+                    self.loss += tf.cast(self.sparse_loss, dtype=tf.float32)
+                else:
+                    raise ValueError('Unknown pn_norm_post_normalization type {:s}'.format(
+                        self.config.pn_norm_pre_nonlinearity))
+
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
@@ -249,13 +266,13 @@ class FullModel(Model):
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
         if self.config.label_type == 'combinatorial':
-            self.loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
+            self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         elif self.config.label_type == 'one_hot':
-            self.loss = tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
+            self.loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
             self.acc = tf.metrics.accuracy(labels=tf.argmax(y, axis=-1),
                                            predictions=tf.argmax(logits,axis=-1))
         elif self.config.label_type == 'sparse':
-            self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
+            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
             pred = tf.argmax(logits, axis=-1)
             self.acc = tf.metrics.accuracy(labels=y, predictions=pred)

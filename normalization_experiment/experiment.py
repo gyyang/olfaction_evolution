@@ -12,15 +12,12 @@ import train
 def varying_config(i):
     config = configs.FullConfig()
     config.data_dir = '../datasets/proto/_50_generalization_onehot'
-    config.save_path = './files/vary_config/' + str(i)
+    config.save_path = './files/' + str(i)
     config.max_epoch = 10
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['sparse_pn2kc'] = [True, False]
-    hp_ranges['train_pn2kc'] = [True, False]
-    hp_ranges['direct_glo'] = [True, False]
-    hp_ranges['sign_constraint'] = [True, False]
+    hp_ranges['pn_norm_post_nonlinearity'] = ['batch_norm', 'sparse_norm', None]
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -41,5 +38,6 @@ def varying_config(i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(100):
-        varying_config(i)
+    # for i in range(1,100):
+    #     varying_config(i)
+    varying_config(1)

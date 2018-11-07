@@ -2,7 +2,9 @@ import os
 import json
 
 import numpy as np
-
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import pickle
 
 def save_config(config, save_path):
     # Save config (first convert to dictionary)
@@ -61,3 +63,48 @@ def compute_glo_score(w_orn):
 
     avg_glo_score = np.mean(glo_scores)
     return avg_glo_score, glo_scores
+
+def plot_summary(dirs, fig_dir, list_of_legends, title):
+    mpl.rcParams['font.size'] = 7
+    if not os.path.exists(fig_dir):
+        os.mkdir(fig_dir)
+
+    glo_score, val_acc, val_loss, train_loss, legends = [], [], [], [], []
+    for i, d in enumerate(dirs):
+        log_name = os.path.join(d, 'log.pkl')
+        with open(log_name, 'rb') as f:
+            log = pickle.load(f)
+        glo_score.append(log['glo_score'])
+        val_acc.append(log['val_acc'])
+        val_loss.append(log['val_loss'])
+        train_loss.append(log['train_loss'])
+        legends.append(list_of_legends[i])
+
+    fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10))
+    fig.suptitle(title)
+
+    cur_ax = ax[0, 0]
+    cur_ax.plot(np.array(glo_score).transpose())
+    cur_ax.legend(legends)
+    cur_ax.set_xlabel('Epochs')
+    cur_ax.set_ylabel('Connectivity score')
+
+    cur_ax = ax[0, 1]
+    cur_ax.plot(np.array(val_acc).transpose())
+    cur_ax.legend(legends)
+    cur_ax.set_xlabel('Epochs')
+    cur_ax.set_ylabel('Validation Accuracy')
+
+    cur_ax = ax[1, 0]
+    cur_ax.plot(np.array(train_loss).transpose())
+    cur_ax.legend(legends)
+    cur_ax.set_xlabel('Epochs')
+    cur_ax.set_ylabel('Training Loss')
+
+    cur_ax = ax[1, 1]
+    cur_ax.plot(np.array(val_loss).transpose())
+    cur_ax.legend(legends)
+    cur_ax.set_xlabel('Epochs')
+    cur_ax.set_ylabel('Validation Loss')
+
+    plt.savefig(os.path.join(fig_dir, 'summary.png'))
