@@ -203,7 +203,7 @@ class FullModel(Model):
                 elif self.config.pn_norm == 'batch_norm':
                     # Apply layer norm before activation function
                     glo_in = tf.layers.batch_normalization(
-                        glo_in_pre, center=False, scale=False, training=is_training)
+                        glo_in_pre, center=True, scale=True, training=is_training)
                 else:
                     raise ValueError('Unknown pn_norm type {:s}'.format(
                         self.config.pn_norm))
