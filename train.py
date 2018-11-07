@@ -3,11 +3,11 @@ from collections import defaultdict
 import pickle
 import json
 import time
-
+from task import input_ProtoConfig
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel
+from model import SingleLayerModel, FullModel, FullConfig, SingleLayerConfig
 import tools
 
 
@@ -102,52 +102,17 @@ if __name__ == '__main__':
     experiment = 'robert'
     # experiment = 'peter'
     if experiment == 'peter':
-        class modelConfig():
-            dataset = 'repeat'
-            model = 'singlelayer'
-            N_ORN = 30
-            lr = .001
-            max_epoch = 100
-            batch_size = 256
-            save_path = './files/peter_tmp'
+        config = SingleLayerConfig()
 
     elif experiment == 'robert':
-        class modelConfig():
-            dataset = 'proto'
-            model = 'full'
-            save_path = './files/peter_duplicate'
-            N_ORN = task.PROTO_N_ORN * task.PROTO_N_ORN_PER_PN
-            N_GLO = 50
-            N_KC = 2500
-            N_CLASS = task.PROTO_N_CLASS
-            N_COMBINATORIAL_CLASS = task.N_COMBINATORIAL_CLASSES
-            lr = .001
-            max_epoch = 12
-            batch_size = 256
-            # Whether PN --> KC connections are sparse
-            sparse_pn2kc = True
-            # Whether PN --> KC connections are trainable
-            train_pn2kc = False
-            # Whether to have direct glomeruli-like connections
-            direct_glo = False
-            # Whether the coefficient of the direct glomeruli-like connection
-            # motif is trainable
-            train_direct_glo = True
-            # Whether to tradeoff the direct and random connectivity
-            tradeoff_direct_random = False
-            # Whether to impose all cross area connections are positive
-            sign_constraint = True
-            # Whether to have layer-norm for KC
-            kc_layernorm = True
-            # dropout
-            kc_dropout = True
-            # label type can be either combinatorial, one_hot, sparse
-            label_type = 'one_hot'
-            data_dir = './datasets/proto/_threshold_onehot'
+        config = FullConfig()
+        config.dataset = 'proto'
+        config.data_dir = './datasets/proto/_50_generalization_onehot'
+        config.model = 'full'
+        config.save_path = './files/peter'
     else:
         raise NotImplementedError
 
-    config = modelConfig()
     train(config)
 
 

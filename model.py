@@ -5,6 +5,50 @@ import pickle
 
 import numpy as np
 import tensorflow as tf
+from task import input_ProtoConfig
+
+class SingleLayerConfig(input_ProtoConfig):
+    def __init__(self):
+        super(SingleLayerConfig, self).__init__()
+        self.dataset = 'repeat'
+        self.model = 'singlelayer'
+        self.lr = .001
+        self.max_epoch = 100
+        self.batch_size = 256
+        self.save_path = './files/peter_tmp'
+
+class FullConfig(input_ProtoConfig):
+    def __init__(self):
+        super(FullConfig, self).__init__()
+        self.dataset = 'proto'
+        self.data_dir = './datasets/proto/_100_generalization_onehot'
+        self.model = 'full'
+        self.save_path = './files/test'
+        self.N_GLO = self.N_ORN * self.N_PN_PER_ORN
+        self.N_KC = 2500
+
+        self.lr = .001
+        self.max_epoch = 12
+        self.batch_size = 256
+        # Whether PN --> KC connections are sparse
+        self.sparse_pn2kc = True
+        # Whether PN --> KC connections are trainable
+        self.train_pn2kc = False
+        # Whether to have direct glomeruli-like connections
+        self.direct_glo = False
+        # Whether the coefficient of the direct glomeruli-like connection
+        # motif is trainable
+        self.train_direct_glo = True
+        # Whether to tradeoff the direct and random connectivity
+        self.tradeoff_direct_random = False
+        # Whether to impose all cross area connections are positive
+        self.sign_constraint = True
+        # Whether to have layer-norm for KC
+        self.kc_layernorm = False
+        # dropout
+        self.kc_dropout = True
+        # label type can be either combinatorial, one_hot, sparse
+        self.label_type = 'one_hot'
 
 
 class Model(object):
@@ -64,7 +108,7 @@ class Model(object):
 class SingleLayerModel(Model):
     """Single layer model."""
 
-    def __init__(self, x, y, config, is_training=True):
+    def __init__(self, x, y, config=None, is_training=True):
         """Make model.
 
         Args:
@@ -72,8 +116,10 @@ class SingleLayerModel(Model):
             y: tf placeholder or iterator element (batch_size, N_GLO)
             config: configuration class
         """
-        super(SingleLayerModel, self).__init__(config.save_path)
-        self.config = config
+        if config is None:
+            self.config = FullConfig()
+
+        super(SingleLayerModel, self).__init__(self.config.save_path)
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
             self._build(x, y, config)
@@ -120,7 +166,7 @@ def get_sparse_mask(nx, ny, non):
 class FullModel(Model):
     """Full 3-layer model."""
 
-    def __init__(self, x, y, config, is_training=True):
+    def __init__(self, x, y, config=None, is_training=True):
         """Make model.
 
         Args:
@@ -129,16 +175,19 @@ class FullModel(Model):
             config: configuration class
             is_training: bool
         """
-        super(FullModel, self).__init__(config.save_path)
+        if config is None:
+            config = FullConfig
         self.config = config
 
+        super(FullModel, self).__init__(self.config.save_path)
+
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
-            self._build(x, y, config, is_training)
+            self._build(x, y, is_training)
 
         if is_training:
             optimizer = tf.train.AdamOptimizer(self.config.lr)
 
-            if config.train_pn2kc:
+            if self.config.train_pn2kc:
                 var_list = tf.trainable_variables()
             else:
                 excludes = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='layer2')
@@ -152,19 +201,20 @@ class FullModel(Model):
 
         self.saver = tf.train.Saver()
 
-    def _build(self, x, y, config, is_training):
-        N_GLO = config.N_GLO
-        N_KC = config.N_KC
+    def _build(self, x, y, is_training):
+        N_ORN = self.config.N_ORN * self.config.N_ORN_PER_PN
+        N_GLO = self.config.N_GLO
+        N_KC = self.config.N_KC
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
-            w1 = tf.get_variable('kernel', shape=(config.N_ORN, N_GLO),
+            w1 = tf.get_variable('kernel', shape=(N_ORN, N_GLO),
                                  dtype=tf.float32)
             b_orn = tf.get_variable('bias', shape=(N_GLO,), dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
 
-            if config.direct_glo:
-                if config.train_direct_glo:
-                    if config.tradeoff_direct_random:
+            if self.config.direct_glo:
+                if self.config.train_direct_glo:
+                    if self.config.tradeoff_direct_random:
                         alpha = tf.get_variable('alpha', shape=(1,),
                                                 dtype=tf.float32,
                                                 initializer=tf.zeros_initializer())
@@ -182,7 +232,7 @@ class FullModel(Model):
             else:
                 w_orn = w1
 
-            if config.sign_constraint:
+            if self.config.sign_constraint:
                 w_orn = tf.abs(w_orn)
 
             glo = tf.nn.relu(tf.matmul(x, w_orn) + b_orn)
@@ -192,7 +242,7 @@ class FullModel(Model):
                                  dtype=tf.float32)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
-            if config.sparse_pn2kc:
+            if self.config.sparse_pn2kc:
                 w_mask = get_sparse_mask(N_GLO, N_KC, 7)
                 w_mask = tf.get_variable(
                     'mask', shape=(N_GLO, N_KC), dtype=tf.float32,
@@ -202,35 +252,35 @@ class FullModel(Model):
             else:
                 w_glo = w2
 
-            if config.sign_constraint:
+            if self.config.sign_constraint:
                 w_glo = tf.abs(w_glo)
 
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
 
 
-            if 'kc_layernorm' in dir(config) and config.kc_layernorm:
+            if 'kc_layernorm' in dir(self.config) and self.config.kc_layernorm:
                 # Apply layer norm before activation function
                 kc_in = tf.contrib.layers.layer_norm(kc_in)
 
             kc = tf.nn.relu(kc_in)
 
-        if config.kc_dropout:
+        if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=is_training)
 
-        if config.label_type == 'combinatorial':
-            n_logits = config.N_COMBINATORIAL_CLASS
+        if self.config.label_type == 'combinatorial':
+            n_logits = self.config.N_COMBINATORIAL_CLASS
         else:
-            n_logits = config.N_CLASS
+            n_logits = self.config.N_CLASS
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
-        if config.label_type == 'combinatorial':
+        if self.config.label_type == 'combinatorial':
             self.loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
-        elif config.label_type == 'one_hot':
+        elif self.config.label_type == 'one_hot':
             self.loss = tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
             self.acc = tf.metrics.accuracy(labels=tf.argmax(y, axis=-1),
                                            predictions=tf.argmax(logits,axis=-1))
-        elif config.label_type == 'sparse':
+        elif self.config.label_type == 'sparse':
             self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
             pred = tf.argmax(logits, axis=-1)

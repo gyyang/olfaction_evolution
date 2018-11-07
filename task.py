@@ -4,12 +4,12 @@ import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 
-class input_ProtoConfig():
+class input_ProtoConfig(object):
     def __init__(self):
-        self.PATH = os.path.join(os.getcwd(), 'datasets', 'proto')
+        self.path = os.path.join(os.getcwd(), 'datasets', 'proto')
 
-        self.N_TRAIN = 1000000
-        self.N_VAL = 9192
+        self.n_train = 1000000
+        self.n_val = 9192
 
         self.N_CLASS = 50
         self.N_ORN = 50
@@ -17,11 +17,10 @@ class input_ProtoConfig():
         self.N_PN_PER_ORN = 1
         self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_PER_PN = 1
 
-        self.PERCENT_GENERALIZATION = 100
-
-        self.USE_COMBINATORIAL = False
-        self.N_COMBINATORIAL_CLASSES = 20
-        self.COMBINATORIAL_DENSITY = .3
+        self.percent_generalization = 50
+        self.use_combinatorial = False
+        self.n_combinatorial_classes = 20
+        self.combinatorial_density = .3
 
 def _generate_repeat(config=None):
     '''
@@ -32,7 +31,7 @@ def _generate_repeat(config=None):
     if config is None:
         config = input_ProtoConfig()
 
-    N_SAMPLES = config.N_TRAIN
+    N_SAMPLES = config.n_train
     N_ORN = config.N_ORN
     NEURONS_PER_ORN = config.N_ORN_PER_PN
     NOISE_STD = config.ORN_NOISE_STD
@@ -51,8 +50,8 @@ def _generate_proto(config=None):
 
     N_CLASS = config.N_CLASS
     N_ORN = config.N_ORN
-    N_TRAIN = config.N_TRAIN
-    N_VAL = config.N_VAL
+    N_TRAIN = config.n_train
+    N_VAL = config.n_val
 
     seed = 0
     rng = np.random.RandomState(seed)
@@ -92,9 +91,9 @@ def _generate_proto_threshold(config=None):
     N_ORN = config.N_ORN
     N_ORN_PER_PN = config.N_ORN_PER_PN
     ORN_NOISE_STD = config.ORN_NOISE_STD
-    GEN_THRES = config.PERCENT_GENERALIZATION
-    N_TRAIN = config.N_TRAIN
-    N_VAL = config.N_VAL
+    GEN_THRES = config.percent_generalization
+    N_TRAIN = config.n_train
+    N_VAL = config.n_val
 
     def get_labels(prototypes, odors):
         dist = euclidean_distances(prototypes, odors)
@@ -142,13 +141,13 @@ def save_proto(config=None):
         config = input_ProtoConfig()
 
     #make and save data
-    folder_name = '_' + str(config.PERCENT_GENERALIZATION) + '%_generalization'
+    folder_name = '_' + str(config.percent_generalization) + '_generalization'
     train_x, train_y, val_x, val_y = _generate_proto_threshold(config)
 
-    if config.USE_COMBINATORIAL:
+    if config.use_combinatorial:
         folder_name += '_combinatorial'
         key = _generate_combinatorial_label(
-            config.N_CLASS, config.N_COMBINATORIAL_CLASSES, config.COMBINATORIAL_DENSITY)
+            config.N_CLASS, config.n_combinatorial_classes, config.combinatorial_density)
         train_y = _convert_to_combinatorial_label(train_y, key)
         val_y = _convert_to_combinatorial_label(val_y, key)
     else:
@@ -156,20 +155,20 @@ def save_proto(config=None):
         train_y = _convert_one_hot_label(train_y, config.N_CLASS)
         val_y = _convert_one_hot_label(val_y, config.N_CLASS)
 
-    data_path = os.path.join(config.PATH, folder_name)
-    if not os.path.exists(data_path):
-        os.makedirs(data_path)
+    folder_path = os.path.join(config.path, folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
     else:
-        shutil.rmtree(data_path)
-        os.makedirs(data_path)
+        shutil.rmtree(folder_path)
+        os.makedirs(folder_path)
 
     for result, name in zip([train_x.astype(np.float32), train_y.astype(np.int32),
                              val_x.astype(np.float32), val_y.astype(np.int32)],
                             ['train_x', 'train_y', 'val_x', 'val_y']):
-        np.save(os.path.join(data_path, name), result)
+        np.save(os.path.join(folder_path, name), result)
 
     #save parameters
-    save_name = os.path.join(data_path, 'parameters.txt')
+    save_name = os.path.join(folder_path, 'parameters.txt')
     cur_dict = {k: v for k, v in config.__dict__.items()}
     with open(save_name, 'w') as f:
         for k, v in cur_dict.items():
@@ -181,7 +180,7 @@ def save_proto_all():
     for use_threshold in [True, False]:
         config.USE_THRESHOLD = use_threshold
         for use_combinatorial in [True, False]:
-            config.USE_COMBINATORIAL = use_combinatorial
+            config.use_combinatorial = use_combinatorial
             save_proto(config)
 
 def load_data(dataset, data_dir):
@@ -202,8 +201,8 @@ def load_data(dataset, data_dir):
 
 
 if __name__ == '__main__':
-    # save_proto()
-    save_proto_all()
+    save_proto()
+    # save_proto_all()
     # proto_path = os.path.join(PROTO_PATH, '_threshold_onehot')
     # train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
 
