@@ -235,7 +235,13 @@ class FullModel(Model):
             if self.config.sign_constraint:
                 w_orn = tf.abs(w_orn)
 
-            glo = tf.nn.relu(tf.matmul(x, w_orn) + b_orn)
+            glo_in = tf.matmul(x, w_orn) + b_orn
+
+            if 'pn_layernorm' in dir(self.config) and self.config.pn_layernorm:
+                # Apply layer norm before activation function
+                glo_in = tf.contrib.layers.layer_norm(glo_in)
+
+            glo = tf.nn.relu(glo_in)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
@@ -257,7 +263,6 @@ class FullModel(Model):
 
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
-
 
             if 'kc_layernorm' in dir(self.config) and self.config.kc_layernorm:
                 # Apply layer norm before activation function
@@ -290,6 +295,8 @@ class FullModel(Model):
                                 combinatorial, one_hot, sparse""")
 
         self.w_orn = w_orn
+        self.glo_in = glo_in
         self.glo = glo
+        self.kc_in = kc_in
         self.kc = kc
         self.logits = logits
