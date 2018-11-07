@@ -19,7 +19,8 @@ from model import SingleLayerModel, FullModel
 mpl.rcParams['font.size'] = 7
 
 # save_name = 'no_threshold_onehot'
-save_name = 'test_pnlayernorm'
+save_name = 'test_pnbatchnorm'
+# save_name = 'test'
 
 save_path = os.path.join(rootpath, 'files', save_name)
 figpath = os.path.join(rootpath, 'figures')
@@ -54,7 +55,8 @@ ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
 ax.set_ylim([0, 1])
-plt.savefig(os.path.join(figpath, save_name+'_gloscore.pdf'), transparent=True)
+# plt.savefig(os.path.join(figpath, save_name+'_gloscore.pdf'), transparent=True)
+plt.savefig(os.path.join(figpath, save_name+'_gloscore.png'), transparent=True)
 
 
 # Load network at the end of training
@@ -121,15 +123,19 @@ val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
 model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
 model.save_path = rootpath + model.save_path[1:]
 
-with tf.Session() as sess:
+tf_config = tf.ConfigProto()
+tf_config.gpu_options.allow_growth = True
+with tf.Session(config=tf_config) as sess:
     sess.run(tf.global_variables_initializer())
     sess.run(tf.local_variables_initializer())
     model.load()
 
     # Validation
-    val_loss, val_acc, glo_act, glo_in = sess.run(
-        [model.loss, model.acc, model.glo, model.glo_in],
+    val_loss, val_acc, glo_act, glo_in, glo_in_pre = sess.run(
+        [model.loss, model.acc, model.glo, model.glo_in, model.glo_in_pre],
         {val_x_ph: val_x, val_y_ph: val_y})
+    
+    results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
 
 
 plt.figure()
