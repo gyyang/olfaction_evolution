@@ -199,22 +199,9 @@ class FullModel(Model):
                                     initializer=tf.zeros_initializer())
 
             if self.config.direct_glo:
-                if self.config.train_direct_glo:
-                    if self.config.tradeoff_direct_random:
-                        alpha = tf.get_variable('alpha', shape=(1,),
-                                                dtype=tf.float32,
-                                                initializer=tf.zeros_initializer())
-                        alpha_gate = tf.nn.sigmoid(alpha)
-                        w_orn = (1 - alpha_gate) * w1 + alpha_gate * tf.eye(
-                            N_GLO)
-                    else:
-                        alpha = tf.get_variable('alpha', shape=(1,),
-                                                dtype=tf.float32,
-                                                initializer=tf.constant_initializer(0.5))
-                        w_orn = w1 + alpha * tf.eye(N_GLO)
-                else:
-                    # TODO: Make this work when using more than one neuron per ORN
-                    w_orn = w1 + tf.eye(N_GLO)
+                alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
+                                        initializer=tf.constant_initializer(0.5))
+                w_orn = w1 + alpha * tf.eye(N_GLO)
             else:
                 w_orn = w1
 
@@ -222,13 +209,9 @@ class FullModel(Model):
                 w_orn = tf.abs(w_orn)
 
             glo_in_pre = tf.matmul(x, w_orn) + b_orn
-
-            glo_in = _normalize(
-                glo_in_pre, self.config.pn_norm_pre_nonlinearity, training)
-
+            glo_in = _normalize(glo_in_pre, self.config.pn_norm_pre, training)
             glo = tf.nn.relu(glo_in)
-
-            glo = _normalize(glo, self.config.pn_norm_post_nonlinearity, training)
+            glo = _normalize(glo, self.config.pn_norm_post, training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
@@ -250,10 +233,9 @@ class FullModel(Model):
 
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
-            kc_in = _normalize(
-                kc_in, self.config.kc_norm_pre_nonlinearity, training)
+            kc_in = _normalize(kc_in, self.config.kc_norm_pre, training)
             kc = tf.nn.relu(kc_in)
-            kc = _normalize(kc, self.config.kc_norm_post_nonlinearity, training)
+            kc = _normalize(kc, self.config.kc_norm_post, training)
 
         if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=training)

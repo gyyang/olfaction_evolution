@@ -7,13 +7,13 @@ class input_ProtoConfig(object):
         self.n_train = 1000000
         self.n_val = 8192
 
-        self.N_CLASS = 50  # TODO: make it easier to change this parameter
+        self.N_CLASS = 100  # TODO: make it easier to change this parameter
         self.N_ORN = 50
         self.N_ORN_PER_PN = 1
         self.N_PN_PER_ORN = 1
         self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_PER_PN = 1
 
-        self.percent_generalization = 50
+        self.percent_generalization = 100
         self.use_combinatorial = False
         self.n_combinatorial_classes = 20
         self.combinatorial_density = .3
@@ -45,27 +45,21 @@ class FullConfig(input_ProtoConfig):
         self.sparse_pn2kc = True
         # Whether PN --> KC connections are trainable
         self.train_pn2kc = False
-        # Whether to have direct glomeruli-like connections
+        # Whether to train a direct glomeruli-like connections
         self.direct_glo = False
-        # Whether the coefficient of the direct glomeruli-like connection
-        # motif is trainable
-        self.train_direct_glo = False
-        # Whether to tradeoff the direct and random connectivity
-        self.tradeoff_direct_random = False
         # Whether to impose all cross area connections are positive
         self.sign_constraint = True
         # Whether to have PN norm before non_linearity
-        self.pn_norm_pre_nonlinearity = None
-        self.norm_factor = .5
+        self.pn_norm_pre = None
         # Whether to have PN norm after non_linearity
-        self.pn_norm_post_nonlinearity = None
+        self.pn_norm_post = None
         # Whether to have loss on KC weights
         self.kc_loss = False
 
         # Whether to have KC norm before non_linearity
-        self.kc_norm_pre_nonlinearity = None
+        self.kc_norm_pre = None
         # Whether to have KC norm after non_linearity
-        self.kc_norm_post_nonlinearity = None
+        self.kc_norm_post = None
         # dropout
         self.kc_dropout = True
         # label type can be either combinatorial, one_hot, sparse
