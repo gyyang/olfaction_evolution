@@ -228,8 +228,7 @@ class FullModel(Model):
 
             glo = tf.nn.relu(glo_in)
 
-            glo_in = _normalize(
-                glo_in, self.config.pn_norm_post_nonlinearity, is_training)
+            glo = _normalize(glo, self.config.pn_norm_post_nonlinearity, is_training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
