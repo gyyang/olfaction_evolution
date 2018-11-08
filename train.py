@@ -20,7 +20,7 @@ def make_input(x, y, batch_size):
     return train_iter, next_element
 
 
-def train(config):
+def train(config, reload=False):
     tf.reset_default_graph()
 
     if not os.path.exists(config.save_path):
@@ -63,6 +63,8 @@ def train(config):
         sess.run(tf.local_variables_initializer())
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
+        if reload:
+            model.load()
 
         loss = 0
         total_time, start_time = 0, time.time()
