@@ -205,11 +205,13 @@ class FullModel(Model):
             else:
                 w_orn = w1
 
-            if self.config.sign_constraint:
+            if self.config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
 
             glo_in_pre = tf.matmul(x, w_orn) + b_orn
             glo_in = _normalize(glo_in_pre, self.config.pn_norm_pre, training)
+            if self.config.skip_orn2pn:
+                glo_in = x
             glo = tf.nn.relu(glo_in)
             glo = _normalize(glo, self.config.pn_norm_post, training)
 
@@ -228,7 +230,7 @@ class FullModel(Model):
             else:
                 w_glo = w2
 
-            if self.config.sign_constraint:
+            if self.config.sign_constraint_pn2kc:
                 w_glo = tf.abs(w_glo)
 
             # KC input before activation function

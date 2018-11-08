@@ -38,30 +38,40 @@ class FullConfig(input_ProtoConfig):
         self.N_GLO = self.N_ORN * self.N_PN_PER_ORN
         self.N_KC = 2500
 
-        self.lr = .001
+        self.lr = .001  # learning rate
         self.max_epoch = 10
         self.batch_size = 256
-        # Whether PN --> KC connections are sparse
-        self.sparse_pn2kc = True
-        # Whether PN --> KC connections are trainable
-        self.train_pn2kc = False
-        # Whether to train a direct glomeruli-like connections
-        self.direct_glo = False
-        # Whether to impose all cross area connections are positive
-        self.sign_constraint = True
-        # Whether to have PN norm before non_linearity
-        self.pn_norm_pre = None
-        # Whether to have PN norm after non_linearity
-        self.pn_norm_post = None
-        # Whether to have loss on KC weights
-        self.kc_loss = False
 
-        # Whether to have KC norm before non_linearity
+        # ORN--> PN connections
+        # If True, ORN --> PN connections are positive
+        self.sign_constraint_orn2pn = True
+        # If True, PN --> KC connections are trainable
+        self.train_orn2pn = True
+        # If True, train a direct glomeruli-like connections
+        self.direct_glo = False
+        # PN normalization before non_linearity
+        self.pn_norm_pre = None
+        # PN normalization after non_linearity
+        self.pn_norm_post = None
+        # If True, skip the ORN --> PN connections
+        self.skip_orn2pn = False
+
+        # PN --> KC connections
+        # If True, ORN --> PN connections are positive
+        self.sign_constraint_pn2kc = True
+        # If True, PN --> KC connections are trainable
+        self.train_pn2kc = False
+        # If True, PN --> KC connections are sparse
+        self.sparse_pn2kc = True
+        # If True, have loss on KC weights
+        self.kc_loss = False
+        # KC normalization before non_linearity
         self.kc_norm_pre = None
-        # Whether to have KC norm after non_linearity
+        # KC normalization after non_linearity
         self.kc_norm_post = None
-        # dropout
+        # If True, add dropout to KC layer
         self.kc_dropout = True
+
         # label type can be either combinatorial, one_hot, sparse
         self.label_type = 'one_hot'
 
