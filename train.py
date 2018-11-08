@@ -50,7 +50,7 @@ def train(config):
     # Build validation model
     val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
     val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
-    val_model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
+    val_model = CurrentModel(val_x_ph, val_y_ph, config=config, training=False)
 
     # Make custom logger
     log = defaultdict(list)

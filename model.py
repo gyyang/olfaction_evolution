@@ -64,7 +64,7 @@ class Model(object):
 class SingleLayerModel(Model):
     """Single layer model."""
 
-    def __init__(self, x, y, config=None, is_training=True):
+    def __init__(self, x, y, config=None, training=True):
         """Make model.
 
         Args:
@@ -80,7 +80,7 @@ class SingleLayerModel(Model):
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
             self._build(x, y, config)
 
-        if is_training:
+        if training:
             optimizer = tf.train.AdamOptimizer(self.config.lr)
             self.train_op = optimizer.minimize(self.loss)
 
@@ -119,7 +119,7 @@ def get_sparse_mask(nx, ny, non):
     return mask.astype(np.float32)
 
 
-def _normalize(inputs, norm_type, is_training=True):
+def _normalize(inputs, norm_type, training=True):
     """Summarize different forms of normalization."""
     if norm_type is not None:
         if norm_type == 'layer_norm':
@@ -129,11 +129,11 @@ def _normalize(inputs, norm_type, is_training=True):
         elif norm_type == 'batch_norm':
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
-                inputs, center=True, scale=True, training=is_training)
+                inputs, center=True, scale=True, training=training)
         elif norm_type == 'batch_norm_nocenterscale':
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
-                inputs, center=False, scale=False, training=is_training)
+                inputs, center=False, scale=False, training=training)
         else:
             raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
     else:
@@ -145,14 +145,14 @@ def _normalize(inputs, norm_type, is_training=True):
 class FullModel(Model):
     """Full 3-layer model."""
 
-    def __init__(self, x, y, config=None, is_training=True):
+    def __init__(self, x, y, config=None, training=True):
         """Make model.
 
         Args:
             x: tf placeholder or iterator element (batch_size, N_ORN)
             y: tf placeholder or iterator element (batch_size, N_GLO)
             config: configuration class
-            is_training: bool
+            training: bool
         """
         if config is None:
             config = FullConfig
@@ -161,9 +161,9 @@ class FullModel(Model):
         super(FullModel, self).__init__(self.config.save_path)
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
-            self._build(x, y, is_training)
+            self._build(x, y, training)
 
-        if is_training:
+        if training:
             optimizer = tf.train.AdamOptimizer(self.config.lr)
 
             excludes = list()
@@ -186,7 +186,7 @@ class FullModel(Model):
 
         self.saver = tf.train.Saver()
 
-    def _build(self, x, y, is_training):
+    def _build(self, x, y, training):
         N_ORN = self.config.N_ORN * self.config.N_ORN_PER_PN
         N_GLO = self.config.N_GLO
         N_KC = self.config.N_KC
@@ -224,11 +224,11 @@ class FullModel(Model):
             glo_in_pre = tf.matmul(x, w_orn) + b_orn
 
             glo_in = _normalize(
-                glo_in_pre, self.config.pn_norm_pre_nonlinearity, is_training)
+                glo_in_pre, self.config.pn_norm_pre_nonlinearity, training)
 
             glo = tf.nn.relu(glo_in)
 
-            glo = _normalize(glo, self.config.pn_norm_post_nonlinearity, is_training)
+            glo = _normalize(glo, self.config.pn_norm_post_nonlinearity, training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
@@ -251,12 +251,12 @@ class FullModel(Model):
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
             kc_in = _normalize(
-                kc_in, self.config.kc_norm_pre_nonlinearity, is_training)
+                kc_in, self.config.kc_norm_pre_nonlinearity, training)
             kc = tf.nn.relu(kc_in)
-            kc = _normalize(kc, self.config.kc_norm_post_nonlinearity, is_training)
+            kc = _normalize(kc, self.config.kc_norm_post_nonlinearity, training)
 
         if self.config.kc_dropout:
-            kc = tf.layers.dropout(kc, 0.5, training=is_training)
+            kc = tf.layers.dropout(kc, 0.5, training=training)
 
         if self.config.kc_loss:
             self.loss += tf.reduce_mean(kc) * 10

@@ -28,7 +28,7 @@ for i, d in enumerate(dirs):
     train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
     val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
     val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
-    model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
+    model = CurrentModel(val_x_ph, val_y_ph, config=config, training=False)
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
