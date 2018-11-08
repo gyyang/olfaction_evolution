@@ -130,6 +130,10 @@ def _normalize(inputs, norm_type, is_training=True):
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
                 inputs, center=True, scale=True, training=is_training)
+        elif norm_type == 'batch_norm_nocenterscale':
+            # Apply layer norm before activation function
+            outputs = tf.layers.batch_normalization(
+                inputs, center=False, scale=False, training=is_training)
         else:
             raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
     else:
@@ -162,11 +166,15 @@ class FullModel(Model):
         if is_training:
             optimizer = tf.train.AdamOptimizer(self.config.lr)
 
-            if self.config.train_pn2kc:
-                var_list = tf.trainable_variables()
-            else:
-                excludes = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='layer2')
-                var_list = [v for v in tf.trainable_variables() if v not in excludes]
+            excludes = list()
+            if 'train_orn2pn' in dir(self.config) and not self.config.train_orn2pn:
+                # TODO: this will also exclude batch norm vars, is that right?
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope='model/layer1')
+            if not self.config.train_pn2kc:
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope='model/layer2')
+            var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
