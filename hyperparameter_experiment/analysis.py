@@ -19,7 +19,7 @@ from model import SingleLayerModel, FullModel
 mpl.rcParams['font.size'] = 7
 
 # save_name = 'no_threshold_onehot'
-save_name = 'test_pnbatchnorm_largebatchlargelr'
+save_name = 'test_fix_orn2pn'
 # save_name = 'test'
 
 save_path = os.path.join(rootpath, 'files', save_name)
@@ -111,7 +111,7 @@ plt.show()
 
 # Plot distribution of various connections
 # keys = var_dict.keys()
-keys = ['model/layer1/bias:0']
+keys = ['model/layer1/bias:0', 'model/layer2/bias:0']
 for key in keys:
     fig = plt.figure(figsize=(2, 2))
     plt.hist(var_dict[key].flatten())
@@ -137,7 +137,7 @@ else:
 # Build validation model
 val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
 val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
-model = CurrentModel(val_x_ph, val_y_ph, config=config, is_training=False)
+model = CurrentModel(val_x_ph, val_y_ph, config=config, training=False)
 model.save_path = rootpath + model.save_path[1:]
 
 tf_config = tf.ConfigProto()
@@ -148,8 +148,8 @@ with tf.Session(config=tf_config) as sess:
     model.load()
 
     # Validation
-    val_loss, val_acc, glo_act, glo_in, glo_in_pre = sess.run(
-        [model.loss, model.acc, model.glo, model.glo_in, model.glo_in_pre],
+    val_loss, val_acc, glo_act, glo_in, glo_in_pre, kc_act = sess.run(
+        [model.loss, model.acc, model.glo, model.glo_in, model.glo_in_pre, model.kc],
         {val_x_ph: val_x, val_y_ph: val_y})
     
     results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
@@ -159,4 +159,10 @@ plt.figure()
 plt.hist(glo_act.flatten(), bins=100)
 plt.title('Glo activity distribution')
 plt.savefig(os.path.join(figpath, save_name + '_pn_activity.pdf'), transparent=True)
+plt.show()
+
+plt.figure()
+plt.hist(kc_act.flatten(), bins=100)
+plt.title('KC activity distribution')
+plt.savefig(os.path.join(figpath, save_name + '_kc_activity.pdf'), transparent=True)
 plt.show()
