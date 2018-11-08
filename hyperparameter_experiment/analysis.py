@@ -19,7 +19,7 @@ from model import SingleLayerModel, FullModel
 mpl.rcParams['font.size'] = 7
 
 # save_name = 'no_threshold_onehot'
-save_name = 'test_pnbatchnorm'
+save_name = 'test_pnbatchnorm_largebatchlargelr'
 # save_name = 'test'
 
 save_path = os.path.join(rootpath, 'files', save_name)
@@ -29,12 +29,29 @@ log_name = os.path.join(save_path, 'log.pkl')
 with open(log_name, 'rb') as f:
     log = pickle.load(f)
 
+
+# Validation loss
+fig = plt.figure(figsize=(2, 2))
+ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
+ax.plot(log['epoch'], np.log10(log['val_loss']))
+ax.set_xlabel('Epochs')
+ax.set_ylabel('Validation loss')
+ax.spines["right"].set_visible(False)
+ax.spines["top"].set_visible(False)
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
+# ax.set_ylim([0, 1])
+# plt.savefig(os.path.join(figpath, save_name + '_valacc.pdf'), transparent=True)
+
+
 # Validation accuracy
 fig = plt.figure(figsize=(2, 2))
 ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
 ax.plot(log['epoch'], log['val_acc'])
 ax.set_xlabel('Epochs')
 ax.set_ylabel('Validation accuracy')
+plt.title('Final accuracy {:0.3f}'.format(log['val_acc'][-1]))
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
