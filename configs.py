@@ -5,9 +5,9 @@ class input_ProtoConfig(object):
         self.path = os.path.join(os.getcwd(), 'datasets', 'proto')
 
         self.n_train = 1000000
-        self.n_val = 9192
+        self.n_val = 8192
 
-        self.N_CLASS = 50
+        self.N_CLASS = 50  # TODO: make it easier to change this parameter
         self.N_ORN = 50
         self.N_ORN_PER_PN = 1
         self.N_PN_PER_ORN = 1

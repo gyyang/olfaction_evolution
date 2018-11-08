@@ -5,6 +5,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 from configs import input_ProtoConfig
 import matplotlib.pyplot as plt
 
+
 def _generate_repeat(config=None):
     '''
     :return:
@@ -25,32 +26,6 @@ def _generate_repeat(config=None):
     x += n
     return x.astype(np.float32), y.astype(np.float32)
 
-# TODO: is this function still needed? It is basically equivalent to 100% generalization
-def _generate_proto(config=None):
-    """Activate all ORNs randomly."""
-    if config is None:
-        config = input_ProtoConfig()
-
-    N_CLASS = config.N_CLASS
-    N_ORN = config.N_ORN
-    N_TRAIN = config.n_train
-    N_VAL = config.n_val
-
-    seed = 0
-    rng = np.random.RandomState(seed)
-
-    prototypes = np.random.poisson(size=(N_CLASS, N_ORN)).astype(np.float32)
-    train_odors = np.random.poisson(size=(N_TRAIN, N_ORN)).astype(np.float32)
-    val_odors = np.random.poisson(size=(N_VAL, N_ORN)).astype(np.float32)
-
-    def get_labels(odors):
-        dist = euclidean_distances(prototypes, odors)
-        return np.argmin(dist, axis=0).astype(np.int32)
-
-    train_labels = get_labels(train_odors)
-    val_labels = get_labels(val_odors)
-    return train_odors, train_labels, val_odors, val_labels
-
 def _generate_proto_threshold(config=None):
     """Activate all ORNs randomly.
 
@@ -58,8 +33,6 @@ def _generate_proto_threshold(config=None):
     generalize. If the similarity index (currently euclidean distance) is
     below the distance value at the percentile, the test class will not be
     any of the prototypes, but rather an additional 'default' label.
-
-
 
     default label will be labels(0), prototype classes will be labels(a
     1:N_CLASS)
