@@ -26,7 +26,6 @@ def _generate_repeat(config=None):
     x += n
     return x.astype(np.float32), y.astype(np.float32)
 
-
 def _generate_proto_threshold(config=None):
     """Activate all ORNs randomly.
 
@@ -60,10 +59,24 @@ def _generate_proto_threshold(config=None):
         dist = np.vstack((default_class, dist))
         return np.argmin(dist, axis=0)
 
+    def add_bias(matrix, bias):
+        ''' add correlated bias'''
+        bias_vector = np.random.normal(0, bias, size=matrix.shape[0])
+        matrix += bias_vector.reshape(-1,1)
+        return matrix
+
+    lamb = 1
+    bias = 0
     repeat = lambda x: np.repeat(x, repeats= N_ORN_PER_PN, axis=1)
-    prototypes = repeat(rng.rand(N_CLASS-1, N_ORN))
-    train_odors = repeat(rng.rand(N_TRAIN, N_ORN))
-    val_odors = repeat(rng.rand(N_VAL, N_ORN))
+    prototypes = repeat(np.random.uniform(0,lamb, (N_CLASS-1, N_ORN))).astype(np.float32)
+    train_odors = repeat(np.random.uniform(0,lamb, (N_TRAIN, N_ORN))).astype(np.float32)
+    val_odors = repeat(np.random.uniform(0, lamb, (N_VAL, N_ORN))).astype(np.float32)
+    prototypes += add_bias(prototypes, bias)
+    train_odors += add_bias(train_odors, bias)
+    val_odors += add_bias(val_odors, bias)
+    prototypes.clip(min=0)
+    train_odors.clip(min=0)
+    val_odors.clip(min=0)
 
     train_labels = get_labels(prototypes, train_odors)
     val_labels = get_labels(prototypes, val_odors)

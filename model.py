@@ -218,6 +218,7 @@ class FullModel(Model):
             glo_in = _normalize(
                 glo_in_pre, self.config.pn_norm_pre_nonlinearity, is_training)
 
+
             glo = tf.nn.relu(glo_in)
 
             glo_in = _normalize(
