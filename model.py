@@ -251,16 +251,16 @@ class FullModel(Model):
 
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
-
             kc_in = _normalize(
                 kc_in, self.config.kc_norm_pre_nonlinearity, is_training)
-
             kc = tf.nn.relu(kc_in)
-
             kc = _normalize(kc, self.config.kc_norm_post_nonlinearity, is_training)
 
         if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=is_training)
+
+        if self.config.kc_loss:
+            self.loss += tf.reduce_mean(kc) * 10
 
         if self.config.label_type == 'combinatorial':
             n_logits = self.config.N_COMBINATORIAL_CLASS
