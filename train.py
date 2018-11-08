@@ -92,9 +92,13 @@ def train(config):
             with open(log_name, 'wb') as f:
                 pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-            # Train
-            for b in range(n_batch):
-                loss, _ = sess.run([model.loss, model.train_op])
+            try:
+                # Train
+                for b in range(n_batch):
+                    loss, _ = sess.run([model.loss, model.train_op])
+            except KeyboardInterrupt:
+                print('Training interrupted by users')
+                break
 
         print('Training finished')
         model.save_pickle()
