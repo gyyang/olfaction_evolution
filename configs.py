@@ -32,7 +32,7 @@ class FullConfig(input_ProtoConfig):
     def __init__(self):
         super(FullConfig, self).__init__()
         self.dataset = 'proto'
-        self.data_dir = './datasets/proto/_100_generalization_onehot'
+        self.data_dir = './datasets/proto/_50_generalization_onehot'
         self.model = 'full'
         self.save_path = './files/test'
         self.N_GLO = self.N_ORN * self.N_PN_PER_ORN
@@ -49,7 +49,7 @@ class FullConfig(input_ProtoConfig):
         self.direct_glo = False
         # Whether the coefficient of the direct glomeruli-like connection
         # motif is trainable
-        self.train_direct_glo = True
+        self.train_direct_glo = False
         # Whether to tradeoff the direct and random connectivity
         self.tradeoff_direct_random = False
         # Whether to impose all cross area connections are positive
@@ -59,6 +59,8 @@ class FullConfig(input_ProtoConfig):
         self.norm_factor = .5
         # Whether to have PN norm after non_linearity
         self.pn_norm_post_nonlinearity = None
+        # Whether to have loss on KC weights
+        self.kc_loss = False
 
         # Whether to have layer-norm for KC
         self.kc_layernorm = False

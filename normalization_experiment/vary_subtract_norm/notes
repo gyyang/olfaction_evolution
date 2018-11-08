@@ -1,0 +1,1 @@
+- subtract_norm: subtract off the mean activity of odor times a scaling constant. doesn't do so well

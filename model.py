@@ -259,6 +259,9 @@ class FullModel(Model):
         if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=is_training)
 
+        if self.config.kc_loss:
+            self.loss += tf.reduce_mean(w_glo)
+
         if self.config.label_type == 'combinatorial':
             n_logits = self.config.N_COMBINATORIAL_CLASS
         else:
