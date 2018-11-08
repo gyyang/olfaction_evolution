@@ -205,6 +205,13 @@ class FullModel(Model):
                     # Apply layer norm before activation function
                     glo_in = tf.layers.batch_normalization(
                         glo_in_pre, center=True, scale=True, training=is_training)
+                elif self.config.pn_norm_pre_nonlinearity == 'scale_norm':
+                    mean_activity_per_odor = tf.reduce_mean(glo_in_pre, axis=1, keep_dims=True)
+                    glo_in = glo_in_pre -  .5 * mean_activity_per_odor
+                elif self.config.pn_norm_pre_nonlinearity == 'global_norm':
+                    norm_factor = 1
+                    mean_activity_per_odor = tf.reduce_mean(glo_in_pre)
+                    glo_in = glo_in_pre - self.config.norm_factor * mean_activity_per_odor
                 else:
                     raise ValueError('Unknown pn_norm type {:s}'.format(
                         self.config.pn_norm_pre_nonlinearity))

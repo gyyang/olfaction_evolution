@@ -56,6 +56,7 @@ class FullConfig(input_ProtoConfig):
         self.sign_constraint = True
         # Whether to have PN norm before non_linearity
         self.pn_norm_pre_nonlinearity = None
+        self.norm_factor = .5
         # Whether to have PN norm after non_linearity
         self.pn_norm_post_nonlinearity = None
 
