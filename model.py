@@ -130,6 +130,10 @@ def _normalize(inputs, norm_type, is_training=True):
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
                 inputs, center=True, scale=True, training=is_training)
+        elif norm_type == 'batch_norm_nocenterscale':
+            # Apply layer norm before activation function
+            outputs = tf.layers.batch_normalization(
+                inputs, center=False, scale=False, training=is_training)
         else:
             raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
     else:
