@@ -61,16 +61,16 @@ def _generate_proto_threshold(config=None):
 
     def add_bias(matrix, bias):
         ''' add correlated bias'''
-        bias_vector = np.random.normal(0, bias, size=matrix.shape[0])
+        bias_vector = rng.normal(0, bias, size=matrix.shape[0])
         matrix += bias_vector.reshape(-1,1)
         return matrix
 
     lamb = 1
     bias = 0
     repeat = lambda x: np.repeat(x, repeats= N_ORN_PER_PN, axis=1)
-    prototypes = repeat(np.random.uniform(0,lamb, (N_CLASS-1, N_ORN))).astype(np.float32)
-    train_odors = repeat(np.random.uniform(0,lamb, (N_TRAIN, N_ORN))).astype(np.float32)
-    val_odors = repeat(np.random.uniform(0, lamb, (N_VAL, N_ORN))).astype(np.float32)
+    prototypes = repeat(rng.uniform(0,lamb, (N_CLASS-1, N_ORN))).astype(np.float32)
+    train_odors = repeat(rng.uniform(0,lamb, (N_TRAIN, N_ORN))).astype(np.float32)
+    val_odors = repeat(rng.uniform(0, lamb, (N_VAL, N_ORN))).astype(np.float32)
     prototypes += add_bias(prototypes, bias)
     train_odors += add_bias(train_odors, bias)
     val_odors += add_bias(val_odors, bias)
@@ -81,8 +81,8 @@ def _generate_proto_threshold(config=None):
     train_labels = get_labels(prototypes, train_odors)
     val_labels = get_labels(prototypes, val_odors)
     #noise is added after getting labels
-    train_odors += np.random.normal(loc=0, scale=ORN_NOISE_STD, size=train_odors.shape)
-    val_odors += np.random.normal(loc=0, scale=ORN_NOISE_STD, size=val_odors.shape)
+    train_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=train_odors.shape)
+    val_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=val_odors.shape)
     return train_odors, train_labels, val_odors, val_labels
 
 def save_proto(config=None):
@@ -110,10 +110,11 @@ def save_proto(config=None):
     if config is None:
         config = input_ProtoConfig()
 
-    #make and save data
+    # make and save data
     folder_name = '_' + str(config.percent_generalization) + '_generalization'
     train_x, train_y, val_x, val_y = _generate_proto_threshold(config)
 
+    # Convert labels
     if config.use_combinatorial:
         folder_name += '_combinatorial'
         key = _generate_combinatorial_label(
