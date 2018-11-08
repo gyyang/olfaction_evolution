@@ -3,7 +3,6 @@ import shutil
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 from configs import input_ProtoConfig
-import matplotlib.pyplot as plt
 
 
 def _generate_repeat(config=None):
@@ -26,7 +25,8 @@ def _generate_repeat(config=None):
     x += n
     return x.astype(np.float32), y.astype(np.float32)
 
-def _generate_proto_threshold(config=None):
+
+def _generate_proto_threshold(config=None, seed=0):
     """Activate all ORNs randomly.
 
     Only a fraction (as defined by variable PERCENTILE) of odors will
@@ -40,7 +40,6 @@ def _generate_proto_threshold(config=None):
     if config is None:
         config = input_ProtoConfig()
 
-    seed = 0
     rng = np.random.RandomState(seed)
 
     N_CLASS = config.N_CLASS
@@ -85,7 +84,8 @@ def _generate_proto_threshold(config=None):
     val_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=val_odors.shape)
     return train_odors, train_labels, val_odors, val_labels
 
-def save_proto(config=None):
+
+def save_proto(config=None, seed=0):
     """Save dataset in numpy format."""
     def _convert_one_hot_label(labels, n_class):
         """Convert labels to one-hot labels."""
@@ -94,7 +94,6 @@ def save_proto(config=None):
         return label_one_hot
 
     def _generate_combinatorial_label(n_class, n_comb_class, density):
-        seed = 100
         rng = np.random.RandomState(seed)
         masks = rng.rand(n_class + 1, n_comb_class)
         label_to_combinatorial = masks < density
@@ -112,7 +111,7 @@ def save_proto(config=None):
 
     # make and save data
     folder_name = '_' + str(config.percent_generalization) + '_generalization'
-    train_x, train_y, val_x, val_y = _generate_proto_threshold(config)
+    train_x, train_y, val_x, val_y = _generate_proto_threshold(config, seed=seed)
 
     # Convert labels
     if config.use_combinatorial:
@@ -125,6 +124,8 @@ def save_proto(config=None):
         folder_name += '_onehot'
         train_y = _convert_one_hot_label(train_y, config.N_CLASS)
         val_y = _convert_one_hot_label(val_y, config.N_CLASS)
+
+    folder_name += '_s' + str(seed)
 
     folder_path = os.path.join(config.path, folder_name)
     if not os.path.exists(folder_path):
@@ -146,6 +147,7 @@ def save_proto(config=None):
             f.write('%s: %s \n' % (k, v))
     return folder_path
 
+
 def save_proto_all():
     """Generate all datasets."""
     config = input_ProtoConfig()
@@ -154,6 +156,7 @@ def save_proto_all():
         for use_combinatorial in [True, False]:
             config.use_combinatorial = use_combinatorial
             save_proto(config)
+
 
 def load_data(dataset, data_dir):
     """Load dataset."""
