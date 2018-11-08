@@ -60,8 +60,10 @@ class FullConfig(input_ProtoConfig):
         # Whether to have PN norm after non_linearity
         self.pn_norm_post_nonlinearity = None
 
-        # Whether to have layer-norm for KC
-        self.kc_layernorm = False
+        # Whether to have KC norm before non_linearity
+        self.kc_norm_pre_nonlinearity = None
+        # Whether to have KC norm after non_linearity
+        self.kc_norm_post_nonlinearity = None
         # dropout
         self.kc_dropout = True
         # label type can be either combinatorial, one_hot, sparse

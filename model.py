@@ -226,7 +226,6 @@ class FullModel(Model):
             glo_in = _normalize(
                 glo_in_pre, self.config.pn_norm_pre_nonlinearity, is_training)
 
-
             glo = tf.nn.relu(glo_in)
 
             glo_in = _normalize(
@@ -253,11 +252,12 @@ class FullModel(Model):
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
 
-            if 'kc_layernorm' in dir(self.config) and self.config.kc_layernorm:
-                # Apply layer norm before activation function
-                kc_in = tf.contrib.layers.layer_norm(kc_in)
+            kc_in = _normalize(
+                kc_in, self.config.kc_norm_pre_nonlinearity, is_training)
 
             kc = tf.nn.relu(kc_in)
+
+            kc = _normalize(kc, self.config.kc_norm_post_nonlinearity, is_training)
 
         if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=is_training)
