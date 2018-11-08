@@ -22,14 +22,17 @@ for i, d in enumerate(dirs):
         var_dict = pickle.load(f)
         w_orn = var_dict['w_orn']
         w.append(w_orn)
-        wkc.append(var_dict['layer2/kernel'])
+        wkc.append(var_dict['model/layer2/kernel:0'])
 
 
 fig, ax = plt.subplots(nrows=3, ncols = 2, figsize=(10,10))
 for i, cur_wkc in enumerate(wkc):
-    sparsity = np.count_nonzero(cur_wkc >0, axis= 1) / cur_wkc.shape[1]
-    ax[i,0].hist(sparsity, bins=20, range=(0,1))
+    sparsity = np.count_nonzero(cur_wkc >0, axis= 0)
+    ax[i,0].hist(sparsity, bins=20, range=(0,50))
     ax[i,0].set_title(list_of_legends[i])
+
+    ax[i,1].hist(cur_wkc.flatten(), bins=100, range =(0, .2))
+    ax[i,1].set_title('KC loss: ' + str(list_of_legends[i]))
 
 
 plt.savefig(os.path.join(fig_dir, 'connections.png'))

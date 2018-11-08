@@ -253,14 +253,13 @@ class FullModel(Model):
             if 'kc_layernorm' in dir(self.config) and self.config.kc_layernorm:
                 # Apply layer norm before activation function
                 kc_in = tf.contrib.layers.layer_norm(kc_in)
-
             kc = tf.nn.relu(kc_in)
 
         if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, 0.5, training=is_training)
 
         if self.config.kc_loss:
-            self.loss += tf.reduce_mean(w_glo)
+            self.loss += tf.reduce_mean(kc) * 10
 
         if self.config.label_type == 'combinatorial':
             n_logits = self.config.N_COMBINATORIAL_CLASS

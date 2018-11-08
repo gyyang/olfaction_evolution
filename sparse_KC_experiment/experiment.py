@@ -15,10 +15,11 @@ def varying_config(i):
     config.kc_layernorm = False
     config.sparse_pn2kc = False
     config.train_pn2kc = True
+    config.max_epoch = 5
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['KC_loss'] = [False, True]
+    hp_ranges['kc_loss'] = [False, True]
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -38,5 +39,6 @@ def varying_config(i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(0,100):
-        varying_config(i)
+    # for i in range(0,100):
+    #     varying_config(i)
+    varying_config(0)
