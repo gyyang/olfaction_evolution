@@ -14,32 +14,37 @@ import tools
 mpl.rcParams['font.size'] = 7
 
 new_rootpath = os.path.join(rootpath, 'files', 'vary_size_experiment')
-
-dir = os.path.join(new_rootpath, 'vary_PN', 'files')
-dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
 fig_dir = os.path.join(os.getcwd())
 
-glo_score = np.zeros(len(dirs))
-val_acc = np.zeros(len(dirs))
-n_pns = np.zeros(len(dirs))
-n_kcs = np.zeros(len(dirs))
-for i, d in enumerate(dirs):
-    log_name = os.path.join(d, 'log.pkl')
-    with open(log_name, 'rb') as f:
-        log = pickle.load(f)
-    config = tools.load_config(d)
-    glo_score[i] = log['glo_score'][-1]
-    val_acc[i] = log['val_acc'][-1]
-    n_pns[i] = config.N_GLO
-    n_kcs[i] = config.N_KC
 
+def _load_results(save_name):
+    dir = os.path.join(new_rootpath, save_name, 'files')
+    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    
+    
+    glo_score = np.zeros(len(dirs))
+    val_acc = np.zeros(len(dirs))
+    n_pns = np.zeros(len(dirs))
+    n_kcs = np.zeros(len(dirs))
+    for i, d in enumerate(dirs):
+        log_name = os.path.join(d, 'log.pkl')
+        with open(log_name, 'rb') as f:
+            log = pickle.load(f)
+        config = tools.load_config(d)
+        glo_score[i] = log['glo_score'][-1]
+        val_acc[i] = log['val_acc'][-1]
+        n_pns[i] = config.N_GLO
+        n_kcs[i] = config.N_KC
+    return glo_score, val_acc, n_pns, n_kcs
+    
+glo_score, val_acc, n_pns, n_kcs = _load_results('vary_PN')
 ind_sort = np.argsort(n_pns)
 mpl.rcParams['font.size'] = 10
 fig = plt.figure(figsize=(2, 2))
 ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
 ax.plot(np.log10(n_pns[ind_sort]), glo_score[ind_sort], 'o-')
 ax.set_xlabel('nPNs')
-ax.set_ylabel('Glo Score')
+ax.set_ylabel('GloScore')
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
@@ -53,24 +58,8 @@ plt.xticks(np.log10(ix), ix)
 
 plt.savefig(os.path.join(fig_dir, 'vary_PN.pdf'))
 
-dir = os.path.join(new_rootpath, 'vary_KC', 'files')
-dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-fig_dir = os.path.join(os.getcwd())
 
-glo_score = np.zeros(len(dirs))
-val_acc = np.zeros(len(dirs))
-n_pns = np.zeros(len(dirs))
-n_kcs = np.zeros(len(dirs))
-for i, d in enumerate(dirs):
-    log_name = os.path.join(d, 'log.pkl')
-    with open(log_name, 'rb') as f:
-        log = pickle.load(f)
-    config = tools.load_config(d)
-    glo_score[i] = log['glo_score'][-1]
-    val_acc[i] = log['val_acc'][-1]
-    n_pns[i] = config.N_GLO
-    n_kcs[i] = config.N_KC
-    
+glo_score, val_acc, n_pns, n_kcs = _load_results('vary_KC')
 ind_sort = np.argsort(n_kcs)
 
 mpl.rcParams['font.size'] = 10
@@ -78,7 +67,7 @@ fig = plt.figure(figsize=(2, 2))
 ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
 ax.plot(np.log10(n_kcs[ind_sort]), glo_score[ind_sort])
 ax.set_xlabel('nKCs')
-ax.set_ylabel('Glo Score')
+ax.set_ylabel('GloScore')
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
