@@ -19,7 +19,7 @@ from model import SingleLayerModel, FullModel
 mpl.rcParams['font.size'] = 7
 
 # save_name = 'no_threshold_onehot'
-save_name = 'test_fix_orn2pn'
+save_name = 'transfer_batchnorm'
 # save_name = 'test'
 
 save_path = os.path.join(rootpath, 'files', save_name)
@@ -138,7 +138,8 @@ else:
 val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
 val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
 model = CurrentModel(val_x_ph, val_y_ph, config=config, training=False)
-model.save_path = rootpath + model.save_path[1:]
+# model.save_path = rootpath + model.save_path[1:]
+model.save_path = save_path
 
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth = True
