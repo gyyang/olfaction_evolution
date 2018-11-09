@@ -236,6 +236,8 @@ class FullModel(Model):
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
             kc_in = _normalize(kc_in, self.config.kc_norm_pre, training)
+            if 'skip_pn2kc' in dir(self.config) and self.config.skip_pn2kc:
+                kc_in = glo
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, self.config.kc_norm_post, training)
 

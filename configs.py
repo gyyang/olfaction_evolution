@@ -73,6 +73,8 @@ class FullConfig(input_ProtoConfig):
         self.kc_norm_post = None
         # If True, add dropout to KC layer
         self.kc_dropout = True
+        # If True, skip the PN --> KC connections
+        self.skip_pn2kc = False
 
         # label type can be either combinatorial, one_hot, sparse
         self.label_type = 'one_hot'
