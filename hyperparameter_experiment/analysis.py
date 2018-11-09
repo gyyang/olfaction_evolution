@@ -20,7 +20,7 @@ mpl.rcParams['font.size'] = 7
 
 # save_name = 'no_threshold_onehot'
 # save_name = 'transfer_batchnorm'
-save_name = 'standard'
+save_name = 'hyperparameter_experiment/files/vary_config/15'
 # save_name = 'test'
 
 save_path = os.path.join(rootpath, 'files', save_name)
