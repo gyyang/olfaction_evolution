@@ -10,7 +10,8 @@ import numpy as np
 def varying_config(i):
     config = configs.FullConfig()
     config.save_path = './files/' + str(i).zfill(2)
-    config.N_ORN_PER_PN = 10
+    config.N_ORN_DUPLICATION = 10
+    config.N_PN_PER_ORN
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()

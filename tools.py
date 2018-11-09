@@ -122,3 +122,4 @@ def plot_summary(dirs, fig_dir, list_of_legends, title):
     cur_ax.set_ylabel('Validation Loss')
 
     plt.savefig(os.path.join(fig_dir, 'summary.pdf'), transparent=True)
+    return glo_score, val_acc, val_loss, train_loss
