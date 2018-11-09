@@ -7,14 +7,38 @@ import matplotlib as mpl
 import tools
 
 # mpl.rcParams['font.size'] = 7
-dir = os.path.join(os.getcwd(), 'vary_KC')
+parameters =list(range(10,110,10)) + [150, 200, 250]
+dir = os.path.join(os.getcwd(), 'vary_PN')
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
 dirs = dirs
+parameters = parameters
 fig_dir = os.path.join(os.getcwd(), 'figures')
-list_of_legends = [50, 100, 200, 400, 800, 1200, 2500, 5000, 10000, 20000]
-# list_of_legends =list(range(10,110,10)) + [150, 200, 250]
-list_of_legends = ['KC:' + str(n) for n in list_of_legends]
-tools.plot_summary(dirs, fig_dir, list_of_legends, 'nORN=PN=50, vary nKC')
+list_of_legends = ['PN:' + str(n) for n in parameters]
+glo_score, val_acc, val_loss, train_loss = \
+    tools.plot_summary(dirs, fig_dir, list_of_legends, 'nORN=50, nKC=2500, vary nPN')
+
+titles = ['glomerular score', 'validation accuracy', 'validation loss', 'training loss']
+data = [glo_score, val_acc, val_loss, train_loss]
+
+
+mpl.rcParams['font.size'] = 10
+rc = (2,2)
+fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(10,10))
+fig.suptitle('nORN = 50, nKC=2500, vary nPN')
+for i, (d, t) in enumerate(zip(data, titles)):
+    ax_i = np.unravel_index(i, dims=rc)
+    cur_ax = ax[ax_i]
+    x = parameters
+    y = [x[-1] for x in d]
+    cur_ax.semilogx(parameters, y,  marker='o')
+    cur_ax.set_xlabel('nPN')
+    cur_ax.set_ylabel(t)
+    cur_ax.grid(True)
+    cur_ax.spines["right"].set_visible(False)
+    cur_ax.spines["top"].set_visible(False)
+    cur_ax.xaxis.set_ticks_position('bottom')
+    cur_ax.yaxis.set_ticks_position('left')
+plt.savefig(os.path.join(fig_dir, 'summary_last_epoch.pdf'))
 
 w = []
 for i, d in enumerate(dirs):
@@ -26,7 +50,8 @@ for i, d in enumerate(dirs):
 
 def helper(ax):
     plt.sca(ax)
-    plt.axis('tight', ax= ax)
+    plt.axis('scaled', ax= ax)
+    plt.axis('off')
     for loc in ['bottom', 'top', 'left', 'right']:
         ax.spines[loc].set_visible(False)
     ax.tick_params('both', length=0)
@@ -38,7 +63,7 @@ def helper(ax):
     plt.tick_params(axis='both', which='major', labelsize=7)
 
 vlim = .5
-fig, ax = plt.subplots(nrows=6, ncols = 2, figsize=(10,10))
+fig, ax = plt.subplots(nrows=7, ncols = 2, figsize=(10,10))
 for i, cur_w in enumerate(w[::2]):
     ind_max = np.argmax(cur_w, axis=0)
     ind_sort = np.argsort(ind_max)
@@ -50,13 +75,4 @@ for i, cur_w in enumerate(w[::2]):
     ax[i,1].imshow(cur_w_sorted, cmap='RdBu_r', vmin=-vlim, vmax=vlim)
     helper(ax[i,1])
     plt.title('Sorted')
-
 plt.savefig(os.path.join(fig_dir, 'weights.pdf'))
-
-fig = plt.figure()
-ind_max = np.argmax(w[-1], axis=0)
-ind_sort = np.argsort(ind_max)
-w_plot = w[-1][:, ind_sort]
-plt.imshow(w_plot, cmap='RdBu_r', vmin = -vlim, vmax = vlim)
-helper(plt.gca())
-plt.savefig(os.path.join(fig_dir, 'big_weight.pdf'))

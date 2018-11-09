@@ -9,14 +9,16 @@ class input_ProtoConfig(object):
 
         self.N_CLASS = 100  # TODO: make it easier to change this parameter
         self.N_ORN = 50
-        self.N_ORN_PER_PN = 1
+        self.N_ORN_DUPLICATION = 1
         self.N_PN_PER_ORN = 1
-        self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_PER_PN = 1
+        self.ORN_NOISE_STD = 0.25 #make sure this param is set to zero if N_ORN_PER_PN = 1
+        self.N_KC = 2500
 
         self.percent_generalization = 100
         self.use_combinatorial = False
         self.n_combinatorial_classes = 20
         self.combinatorial_density = .3
+
 
 class SingleLayerConfig(input_ProtoConfig):
     def __init__(self):
@@ -28,6 +30,7 @@ class SingleLayerConfig(input_ProtoConfig):
         self.batch_size = 256
         self.save_path = './files/peter_tmp'
 
+
 class FullConfig(input_ProtoConfig):
     def __init__(self):
         super(FullConfig, self).__init__()
@@ -35,8 +38,6 @@ class FullConfig(input_ProtoConfig):
         self.data_dir = './datasets/proto/_100_generalization_onehot_s0'
         self.model = 'full'
         self.save_path = './files/test'
-        self.N_GLO = self.N_ORN * self.N_PN_PER_ORN
-        self.N_KC = 2500
 
         self.lr = .001  # learning rate
         self.max_epoch = 10
