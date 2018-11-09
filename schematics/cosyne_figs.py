@@ -39,11 +39,11 @@ def _load_results(save_name):
     
 glo_score, val_acc, n_pns, n_kcs = _load_results('vary_PN')
 ind_sort = np.argsort(n_pns)
-mpl.rcParams['font.size'] = 10
-fig = plt.figure(figsize=(2, 2))
+
+fig = plt.figure(figsize=(2, 1.2))
 ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
-ax.plot(np.log10(n_pns[ind_sort]), glo_score[ind_sort], 'o-')
-ax.set_xlabel('nPNs')
+ax.plot(np.log10(n_pns[ind_sort]), glo_score[ind_sort], 'o-', markersize=3)
+ax.set_xlabel('Number of PNs')
 ax.set_ylabel('GloScore')
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
@@ -51,22 +51,17 @@ ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 ax.yaxis.set_ticks([0, 0.5, 1.0])
 ax.xaxis.set_ticks([])
-# ax.xaxis.set_ticks(x[::2], parameters[::2])
-plt.sca(ax)
-ix = [10, 50, 100, 250]
-plt.xticks(np.log10(ix), ix)
-
+plt.xticks(np.log10([10, 50, 100, 250]), [10, 50, 100, 250])
 plt.savefig(os.path.join(fig_dir, 'vary_PN.pdf'))
 
 
 glo_score, val_acc, n_pns, n_kcs = _load_results('vary_KC')
 ind_sort = np.argsort(n_kcs)
 
-mpl.rcParams['font.size'] = 10
-fig = plt.figure(figsize=(2, 2))
+fig = plt.figure(figsize=(2, 1.2))
 ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
-ax.plot(np.log10(n_kcs[ind_sort]), glo_score[ind_sort])
-ax.set_xlabel('nKCs')
+ax.plot(np.log10(n_kcs[ind_sort]), glo_score[ind_sort], 'o-', markersize=3)
+ax.set_xlabel('Number of KCs')
 ax.set_ylabel('GloScore')
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
@@ -74,10 +69,6 @@ ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 ax.yaxis.set_ticks([0, 0.5, 1.0])
 ax.xaxis.set_ticks([])
-# ax.xaxis.set_ticks(x[::2], parameters[::2])
-plt.sca(ax)
-ix = [50, 200, 2500, 20000]
-str = [50, 200, '2.5K', '20K']
-plt.xticks(np.log10(ix), str)
+plt.xticks(np.log10([50, 200, 2500, 20000]), [50, 200, '2.5K', '20K'])
 
 plt.savefig(os.path.join(fig_dir, 'vary_KC.pdf'))
