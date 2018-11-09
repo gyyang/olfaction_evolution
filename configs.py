@@ -32,7 +32,7 @@ class FullConfig(input_ProtoConfig):
     def __init__(self):
         super(FullConfig, self).__init__()
         self.dataset = 'proto'
-        self.data_dir = './datasets/proto/_50_generalization_onehot'
+        self.data_dir = './datasets/proto/_100_generalization_onehot_s0'
         self.model = 'full'
         self.save_path = './files/test'
         self.N_GLO = self.N_ORN * self.N_PN_PER_ORN
@@ -41,6 +41,7 @@ class FullConfig(input_ProtoConfig):
         self.lr = .001  # learning rate
         self.max_epoch = 10
         self.batch_size = 256
+        self.target_acc = None  # target accuracy
 
         # ORN--> PN connections
         # If True, ORN --> PN connections are positive

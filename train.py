@@ -74,8 +74,9 @@ def train(config, reload=False):
             # Validation
             val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
                                          {val_x_ph: val_x, val_y_ph: val_y})
+            val_acc = val_acc[1]
             print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
-            print('Validation accuracy', val_acc[1])
+            print('Validation accuracy', val_acc)
             w_orn = sess.run(model.w_orn)
             glo_score, _ = tools.compute_glo_score(w_orn)
             print('Glo score ' + str(glo_score))
@@ -92,9 +93,15 @@ def train(config, reload=False):
             log['glo_score'].append(glo_score)
             log['train_loss'].append(loss)
             log['val_loss'].append(val_loss)
-            log['val_acc'].append(val_acc[1])
+            log['val_acc'].append(val_acc)
             with open(log_name, 'wb') as f:
                 pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            if 'target_acc' in dir(config) and config.target_acc is not None:
+                if val_acc > config.target_acc:
+                    print('Training reached target accuracy {:0.2f}>{:0.2f}'.format(
+                        val_acc, config.target_acc
+                    ))
 
             try:
                 # Train
