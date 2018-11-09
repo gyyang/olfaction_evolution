@@ -102,6 +102,7 @@ def train(config, reload=False):
                     print('Training reached target accuracy {:0.2f}>{:0.2f}'.format(
                         val_acc, config.target_acc
                     ))
+                break
 
             try:
                 # Train
