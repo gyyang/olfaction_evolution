@@ -20,7 +20,8 @@ mpl.rcParams['font.size'] = 7
 
 # save_name = 'no_threshold_onehot'
 # save_name = 'transfer_batchnorm'
-save_name = 'hyperparameter_experiment/files/vary_config/15'
+# save_name = 'hyperparameter_experiment/files/vary_config/15'
+save_name = 'standard'
 # save_name = 'test'
 
 save_path = os.path.join(rootpath, 'files', save_name)
@@ -98,18 +99,20 @@ def plot_weights():
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
-    fig = plt.figure(figsize=(2.5, 2.5))
+    fig = plt.figure(figsize=(2.0, 2.0))
     ax = fig.add_axes(rect)
     vlim = np.round(np.max(abs(w_plot)), decimals=1)
     im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
                    interpolation='none')
     plt.axis('tight')
-    plt.title('ORN-PN connectivity after training')
+    plt.title('ORN-PN connectivity after training', fontsize=7)
     for loc in ['bottom', 'top', 'left', 'right']:
         ax.spines[loc].set_visible(False)
     ax.tick_params('both', length=0)
-    ax.set_xlabel('To PNs', fontsize=7)
-    ax.set_ylabel('From ORNs')
+    ax.set_xlabel('To PNs', labelpad=-5)
+    ax.set_ylabel('From ORNs', labelpad=-5)
+    ax.set_xticks([0, w_plot.shape[0]])
+    ax.set_yticks([0, w_plot.shape[1]])
     ax = fig.add_axes(rect_cb)
     cb = plt.colorbar(im, cax=ax, ticks=[-vlim, vlim])
     cb.outline.set_linewidth(0.5)
@@ -182,6 +185,6 @@ def plot_activity():
 
 
 if __name__ == '__main__':
-    plot_progress()
+    # plot_progress()
     plot_weights()
-    plot_activity()
+    # plot_activity()
