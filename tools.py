@@ -1,19 +1,21 @@
 import os
 import json
+import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import pickle
+
 
 def save_config(config, save_path):
-    # Save config (first convert to dictionary)
+    """Save config."""
     config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
     with open(os.path.join(save_path, 'config.json'), 'w') as f:
         json.dump(config_dict, f)
 
 
 def load_config(save_path):
+    """Load config."""
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
 
@@ -67,6 +69,7 @@ def compute_glo_score(w_orn):
     avg_glo_score = np.mean(glo_scores)
     return avg_glo_score, glo_scores
 
+
 def plot_summary(dirs, fig_dir, list_of_legends, title):
     mpl.rcParams['font.size'] = 7
     if not os.path.exists(fig_dir):
@@ -118,5 +121,5 @@ def plot_summary(dirs, fig_dir, list_of_legends, title):
     cur_ax.set_xlabel('Epochs')
     cur_ax.set_ylabel('Validation Loss')
 
-    plt.savefig(os.path.join(fig_dir, 'summary.pdf'))
+    plt.savefig(os.path.join(fig_dir, 'summary.pdf'), transparent=True)
     return glo_score, val_acc, val_loss, train_loss

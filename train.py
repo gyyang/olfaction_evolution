@@ -65,6 +65,8 @@ def train(config, reload=False):
                                                     train_y_ph: train_y})
         if reload:
             model.load()
+            with open(log_name, 'rb') as f:
+                log = pickle.load(f)
 
         loss = 0
         total_time, start_time = 0, time.time()
