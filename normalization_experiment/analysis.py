@@ -13,11 +13,14 @@ dir = os.path.join(os.getcwd(), 'files')
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
 # dirs = dirs[:3]
 fig_dir = os.path.join(os.getcwd(), 'figures')
-list_of_legends = ['batch_norm', None]
-tools.plot_summary(dirs, fig_dir, list_of_legends, 'Scaling')
+list_of_legends = [None, 'pn_pre', 'pn_post', 'kc_pre', 'kc_post']
+glo_score, val_acc, val_loss, train_loss = \
+    tools.plot_summary(dirs, fig_dir, list_of_legends, 'Scaling')
+
+
 
 # # Reload the network and analyze activity
-fig, ax = plt.subplots(nrows=4, ncols=2)
+fig, ax = plt.subplots(nrows=5, ncols=2)
 for i, d in enumerate(dirs):
     config = tools.load_config(d)
 
@@ -50,7 +53,7 @@ for i, d in enumerate(dirs):
     ax[i,1].hist(sparsity, bins=20, range=(0,1))
     ax[i,1].set_title('Sparseness')
 
-ax[3,0].hist(val_x.flatten(), bins=20, range= (0,5))
-ax[3,0].set_title('OR activation')
+ax[5,0].hist(val_x.flatten(), bins=20, range= (0,5))
+ax[5,0].set_title('OR activation')
 
 plt.savefig(os.path.join(fig_dir, 'norm.png'))

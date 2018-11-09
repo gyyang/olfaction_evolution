@@ -8,11 +8,12 @@ import tools
 
 # mpl.rcParams['font.size'] = 7
 parameters =list(range(10,110,10)) + [150, 200, 250]
-dir = os.path.join(os.getcwd(), 'vary_PN')
+dir = os.path.join(os.getcwd(), 'vary_PN', 'files')
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
 dirs = dirs
 parameters = parameters
-fig_dir = os.path.join(os.getcwd(), 'figures')
+logparams = np.log10(parameters)
+fig_dir = os.path.join(os.getcwd(), 'vary_PN', 'figures')
 list_of_legends = ['PN:' + str(n) for n in parameters]
 glo_score, val_acc, val_loss, train_loss = \
     tools.plot_summary(dirs, fig_dir, list_of_legends, 'nORN=50, nKC=2500, vary nPN')
@@ -28,12 +29,14 @@ fig.suptitle('nORN = 50, nKC=2500, vary nPN')
 for i, (d, t) in enumerate(zip(data, titles)):
     ax_i = np.unravel_index(i, dims=rc)
     cur_ax = ax[ax_i]
-    x = parameters
+    plt.sca(cur_ax)
+    x = logparams
     y = [x[-1] for x in d]
-    cur_ax.semilogx(parameters, y,  marker='o')
+    cur_ax.plot(x, y, marker='o')
     cur_ax.set_xlabel('nPN')
     cur_ax.set_ylabel(t)
-    cur_ax.grid(True)
+    cur_ax.grid(False)
+    plt.xticks(x[::2], parameters[::2])
     cur_ax.spines["right"].set_visible(False)
     cur_ax.spines["top"].set_visible(False)
     cur_ax.xaxis.set_ticks_position('bottom')
