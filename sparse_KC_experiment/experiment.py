@@ -11,7 +11,7 @@ def varying_config(i):
     config = configs.FullConfig()
     config.save_path = './files/' + str(i).zfill(2)
     config.data_dir = '../datasets/proto/_50_generalization_onehot'
-    config.N_ORN_PER_PN = 1
+    config.N_ORN_DUPLICATION = 1
     config.kc_layernorm = False
     config.sparse_pn2kc = False
     config.train_pn2kc = True

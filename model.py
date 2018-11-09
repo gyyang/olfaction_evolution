@@ -149,8 +149,8 @@ class FullModel(Model):
         """Make model.
 
         Args:
-            x: tf placeholder or iterator element (batch_size, N_ORN)
-            y: tf placeholder or iterator element (batch_size, N_GLO)
+            x: tf placeholder or iterator element (batch_size, N_ORN * N_ORN_DUPLICATION)
+            y: tf placeholder or iterator element (batch_size, N_CLASS)
             config: configuration class
             training: bool
         """
@@ -187,21 +187,21 @@ class FullModel(Model):
         self.saver = tf.train.Saver()
 
     def _build(self, x, y, training):
-        N_ORN = self.config.N_ORN * self.config.N_ORN_PER_PN
-        N_GLO = self.config.N_GLO
+        N_ORN = self.config.N_ORN * self.config.N_ORN_DUPLICATION
+        N_PN = self.config.N_ORN * self.config.N_PN_PER_ORN
         N_KC = self.config.N_KC
         self.loss = 0
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
-            w1 = tf.get_variable('kernel', shape=(N_ORN, N_GLO),
+            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32)
-            b_orn = tf.get_variable('bias', shape=(N_GLO,), dtype=tf.float32,
+            b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
 
             if self.config.direct_glo:
                 alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
                                         initializer=tf.constant_initializer(0.5))
-                w_orn = w1 + alpha * tf.eye(N_GLO)
+                w_orn = w1 + alpha * tf.eye(N_PN)
             else:
                 w_orn = w1
 
@@ -216,14 +216,14 @@ class FullModel(Model):
             glo = _normalize(glo, self.config.pn_norm_post, training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            w2 = tf.get_variable('kernel', shape=(N_GLO, N_KC),
+            w2 = tf.get_variable('kernel', shape=(N_PN, N_KC),
                                  dtype=tf.float32)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
             if self.config.sparse_pn2kc:
-                w_mask = get_sparse_mask(N_GLO, N_KC, 7)
+                w_mask = get_sparse_mask(N_PN, N_KC, 7)
                 w_mask = tf.get_variable(
-                    'mask', shape=(N_GLO, N_KC), dtype=tf.float32,
+                    'mask', shape=(N_PN, N_KC), dtype=tf.float32,
                     initializer=tf.constant_initializer(w_mask),
                     trainable=False)
                 w_glo = tf.multiply(w2, w_mask)

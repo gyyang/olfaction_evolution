@@ -16,7 +16,7 @@ def _generate_repeat(config=None):
 
     N_SAMPLES = config.n_train
     N_ORN = config.N_ORN
-    NEURONS_PER_ORN = config.N_ORN_PER_PN
+    NEURONS_PER_ORN = config.N_ORN_DUPLICATION
     NOISE_STD = config.ORN_NOISE_STD
 
     y = np.random.uniform(low=0, high=1, size= (N_SAMPLES, N_ORN))
@@ -44,7 +44,7 @@ def _generate_proto_threshold(config=None, seed=0):
 
     N_CLASS = config.N_CLASS
     N_ORN = config.N_ORN
-    N_ORN_PER_PN = config.N_ORN_PER_PN
+    N_ORN_PER_PN = config.N_ORN_DUPLICATION
     ORN_NOISE_STD = config.ORN_NOISE_STD
     GEN_THRES = config.percent_generalization
     N_TRAIN = config.n_train
