@@ -7,11 +7,12 @@ import matplotlib as mpl
 import tools
 
 # mpl.rcParams['font.size'] = 7
-dir = os.path.join(os.getcwd(), 'vary_KC')
+dir = os.path.join(os.getcwd(), 'vary_KC/files')
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
 dirs = dirs
-fig_dir = os.path.join(os.getcwd(), 'figures')
+fig_dir = os.path.join(os.getcwd(), 'vary_KC', 'figures')
 parameters = [50, 100, 200, 400, 800, 1200, 2500, 5000, 10000, 20000]
+logparams = np.log10(parameters)
 # parameters =list(range(10,110,10)) + [150, 200, 250]
 list_of_legends = ['KC:' + str(n) for n in parameters]
 glo_score, val_acc, val_loss, train_loss = \
@@ -28,12 +29,14 @@ fig.suptitle('nORN = nPN = 50, vary nKC')
 for i, (d, t) in enumerate(zip(data, titles)):
     ax_i = np.unravel_index(i, dims=rc)
     cur_ax = ax[ax_i]
-    x = parameters
+    plt.sca(cur_ax)
+    x = logparams
     y = [x[-1] for x in d]
-    cur_ax.semilogx(parameters, y,  marker='o')
+    cur_ax.plot(x, y,  marker='o')
     cur_ax.set_xlabel('nKC')
     cur_ax.set_ylabel(t)
-    cur_ax.grid(True)
+    cur_ax.grid(False)
+    plt.xticks(x, parameters)
     cur_ax.spines["right"].set_visible(False)
     cur_ax.spines["top"].set_visible(False)
     cur_ax.xaxis.set_ticks_position('bottom')
