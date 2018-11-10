@@ -196,7 +196,7 @@ class FullModel(Model):
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32)
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
-                                    initializer=tf.zeros_initializer())
+                                    initializer=tf.constant_initializer(0))
 
             if self.config.direct_glo:
                 alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
@@ -219,7 +219,7 @@ class FullModel(Model):
             w2 = tf.get_variable('kernel', shape=(N_PN, N_KC),
                                  dtype=tf.float32)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.zeros_initializer())
+                                    initializer=tf.constant_initializer(-0.5))
             if self.config.sparse_pn2kc:
                 w_mask = get_sparse_mask(N_PN, N_KC, 7)
                 w_mask = tf.get_variable(

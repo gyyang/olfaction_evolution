@@ -9,16 +9,19 @@ import numpy as np
 
 def varying_config(i):
     config = configs.FullConfig()
-    config.save_path = './files/' + str(i).zfill(2)
+    config.save_path = './vary_PN_dupORN10x_.25Noise/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 10
     config.N_ORN = 50
     config.ORN_NOISE_STD = 0.25
-    config.data_dir = '../datasets/proto/_100_generalization_onehot_DUP_noise'
-    config.max_epoch = 6
+    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_.25noise'
+    config.max_epoch = 4
+    config.kc_norm_post = None
+    config.N_PN_PER_ORN = 1
+    config.train_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['N_PN_PER_ORN'] =[1, 5, 10, 25, 50]
+    hp_ranges['train_pn2kc'] = [True, False]
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -37,5 +40,5 @@ def varying_config(i):
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     #varying_config(0)
-    for i in range(1,4):
+    for i in range(1,5):
         varying_config(i)

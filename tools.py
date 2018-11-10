@@ -49,13 +49,13 @@ def compute_glo_score(w_orn):
         glo_scores: numpy array (n_pn,), all glomeruli scores
     """
     n_orn, n_pn = w_orn.shape
-    w_orn_by_pn = abs(w_orn)
+    # w_orn_by_pn = abs(w_orn)
 
     # this code does **not** work for arbitrary orn / pn sizes
-    # n_pn_per_orn = n_orn // n_pn
-    # w_orn_by_pn = np.reshape(w_orn, (n_orn, n_pn_per_orn, n_pn))
-    # w_orn_by_pn = w_orn_by_pn.mean(axis=1)
-    # w_orn_by_pn = abs(w_orn_by_pn)
+    n_pn_per_orn = n_orn // n_pn
+    w_orn_by_pn = np.reshape(w_orn, (n_pn, n_pn_per_orn, n_pn))
+    w_orn_by_pn = w_orn_by_pn.mean(axis=1)
+    w_orn_by_pn = abs(w_orn_by_pn)
 
     glo_scores = list()
     for i in range(n_pn):
@@ -121,5 +121,5 @@ def plot_summary(dirs, fig_dir, list_of_legends, title):
     cur_ax.set_xlabel('Epochs')
     cur_ax.set_ylabel('Validation Loss')
 
-    plt.savefig(os.path.join(fig_dir, 'summary.pdf'), transparent=True)
+    plt.savefig(os.path.join(fig_dir, 'summary.png'), transparent=True)
     return glo_score, val_acc, val_loss, train_loss

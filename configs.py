@@ -11,7 +11,7 @@ class input_ProtoConfig(object):
         self.N_ORN = 50
         self.N_ORN_DUPLICATION = 1
         self.N_PN_PER_ORN = 1
-        self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_PER_PN = 1
+        self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_DUPLICATION = 1
         self.N_KC = 2500
 
         self.percent_generalization = 100
