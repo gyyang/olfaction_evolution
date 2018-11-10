@@ -7,61 +7,71 @@ import matplotlib as mpl
 import tools
 
 # mpl.rcParams['font.size'] = 7
-dir = os.path.join(os.getcwd(), 'vary_PN_dupORN10x_noNoise')
-dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+dir = os.path.join(os.getcwd(), 'vary_PN_dupORN10x_.25Noise')
+dirs = [os.path.join(dir, n) for n in os.listdir(dir) if n[:1] == '0']
 dirs = dirs
-fig_dir = os.path.join(os.getcwd(), 'figures')
-parameters = [1, 5, 10, 25, 50, 100, 200, 500]
-parameters = [1, 5, 10, 25, 50]
-list_of_legends = ['nPN per ORN:' + str(n) for n in parameters]
+fig_dir = os.path.join(dir, 'figures')
+list_of_legends = np.arange(1,6)
 glo_score, val_acc, val_loss, train_loss = \
     tools.plot_summary(dirs, fig_dir, list_of_legends,
                        'nORN = 50, nORN dup = 10, vary nPN per ORN')
 
-titles = ['glomerular score', 'validation accuracy', 'validation loss', 'training loss']
-data = [glo_score, val_acc, val_loss, train_loss]
-mpl.rcParams['font.size'] = 10
-rc = (2,2)
-fig, ax = plt.subplots(nrows=rc[0], ncols=rc[1], figsize=(10,10))
-fig.suptitle('nORN = 50, nORN dup = 10, vary nPN per ORN')
-for i, (d, t) in enumerate(zip(data, titles)):
-    ax_i = np.unravel_index(i, dims=rc)
-    cur_ax = ax[ax_i]
-    x = parameters
-    y = [x[-1] for x in d]
-    cur_ax.semilogx(parameters, y,  marker='o')
-    cur_ax.set_xlabel('nPN dup')
-    cur_ax.set_ylabel(t)
-    cur_ax.grid(True)
-    cur_ax.spines["right"].set_visible(False)
-    cur_ax.spines["top"].set_visible(False)
-    cur_ax.xaxis.set_ticks_position('bottom')
-    cur_ax.yaxis.set_ticks_position('left')
-plt.savefig(os.path.join(fig_dir, 'summary_last_epoch.pdf'))
+# titles = ['glomerular score', 'validation accuracy', 'validation loss', 'training loss']
+# data = [glo_score, val_acc, val_loss, train_loss]
+# mpl.rcParams['font.size'] = 10
+# rc = (2,2)
+# fig, ax = plt.subplots(nrows=rc[0], ncols=rc[1], figsize=(10,10))
+# fig.suptitle('nORN = 50, nORN dup = 10, vary nPN per ORN')
+# for i, (d, t) in enumerate(zip(data, titles)):
+#     ax_i = np.unravel_index(i, dims=rc)
+#     cur_ax = ax[ax_i]
+#     x = parameters
+#     y = [x[-1] for x in d]
+#     cur_ax.semilogx(parameters, y,  marker='o')
+#     cur_ax.set_xlabel('nPN dup')
+#     cur_ax.set_ylabel(t)
+#     cur_ax.grid(True)
+#     cur_ax.spines["right"].set_visible(False)
+#     cur_ax.spines["top"].set_visible(False)
+#     cur_ax.xaxis.set_ticks_position('bottom')
+#     cur_ax.yaxis.set_ticks_position('left')
+# plt.savefig(os.path.join(fig_dir, 'summary_last_epoch.pdf'))
 
-w = []
+worn, born, wpn, bpn = [], [], [], []
 for i, d in enumerate(dirs):
     model_dir = os.path.join(d, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
         w_orn = var_dict['w_orn']
-        w.append(w_orn)
+        worn.append(w_orn)
+        born.append(var_dict['model/layer1/bias:0'])
+        wpn.append(var_dict['model/layer2/kernel:0'])
+        bpn.append(var_dict['model/layer2/bias:0'])
+        print(tools.compute_glo_score(w_orn)[0])
+
+r,c=2,2
+fig, ax = plt.subplots(r,c, figsize=(10,10))
+for i, w in enumerate(bpn):
+    p_i= np.unravel_index(i, (r,c))
+    cur_ax = ax[p_i]
+    cur_ax.hist(w.flatten(), bins=50)
+plt.tight_layout()
+plt.savefig(os.path.join(fig_dir, 'weight_distr.png'))
 
 #calculate sparseness
-
-rc= (5,2)
-fig, ax = plt.subplots(nrows=rc[0], ncols= rc[1], figsize=(10,10))
-fig.suptitle('')
-for i, cw in enumerate(w):
-    ax_i = np.unravel_index(i, dims=rc)
-    cur_ax = ax[ax_i]
-    maxval = np.max(cw, axis=0)
-    cur_ax.hist(maxval, bins=50, range=[0, 2])
-    cur_ax.set_xlabel('max weight')
-    cur_ax.set_ylabel('count')
-    cur_ax.set_title('nPN per ORN: ' +str(parameters[i]))
-plt.tight_layout()
-plt.savefig(os.path.join(fig_dir, 'sparseness.pdf'))
+# rc= (5,2)
+# fig, ax = plt.subplots(nrows=rc[0], ncols= rc[1], figsize=(10,10))
+# fig.suptitle('')
+# for i, cw in enumerate(w):
+#     ax_i = np.unravel_index(i, dims=rc)
+#     cur_ax = ax[ax_i]
+#     maxval = np.max(cw, axis=0)
+#     cur_ax.hist(maxval, bins=50, range=[0, 2])
+#     cur_ax.set_xlabel('max weight')
+#     cur_ax.set_ylabel('count')
+#     cur_ax.set_title('nPN per ORN: ' +str(parameters[i]))
+# plt.tight_layout()
+# plt.savefig(os.path.join(fig_dir, 'sparseness.pdf'))
 
 def helper(ax):
     plt.sca(ax)
@@ -77,16 +87,18 @@ def helper(ax):
     plt.tick_params(axis='both', which='major', labelsize=7)
 
 vlim = .5
-fig, ax = plt.subplots(nrows=6, ncols = 2, figsize=(10,10))
-for i, cur_w in enumerate(w):
+fig, ax = plt.subplots(nrows=5, ncols = 2, figsize=(10,10))
+for i, cur_w in enumerate(worn):
     ind_max = np.argmax(cur_w, axis=0)
     ind_sort = np.argsort(ind_max)
     cur_w_sorted = cur_w[:, ind_sort]
 
-    ax[i,0].imshow(cur_w, cmap='RdBu_r', vmin = -vlim, vmax = vlim)
+
+    ax[i,0].imshow(cur_w, cmap='RdBu_r', vmin = -vlim, vmax=vlim)
     helper(ax[i,0])
     plt.title(str(list_of_legends[i]))
     ax[i,1].imshow(cur_w_sorted, cmap='RdBu_r', vmin=-vlim, vmax=vlim)
     helper(ax[i,1])
     plt.title('Sorted')
-plt.savefig(os.path.join(fig_dir, 'weights.pdf'))
+plt.tight_layout()
+plt.savefig(os.path.join(fig_dir, 'weights.png'))

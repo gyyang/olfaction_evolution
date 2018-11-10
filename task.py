@@ -3,6 +3,7 @@ import shutil
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 from configs import input_ProtoConfig
+import matplotlib.pyplot as plt
 
 
 def _generate_repeat(config=None):
