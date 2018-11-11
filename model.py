@@ -269,6 +269,7 @@ class FullModel(Model):
                                 combinatorial, one_hot, sparse""")
 
         self.w_orn = w_orn
+        self.w_glo = w_glo
         self.glo_in = glo_in
         self.glo_in_pre = glo_in_pre
         self.glo = glo

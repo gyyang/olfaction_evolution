@@ -3,7 +3,8 @@ from collections import defaultdict
 import pickle
 import json
 import time
-from task import input_ProtoConfig
+
+import numpy as np
 import tensorflow as tf
 
 import task
@@ -81,6 +82,12 @@ def train(config, reload=False):
             glo_score, _ = tools.compute_glo_score(w_orn)
             print('Glo score ' + str(glo_score))
 
+            # Compute condition number
+            w_glo = sess.run(model.w_glo)
+            w_orn2kc = np.dot(w_orn, w_glo)
+            cond = np.linalg.cond(w_orn2kc)
+            print('Condition number '+ str(cond))
+
             if ep > 0:
                 time_spent = time.time() - start_time
                 total_time += time_spent
@@ -94,6 +101,7 @@ def train(config, reload=False):
             log['train_loss'].append(loss)
             log['val_loss'].append(val_loss)
             log['val_acc'].append(val_acc)
+            log['cond'].append(cond)
             with open(log_name, 'wb') as f:
                 pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
 
