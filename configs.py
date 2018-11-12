@@ -43,6 +43,7 @@ class FullConfig(input_ProtoConfig):
         self.max_epoch = 10
         self.batch_size = 256
         self.target_acc = None  # target accuracy
+        self.kc_bias = -.5
 
         # ORN--> PN connections
         # If True, ORN --> PN connections are positive
@@ -75,6 +76,8 @@ class FullConfig(input_ProtoConfig):
         self.kc_dropout = True
         # If True, skip the PN --> KC connections
         self.skip_pn2kc = False
+        # number of inputs onto KCs
+        self.kc_inputs = 7
 
         # label type can be either combinatorial, one_hot, sparse
         self.label_type = 'one_hot'
