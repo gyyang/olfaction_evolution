@@ -216,14 +216,20 @@ class FullModel(Model):
             glo = _normalize(glo, self.config.pn_norm_post, training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            w2 = tf.get_variable('kernel', shape=(N_PN, N_KC),
-                                 dtype=tf.float32)
+            if self.config.skip_orn2pn:
+                N_USE = N_ORN
+            else:
+                N_USE = N_PN
+
+            w2 = tf.get_variable('kernel', shape=(N_USE, N_KC),
+                                     dtype=tf.float32)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(-0.5))
+                                    initializer=tf.constant_initializer(self.config.kc_bias))
+
             if self.config.sparse_pn2kc:
-                w_mask = get_sparse_mask(N_PN, N_KC, 7)
+                w_mask = get_sparse_mask(N_USE, N_KC, self.config.kc_inputs)
                 w_mask = tf.get_variable(
-                    'mask', shape=(N_PN, N_KC), dtype=tf.float32,
+                    'mask', shape=(N_USE, N_KC), dtype=tf.float32,
                     initializer=tf.constant_initializer(w_mask),
                     trainable=False)
                 w_glo = tf.multiply(w2, w_mask)

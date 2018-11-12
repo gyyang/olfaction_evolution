@@ -10,36 +10,14 @@ from model import SingleLayerModel, FullModel
 import task
 
 # mpl.rcParams['font.size'] = 7
-dir = os.path.join(os.getcwd(), 'vary_claws')
-dirs = [os.path.join(dir, n) for n in os.listdir(dir) if n[:1] == '0']
-dirs = dirs[:1]
+dir = os.path.join(os.getcwd())
+dirs = [os.path.join(dir, n) for n in os.listdir(dir) if n[:1] == '1']
+dirs = dirs
 fig_dir = os.path.join(dir, 'figures')
-list_of_legends = list(range(0,15,2)) + [15, 20, 25, 35, 50, 100, 200]
-list_of_legends = list_of_legends[:1]
+list_of_legends = [0,-1,-2,-3,-4]
 glo_score, val_acc, val_loss, train_loss = \
     tools.plot_summary(dirs, fig_dir, list_of_legends,
                        'nORN = 50, nORN dup = 10, vary nPN per ORN')
-
-# titles = ['glomerular score', 'validation accuracy', 'validation loss', 'training loss']
-# data = [glo_score, val_acc, val_loss, train_loss]
-# mpl.rcParams['font.size'] = 10
-# rc = (2,2)
-# fig, ax = plt.subplots(nrows=rc[0], ncols=rc[1], figsize=(10,10))
-# fig.suptitle('nORN = 50, nORN dup = 10, vary nPN per ORN')
-# for i, (d, t) in enumerate(zip(data, titles)):
-#     ax_i = np.unravel_index(i, dims=rc)
-#     cur_ax = ax[ax_i]
-#     x = parameters
-#     y = [x[-1] for x in d]
-#     cur_ax.semilogx(parameters, y,  marker='o')
-#     cur_ax.set_xlabel('nPN dup')
-#     cur_ax.set_ylabel(t)
-#     cur_ax.grid(True)
-#     cur_ax.spines["right"].set_visible(False)
-#     cur_ax.spines["top"].set_visible(False)
-#     cur_ax.xaxis.set_ticks_position('bottom')
-#     cur_ax.yaxis.set_ticks_position('left')
-# plt.savefig(os.path.join(fig_dir, 'summary_last_epoch.pdf'))
 
 worn, born, wpn, bpn = [], [], [], []
 for i, d in enumerate(dirs):
@@ -53,15 +31,6 @@ for i, d in enumerate(dirs):
         bpn.append(var_dict['model/layer2/bias:0'])
         print(tools.compute_glo_score(w_orn)[0])
 
-r,c=2,2
-fig, ax = plt.subplots(r,c, figsize=(10,10))
-for i, w in enumerate(bpn):
-    p_i= np.unravel_index(i, (r,c))
-    cur_ax = ax[p_i]
-    cur_ax.hist(w.flatten(), bins=50)
-plt.tight_layout()
-plt.savefig(os.path.join(fig_dir, 'weight_distr.png'))
-
 def helper(ax):
     plt.sca(ax)
     plt.axis('tight', ax= ax)
@@ -70,12 +39,9 @@ def helper(ax):
     ax.tick_params('both', length=0)
     ax.set_xlabel('To PNs')
     ax.set_ylabel('From ORNs')
-    # cb = plt.colorbar()
-    # cb.outline.set_linewidth(0.5)
-    # cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
 
-vlim = .5
+vlim = 2
 fig, ax = plt.subplots(nrows=5, ncols = 2, figsize=(10,10))
 for i, cur_w in enumerate(worn):
     ind_max = np.argmax(cur_w, axis=0)
@@ -93,9 +59,8 @@ plt.tight_layout()
 plt.savefig(os.path.join(fig_dir, 'weights.png'))
 
 
-
 # # Reload the network and analyze activity
-fig, ax = plt.subplots(nrows=3, ncols=2)
+fig, ax = plt.subplots(nrows=6, ncols=2)
 for i, d in enumerate(dirs):
     config = tools.load_config(d)
 
@@ -127,8 +92,5 @@ for i, d in enumerate(dirs):
     sparsity = np.count_nonzero(kc >0, axis= 1) / kc.shape[1]
     ax[i,1].hist(sparsity, bins=20, range=(0,1))
     ax[i,1].set_title('Sparseness')
-
-ax[2,0].hist(val_x.flatten(), bins=20, range= (0,5))
-ax[2,0].set_title('OR activation')
 
 plt.savefig(os.path.join(fig_dir, 'activity.png'))
