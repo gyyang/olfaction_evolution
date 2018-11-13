@@ -48,14 +48,19 @@ def compute_glo_score(w_orn):
         avg_glo_score: scalar, average glomeruli score
         glo_scores: numpy array (n_pn,), all glomeruli scores
     """
+    unique_orn = 50
     n_orn, n_pn = w_orn.shape
-    # w_orn_by_pn = abs(w_orn)
+    w_orn_by_pn = abs(w_orn)
+    n_duplicate_orn = n_orn // unique_orn
+    w_orn_by_pn = np.reshape(w_orn_by_pn, (unique_orn, n_duplicate_orn, n_pn))
+    w_orn_by_pn = w_orn_by_pn.mean(axis=1)
+    w_orn_by_pn = abs(w_orn_by_pn)
 
     # this code does **not** work for arbitrary orn / pn sizes
     n_pn_per_orn = n_orn // n_pn
-    w_orn_by_pn = np.reshape(w_orn, (n_pn, n_pn_per_orn, n_pn))
-    w_orn_by_pn = w_orn_by_pn.mean(axis=1)
-    w_orn_by_pn = abs(w_orn_by_pn)
+    # w_orn_by_pn = np.reshape(w_orn, (n_pn, n_pn_per_orn, n_pn))
+    # w_orn_by_pn = w_orn_by_pn.mean(axis=1)
+    # w_orn_by_pn = abs(w_orn_by_pn)
 
     glo_scores = list()
     for i in range(n_pn):
@@ -68,7 +73,6 @@ def compute_glo_score(w_orn):
 
     avg_glo_score = np.mean(glo_scores)
     return avg_glo_score, glo_scores
-
 
 def plot_summary(dirs, fig_dir, list_of_legends, title):
     mpl.rcParams['font.size'] = 7

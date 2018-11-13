@@ -188,7 +188,7 @@ class FullModel(Model):
 
     def _build(self, x, y, training):
         N_ORN = self.config.N_ORN * self.config.N_ORN_DUPLICATION
-        N_PN = self.config.N_ORN * self.config.N_PN_PER_ORN
+        N_PN = self.config.N_PN
         N_KC = self.config.N_KC
         self.loss = 0
 

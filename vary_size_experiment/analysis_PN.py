@@ -7,10 +7,12 @@ import matplotlib as mpl
 import tools
 
 # mpl.rcParams['font.size'] = 7
-parameters =list(range(10,110,10)) + [150, 200, 250]
-dir = os.path.join(os.getcwd(), 'vary_PN', 'files')
+# parameters =list(range(10,110,10)) + [150, 200, 250]
+parameters = [10,20,30,40,50,100,200,400,800,1600]
+dir = os.path.join(os.getcwd(), 'vary_PN/files')
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-dirs = dirs
+# parameters = parameters[:8]
+# dirs = dirs[:8]
 parameters = parameters
 logparams = np.log10(parameters)
 fig_dir = os.path.join(os.getcwd(), 'vary_PN', 'figures')
@@ -41,7 +43,7 @@ for i, (d, t) in enumerate(zip(data, titles)):
     cur_ax.spines["top"].set_visible(False)
     cur_ax.xaxis.set_ticks_position('bottom')
     cur_ax.yaxis.set_ticks_position('left')
-plt.savefig(os.path.join(fig_dir, 'summary_last_epoch.pdf'))
+plt.savefig(os.path.join(fig_dir, 'summary_last_epoch.png'))
 
 w = []
 for i, d in enumerate(dirs):
@@ -53,7 +55,7 @@ for i, d in enumerate(dirs):
 
 def helper(ax):
     plt.sca(ax)
-    plt.axis('scaled', ax= ax)
+    plt.axis('tight', ax= ax)
     plt.axis('off')
     for loc in ['bottom', 'top', 'left', 'right']:
         ax.spines[loc].set_visible(False)
@@ -66,7 +68,7 @@ def helper(ax):
     plt.tick_params(axis='both', which='major', labelsize=7)
 
 vlim = .5
-fig, ax = plt.subplots(nrows=7, ncols = 2, figsize=(10,10))
+fig, ax = plt.subplots(nrows=8, ncols = 2, figsize=(10,10))
 for i, cur_w in enumerate(w[::2]):
     ind_max = np.argmax(cur_w, axis=0)
     ind_sort = np.argsort(ind_max)
@@ -78,4 +80,4 @@ for i, cur_w in enumerate(w[::2]):
     ax[i,1].imshow(cur_w_sorted, cmap='RdBu_r', vmin=-vlim, vmax=vlim)
     helper(ax[i,1])
     plt.title('Sorted')
-plt.savefig(os.path.join(fig_dir, 'weights.pdf'))
+plt.savefig(os.path.join(fig_dir, 'weights.png'))

@@ -16,7 +16,6 @@ mpl.rcParams['font.size'] = 7
 new_rootpath = os.path.join(rootpath, 'files', 'vary_size_experiment')
 fig_dir = os.path.join(os.getcwd())
 
-
 def _load_results(save_name):
     dir = os.path.join(new_rootpath, save_name, 'files')
     dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
@@ -33,7 +32,7 @@ def _load_results(save_name):
         config = tools.load_config(d)
         glo_score[i] = log['glo_score'][-1]
         val_acc[i] = log['val_acc'][-1]
-        n_pns[i] = config.N_GLO
+        n_pns[i] = config.N_PN
         n_kcs[i] = config.N_KC
     return glo_score, val_acc, n_pns, n_kcs
     
@@ -52,7 +51,7 @@ ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 ax.yaxis.set_ticks([0, 0.5, 1.0])
 ax.xaxis.set_ticks([])
-plt.xticks(np.log10([10, 50, 100, 250]), [10, 50, 100, 250])
+plt.xticks(np.log10([10, 50, 200, 800]), [10, 50, 200, 800])
 plt.savefig(os.path.join(fig_dir, 'vary_PN.pdf'), transparent=True)
 
 
