@@ -9,34 +9,46 @@ import numpy as np
 
 def vary_pn(i):
     config = configs.FullConfig()
-    config.data_dir = '../datasets/proto/_100_generalization_onehot_s0'
+    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
     config.N_ORN = 50
-    config.N_ORN_DUPLICATION = 1
-    config.max_epoch = 5
-    config.save_path = './vary_PN/' + str(i).zfill(2)
+    config.N_ORN_DUPLICATION = 10
+    config.max_epoch = 20
+    config.save_path = './vary_PN/files/' + str(i).zfill(2)
 
     hp_ranges = OrderedDict()
-    hp_ranges['N_PN_PER_ORN'] = list(range(10, 110, 10)) + [150, 200, 250]
+    hp_ranges['N_PN'] = [10,20,30,40,50,100,200,400,800,1600]
+    # hp_ranges['N_PN'] = [200]
     return config, hp_ranges
 
 def vary_kc(i):
     config = configs.FullConfig()
     config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
     config.N_ORN = 50
-    config.N_ORN_DUPLICATION = 1
-    config.N_PN_PER_ORN = 1
-    config.max_epoch = 5
-    config.save_path = './vary_KC/' + str(i).zfill(2)
+    config.N_PN = 50
+    config.N_ORN_DUPLICATION = 10
+    config.max_epoch = 20
+    config.save_path = './vary_KC/files/' + str(i).zfill(2)
 
     hp_ranges = OrderedDict()
     hp_ranges['N_KC'] = [50, 100, 200, 400, 800, 1200, 2500, 5000, 10000, 20000]
     return config, hp_ranges
 
+def dup(i):
+    config = configs.FullConfig()
+    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_.25noise'
+    config.N_ORN = 50
+    config.N_PN = 50
+    config.N_ORN_DUPLICATION = 10
+    config.max_epoch = 1
+    config.save_path = './duplication/one_epoch/files/' + str(i).zfill(2)
+    hp_ranges = OrderedDict()
+    hp_ranges['nothing'] = [0]
+    return config, hp_ranges
 
 
-def varying_config(i):
+def varying_config(experiment, i):
     # Ranges of hyperparameters to loop over
-    config, hp_ranges = vary_pn(i)
+    config, hp_ranges = experiment(i)
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -55,6 +67,5 @@ def varying_config(i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(0,100):
-        varying_config(i)
-    # varying_config(8)
+    for i in range(100):
+        varying_config(dup, i)
