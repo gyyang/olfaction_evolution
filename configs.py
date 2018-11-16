@@ -9,7 +9,7 @@ class input_ProtoConfig(object):
 
         self.N_CLASS = 100  # TODO: make it easier to change this parameter
         self.N_ORN = 50
-        self.N_ORN_DUPLICATION = 1
+        self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
         self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_DUPLICATION = 1
         self.N_KC = 2500

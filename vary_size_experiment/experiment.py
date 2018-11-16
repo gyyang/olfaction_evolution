@@ -35,11 +35,11 @@ def vary_kc(i):
 
 def dup(i):
     config = configs.FullConfig()
-    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_.25noise'
+    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
     config.N_ORN = 50
     config.N_PN = 50
     config.N_ORN_DUPLICATION = 10
-    config.max_epoch = 1
+    config.max_epoch = 5
     config.save_path = './duplication/one_epoch/files/' + str(i).zfill(2)
     hp_ranges = OrderedDict()
     hp_ranges['nothing'] = [0]
