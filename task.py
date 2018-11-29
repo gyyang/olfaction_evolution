@@ -67,9 +67,9 @@ def _generate_proto_threshold(config=None, seed=0):
 
     lamb = 1
     bias = 0
-    repeat = lambda x: np.repeat(x, repeats= N_ORN_PER_PN, axis=1)
-    prototypes = repeat(rng.uniform(0,lamb, (N_CLASS-1, N_ORN))).astype(np.float32)
-    train_odors = repeat(rng.uniform(0,lamb, (N_TRAIN, N_ORN))).astype(np.float32)
+    repeat = lambda x: np.repeat(x, repeats=N_ORN_PER_PN, axis=1)
+    prototypes = repeat(rng.uniform(0, lamb, (N_CLASS-1, N_ORN))).astype(np.float32)
+    train_odors = repeat(rng.uniform(0, lamb, (N_TRAIN, N_ORN))).astype(np.float32)
     val_odors = repeat(rng.uniform(0, lamb, (N_VAL, N_ORN))).astype(np.float32)
     prototypes += add_bias(prototypes, bias)
     train_odors += add_bias(train_odors, bias)
