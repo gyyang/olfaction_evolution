@@ -12,11 +12,11 @@ def vary_pn(i):
     config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
     config.N_ORN = 50
     config.N_ORN_DUPLICATION = 10
-    config.max_epoch = 20
+    config.max_epoch = 5
     config.save_path = './vary_PN/files/' + str(i).zfill(2)
 
     hp_ranges = OrderedDict()
-    hp_ranges['N_PN'] = [10,20,30,40,50,100,200,400,800,1600]
+    hp_ranges['N_PN'] = [10,30,50,100]
     # hp_ranges['N_PN'] = [200]
     return config, hp_ranges
 
@@ -40,11 +40,38 @@ def dup(i):
     config.N_PN = 50
     config.N_ORN_DUPLICATION = 10
     config.max_epoch = 5
-    config.save_path = './duplication/one_epoch/files/' + str(i).zfill(2)
+    config.save_path = './duplication/files/' + str(i).zfill(2)
     hp_ranges = OrderedDict()
     hp_ranges['nothing'] = [0]
     return config, hp_ranges
 
+def vary_kc_bias(i):
+    config = configs.FullConfig()
+    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
+    config.N_ORN = 50
+    config.N_PN = 50
+    config.N_ORN_DUPLICATION = 10
+    config.max_epoch = 5
+    config.save_path = './vary_KC_bias/files/' + str(i).zfill(2)
+    hp_ranges = OrderedDict()
+    hp_ranges['kc_bias'] = [-4,-3,-2,-1,0]
+    return config, hp_ranges
+
+def vary_kc_claws(i):
+    config = configs.FullConfig()
+    config.save_path = './vary_kc_claws/' + str(i).zfill(2)
+    config.N_ORN_DUPLICATION = 10
+    config.N_ORN = 50
+    config.ORN_NOISE_STD = 0
+    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
+    config.max_epoch = 5
+    config.kc_norm_post = None
+    config.sparse_pn2kc = True
+    config.train_pn2kc = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['skip_orn2pn'] = [True]
 
 def varying_config(experiment, i):
     # Ranges of hyperparameters to loop over
@@ -68,4 +95,4 @@ def varying_config(experiment, i):
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     for i in range(100):
-        varying_config(dup, i)
+        varying_config(vary_pn, i)
