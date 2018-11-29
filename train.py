@@ -70,6 +70,7 @@ def train(config, reload=False):
                 log = pickle.load(f)
 
         loss = 0
+        acc = 0
         total_time, start_time = 0, time.time()
         # weight_over_time = []
         for ep in range(config.max_epoch):
@@ -77,8 +78,9 @@ def train(config, reload=False):
             val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
                                          {val_x_ph: val_x, val_y_ph: val_y})
             val_acc = val_acc[1]
-            print('[*] Epoch {:d}  train_loss={:0.2f}, val_loss={:0.2f}'.format(ep, loss, val_loss))
-            print('Validation accuracy', val_acc)
+            print('[*] Epoch {:d}'.format(ep))
+            print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
+            print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
             w_orn = sess.run(model.w_orn)
             glo_score, _ = tools.compute_glo_score(w_orn)
             print('Glo score ' + str(glo_score))
@@ -100,6 +102,7 @@ def train(config, reload=False):
             log['epoch'].append(ep)
             log['glo_score'].append(glo_score)
             log['train_loss'].append(loss)
+            log['train_acc'].append(acc)
             log['val_loss'].append(val_loss)
             log['val_acc'].append(val_acc)
             log['cond'].append(cond)
@@ -115,8 +118,11 @@ def train(config, reload=False):
 
             try:
                 # Train
-                for b in range(n_batch):
-                    loss, _ = sess.run([model.loss, model.train_op])
+                for b in range(n_batch-1):
+                    _ = sess.run(model.train_op)
+                # Compute training loss and accuracy using last batch
+                loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                acc = acc[1]
             except KeyboardInterrupt:
                 print('Training interrupted by users')
                 break
