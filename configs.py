@@ -18,6 +18,7 @@ class input_ProtoConfig(object):
         self.use_combinatorial = False
         self.n_combinatorial_classes = 20
         self.combinatorial_density = .3
+        self.distort_input = False
 
 
 class SingleLayerConfig(input_ProtoConfig):

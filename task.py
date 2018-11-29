@@ -78,8 +78,27 @@ def _generate_proto_threshold(config=None, seed=0):
     train_odors.clip(min=0)
     val_odors.clip(min=0)
 
-    train_labels = get_labels(prototypes, train_odors)
-    val_labels = get_labels(prototypes, val_odors)
+    if config.distort_input:
+        Ms = [np.random.randn(N_ORN, N_ORN) / np.sqrt(N_ORN) for _ in range(5)]
+
+        relu = lambda x: x * (x > 0.)
+
+        def transform(x):
+            for M in Ms:
+                # x = np.tanh(np.dot(x, M))
+                x = relu(np.dot(x, M))
+                x = x / np.std(x) * 0.3
+            return x
+
+        prototypes_distort = transform(prototypes)
+        train_odors_distort = transform(train_odors)
+        val_odors_distort = transform(val_odors)
+        train_labels = get_labels(prototypes_distort, train_odors_distort)
+        val_labels = get_labels(prototypes_distort, val_odors_distort)
+
+    else:
+        train_labels = get_labels(prototypes, train_odors)
+        val_labels = get_labels(prototypes, val_odors)
 
     # Repeat odors for duplication of ORNs
     repeat = lambda x: np.repeat(x, repeats=N_ORN_PER_PN, axis=1)
