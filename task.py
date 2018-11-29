@@ -79,7 +79,7 @@ def _generate_proto_threshold(config=None, seed=0):
     val_odors.clip(min=0)
 
     if config.distort_input:
-        Ms = [np.random.randn(N_ORN, N_ORN) / np.sqrt(N_ORN) for _ in range(5)]
+        Ms = [rng.randn(N_ORN, N_ORN) / np.sqrt(N_ORN) for _ in range(5)]
 
         relu = lambda x: x * (x > 0.)
 
