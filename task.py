@@ -79,6 +79,7 @@ def _generate_proto_threshold(config=None, seed=0):
     val_odors.clip(min=0)
 
     if config.distort_input:
+        # Distort the distance metric with random MLP
         Ms = [rng.randn(N_ORN, N_ORN) / np.sqrt(N_ORN) for _ in range(5)]
 
         relu = lambda x: x * (x > 0.)
@@ -99,6 +100,11 @@ def _generate_proto_threshold(config=None, seed=0):
     else:
         train_labels = get_labels(prototypes, train_odors)
         val_labels = get_labels(prototypes, val_odors)
+
+    if config.shuffle_label:
+        # Shuffle the labels
+        rng.shuffle(train_labels)
+        rng.shuffle(val_labels)
 
     # Repeat odors for duplication of ORNs
     repeat = lambda x: np.repeat(x, repeats=N_ORN_PER_PN, axis=1)

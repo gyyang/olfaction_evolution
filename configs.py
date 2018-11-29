@@ -18,7 +18,11 @@ class input_ProtoConfig(object):
         self.use_combinatorial = False
         self.n_combinatorial_classes = 20
         self.combinatorial_density = .3
+        # If True, the enclidean distance used for nearest neighbor is
+        # computed in a distorted space
         self.distort_input = False
+        # If True, shuffle the train and validation labels
+        self.shuffle_label = False
 
 
 class SingleLayerConfig(input_ProtoConfig):
