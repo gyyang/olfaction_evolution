@@ -18,11 +18,8 @@ from model import SingleLayerModel, FullModel
 
 mpl.rcParams['font.size'] = 7
 
-# save_name = 'no_threshold_onehot'
-# save_name = 'transfer_batchnorm'
-# save_name = 'hyperparameter_experiment/files/vary_config/15'
-save_name = 'standard'
-# save_name = 'test'
+# save_name = 'standard'
+save_name = 'duplication'
 
 save_path = os.path.join(rootpath, 'files', save_name)
 figpath = os.path.join(rootpath, 'figures')
@@ -99,7 +96,7 @@ def plot_weights():
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
-    fig = plt.figure(figsize=(2.0, 2.0))
+    fig = plt.figure(figsize=(2.6, 2.6))
     ax = fig.add_axes(rect)
     vlim = np.round(np.max(abs(w_plot)), decimals=1)
     im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
@@ -111,8 +108,8 @@ def plot_weights():
     ax.tick_params('both', length=0)
     ax.set_xlabel('To PNs', labelpad=-5)
     ax.set_ylabel('From ORNs', labelpad=-5)
-    ax.set_xticks([0, w_plot.shape[0]])
-    ax.set_yticks([0, w_plot.shape[1]])
+    ax.set_xticks([0, w_plot.shape[1]])
+    ax.set_yticks([0, w_plot.shape[0]])
     ax = fig.add_axes(rect_cb)
     cb = plt.colorbar(im, cax=ax, ticks=[-vlim, vlim])
     cb.outline.set_linewidth(0.5)

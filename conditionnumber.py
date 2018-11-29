@@ -22,7 +22,7 @@ def _get_cond(q, n_orn, n_pn, n_kc):
     return cond
 
 
-def get_logcond(q=1, n_orn=50, n_pn=50, n_kc=2500, n_rep=10):
+def get_logcond(q=1, n_orn=50, n_pn=50, n_kc=2500, n_rep=100):
     conds = [_get_cond(q, n_orn, n_pn, n_kc) for i in range(n_rep)]
     return np.mean(np.log10(conds))
 
@@ -35,25 +35,34 @@ def plot_cond_by_q(n_kc=2500):
     plt.figure()
     plt.plot(qs, conds, 'o-')
     plt.title('N_KC: ' + str(n_kc))
-    plt.xlabel('frac diagonal')
+    plt.xlabel('fraction diagonal')
     plt.ylabel('log condition number')
+    # plt.savefig('figures/condvsfracdiag_nkc'+str(n_kc)+'.pdf', transparent=True)
 
 
-plot_cond_by_q(n_kc=100)
-plot_cond_by_q(n_kc=2500)
+# =============================================================================
+# plot_cond_by_q(n_kc=30)
+# plot_cond_by_q(n_kc=2500)
+# =============================================================================
 
 
 n_kcs = np.logspace(1, 4, 10).astype(int)
-conds = [get_logcond(n_kc=n_kc) for n_kc in n_kcs]
+conds_q1 = np.array([get_logcond(n_kc=n_kc, q=1) for n_kc in n_kcs])
 
 plt.figure()
-plt.plot(np.log10(n_kcs), conds, 'o-')
+plt.plot(np.log10(n_kcs), conds_q1, 'o-')
 plt.xticks(np.log10(n_kcs), n_kcs)
 
 
 n_kcs = np.logspace(1, 4, 10).astype(int)
-conds = [get_logcond(n_kc=n_kc, q=0) for n_kc in n_kcs]
+conds_q0 = np.array([get_logcond(n_kc=n_kc, q=0) for n_kc in n_kcs])
 
 plt.figure()
-plt.plot(np.log10(n_kcs), conds, 'o-')
+plt.plot(np.log10(n_kcs), conds_q0, 'o-')
 plt.xticks(np.log10(n_kcs), n_kcs)
+
+
+plt.figure()
+plt.plot(np.log10(n_kcs), conds_q1 - conds_q0, 'o-')
+plt.xticks(np.log10(n_kcs), n_kcs)
+plt.ylabel('Log decrease in condition number')

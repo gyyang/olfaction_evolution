@@ -30,7 +30,7 @@ rand_colors = [colors[i] for i in rand_labels]
 
 #plotting
 mpl.rcParams['font.size'] = 7
-fig = plt.figure(figsize=(3, 2.2))
+fig = plt.figure(figsize=(2.5, 1.8))
 ax = plt.gca()
 plt.sca(ax)
 
