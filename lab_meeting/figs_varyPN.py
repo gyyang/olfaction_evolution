@@ -7,7 +7,7 @@ import matplotlib as mpl
 import tools
 from matplotlib import pylab
 import utils
-from utils import _load_results, adjust
+from utils import load_results, adjust
 
 mpl.rcParams['font.size'] = 12
 plt.style.use('dark_background')
@@ -17,7 +17,7 @@ fig_dir = os.path.join(fig_dir)
 root_dir = 'C:/Users/Peter/PycharmProjects/olfaction_evolution/vary_size_experiment/'
 save_name = 'vary_PN'
 
-glo_score, val_acc, config = _load_results(root_dir, save_name)
+glo_score, val_acc, config = load_results(root_dir, save_name)
 params = np.array([c.N_PN for c in config])
 ind_sort = np.argsort(params)
 glo_score_last = np.array([x[-1] for x in glo_score])
