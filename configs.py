@@ -48,7 +48,10 @@ class FullConfig(input_ProtoConfig):
         self.max_epoch = 10
         self.batch_size = 256
         self.target_acc = None  # target accuracy
-        self.kc_bias = -.5
+        self.kc_bias = -1.5
+
+        #initliazation
+        self.initialization_uniform = True
 
         # ORN--> PN connections
         # If True, ORN --> PN connections are positive
