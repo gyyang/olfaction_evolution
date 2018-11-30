@@ -89,17 +89,17 @@ def adjust(ax):
     ax.xaxis.set_ticks([])
     ax.set_ylim([0, 1])
 
-def plot_weights(w_orn, name, arg_sort, fig_dir,
+def plot_weights(weights, name, arg_sort, fig_dir,
                  ylabel= 'from ORNs', xlabel = 'To PNs', title='ORN-PN connectivity after training'):
 
     # Sort for visualization
     if arg_sort:
-        ind_max = np.argmax(w_orn, axis=0)
+        ind_max = np.argmax(weights, axis=0)
         ind_sort = np.argsort(ind_max)
-        w_plot = w_orn[:, ind_sort]
+        w_plot = weights[:, ind_sort]
         str = ''
     else:
-        w_plot = w_orn
+        w_plot = weights
         str = 'unsorted_'
 
     rect = [0.15, 0.15, 0.65, 0.65]
@@ -107,8 +107,7 @@ def plot_weights(w_orn, name, arg_sort, fig_dir,
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_axes(rect)
     vlim = .5
-    im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
-                   interpolation='none')
+    im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim, interpolation='none')
     plt.axis('tight')
     plt.title(title)
     for loc in ['bottom', 'top', 'left', 'right']:
@@ -130,6 +129,7 @@ def plot_weights(w_orn, name, arg_sort, fig_dir,
 def get_model_vars(save_path):
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
+    config.save_path = save_path
 
     tf.reset_default_graph()
     CurrentModel = FullModel

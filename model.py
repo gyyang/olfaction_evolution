@@ -56,6 +56,7 @@ class Model(object):
         sess = tf.get_default_session()
         var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
         var_dict['w_orn'] = sess.run(self.w_orn)
+        var_dict['w_glo'] = sess.run(self.w_glo)
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
@@ -193,15 +194,15 @@ class FullModel(Model):
         self.loss = 0
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
-            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
-                                 dtype=tf.float32)
+            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32)
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(0))
 
             if self.config.direct_glo:
                 alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
                                         initializer=tf.constant_initializer(0.5))
-                w_orn = w1 + alpha * tf.eye(N_PN)
+                # w_orn = w1 + alpha * tf.eye(N_PN)
+                w_orn = w1 * tf.eye(N_PN)
             else:
                 w_orn = w1
 
@@ -221,8 +222,14 @@ class FullModel(Model):
             else:
                 N_USE = N_PN
 
-            w2 = tf.get_variable('kernel', shape=(N_USE, N_KC),
-                                     dtype=tf.float32)
+            if self.config.sparse_pn2kc and self.config.N_ORN_DUPLICATION == 1:
+            # if self.config.sparse_pn2kc:
+                initializer = tf.random_normal_initializer(0.0, 1.0)
+            else:
+                initializer = tf.glorot_uniform_initializer()
+
+            w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
+                                 initializer=initializer)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(self.config.kc_bias))
 

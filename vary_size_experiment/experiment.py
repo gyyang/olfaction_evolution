@@ -57,21 +57,25 @@ def vary_kc_bias(i):
     hp_ranges['kc_bias'] = [-4,-3,-2,-1,0]
     return config, hp_ranges
 
-def vary_kc_claws(i):
+def vary_sparse_kc(i):
     config = configs.FullConfig()
-    config.save_path = './vary_kc_claws/' + str(i).zfill(2)
+    config.save_path = './sparse/dup_trainable/files/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 10
     config.N_ORN = 50
     config.ORN_NOISE_STD = 0
     config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
-    config.max_epoch = 5
+    config.max_epoch = 10
     config.kc_norm_post = None
-    config.sparse_pn2kc = True
+    # config.sparse_pn2kc = False
     config.train_pn2kc = True
+    config.sign_constraint_pn2kc = True
+    config.skip_orn2pn = False
+    config.direct_glo = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['skip_orn2pn'] = [True]
+    hp_ranges['sparse_pn2kc'] = [True,False]
+    return config, hp_ranges
 
 def varying_config(experiment, i):
     # Ranges of hyperparameters to loop over
@@ -95,4 +99,4 @@ def varying_config(experiment, i):
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     for i in range(100):
-        varying_config(vary_pn, i)
+        varying_config(vary_sparse_kc, i)
