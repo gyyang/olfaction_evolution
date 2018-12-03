@@ -50,7 +50,7 @@ class FullConfig(input_ProtoConfig):
         self.target_acc = None  # target accuracy
 
         #TODO: need to adjust this as well in relation to kc sparseness
-        self.kc_bias = -.5
+        self.kc_bias = -1
 
         #initliazation
         self.initialization_uniform = True

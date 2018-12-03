@@ -98,7 +98,7 @@ def no_pn_layer(i):
 
 def vary_kc_claws(i):
     config = configs.FullConfig()
-    config.save_path = './no_pn_layer/vary_kc_claws_fixed/files/' + str(i).zfill(2)
+    config.save_path = './no_pn_layer/vary_kc_claws_only_bias_untrainable/files/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 1
     config.N_ORN = 50
     config.ORN_NOISE_STD = 0
@@ -106,6 +106,7 @@ def vary_kc_claws(i):
     config.max_epoch = 8
     config.kc_norm_post = None
     config.train_pn2kc = False
+    config.train_kc_bias = True
     config.sign_constraint_pn2kc = True
     config.skip_orn2pn = True
     config.direct_glo = False
@@ -113,7 +114,8 @@ def vary_kc_claws(i):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_inputs'] = [1, 2, 3, 5, 7, 9, 11, 13, 15, 20, 30, 40, 50, 100, 150]
+    # hp_ranges['sparse_pn2kc'] = [True, False]
+    hp_ranges['kc_inputs'] = [1, 8, 15, 50, 200]
     return config, hp_ranges
 
 def varying_config(experiment, i):
@@ -137,6 +139,6 @@ def varying_config(experiment, i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(0,100, 2):
+    for i in range(4,5):
         print('[***] Hyper-parameter: %2d' % i)
         varying_config(vary_kc_claws, i)
