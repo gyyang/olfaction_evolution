@@ -22,15 +22,17 @@ def vary_pn(i):
 
 def vary_kc(i):
     config = configs.FullConfig()
-    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
+    config.data_dir = '../datasets/proto/_100_generalization_onehot'
     config.N_ORN = 50
     config.N_PN = 50
-    config.N_ORN_DUPLICATION = 10
-    config.max_epoch = 20
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.train_kc_bias = True
+    config.max_epoch = 8
     config.save_path = './vary_KC/files/' + str(i).zfill(2)
 
     hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [50, 100, 200, 400, 800, 1200, 2500, 5000, 10000, 20000]
+    hp_ranges['N_KC'] = [50, 200, 800, 2500, 5000, 10000, 20000]
     return config, hp_ranges
 
 def dup(i):
@@ -118,6 +120,47 @@ def vary_kc_claws(i):
     hp_ranges['kc_inputs'] = [1, 8, 15, 50, 200]
     return config, hp_ranges
 
+def noise_pn_layer(i):
+    config = configs.FullConfig()
+    config.save_path = './why_pn_layer/no_noise_skip/files/' + str(i).zfill(2)
+    config.N_ORN_DUPLICATION = 10
+    config.N_ORN = 50
+    config.ORN_NOISE_STD = 0
+    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
+    config.max_epoch = 8
+    config.train_pn2kc = False
+    config.train_kc_bias = True
+    config.sign_constraint_pn2kc = True
+    config.sparse_pn2kc = True
+
+    config.skip_orn2pn = False
+    config.direct_glo = False
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    # hp_ranges['direct_glo'] = [True]
+    hp_ranges['skip_orn2pn'] = [True]
+    return config, hp_ranges
+
+# def noise_claws(i):
+#     config = configs.FullConfig()
+#     config.save_path = './why_pn_layer/trainable_claws_noise/files/' + str(i).zfill(2)
+#     config.N_ORN_DUPLICATION = 10
+#     config.N_ORN = 50
+#     config.ORN_NOISE_STD = 0
+#     config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
+#     config.max_epoch = 8
+#     config.train_pn2kc = True
+#     config.train_kc_bias = True
+#     config.sign_constraint_pn2kc = True
+#     config.skip_orn2pn = True
+#     config.sparse_pn2kc = False
+#
+#     # Ranges of hyperparameters to loop over
+#     hp_ranges = OrderedDict()
+#     hp_ranges['direct_glo'] = [True, False]
+#     return config, hp_ranges
+
+
 def varying_config(experiment, i):
     # Ranges of hyperparameters to loop over
     config, hp_ranges = experiment(i)
@@ -139,6 +182,6 @@ def varying_config(experiment, i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(4,5):
+    for i in range(0,50):
         print('[***] Hyper-parameter: %2d' % i)
-        varying_config(vary_kc_claws, i)
+        varying_config(noise_pn_layer, i)

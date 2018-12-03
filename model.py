@@ -142,7 +142,7 @@ def _normalize(inputs, norm_type, training=True):
 
     return outputs
 
-def _sparse_std(n_in, n_out, sparse_degree):
+def _sparse_range(n_in, n_out, sparse_degree):
     # fan_in = sparse_degree
     # fan_out = (n_out / n_in) * sparse_degree
     # variance = 2 / (fan_in + fan_out)
@@ -206,9 +206,9 @@ class FullModel(Model):
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:
-                range = _sparse_std(N_ORN, N_PN, 1)
+                range = _sparse_range(N_ORN, N_PN, 1)
             else:
-                range = _sparse_std(N_ORN, N_PN, N_ORN)
+                range = _sparse_range(N_ORN, N_PN, N_ORN)
 
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32,
                                  initializer= tf.random_uniform_initializer(0.0, range))
@@ -216,10 +216,12 @@ class FullModel(Model):
                                     initializer=tf.constant_initializer(0))
 
             if self.config.direct_glo:
-                alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
-                                        initializer=tf.constant_initializer(0.5))
+                # alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
+                #                         initializer=tf.constant_initializer(0.5))
                 # w_orn = w1 + alpha * tf.eye(N_PN)
-                w_orn = w1 * tf.eye(N_PN)
+                # w_orn = w1 * tf.eye(N_PN)
+                mask = np.repeat(np.eye(N_PN), self.config.N_ORN_DUPLICATION, axis=0)
+                w_orn = w1 * mask
             else:
                 w_orn = w1
 
@@ -240,9 +242,9 @@ class FullModel(Model):
                 N_USE = N_PN
 
             if self.config.sparse_pn2kc:
-                range = _sparse_std(N_USE, N_KC, self.config.kc_inputs)
+                range = _sparse_range(N_USE, N_KC, self.config.kc_inputs)
             else:
-                range = _sparse_std(N_USE, N_KC, N_USE)
+                range = _sparse_range(N_USE, N_KC, N_USE)
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= tf.random_uniform_initializer(0.0, range))
