@@ -7,8 +7,8 @@ import matplotlib as mpl
 import tools
 import utils
 
-param = "sparse_pn2kc"
-condition = "sparse/dup_trainable"
+param = "kc_inputs"
+condition = "no_pn_layer/vary_kc_claws"
 
 mpl.rcParams['font.size'] = 10
 fig_dir = os.path.join(os.getcwd(), condition, 'figures')
@@ -31,17 +31,17 @@ for p, cur_w in zip(parameters, wglo):
     glo_score, _ = tools.compute_glo_score(cur_w)
     utils.plot_weights(cur_w, str(p), arg_sort = 1, fig_dir = fig_dir, ylabel= 'from PNs', xlabel='to KCs', title= glo_score)
 
-fig, ax = plt.subplots(nrows=2, ncols=3)
-thres = 0.03
+fig, ax = plt.subplots(nrows=8, ncols=3)
+thres = 0.05
 for i, (l, cur_w) in enumerate(zip(list_of_legends, wglo)):
     ax[i,0].hist(cur_w.flatten(), bins=100, range= (0, thres))
-    ax[i,0].set_title(l)
-    ax[i,1].hist(cur_w.flatten(), bins=100, range= (thres, .5))
-    ax[i,1].set_title(l)
+    # ax[i,0].set_title(l)
+    ax[i,1].hist(cur_w.flatten(), bins=100, range= (thres, 2))
+    # ax[i,1].set_title(l)
     sparsity = np.count_nonzero(cur_w > thres, axis=0)
     ax[i,2].hist(sparsity, bins=20, range= (0, 20))
-    ax[i,2].set_title('sparsity')
-plt.tight_layout()
+    # ax[i,2].set_title('sparsity')
+# plt.tight_layout()
 plt.savefig(os.path.join(fig_dir, 'weight_distribution.png'))
 
 

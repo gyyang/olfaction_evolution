@@ -142,6 +142,12 @@ def _normalize(inputs, norm_type, training=True):
 
     return outputs
 
+def _sparse_std(n_in, n_out, sparse_degree):
+    fan_in = sparse_degree
+    fan_out = (n_out / n_in) * sparse_degree
+    variance = 2 / (fan_in + fan_out)
+    std = np.sqrt(variance)
+    return std
 
 class FullModel(Model):
     """Full 3-layer model."""
@@ -173,8 +179,13 @@ class FullModel(Model):
                 excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                               scope='model/layer1')
             if not self.config.train_pn2kc:
+                # excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                #                               scope='model/layer2')
                 excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                              scope='model/layer2')
+                                              scope= 'model/layer2/kernel:0')
+            if not self.config.train_kc_bias:
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope= 'model/layer2/bias:0')
             var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -194,7 +205,13 @@ class FullModel(Model):
         self.loss = 0
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
-            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32)
+            if self.config.direct_glo:
+                std = _sparse_std(N_ORN, N_PN, 1)
+            else:
+                std = _sparse_std(N_ORN, N_PN, N_ORN)
+
+            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32,
+                                 initializer= tf.random_normal_initializer(0.0, std))
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(0))
 
@@ -222,14 +239,13 @@ class FullModel(Model):
             else:
                 N_USE = N_PN
 
-            if self.config.sparse_pn2kc and self.config.N_ORN_DUPLICATION == 1:
-            # if self.config.sparse_pn2kc:
-                initializer = tf.random_normal_initializer(0.0, 1.0)
+            if self.config.sparse_pn2kc:
+                std = _sparse_std(N_USE, N_KC, self.config.kc_inputs)
             else:
-                initializer = tf.glorot_uniform_initializer()
+                std = _sparse_std(N_USE, N_KC, N_USE)
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
-                                 initializer=initializer)
+                                 initializer= tf.random_normal_initializer(0.0, std))
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(self.config.kc_bias))
 
