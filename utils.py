@@ -43,7 +43,7 @@ def plot_summary(data, titles, fig_dir, legends, title):
     r, c = 2, 2
     fig, ax = plt.subplots(nrows=r, ncols=c, figsize=(10, 10))
     fig.suptitle(title)
-    cmap = plt.get_cmap('jet')
+    cmap = plt.get_cmap('cool')
     colors = [cmap(i) for i in np.linspace(0, 1, len(legends))]
     for i in range(r * c):
         ax_ix = np.unravel_index(i, (r, c))
