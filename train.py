@@ -91,6 +91,11 @@ def train(config, reload=False):
             cond = np.linalg.cond(w_orn2kc)
             print('Condition number '+ str(cond))
 
+            if True:
+                w_savename = os.path.join(config.save_path, 'w_glo{:d}.pkl'.format(ep))
+                with open(w_savename, 'wb') as f:
+                    pickle.dump(w_glo, f, protocol=pickle.HIGHEST_PROTOCOL)
+
             if ep > 0:
                 time_spent = time.time() - start_time
                 total_time += time_spent
