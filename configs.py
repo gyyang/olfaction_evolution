@@ -11,7 +11,7 @@ class input_ProtoConfig(object):
         self.N_ORN = 50
         self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
-        self.ORN_NOISE_STD = 0 #make sure this param is set to zero if N_ORN_DUPLICATION = 1
+        self.ORN_NOISE_STD = 0.5 #make sure this param is set to zero if N_ORN_DUPLICATION = 1
         self.N_KC = 2500
 
         self.percent_generalization = 100
@@ -48,7 +48,12 @@ class FullConfig(input_ProtoConfig):
         self.max_epoch = 10
         self.batch_size = 256
         self.target_acc = None  # target accuracy
-        self.kc_bias = -.5
+
+        #TODO: need to adjust this as well in relation to kc sparseness
+        self.kc_bias = -1
+
+        #initliazation
+        self.initialization_uniform = True
 
         # ORN--> PN connections
         # If True, ORN --> PN connections are positive
@@ -69,6 +74,8 @@ class FullConfig(input_ProtoConfig):
         self.sign_constraint_pn2kc = True
         # If True, PN --> KC connections are trainable
         self.train_pn2kc = False
+        # If True, KC biases are trainable
+        self.train_kc_bias = False
         # If True, PN --> KC connections are sparse
         self.sparse_pn2kc = True
         # If True, have loss on KC weights
