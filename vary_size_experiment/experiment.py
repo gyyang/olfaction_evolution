@@ -100,23 +100,23 @@ def no_pn_layer(i):
 
 def vary_kc_claws(i):
     config = configs.FullConfig()
-    config.save_path = './no_pn_layer/vary_kc_claws_bias_trainable/files/' + str(i).zfill(2)
+    config.save_path = './no_pn_layer/vary_kc_claws_uniform_bias_trainable/files/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 1
     config.N_ORN = 50
     config.ORN_NOISE_STD = 0
     config.data_dir = '../datasets/proto/_100_generalization_onehot'
-    config.max_epoch = 25
+    config.max_epoch = 10
     config.kc_norm_post = None
     config.train_pn2kc = False
     config.train_kc_bias = True
     config.sign_constraint_pn2kc = True
-    config.skip_orn2pn = False
+    config.skip_orn2pn = True
     config.direct_glo = False
     config.sparse_pn2kc = True
+    config.uniform_pn2kc = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    # hp_ranges['sparse_pn2kc'] = [True, False]
     hp_ranges['kc_inputs'] = [1, 3, 5, 7, 9, 11, 13, 15, 20, 30, 40, 50, 100, 200, 400]
     return config, hp_ranges
 
@@ -139,6 +139,27 @@ def noise_pn_layer(i):
     hp_ranges = OrderedDict()
     # hp_ranges['direct_glo'] = [True]
     hp_ranges['skip_orn2pn'] = [True]
+    return config, hp_ranges
+
+def vary_trainable_n_kc(i):
+    config = configs.FullConfig()
+    config.save_path = './sparse/n_kc/files/' + str(i).zfill(2)
+    config.N_ORN_DUPLICATION = 1
+    config.N_ORN = 50
+    config.ORN_NOISE_STD = 0
+    config.data_dir = '../datasets/proto/_100_generalization_onehot'
+    config.max_epoch = 10
+    config.kc_norm_post = None
+    config.train_pn2kc = True
+    config.train_kc_bias = True
+    config.sign_constraint_pn2kc = True
+    config.skip_orn2pn = True
+    config.uniform_pn2kc = False
+    config.sparse_pn2kc = False
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['N_KC'] = [50, 100, 500, 1000, 2500, 10000]
     return config, hp_ranges
 
 # def noise_claws(i):
@@ -182,6 +203,6 @@ def varying_config(experiment, i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(0,1):
+    for i in range(0, 1):
         print('[***] Hyper-parameter: %2d' % i)
-        varying_config(vary_sparse_kc, i)
+        varying_config(vary_trainable_n_kc, i)

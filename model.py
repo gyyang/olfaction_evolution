@@ -254,7 +254,7 @@ class FullModel(Model):
                 std = _sparse_std(N_USE, N_KC, N_USE)
 
             if self.config.uniform_pn2kc:
-                initializer = tf.constant_initializer(range)
+                initializer = tf.constant_initializer(range/2.0)
             else:
                 initializer = tf.random_uniform_initializer(0, range)
 

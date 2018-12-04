@@ -72,7 +72,7 @@ def plot_summary_last_epoch(data, titles, fig_dir, parameters, title):
         cur_ax.set_xlabel(title)
         cur_ax.set_ylabel(t)
         cur_ax.grid(False)
-        plt.xticks(logparams[::2], parameters[::2])
+        plt.xticks(logparams[::1], parameters[::1])
         cur_ax.spines["right"].set_visible(False)
         cur_ax.spines["top"].set_visible(False)
         cur_ax.xaxis.set_ticks_position('bottom')
