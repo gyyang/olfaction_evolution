@@ -15,7 +15,14 @@ import tools
 
 def make_input(x, y, batch_size):
     data = tf.data.Dataset.from_tensor_slices((x, y))
-    data = data.shuffle(int(1E6)).batch(tf.cast(batch_size, tf.int64)).repeat()
+    data = data.shuffle(int(1E6))
+    # Making sure the shape is fully defined
+    try:
+        data = data.batch(tf.cast(batch_size, tf.int64), drop_remainder=True)
+    except TypeError:
+        data = data.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
+    # data = data.batch(tf.cast(batch_size, tf.int64))
+    data = data.repeat()
     train_iter = data.make_initializable_iterator()
     next_element = train_iter.get_next()
     return train_iter, next_element
@@ -46,6 +53,7 @@ def train(config, reload=False):
     train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
     train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)
     train_iter, next_element = make_input(train_x_ph, train_y_ph, batch_size)
+    print(next_element[0].shape)
     model = CurrentModel(next_element[0], next_element[1], config=config)
 
     # Build validation model
