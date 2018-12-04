@@ -207,6 +207,13 @@ class FullModel(Model):
         N_KC = self.config.N_KC
         self.loss = 0
 
+        if self.config.replicate_orn_with_tiling:
+            # Replicating ORNs through tiling
+            assert x.shape[-1] == self.config.N_ORN
+            x = tf.tile(x, [1, self.config.N_ORN_DUPLICATION])
+            # x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
+            x = tf.keras.layers.GaussianNoise(self.config.ORN_NOISE_STD)(x)
+
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:
                 range = _sparse_range(1)

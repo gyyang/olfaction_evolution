@@ -7,11 +7,11 @@ class input_ProtoConfig(object):
         self.n_train = 1000000
         self.n_val = 8192
 
-        self.N_CLASS = 100  # TODO: make it easier to change this parameter
+        self.N_CLASS = 100
         self.N_ORN = 50
         self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
-        self.ORN_NOISE_STD = 0. #make sure this param is set to zero if N_ORN_DUPLICATION = 1
+        self.ORN_NOISE_STD = 0.
         self.N_KC = 2500
 
         self.percent_generalization = 100
@@ -56,6 +56,7 @@ class FullConfig(input_ProtoConfig):
         self.initialization_uniform = True
 
         # ORN--> PN connections
+        self.replicate_orn_with_tiling = False
         # If True, ORN --> PN connections are positive
         self.sign_constraint_orn2pn = True
         # If True, PN --> KC connections are trainable
