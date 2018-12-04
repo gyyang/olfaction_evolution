@@ -51,7 +51,7 @@ def varying_config(experiment, i):
     train.train(config)
 
 
-def compute_glo_score(w_orn):
+def compute_glo_score(w_orn, mode='repeat'):
     """Compute the glomeruli score in numpy.
 
     This function returns the glomeruli score, a number between 0 and 1 that
@@ -64,8 +64,14 @@ def compute_glo_score(w_orn):
 
     Args:
         w_orn: numpy array (n_orn, n_pn). This matrix has to be organized
-        in the following way: the n_orn neurons are grouped into n_pn groups
-        index 0, ..., n_pn_per_orn - 1 is the 0-th group, and so on
+        in the following ways:
+        In the mode=='repeat'
+            neurons from the same orn type are indexed consecutively
+            for example, neurons from the 0-th type would be 0, 1, 2, ...
+        In the mode=='tile'
+            neurons from the same orn type are spaced by the number of types,
+            for example, neurons from the 0-th type would be 0, 50, 100, ...
+        mode: the way w_orn is organized
 
     Return:
         avg_glo_score: scalar, average glomeruli score
@@ -75,8 +81,14 @@ def compute_glo_score(w_orn):
     n_orn, n_pn = w_orn.shape
     w_orn_by_pn = abs(w_orn)
     n_duplicate_orn = n_orn // unique_orn
-    w_orn_by_pn = np.reshape(w_orn_by_pn, (unique_orn, n_duplicate_orn, n_pn))
-    w_orn_by_pn = w_orn_by_pn.mean(axis=1)
+    if mode == 'repeat':
+        w_orn_by_pn = np.reshape(w_orn_by_pn, (unique_orn, n_duplicate_orn, n_pn))
+        w_orn_by_pn = w_orn_by_pn.mean(axis=1)
+    elif mode == 'tile':
+        w_orn_by_pn = np.reshape(w_orn_by_pn, (n_duplicate_orn, unique_orn, n_pn))
+        w_orn_by_pn = w_orn_by_pn.mean(axis=0)
+    else:
+        raise ValueError('Unknown mode' + str(mode))
     w_orn_by_pn = abs(w_orn_by_pn)
 
     # this code does **not** work for arbitrary orn / pn sizes

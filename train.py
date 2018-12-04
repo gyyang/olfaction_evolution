@@ -65,6 +65,8 @@ def train(config, reload=False):
     log = defaultdict(list)
     log_name = os.path.join(config.save_path, 'log.pkl')  # Consider json instead of pickle
 
+    glo_score_mode = 'tile' if config.replicate_orn_with_tiling else 'repeat'
+
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
@@ -91,7 +93,7 @@ def train(config, reload=False):
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
             w_orn = sess.run(model.w_orn)
             w_glo = sess.run(model.w_glo)
-            glo_score, _ = tools.compute_glo_score(w_orn)
+            glo_score, _ = tools.compute_glo_score(w_orn, glo_score_mode)
             glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
             print('Glo score ' + str(glo_score))
 
