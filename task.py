@@ -117,7 +117,22 @@ def _generate_proto_threshold(config=None, seed=0):
     return train_odors, train_labels, val_odors, val_labels
 
 
-def save_proto(config=None, seed=0):
+def _gen_folder_name(config, seed):
+    """Automatically generate folder name."""
+    auto_folder_name = '_' + str(
+        config.percent_generalization) + '_generalization'
+
+    # Convert labels
+    if config.use_combinatorial:
+        auto_folder_name += '_combinatorial'
+    else:
+        auto_folder_name += '_onehot'
+
+    auto_folder_name += '_s' + str(seed)
+    return auto_folder_name
+
+
+def save_proto(config=None, seed=0, folder_name=None):
     """Save dataset in numpy format."""
     def _convert_one_hot_label(labels, n_class):
         """Convert labels to one-hot labels."""
@@ -142,22 +157,20 @@ def save_proto(config=None, seed=0):
         config = input_ProtoConfig()
 
     # make and save data
-    folder_name = '_' + str(config.percent_generalization) + '_generalization'
     train_x, train_y, val_x, val_y = _generate_proto_threshold(config, seed=seed)
 
     # Convert labels
     if config.use_combinatorial:
-        folder_name += '_combinatorial'
         key = _generate_combinatorial_label(
             config.N_CLASS, config.n_combinatorial_classes, config.combinatorial_density)
         train_y = _convert_to_combinatorial_label(train_y, key)
         val_y = _convert_to_combinatorial_label(val_y, key)
     else:
-        folder_name += '_onehot'
         train_y = _convert_one_hot_label(train_y, config.N_CLASS)
         val_y = _convert_one_hot_label(val_y, config.N_CLASS)
 
-    folder_name += '_s' + str(seed)
+    if folder_name is None:
+        folder_name = _gen_folder_name(config, seed)
 
     folder_path = os.path.join(config.path, folder_name)
     if not os.path.exists(folder_path):
