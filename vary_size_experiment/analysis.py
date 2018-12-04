@@ -43,6 +43,7 @@ for i, (l, cur_w) in enumerate(zip(list_of_legends[::skip], wglo[::skip])):
     sparsity = np.count_nonzero(cur_w > thres, axis=0)
     ax[i,2].hist(sparsity, bins=20, range= (0, 20))
     # ax[i,2].set_title('sparsity')
+plt.tight_layout()
 plt.savefig(os.path.join(fig_dir, 'weight_distribution.png'))
 
 r, c= 4, 2

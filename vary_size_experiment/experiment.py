@@ -2,10 +2,10 @@
 
 import os
 import task
-import train
 import configs
 from collections import OrderedDict
 import numpy as np
+import tools
 
 def vary_pn(i):
     config = configs.FullConfig()
@@ -181,28 +181,8 @@ def vary_trainable_n_kc(i):
 #     hp_ranges['direct_glo'] = [True, False]
 #     return config, hp_ranges
 
-
-def varying_config(experiment, i):
-    # Ranges of hyperparameters to loop over
-    config, hp_ranges = experiment(i)
-
-    # Unravel the input index
-    keys = hp_ranges.keys()
-    dims = [len(hp_ranges[k]) for k in keys]
-    n_max = np.prod(dims)
-    indices = np.unravel_index(i % n_max, dims=dims)
-
-    if i >= n_max:
-        return
-
-    # Set up new hyperparameter
-    for key, index in zip(keys, indices):
-        setattr(config, key, hp_ranges[key][index])
-    train.train(config)
-
-
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    for i in range(0, 1):
+    for i in range(0, 100):
         print('[***] Hyper-parameter: %2d' % i)
-        varying_config(vary_trainable_n_kc, i)
+        tools.varying_config(vary_trainable_n_kc, i)

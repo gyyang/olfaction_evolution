@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+import train
 
 
 def save_config(config, save_path):
@@ -23,6 +24,23 @@ def load_config(save_path):
         setattr(config, key, val)
     return config
 
+def varying_config(experiment, i):
+    # Ranges of hyperparameters to loop over
+    config, hp_ranges = experiment(i)
+
+    # Unravel the input index
+    keys = hp_ranges.keys()
+    dims = [len(hp_ranges[k]) for k in keys]
+    n_max = np.prod(dims)
+    indices = np.unravel_index(i % n_max, dims=dims)
+
+    if i >= n_max:
+        return
+
+    # Set up new hyperparameter
+    for key, index in zip(keys, indices):
+        setattr(config, key, hp_ranges[key][index])
+    train.train(config)
 
 def compute_glo_score(w_orn):
     """Compute the glomeruli score in numpy.
