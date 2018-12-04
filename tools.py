@@ -24,7 +24,15 @@ def load_config(save_path):
         setattr(config, key, val)
     return config
 
+
 def varying_config(experiment, i):
+    """Training a specific hyperparameter settings.
+
+    Args:
+        experiment: function handle for the experiment, has to take an integer
+            as input
+        i: integer, indexing the specific hyperparameter setting to be used
+    """
     # Ranges of hyperparameters to loop over
     config, hp_ranges = experiment(i)
 
@@ -41,6 +49,7 @@ def varying_config(experiment, i):
     for key, index in zip(keys, indices):
         setattr(config, key, hp_ranges[key][index])
     train.train(config)
+
 
 def compute_glo_score(w_orn):
     """Compute the glomeruli score in numpy.
