@@ -142,12 +142,15 @@ def _normalize(inputs, norm_type, training=True):
 
     return outputs
 
-def _sparse_range(n_in, n_out, sparse_degree):
-    # fan_in = sparse_degree
-    # fan_out = (n_out / n_in) * sparse_degree
-    # variance = 2 / (fan_in + fan_out)
+def _sparse_range(sparse_degree):
     range = 2.0 / sparse_degree
     return range
+
+def _sparse_std(n_in, n_out, sparse_degree):
+    fan_in = sparse_degree
+    fan_out = (n_out / n_in) * sparse_degree
+    variance = 2 / (fan_in + fan_out)
+    return np.sqrt(variance)
 
 class FullModel(Model):
     """Full 3-layer model."""
@@ -206,9 +209,11 @@ class FullModel(Model):
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:
-                range = _sparse_range(N_ORN, N_PN, 1)
+                range = _sparse_range(1)
+                std = _sparse_std(N_ORN, N_PN, 1)
             else:
-                range = _sparse_range(N_ORN, N_PN, N_ORN)
+                range = _sparse_range(N_ORN)
+                std = _sparse_std(N_ORN, N_PN, N_ORN)
 
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32,
                                  initializer= tf.random_uniform_initializer(0.0, range))
@@ -242,12 +247,19 @@ class FullModel(Model):
                 N_USE = N_PN
 
             if self.config.sparse_pn2kc:
-                range = _sparse_range(N_USE, N_KC, self.config.kc_inputs)
+                range = _sparse_range(self.config.kc_inputs)
+                std = _sparse_std(N_USE, N_KC, self.config.kc_inputs)
             else:
-                range = _sparse_range(N_USE, N_KC, N_USE)
+                range = _sparse_range(N_USE)
+                std = _sparse_std(N_USE, N_KC, N_USE)
+
+            if self.config.uniform_pn2kc:
+                initializer = tf.constant_initializer(range/2.0)
+            else:
+                initializer = tf.random_uniform_initializer(0, range)
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
-                                 initializer= tf.random_uniform_initializer(0.0, range))
+                                 initializer= initializer)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(self.config.kc_bias))
 

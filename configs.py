@@ -11,7 +11,7 @@ class input_ProtoConfig(object):
         self.N_ORN = 50
         self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
-        self.ORN_NOISE_STD = 0.5 #make sure this param is set to zero if N_ORN_DUPLICATION = 1
+        self.ORN_NOISE_STD = 0. #make sure this param is set to zero if N_ORN_DUPLICATION = 1
         self.N_KC = 2500
 
         self.percent_generalization = 100
@@ -78,6 +78,8 @@ class FullConfig(input_ProtoConfig):
         self.train_kc_bias = False
         # If True, PN --> KC connections are sparse
         self.sparse_pn2kc = True
+        # If True, PN --> KC connection weights are uniform
+        self.uniform_pn2kc = False
         # If True, have loss on KC weights
         self.kc_loss = False
         # KC normalization before non_linearity
