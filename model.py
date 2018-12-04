@@ -143,7 +143,7 @@ def _normalize(inputs, norm_type, training=True):
     return outputs
 
 def _sparse_range(sparse_degree):
-    range = 2.0 / sparse_degree
+    range = 4.0 / sparse_degree
     return range
 
 def _sparse_std(n_in, n_out, sparse_degree):

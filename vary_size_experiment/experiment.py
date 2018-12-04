@@ -143,7 +143,7 @@ def noise_pn_layer(i):
 
 def vary_trainable_n_kc(i):
     config = configs.FullConfig()
-    config.save_path = './sparse/n_kc/files/' + str(i).zfill(2)
+    config.save_path = './train_KC_claws/n_kc/files/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 1
     config.N_ORN = 50
     config.ORN_NOISE_STD = 0
@@ -159,7 +159,7 @@ def vary_trainable_n_kc(i):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [50, 100, 500, 1000, 2500, 10000]
+    hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000]
     return config, hp_ranges
 
 # def noise_claws(i):
