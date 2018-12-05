@@ -256,6 +256,8 @@ class FullModel(Model):
             if self.config.sparse_pn2kc:
                 range = _sparse_range(self.config.kc_inputs)
                 std = _sparse_std(N_USE, N_KC, self.config.kc_inputs)
+                if self.config.train_pn2kc:
+                    range *= 2 #avoids KCs with no inputs by setting everything high initially
             else:
                 range = _sparse_range(N_USE)
                 std = _sparse_std(N_USE, N_KC, N_USE)
