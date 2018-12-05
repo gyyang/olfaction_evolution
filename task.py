@@ -45,7 +45,6 @@ def _generate_proto_threshold(config=None, seed=0):
 
     N_CLASS = config.N_CLASS
     N_ORN = config.N_ORN
-    N_ORN_PER_PN = config.N_ORN_DUPLICATION
     ORN_NOISE_STD = config.ORN_NOISE_STD
     GEN_THRES = config.percent_generalization
     N_TRAIN = config.n_train
@@ -77,6 +76,8 @@ def _generate_proto_threshold(config=None, seed=0):
     prototypes.clip(min=0)
     train_odors.clip(min=0)
     val_odors.clip(min=0)
+    train_odors = train_odors.astype(np.float32)
+    val_odors = val_odors.astype(np.float32)
 
     if config.distort_input:
         # Distort the distance metric with random MLP
@@ -107,13 +108,18 @@ def _generate_proto_threshold(config=None, seed=0):
         rng.shuffle(val_labels)
 
     # Repeat odors for duplication of ORNs
-    repeat = lambda x: np.repeat(x, repeats=N_ORN_PER_PN, axis=1)
-    train_odors = repeat(train_odors).astype(np.float32)
-    val_odors = repeat(val_odors).astype(np.float32)
+    if not config.replicate_orn_with_tiling:
+        N_ORN_PER_PN = config.N_ORN_DUPLICATION
+        repeat = lambda x: np.repeat(x, repeats=N_ORN_PER_PN, axis=1)
+        train_odors = repeat(train_odors)
+        val_odors = repeat(val_odors)
 
-    # noise is added after getting labels
-    train_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=train_odors.shape)
-    val_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=val_odors.shape)
+        # noise is added after getting labels
+        train_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=train_odors.shape)
+        val_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=val_odors.shape)
+
+    assert train_odors.dtype == np.float32
+
     return train_odors, train_labels, val_odors, val_labels
 
 

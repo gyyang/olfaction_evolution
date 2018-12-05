@@ -211,8 +211,8 @@ class FullModel(Model):
             # Replicating ORNs through tiling
             assert x.shape[-1] == self.config.N_ORN
             x = tf.tile(x, [1, self.config.N_ORN_DUPLICATION])
-            # x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
-            x = tf.keras.layers.GaussianNoise(self.config.ORN_NOISE_STD)(x)
+            x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
+            # x = tf.keras.layers.GaussianNoise(self.config.ORN_NOISE_STD)(x)
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:

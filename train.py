@@ -53,7 +53,6 @@ def train(config, reload=False):
     train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
     train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)
     train_iter, next_element = make_input(train_x_ph, train_y_ph, batch_size)
-    print(next_element[0].shape)
     model = CurrentModel(next_element[0], next_element[1], config=config)
 
     # Build validation model

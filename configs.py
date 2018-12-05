@@ -9,7 +9,6 @@ class input_ProtoConfig(object):
 
         self.N_CLASS = 100
         self.N_ORN = 50
-        self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
         self.ORN_NOISE_STD = 0.
         self.N_KC = 2500
@@ -23,6 +22,10 @@ class input_ProtoConfig(object):
         self.distort_input = False
         # If True, shuffle the train and validation labels
         self.shuffle_label = False
+
+        # If False, ORNs are already replicated in the dataset
+        self.replicate_orn_with_tiling = True
+        self.N_ORN_DUPLICATION = 10
 
 
 class SingleLayerConfig(input_ProtoConfig):
@@ -56,7 +59,6 @@ class FullConfig(input_ProtoConfig):
         self.initialization_uniform = True
 
         # ORN--> PN connections
-        self.replicate_orn_with_tiling = False
         # If True, ORN --> PN connections are positive
         self.sign_constraint_orn2pn = True
         # If True, PN --> KC connections are trainable
