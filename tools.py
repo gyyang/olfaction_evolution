@@ -1,6 +1,9 @@
 import os
 import json
+import pickle
+
 import numpy as np
+
 import train
 
 
@@ -49,6 +52,36 @@ def varying_config(experiment, i):
     for key, index in zip(keys, indices):
         setattr(config, key, hp_ranges[key][index])
     train.train(config)
+
+
+def load_all_results(rootpath):
+    """Load results from path.
+
+    Args:
+        rootpath: root path of all models loading results from
+
+    Returns:
+        res: dictionary of numpy arrays, containing information from all models
+    """
+    dirs = [os.path.join(rootpath, n) for n in os.listdir(rootpath)]
+
+    from collections import defaultdict
+    res = defaultdict(list)
+
+    for i, d in enumerate(dirs):
+        log_name = os.path.join(d, 'log.pkl')
+        with open(log_name, 'rb') as f:
+            log = pickle.load(f)
+        config = load_config(d)
+        for key, val in log.items():
+            res[key].append(val[-1])  # store last value in log
+        for k in dir(config):
+            if k[0] != '_':
+                res[k].append(getattr(config, k))
+
+    for key, val in res.items():
+        res[key] = np.array(val)
+    return res
 
 
 def compute_glo_score(w_orn, mode='repeat'):
