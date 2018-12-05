@@ -6,6 +6,7 @@ import configs
 from collections import OrderedDict
 import numpy as np
 import tools
+import train
 
 def vary_pn(i):
     config = configs.FullConfig()
@@ -49,7 +50,7 @@ def dup(i):
 
 def vary_kc_bias(i):
     config = configs.FullConfig()
-    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
+    config.data_dir = '../datasets/proto/_100_generalization_onehot'
     config.N_ORN = 50
     config.N_PN = 50
     config.N_ORN_DUPLICATION = 10
@@ -183,6 +184,29 @@ def vary_dropout(i):
     hp_ranges['kc_dropout'] = [True, False]
     return config, hp_ranges
 
+def test(i):
+    config = configs.FullConfig()
+    config.save_path = './test/files/' + str(i).zfill(2)
+    config.data_dir = '../datasets/proto/nodup'
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+    config.max_epoch = 10
+
+    config.uniform_pn2kc = True
+    config.kc_norm_post = None
+    config.train_pn2kc = False
+    config.train_kc_bias = True
+    config.sign_constraint_pn2kc = True
+    config.skip_orn2pn = False
+    config.uniform_pn2kc = False
+    config.sparse_pn2kc = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['kc_dropout'] = [True]
+    return config, hp_ranges
+
 # def noise_claws(i):
 #     config = configs.FullConfig()
 #     config.save_path = './why_pn_layer/trainable_claws_noise/files/' + str(i).zfill(2)
@@ -204,6 +228,7 @@ def vary_dropout(i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
     for i in range(0, 100):
         print('[***] Hyper-parameter: %2d' % i)
-        tools.varying_config(vary_dropout, i)
+        tools.varying_config(test, i)

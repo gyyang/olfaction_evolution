@@ -78,7 +78,7 @@ class FullConfig(input_ProtoConfig):
         # If True, PN --> KC connections are trainable
         self.train_pn2kc = False
         # If True, KC biases are trainable
-        self.train_kc_bias = False
+        self.train_kc_bias = True
         # If True, PN --> KC connections are sparse
         self.sparse_pn2kc = True
         # If True, PN --> KC connection weights are uniform
