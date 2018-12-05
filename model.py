@@ -146,7 +146,7 @@ def _sparse_range(sparse_degree):
     range = 2.0 / sparse_degree
     return range
 
-def _sparse_std(n_in, n_out, sparse_degree):
+def _glorot_std(n_in, n_out, sparse_degree):
     fan_in = sparse_degree
     fan_out = (n_out / n_in) * sparse_degree
     variance = 2 / (fan_in + fan_out)
@@ -217,13 +217,11 @@ class FullModel(Model):
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:
                 range = _sparse_range(1)
-                std = _sparse_std(N_ORN, N_PN, 1)
             else:
                 range = _sparse_range(N_ORN)
-                std = _sparse_std(N_ORN, N_PN, N_ORN)
 
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32,
-                                 initializer= tf.random_uniform_initializer(0.0, range))
+                                 initializer= tf.random_normal_initializer(0.0, range*2))
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(0))
 
@@ -255,17 +253,15 @@ class FullModel(Model):
 
             if self.config.sparse_pn2kc:
                 range = _sparse_range(self.config.kc_inputs)
-                std = _sparse_std(N_USE, N_KC, self.config.kc_inputs)
                 if self.config.train_pn2kc:
                     range *= 2 #avoids KCs with no inputs by setting everything high initially
             else:
                 range = _sparse_range(N_USE)
-                std = _sparse_std(N_USE, N_KC, N_USE)
 
             if self.config.uniform_pn2kc:
-                initializer = tf.constant_initializer(range/2.0)
+                initializer = tf.constant_initializer(range)
             else:
-                initializer = tf.random_uniform_initializer(0, range)
+                initializer = tf.random_normal_initializer(0, range)
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)
