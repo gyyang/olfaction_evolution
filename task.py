@@ -5,6 +5,25 @@ from sklearn.metrics.pairwise import euclidean_distances
 from configs import input_ProtoConfig
 import matplotlib.pyplot as plt
 
+def _make_hallem_dataset(config=None):
+    '''
+    :param config:
+    :return: hallem carlson dataset in matrix format
+
+    110 odors * 24 ORNs, with spontaneous activity subtracted
+    '''
+    N_ODORS = 110
+    N_ORNS = 24
+    if config is None:
+        config = input_ProtoConfig()
+    file = config.hallem_path
+    with open(file) as f:
+        vec = f.readlines()
+    vec = [int(x.strip()) for x in vec]
+    mat = np.reshape(vec, (N_ODORS+1, N_ORNS),'F')
+    spontaneous_activity = mat[-1,:]
+    odor_activation = mat[:-1,:] - spontaneous_activity
+    return odor_activation
 
 def _generate_repeat(config=None):
     '''
@@ -227,8 +246,9 @@ def load_data(dataset, data_dir):
 
 
 if __name__ == '__main__':
-    save_proto()
+    # save_proto()
     # save_proto_all()
     # proto_path = os.path.join(PROTO_PATH, '_threshold_onehot')
     # train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
+    _make_hallem_dataset()
 

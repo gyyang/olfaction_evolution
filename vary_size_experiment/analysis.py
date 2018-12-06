@@ -7,8 +7,8 @@ import matplotlib as mpl
 import tools
 import utils
 
-param = "kc_dropout"
-condition = "./dropout/normal_dup_0noise_range4"
+param = "kc_loss"
+condition = "./test"
 
 mpl.rcParams['font.size'] = 7
 fig_dir = os.path.join(os.getcwd(), condition, 'figures')
@@ -20,7 +20,7 @@ list_of_legends = [param +': ' + str(n) for n in parameters]
 data = [glo_score, val_acc, val_loss, train_loss]
 titles = ['glo score', 'val acc', 'val loss', 'train loss']
 utils.plot_summary(data, titles, fig_dir, list_of_legends, param)
-# utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param)
+utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param)
 
 worn = utils.load_pickle(dir, 'w_orn')
 born = utils.load_pickle(dir, 'model/layer1/bias:0')
@@ -31,10 +31,10 @@ for p, cur_w in zip(parameters, wglo):
     glo_score, _ = tools.compute_glo_score(cur_w)
     utils.plot_weights(cur_w, str(p), arg_sort = 1, fig_dir = fig_dir, ylabel= 'from PNs', xlabel='to KCs', title= glo_score)
 #
-nr = 6
+nr = 7
 skip = 1
 fig, ax = plt.subplots(nrows=nr, ncols=3)
-thres = 0.06
+thres = 0.2
 for i, (l, cur_w) in enumerate(zip(list_of_legends[::skip], wglo[::skip])):
     ax[i,0].hist(cur_w.flatten(), bins=100, range= (0, thres))
     # ax[i,0].set_title(l)
@@ -48,11 +48,11 @@ plt.savefig(os.path.join(fig_dir, 'weight_distribution.png'))
 
 r, c= 4, 2
 fig, ax = plt.subplots(nrows=r, ncols=c)
-thres = -3
+thres = 3
 for i, (l, cur_w) in enumerate(zip(list_of_legends[::skip], bglo[::skip])):
     ax_ix = np.unravel_index(i, (r,c))
     cur_ax = ax[ax_ix]
-    cur_ax.hist(cur_w.flatten(), bins=100, range= (thres, 0))
+    cur_ax.hist(cur_w.flatten(), bins=100, range= (-thres, thres))
     cur_ax.set_title(l)
 plt.tight_layout()
 plt.savefig(os.path.join(fig_dir, 'bias_distribution.png'))
@@ -65,7 +65,7 @@ for i, (l, d) in enumerate(zip(list_of_legends[::skip], dirs[::skip])):
 
     ax[i,0].hist(kc.flatten(), bins=100, range =(.01, 5))
     ax[i,0].set_title('Activity: ' + str(l))
-    sparsity = np.count_nonzero(kc > 0.01, axis= 1) / kc.shape[1]
+    sparsity = np.count_nonzero(kc > 0, axis= 1) / kc.shape[1]
     ax[i,1].hist(sparsity, bins=50, range=(0,1))
     ax[i,1].set_title('Sparseness')
 plt.tight_layout()
