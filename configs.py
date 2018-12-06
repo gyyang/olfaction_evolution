@@ -47,6 +47,7 @@ class FullConfig(input_ProtoConfig):
         self.data_dir = './datasets/proto/_100_generalization_onehot_s0'
         self.model = 'full'
         self.save_path = './files/test'
+        self.save_every_epoch = False
 
         self.lr = .001  # learning rate
         self.max_epoch = 10

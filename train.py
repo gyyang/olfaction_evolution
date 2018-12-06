@@ -102,11 +102,6 @@ def train(config, reload=False):
             # cond = np.linalg.cond(w_orn2kc)
             # print('Condition number '+ str(cond))
 
-            if False:
-                w_savename = os.path.join(config.save_path, 'w_glo{:d}.pkl'.format(ep))
-                with open(w_savename, 'wb') as f:
-                    pickle.dump(w_glo, f, protocol=pickle.HIGHEST_PROTOCOL)
-
             if ep > 0:
                 time_spent = time.time() - start_time
                 total_time += time_spent
@@ -140,6 +135,10 @@ def train(config, reload=False):
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                 acc = acc[1]
+
+                if config.save_every_epoch:
+                    model.save_pickle(ep)
+
             except KeyboardInterrupt:
                 print('Training interrupted by users')
                 break
