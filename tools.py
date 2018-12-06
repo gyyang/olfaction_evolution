@@ -84,6 +84,22 @@ def load_all_results(rootpath):
     return res
 
 
+nicename_dict = {
+        'ORN_NOISE_STD': 'Noise level',
+        'N_KC': 'Number of KCs',
+        'glo_score': 'GloScore',
+        'val_acc': 'Accuracy'
+        }
+
+
+def nicename(name):
+    """Return nice name for publishing."""
+    try:
+        return nicename_dict[name]
+    except KeyError:
+        return name
+
+
 def compute_glo_score(w_orn, mode='repeat'):
     """Compute the glomeruli score in numpy.
 
