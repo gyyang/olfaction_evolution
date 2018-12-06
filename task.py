@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 from configs import input_ProtoConfig
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 def _make_hallem_dataset(config=None):
     '''
@@ -24,6 +25,27 @@ def _make_hallem_dataset(config=None):
     spontaneous_activity = mat[-1,:]
     odor_activation = mat[:-1,:] - spontaneous_activity
     return odor_activation
+
+def _generate_from_hallem(config=None):
+    if config is None:
+        config = input_ProtoConfig()
+    odor_activation = _make_hallem_dataset(config)
+    corr_coef = np.corrcoef(np.transpose(odor_activation))
+    mask = ~np.eye(corr_coef.shape[0], dtype=bool)
+    data = corr_coef[mask].flatten()
+    y, x = np.histogram(data, bins=100)
+    x = [(a + b) / 2 for a, b in zip(x[:-1], x[1:])]
+
+    def gaus(x, a, x0, sigma):
+        return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+    popt, pcov = curve_fit(gaus, x, y)
+
+    # plt.plot(x, y, 'b+', label='data')
+    plt.hist(data, bins=100, label='data')
+    plt.figure()
+    plt.plot(x, gaus(x, *popt), 'ro', label='fit')
+    plt.show()
 
 def _generate_repeat(config=None):
     '''
@@ -250,5 +272,5 @@ if __name__ == '__main__':
     # save_proto_all()
     # proto_path = os.path.join(PROTO_PATH, '_threshold_onehot')
     # train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
-    _make_hallem_dataset()
-
+    # _make_hallem_dataset()
+    _generate_from_hallem()

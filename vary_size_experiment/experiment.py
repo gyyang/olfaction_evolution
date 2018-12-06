@@ -101,12 +101,11 @@ def no_pn_layer(i):
 
 def vary_kc_claws(i):
     config = configs.FullConfig()
-    config.save_path = './vary_KC_claws/uniform_bias_trainable_simple/files/' + str(i).zfill(2)
+    config.save_path = './vary_KC_claws/uniform_bias_trainable/files/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 1
-    config.N_ORN = 50
     config.ORN_NOISE_STD = 0
     config.data_dir = '../datasets/proto/nodup'
-    config.max_epoch = 10
+    config.max_epoch = 20
     config.kc_norm_post = None
     config.train_pn2kc = False
     config.train_kc_bias = True
@@ -115,12 +114,12 @@ def vary_kc_claws(i):
     config.direct_glo = False
     config.sparse_pn2kc = True
     config.uniform_pn2kc = True
-    config.mean_subtract_pn2kc = True
+    config.mean_subtract_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['kc_inputs'] = [1, 3, 5, 7, 9, 11, 13, 15, 20, 30, 40, 50, 100, 200, 400]
-    hp_ranges['kc_inputs'] = [1, 5, 9, 13, 20, 40, 50, 100, 150, 200]
+    hp_ranges['kc_inputs'] = [1, 5, 7, 9, 13, 20, 40, 50, 100, 200]
     # hp_ranges['kc_inputs'] = [7]
     return config, hp_ranges
 
@@ -196,20 +195,21 @@ def test(i):
     config.ORN_NOISE_STD = 0
     config.max_epoch = 8
 
-    config.skip_orn2pn = False
+    config.skip_orn2pn = True
     config.direct_glo = False
 
-    config.uniform_pn2kc = False
+    config.uniform_pn2kc = True
     config.kc_norm_post = None
     config.train_pn2kc = True
-    config.sparse_pn2kc = False
+    config.sparse_pn2kc = True
     config.train_kc_bias = True
     config.sign_constraint_pn2kc = True
     config.mean_subtract_pn2kc = False
+    config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_loss'] = [True]
+    hp_ranges['kc_loss'] = [False]
     return config, hp_ranges
 
 # def noise_claws(i):
