@@ -230,7 +230,7 @@ class FullModel(Model):
                 #                         initializer=tf.constant_initializer(0.5))
                 # w_orn = w1 + alpha * tf.eye(N_PN)
                 # w_orn = w1 * tf.eye(N_PN)
-                mask = np.repeat(np.eye(N_PN), self.config.N_ORN_DUPLICATION, axis=0)
+                mask = np.tile(np.eye(N_PN), (self.config.N_ORN_DUPLICATION,1))
                 w_orn = w1 * mask
             else:
                 w_orn = w1
@@ -281,6 +281,9 @@ class FullModel(Model):
             if self.config.sign_constraint_pn2kc:
                 w_glo = tf.abs(w_glo)
 
+            if self.config.mean_subtract_pn2kc:
+                w_glo -= tf.reduce_mean(w_glo, axis=0)
+
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
             kc_in = _normalize(kc_in, self.config.kc_norm_pre, training)
@@ -293,7 +296,8 @@ class FullModel(Model):
             kc = tf.layers.dropout(kc, 0.5, training=training)
 
         if self.config.kc_loss:
-            self.loss += tf.reduce_mean(kc) * 10
+            # self.loss += tf.reduce_mean(kc) * 10
+            self.loss += tf.reduce_mean(w_glo) * 10
 
         if self.config.label_type == 'combinatorial':
             n_logits = self.config.N_COMBINATORIAL_CLASS

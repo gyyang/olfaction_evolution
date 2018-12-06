@@ -3,6 +3,7 @@ import os
 class input_ProtoConfig(object):
     def __init__(self):
         self.path = os.path.join(os.getcwd(), 'datasets', 'proto')
+        self.hallem_path = os.path.join(os.getcwd(),'datasets','hallem')
 
         self.n_train = 1000000
         self.n_val = 8192
@@ -52,11 +53,6 @@ class FullConfig(input_ProtoConfig):
         self.batch_size = 256
         self.target_acc = None  # target accuracy
 
-        #TODO: need to adjust this as well in relation to kc sparseness
-        self.kc_bias = -1
-
-        #initliazation
-        self.initialization_uniform = True
 
         # ORN--> PN connections
         # If True, ORN --> PN connections are positive
@@ -72,15 +68,20 @@ class FullConfig(input_ProtoConfig):
         # If True, skip the ORN --> PN connections
         self.skip_orn2pn = False
 
+
         # PN --> KC connections
         # If True, ORN --> PN connections are positive
         self.sign_constraint_pn2kc = True
         # If True, PN --> KC connections are trainable
         self.train_pn2kc = False
-        # If True, KC biases are trainable
-        self.train_kc_bias = True
         # If True, PN --> KC connections are sparse
         self.sparse_pn2kc = True
+        # If True, PN --> KC connections are mean-subtracted (sum of all connections onto every KC is 0)
+        self.mean_subtract_pn2kc = False
+        # If True, KC biases are trainable
+        self.train_kc_bias = True
+        # initial KC bias
+        self.kc_bias = -1
         # If True, PN --> KC connection weights are uniform
         self.uniform_pn2kc = False
         # If True, have loss on KC weights
