@@ -101,24 +101,27 @@ def no_pn_layer(i):
 
 def vary_kc_claws(i):
     config = configs.FullConfig()
-    config.save_path = './vary_KC_claws/uniform_bias_trainable_noskip/files/' + str(i).zfill(2)
+    config.save_path = './vary_KC_claws/uniform_bias_trainable_simple/files/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 1
     config.N_ORN = 50
     config.ORN_NOISE_STD = 0
-    config.data_dir = '../datasets/proto/_100_generalization_onehot'
+    config.data_dir = '../datasets/proto/nodup'
     config.max_epoch = 10
     config.kc_norm_post = None
     config.train_pn2kc = False
     config.train_kc_bias = True
     config.sign_constraint_pn2kc = True
-    config.skip_orn2pn = False
+    config.skip_orn2pn = True
     config.direct_glo = False
     config.sparse_pn2kc = True
     config.uniform_pn2kc = True
+    config.mean_subtract_pn2kc = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['kc_inputs'] = [1, 3, 5, 7, 9, 11, 13, 15, 20, 30, 40, 50, 100, 200, 400]
+    hp_ranges['kc_inputs'] = [1, 5, 9, 13, 20, 40, 50, 100, 150, 200]
+    # hp_ranges['kc_inputs'] = [7]
     return config, hp_ranges
 
 def noise_pn_layer(i):
@@ -146,9 +149,8 @@ def vary_trainable_n_kc(i):
     config = configs.FullConfig()
     config.save_path = './train_KC_claws/n_kc_noskip/files/' + str(i).zfill(2)
     config.N_ORN_DUPLICATION = 1
-    config.N_ORN = 50
     config.ORN_NOISE_STD = 0
-    config.data_dir = '../datasets/proto/_100_generalization_onehot'
+    config.data_dir = '../datasets/proto/nodup'
     config.max_epoch = 10
     config.kc_norm_post = None
     config.train_pn2kc = True
@@ -157,10 +159,11 @@ def vary_trainable_n_kc(i):
     config.skip_orn2pn = False
     config.uniform_pn2kc = False
     config.sparse_pn2kc = False
+    config.replicate_orn_with_tiling = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000]
+    hp_ranges['N_KC'] = [50, 100, 200, 500, 1000, 2500, 10000]
     return config, hp_ranges
 
 def vary_dropout(i):
@@ -191,20 +194,22 @@ def test(i):
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.max_epoch = 10
+    config.max_epoch = 8
 
-    config.uniform_pn2kc = True
+    config.skip_orn2pn = False
+    config.direct_glo = False
+
+    config.uniform_pn2kc = False
     config.kc_norm_post = None
-    config.train_pn2kc = False
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
     config.train_kc_bias = True
     config.sign_constraint_pn2kc = True
-    config.skip_orn2pn = False
-    config.uniform_pn2kc = False
-    config.sparse_pn2kc = True
+    config.mean_subtract_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_dropout'] = [True]
+    hp_ranges['kc_loss'] = [True]
     return config, hp_ranges
 
 # def noise_claws(i):
@@ -229,6 +234,6 @@ def test(i):
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-    for i in range(0, 100):
+    for i in range(0,100):
         print('[***] Hyper-parameter: %2d' % i)
         tools.varying_config(test, i)
