@@ -55,11 +55,14 @@ def plot_summary(data, titles, fig_dir, legends, title):
         cur_ax.set_ylabel(titles[i])
     plt.savefig(os.path.join(fig_dir, 'summary.png'))
 
-def plot_summary_last_epoch(data, titles, fig_dir, parameters, title):
+def plot_summary_last_epoch(data, titles, fig_dir, parameters, title, log=True, skip=1):
     if not os.path.exists(fig_dir):
         os.mkdir(fig_dir)
 
-    logparams = np.log10(parameters)
+    if log:
+        params = np.log10(parameters)
+    else:
+        params = parameters
     r, c = 2, 2
     fig, ax = plt.subplots(nrows=r, ncols=c, figsize=(10, 10))
     fig.suptitle(title)
@@ -68,11 +71,11 @@ def plot_summary_last_epoch(data, titles, fig_dir, parameters, title):
         cur_ax = ax[ax_ix]
         plt.sca(cur_ax)
         y = [x[-1] for x in d]
-        cur_ax.plot(logparams, y, marker='o')
+        cur_ax.plot(params, y, marker='o')
         cur_ax.set_xlabel(title)
         cur_ax.set_ylabel(t)
         cur_ax.grid(False)
-        plt.xticks(logparams[::1], parameters[::1])
+        plt.xticks(params[::skip], parameters[::skip])
         cur_ax.spines["right"].set_visible(False)
         cur_ax.spines["top"].set_visible(False)
         cur_ax.xaxis.set_ticks_position('bottom')

@@ -71,6 +71,8 @@ class FullConfig(input_ProtoConfig):
 
 
         # PN --> KC connections
+        # Initial value of pn2kc weights. if it is set to 0, network will initialize according to sparsity
+        self.initial_pn2kc = 0
         # If True, ORN --> PN connections are positive
         self.sign_constraint_pn2kc = True
         # If True, PN --> KC connections are trainable

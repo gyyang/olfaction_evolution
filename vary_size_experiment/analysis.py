@@ -7,8 +7,8 @@ import matplotlib as mpl
 import tools
 import utils
 
-param = "N_KC"
-condition = "test"
+param = "kc_inputs"
+condition = "test/nodup_loss"
 
 mpl.rcParams['font.size'] = 7
 fig_dir = os.path.join(os.getcwd(), condition, 'figures')
@@ -20,7 +20,7 @@ list_of_legends = [param +': ' + str(n) for n in parameters]
 data = [glo_score, val_acc, val_loss, train_loss]
 titles = ['glo score', 'val acc', 'val loss', 'train loss']
 utils.plot_summary(data, titles, fig_dir, list_of_legends, param)
-utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param)
+utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param, log=False, skip=2)
 
 worn = utils.load_pickle(dir, 'w_orn')
 born = utils.load_pickle(dir, 'model/layer1/bias:0')
@@ -31,10 +31,10 @@ for p, cur_w in zip(parameters, wglo):
     glo_score, _ = tools.compute_glo_score(cur_w)
     utils.plot_weights(cur_w, str(p), arg_sort = 1, fig_dir = fig_dir, ylabel= 'from PNs', xlabel='to KCs', title= glo_score)
 #
-nr = 9
-skip = 1
+nr = 2
+skip = 4
 fig, ax = plt.subplots(nrows=nr, ncols=3)
-thres = 0.06
+thres = 0.025
 for i, (l, cur_w) in enumerate(zip(list_of_legends[::skip], wglo[::skip])):
     ax[i,0].hist(cur_w.flatten(), bins=100, range= (0, thres))
     # ax[i,0].set_title(l)
@@ -48,7 +48,7 @@ plt.savefig(os.path.join(fig_dir, 'weight_distribution.png'))
 
 r, c= 5, 2
 fig, ax = plt.subplots(nrows=r, ncols=c)
-thres = 3
+thres = 10
 for i, (l, cur_w) in enumerate(zip(list_of_legends[::skip], bglo[::skip])):
     ax_ix = np.unravel_index(i, (r,c))
     cur_ax = ax[ax_ix]

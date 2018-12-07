@@ -129,6 +129,8 @@ def train(config, reload=False):
                     break
 
             try:
+                if config.save_every_epoch:
+                    model.save_pickle(ep)
                 # Train
                 for b in range(n_batch-1):
                     _ = sess.run(model.train_op)
@@ -136,8 +138,6 @@ def train(config, reload=False):
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                 acc = acc[1]
 
-                if config.save_every_epoch:
-                    model.save_pickle(ep)
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')

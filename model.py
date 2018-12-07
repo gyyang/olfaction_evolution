@@ -48,7 +48,7 @@ class Model(object):
         """
         save_path = self.save_path
         if epoch is not None:
-            save_path = os.path.join(save_path, str(epoch))
+            save_path = os.path.join(save_path, 'epoch', str(epoch))
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         fname = os.path.join(save_path, 'model.pkl')
@@ -202,7 +202,8 @@ class FullModel(Model):
         self.saver = tf.train.Saver()
 
     def _build(self, x, y, training):
-        N_ORN = self.config.N_ORN * self.config.N_ORN_DUPLICATION
+        ORN_DUP = self.config.N_ORN_DUPLICATION
+        N_ORN = self.config.N_ORN * ORN_DUP
         N_PN = self.config.N_PN
         N_KC = self.config.N_KC
         self.loss = 0
@@ -210,18 +211,18 @@ class FullModel(Model):
         if self.config.replicate_orn_with_tiling:
             # Replicating ORNs through tiling
             assert x.shape[-1] == self.config.N_ORN
-            x = tf.tile(x, [1, self.config.N_ORN_DUPLICATION])
+            x = tf.tile(x, [1, ORN_DUP])
             x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
             # x = tf.keras.layers.GaussianNoise(self.config.ORN_NOISE_STD)(x)
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:
-                range = _sparse_range(1)
+                range = _sparse_range(ORN_DUP)
             else:
                 range = _sparse_range(N_ORN)
 
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32,
-                                 initializer= tf.random_normal_initializer(0.0, range*2))
+                                 initializer= tf.constant_initializer(range))
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(0))
 
@@ -230,7 +231,8 @@ class FullModel(Model):
                 #                         initializer=tf.constant_initializer(0.5))
                 # w_orn = w1 + alpha * tf.eye(N_PN)
                 # w_orn = w1 * tf.eye(N_PN)
-                mask = np.tile(np.eye(N_PN), (self.config.N_ORN_DUPLICATION,1))
+                # mask = np.repeat(np.eye(N_PN)/ (1.0 * ORN_DUP), repeats= ORN_DUP, axis=0)
+                mask = np.tile(np.eye(N_PN), (ORN_DUP,1))
                 w_orn = w1 * mask
             else:
                 w_orn = w1
@@ -251,20 +253,21 @@ class FullModel(Model):
             else:
                 N_USE = N_PN
 
-            if self.config.sparse_pn2kc:
-                range = _sparse_range(self.config.kc_inputs)
-                if self.config.train_pn2kc:
-                    range *= 2 #avoids KCs with no inputs by setting everything high initially
+            if self.config.initial_pn2kc == 0:
+                if self.config.sparse_pn2kc:
+                    range = _sparse_range(self.config.kc_inputs)
+                else:
+                    range = _sparse_range(N_USE)
             else:
-                range = _sparse_range(N_USE)
+                range = self.config.initial_pn2kc
 
-            if self.config.uniform_pn2kc:
-                initializer = tf.constant_initializer(range)
-            else:
-                initializer = tf.random_normal_initializer(0, range)
+            # if self.config.uniform_pn2kc or self.config.train_pn2kc:
+            #     initializer = tf.constant_initializer(range)
+            # else:
+            #     initializer = tf.random_normal_initializer(0, range)
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
-                                 initializer= initializer)
+                                 initializer= tf.constant_initializer(range))
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(self.config.kc_bias))
 
@@ -297,7 +300,7 @@ class FullModel(Model):
 
         if self.config.kc_loss:
             # self.loss += tf.reduce_mean(kc) * 10
-            self.loss += tf.reduce_mean(w_glo) * 10
+            self.loss += tf.reduce_mean(tf.math.pow(w_glo, .5)) * 10
 
         if self.config.label_type == 'combinatorial':
             n_logits = self.config.N_COMBINATORIAL_CLASS
