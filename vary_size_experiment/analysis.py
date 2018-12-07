@@ -7,8 +7,8 @@ import matplotlib as mpl
 import tools
 import utils
 
-param = "kc_inputs"
-condition = "test/nodup_loss"
+param = "kc_loss"
+condition = "test/nodup_noloss_vs_loss"
 
 mpl.rcParams['font.size'] = 7
 fig_dir = os.path.join(os.getcwd(), condition, 'figures')
@@ -32,9 +32,9 @@ for p, cur_w in zip(parameters, wglo):
     utils.plot_weights(cur_w, str(p), arg_sort = 1, fig_dir = fig_dir, ylabel= 'from PNs', xlabel='to KCs', title= glo_score)
 #
 nr = 2
-skip = 4
+skip = 1
 fig, ax = plt.subplots(nrows=nr, ncols=3)
-thres = 0.025
+thres = 0.04
 for i, (l, cur_w) in enumerate(zip(list_of_legends[::skip], wglo[::skip])):
     ax[i,0].hist(cur_w.flatten(), bins=100, range= (0, thres))
     # ax[i,0].set_title(l)
