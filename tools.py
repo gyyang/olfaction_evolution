@@ -35,6 +35,8 @@ def varying_config(experiment, i):
         experiment: function handle for the experiment, has to take an integer
             as input
         i: integer, indexing the specific hyperparameter setting to be used
+
+       hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1], there are 8 possible combinations
     """
     # Ranges of hyperparameters to loop over
     config, hp_ranges = experiment(i)
@@ -51,6 +53,33 @@ def varying_config(experiment, i):
     # Set up new hyperparameter
     for key, index in zip(keys, indices):
         setattr(config, key, hp_ranges[key][index])
+    train.train(config)
+
+def varying_config_sequential(experiment, i):
+    """Training specific combinations of hyper-parameter settings
+
+    Args:
+        experiment: function handle for the experiment, has to take an integer as input
+        i: integer, indexing the specific hyperparameter settings to be used
+
+       unlike varying_config, this function does not iterate through all possible
+       hyper-parameter combinations.
+
+       hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
+       possible combinations are {'a':0,'b':0,'c':0}, and {'a':1,'b':1,'c':1}
+    """
+    config, hp_ranges = experiment(i)
+
+    # Unravel the input index
+    keys = hp_ranges.keys()
+    dims = [len(hp_ranges[k]) for k in keys]
+    n_max = dims[0]
+
+    if i >= n_max:
+        return
+
+    for key in keys:
+        setattr(config, key, hp_ranges[key][i])
     train.train(config)
 
 
