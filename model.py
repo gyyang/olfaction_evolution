@@ -331,3 +331,89 @@ class FullModel(Model):
         self.kc_in = kc_in
         self.kc = kc
         self.logits = logits
+
+
+
+def _signed_dense(x, n0, n1, training):
+    w1 = tf.get_variable('kernel', shape=(n0, n1), dtype=tf.float32)
+    b_orn = tf.get_variable('bias', shape=(n1,), dtype=tf.float32,
+                            initializer=tf.zeros_initializer())
+
+    w_orn = tf.abs(w1)
+    glo_in_pre = tf.matmul(x, w_orn) + b_orn
+    glo_in = _normalize(glo_in_pre, 'batch_norm', training)
+    glo = tf.nn.relu(glo_in)
+    return glo
+
+
+class NormalizedMLP(Model):
+    """Normalized multi-layer perceptron model.
+
+    This model is simplified compared to the full model, with fewer options available
+    """
+
+    def __init__(self, x, y, config=None, training=True):
+        """Make model.
+
+        Args:
+            x: tf placeholder or iterator element (batch_size, N_ORN * N_ORN_DUPLICATION)
+            y: tf placeholder or iterator element (batch_size, N_CLASS)
+            config: configuration class
+            training: bool
+        """
+        if config is None:
+            config = FullConfig
+        self.config = config
+
+        super(NormalizedMLP, self).__init__(self.config.save_path)
+
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+
+        if training:
+            optimizer = tf.train.AdamOptimizer(self.config.lr)
+
+            var_list = tf.trainable_variables()
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+        self.saver = tf.train.Saver()
+
+    def _build(self, x, y, training):
+        ORN_DUP = self.config.N_ORN_DUPLICATION
+        N_ORN = self.config.N_ORN * ORN_DUP
+        NEURONS = [N_ORN] + list(self.config.NEURONS)
+        n_layer = len(self.config.NEURONS)  # number of hidden layers
+
+        # Replicating ORNs through tiling
+        assert x.shape[-1] == self.config.N_ORN
+        x = tf.tile(x, [1, ORN_DUP])
+        x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
+
+        y_hat = x
+
+        for i_layer in range(n_layer):
+            layername = 'layer' + str(i_layer+1)
+            with tf.variable_scope(layername, reuse=tf.AUTO_REUSE):
+                y_hat = _signed_dense(
+                    y_hat, NEURONS[i_layer], NEURONS[i_layer+1], training)
+
+        layername = 'layer' + str(n_layer + 1)
+        logits = tf.layers.dense(y_hat, self.config.N_CLASS,
+                                 name=layername, reuse=tf.AUTO_REUSE)
+
+        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
+        self.acc = tf.metrics.accuracy(labels=tf.argmax(y, axis=-1),
+                                       predictions=tf.argmax(logits,axis=-1))
+
+        self.logits = logits
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle."""
+        pass

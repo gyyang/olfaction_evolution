@@ -86,7 +86,7 @@ def varying_config_sequential(experiment, i):
 def load_all_results(rootpath):
     """Load results from path.
 
-    Args:
+    Args:a
         rootpath: root path of all models loading results from
 
     Returns:
@@ -107,7 +107,7 @@ def load_all_results(rootpath):
         for k in dir(config):
             if k[0] != '_':
                 res[k].append(getattr(config, k))
-
+    # TODO: exclude models that didn't finish training
     for key, val in res.items():
         res[key] = np.array(val)
     return res

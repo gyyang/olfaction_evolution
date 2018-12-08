@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel
+from model import SingleLayerModel, FullModel, NormalizedMLP
 from configs import FullConfig, SingleLayerConfig
 import tools
 
@@ -46,6 +46,8 @@ def train(config, reload=False):
         CurrentModel = FullModel
     elif config.model == 'singlelayer':
         CurrentModel = SingleLayerModel
+    elif config.model == 'normmlp':
+        CurrentModel = NormalizedMLP
     else:
         raise ValueError('Unknown model type ' + str(config.model))
 
@@ -90,16 +92,26 @@ def train(config, reload=False):
             print('[*] Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
-            w_orn = sess.run(model.w_orn)
-            w_glo = sess.run(model.w_glo)
-            glo_score, _ = tools.compute_glo_score(w_orn, glo_score_mode)
-            glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
-            print('Glo score ' + str(glo_score))
+            log['epoch'].append(ep)
+            log['train_loss'].append(loss)
+            log['train_acc'].append(acc)
+            log['val_loss'].append(val_loss)
+            log['val_acc'].append(val_acc)
+
+            if config.model == 'full':
+                w_orn = sess.run(model.w_orn)
+                w_glo = sess.run(model.w_glo)
+                glo_score, _ = tools.compute_glo_score(w_orn, glo_score_mode)
+                # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
+                log['glo_score'].append(glo_score)
+                # log['glo_score_w_glo'].append(glo_score_w_glo)
+                print('Glo score ' + str(glo_score))
 
             # Compute condition number
             # w_glo = sess.run(model.w_glo)
             # w_orn2kc = np.dot(w_orn, w_glo)
             # cond = np.linalg.cond(w_orn2kc)
+            # log['cond'].append(cond)
             # print('Condition number '+ str(cond))
 
             if ep > 0:
@@ -109,15 +121,6 @@ def train(config, reload=False):
                 print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
             start_time = time.time()
 
-            # Logging
-            log['epoch'].append(ep)
-            log['glo_score'].append(glo_score)
-            log['glo_score_w_glo'].append(glo_score_w_glo)
-            log['train_loss'].append(loss)
-            log['train_acc'].append(acc)
-            log['val_loss'].append(val_loss)
-            log['val_acc'].append(val_acc)
-            # log['cond'].append(cond)
             with open(log_name, 'wb') as f:
                 pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -150,7 +153,6 @@ def train(config, reload=False):
             #         pickle.dump(weight_over_time, handle,
             #                     protocol=pickle.HIGHEST_PROTOCOL)
         print('Training finished')
-
         model.save_pickle()
         model.save()
 
