@@ -92,6 +92,7 @@ def train(config, reload=False):
             print('[*] Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
+
             log['epoch'].append(ep)
             log['train_loss'].append(loss)
             log['train_acc'].append(acc)
@@ -106,6 +107,11 @@ def train(config, reload=False):
                 log['glo_score'].append(glo_score)
                 # log['glo_score_w_glo'].append(glo_score_w_glo)
                 print('Glo score ' + str(glo_score))
+
+            w_orn = sess.run(model.w_orn)
+            glo_score, _ = tools.compute_glo_score(w_orn, glo_score_mode)
+            print('Glo score ' + str(glo_score))
+
 
             # Compute condition number
             # w_glo = sess.run(model.w_glo)

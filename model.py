@@ -265,7 +265,6 @@ class FullModel(Model):
             #     initializer = tf.constant_initializer(range)
             # else:
             #     initializer = tf.random_normal_initializer(0, range)
-
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= tf.constant_initializer(range))
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
@@ -300,7 +299,8 @@ class FullModel(Model):
 
         if self.config.kc_loss:
             # self.loss += tf.reduce_mean(kc) * 10
-            self.loss += tf.reduce_mean(tf.math.pow(w_glo, .5)) * 10
+            self.kc_loss = tf.reduce_mean(tf.math.pow(w_glo, 0.5)) * 10
+            self.loss += self.kc_loss
 
         if self.config.label_type == 'combinatorial':
             n_logits = self.config.N_COMBINATORIAL_CLASS

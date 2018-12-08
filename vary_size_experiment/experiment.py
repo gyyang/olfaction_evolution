@@ -60,26 +60,6 @@ def vary_kc_bias(i):
     hp_ranges['kc_bias'] = [-4,-3,-2,-1,0]
     return config, hp_ranges
 
-def vary_sparse_kc(i):
-    config = configs.FullConfig()
-    config.save_path = './sparse/nodup_trainable/files/' + str(i).zfill(2)
-    config.N_ORN_DUPLICATION = 1
-    config.N_ORN = 50
-    config.ORN_NOISE_STD = 0
-    config.data_dir = '../datasets/proto/_100_generalization_onehot'
-    config.max_epoch = 10
-    config.kc_norm_post = None
-    # config.sparse_pn2kc = False
-    config.train_pn2kc = True
-    config.sign_constraint_pn2kc = True
-    config.skip_orn2pn = False
-    config.direct_glo = False
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['sparse_pn2kc'] = [True,False]
-    return config, hp_ranges
-
 def no_pn_layer(i):
     config = configs.FullConfig()
     config.save_path = './no_pn_layer/test/files/' + str(i).zfill(2)
@@ -144,27 +124,6 @@ def noise_pn_layer(i):
     hp_ranges['skip_orn2pn'] = [True]
     return config, hp_ranges
 
-def vary_trainable_n_kc(i):
-    config = configs.FullConfig()
-    config.save_path = './train_KC_claws/n_kc_noskip/files/' + str(i).zfill(2)
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.data_dir = '../datasets/proto/nodup'
-    config.max_epoch = 10
-    config.kc_norm_post = None
-    config.train_pn2kc = True
-    config.train_kc_bias = True
-    config.sign_constraint_pn2kc = True
-    config.skip_orn2pn = False
-    config.uniform_pn2kc = False
-    config.sparse_pn2kc = False
-    config.replicate_orn_with_tiling = False
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [50, 100, 200, 500, 1000, 2500, 10000]
-    return config, hp_ranges
-
 def vary_dropout(i):
     config = configs.FullConfig()
     config.save_path = './dropout/normal_dup_0noise_range4/files/' + str(i).zfill(2)
@@ -188,7 +147,7 @@ def vary_dropout(i):
 
 def test(i):
     config = configs.FullConfig()
-    config.save_path = './test/nodup_loss/files/' + str(i).zfill(2)
+    config.save_path = './test/nodup_noloss_vs_loss/files/' + str(i).zfill(2)
     config.data_dir = '../datasets/proto/nodup'
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
@@ -200,17 +159,18 @@ def test(i):
 
     config.kc_norm_post = None
     config.sign_constraint_pn2kc = True
-    config.train_kc_bias = True
-    config.kc_loss = False
+    config.train_kc_bias = False
+    config.kc_loss = True
 
-    config.train_pn2kc = False
-    config.sparse_pn2kc = True
+    config.initial_pn2kc = 0.1
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
     config.mean_subtract_pn2kc = False
-    config.save_every_epoch = False
+    config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['uniform_pn2kc'] = [True]
+    hp_ranges['kc_loss'] = [False, True]
     return config, hp_ranges
 
 if __name__ == '__main__':
