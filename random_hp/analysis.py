@@ -19,13 +19,22 @@ figpath = os.path.join(rootpath, 'figures')
 
 path = os.path.join(rootpath, 'files', 'random_hp_mlp')
 res = tools.load_all_results(path)
+n_model = len(res['val_acc'])
 
-indsort = np.argsort(res['val_acc'])
+y_key = 'val_acc'
+# y_key = 'val_loss'
 
+indsort = np.argsort(res[y_key])
 
+ind_bio = list(res['NEURONS']).index([50, 2500])  # find the bio model
 
 plt.figure()
-plt.plot(res['val_acc'][indsort])
+plt.plot(res[y_key][indsort])
+plt.plot([0, n_model], [res[y_key][ind_bio]]*2)
+
+print(res['NEURONS'][indsort][-5:])
+
+
 
 # plt.figure()
 # plt.plot(res['glo_score'][indsort])

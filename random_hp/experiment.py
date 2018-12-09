@@ -35,9 +35,26 @@ def train_random_model(i):
     train.train(config)
 
 
+def train_bio():
+    config = configs.FullConfig()
+    config.save_path = './files/random_hp_mlp/bio'
+    config.data_dir = './datasets/proto/_100_generalization_onehot_s0'
+    config.max_epoch = 30
+    config.ORN_NOISE_STD = 0.5
+    config.N_ORN_DUPLICATION = 10
+    config.model = 'normmlp'
+    config.NEURONS = [50, 2500]
+    print(config.NEURONS)
+
+    train.train(config)
+
+
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 
-    for i in range(args.seed0, args.seed1):
-        print('[***] Hyper-parameter: %5d' % i)
-        train_random_model(i)
+    if args.seed0 < 0:
+        train_bio()
+    else:
+        for i in range(args.seed0, args.seed1):
+            print('[***] Hyper-parameter: %5d' % i)
+            train_random_model(i)
