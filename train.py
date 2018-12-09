@@ -108,11 +108,6 @@ def train(config, reload=False):
                 # log['glo_score_w_glo'].append(glo_score_w_glo)
                 print('Glo score ' + str(glo_score))
 
-            w_orn = sess.run(model.w_orn)
-            glo_score, _ = tools.compute_glo_score(w_orn, glo_score_mode)
-            print('Glo score ' + str(glo_score))
-
-
             # Compute condition number
             # w_glo = sess.run(model.w_glo)
             # w_orn2kc = np.dot(w_orn, w_glo)
