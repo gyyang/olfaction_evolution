@@ -9,36 +9,35 @@ import tools
 import train
 
 
-def kc_weight_changes(i):
+def vary_training(i):
     config = configs.FullConfig()
-    config.save_path = './kc_weight_change/files/' + str(i).zfill(2)
+    config.save_path = './vary_KC_training/files/' + str(i).zfill(2)
     config.data_dir = '../datasets/proto/nodup'
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.max_epoch = 10
+    config.max_epoch = 20
 
     config.skip_orn2pn = True
     config.direct_glo = False
 
-    config.kc_norm_post = None
-    config.train_kc_bias = True
     config.sign_constraint_pn2kc = True
-    config.mean_subtract_pn2kc = False
 
     config.kc_inputs = 7
     config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['uniform_pn2kc'] = [False, True, False]
-    hp_ranges['train_pn2kc'] = [True, False, True]
-    hp_ranges['sparse_pn2kc'] = [False, True, False]
+    hp_ranges['train_pn2kc'] = [True, True, False]
+    hp_ranges['sparse_pn2kc'] = [False, False, True]
+    hp_ranges['train_kc_bias'] = [False, False, True]
+    hp_ranges['kc_loss'] = [False, True, False]
+    hp_ranges['initial_pn2kc'] = [0.2, 0.2, 0]
     return config, hp_ranges
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-    for i in range(2,100):
+    for i in range(0,100):
         print('[***] Hyper-parameter: %2d' % i)
-        tools.varying_config_sequential(kc_weight_changes, i)
+        tools.varying_config_sequential(vary_training, i)
