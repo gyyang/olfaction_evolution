@@ -64,5 +64,8 @@ def whatthef(i):
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-    for i in range(0,100):
-        tools.varying_config(whatthef, i)
+
+
+
+    # for i in range(0,100):
+    #     tools.varying_config(whatthef, i)
