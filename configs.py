@@ -1,7 +1,17 @@
 import os
 
-class input_ProtoConfig(object):
+
+class BaseConfig(object):
     def __init__(self):
+        pass
+
+    def update(self, new_config):
+        self.__dict__.update(new_config.__dict__)
+
+
+class input_ProtoConfig(BaseConfig):
+    def __init__(self):
+        super(input_ProtoConfig, self).__init__()
         self.path = os.path.join(os.getcwd(), 'datasets', 'proto')
         self.hallem_path = os.path.join(os.getcwd(),'datasets','hallem')
 
@@ -10,9 +20,6 @@ class input_ProtoConfig(object):
 
         self.N_CLASS = 100
         self.N_ORN = 50
-        self.N_PN = 50
-        self.ORN_NOISE_STD = 0.
-        self.N_KC = 2500
 
         self.percent_generalization = 100
         self.use_combinatorial = False
@@ -29,7 +36,7 @@ class input_ProtoConfig(object):
         self.N_ORN_DUPLICATION = 10
 
 
-class SingleLayerConfig(input_ProtoConfig):
+class SingleLayerConfig(BaseConfig):
     def __init__(self):
         super(SingleLayerConfig, self).__init__()
         self.dataset = 'repeat'
@@ -40,7 +47,8 @@ class SingleLayerConfig(input_ProtoConfig):
         self.save_path = './files/peter_tmp'
 
 
-class FullConfig(input_ProtoConfig):
+# class FullConfig(input_ProtoConfig):
+class FullConfig(BaseConfig):
     def __init__(self):
         super(FullConfig, self).__init__()
         self.dataset = 'proto'
@@ -54,6 +62,10 @@ class FullConfig(input_ProtoConfig):
         self.batch_size = 256
         self.target_acc = None  # target accuracy
 
+        # Overall architecture
+        self.N_PN = 50
+        self.ORN_NOISE_STD = 0.
+        self.N_KC = 2500
 
         # ORN--> PN connections
         # If True, ORN --> PN connections are positive

@@ -31,9 +31,14 @@ def make_input(x, y, batch_size):
 def train(config, reload=False):
     tf.reset_default_graph()
 
+    # Merge model config with config from dataset
+    dataset_config = tools.load_config(config.data_dir)
+    dataset_config.update(config)
+    config = dataset_config
+
     if not os.path.exists(config.save_path):
         os.makedirs(config.save_path)
-    # Save config (first convert to dictionary)
+    # Save config
     tools.save_config(config, save_path=config.save_path)
 
     # Load dataset

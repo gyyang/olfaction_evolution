@@ -1,10 +1,14 @@
 import os
 import shutil
+
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
-from configs import input_ProtoConfig
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+
+import tools
+from configs import input_ProtoConfig
+
 
 def _make_hallem_dataset(config=None):
     '''
@@ -86,7 +90,6 @@ def _generate_proto_threshold(config=None, seed=0):
 
     N_CLASS = config.N_CLASS
     N_ORN = config.N_ORN
-    ORN_NOISE_STD = config.ORN_NOISE_STD
     GEN_THRES = config.percent_generalization
     N_TRAIN = config.n_train
     N_VAL = config.n_val
@@ -156,6 +159,7 @@ def _generate_proto_threshold(config=None, seed=0):
         val_odors = repeat(val_odors)
 
         # noise is added after getting labels
+        ORN_NOISE_STD = config.ORN_NOISE_STD
         train_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=train_odors.shape)
         val_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=val_odors.shape)
 
@@ -237,6 +241,7 @@ def save_proto(config=None, seed=0, folder_name=None):
     with open(save_name, 'w') as f:
         for k, v in cur_dict.items():
             f.write('%s: %s \n' % (k, v))
+    tools.save_config(config, folder_path)
     return folder_path
 
 

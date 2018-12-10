@@ -5,11 +5,13 @@ import pickle
 import numpy as np
 
 import train
+import configs
 
 
 def save_config(config, save_path):
     """Save config."""
-    config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
+    # config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
+    config_dict = config.__dict__
     with open(os.path.join(save_path, 'config.json'), 'w') as f:
         json.dump(config_dict, f)
 
@@ -19,10 +21,7 @@ def load_config(save_path):
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
 
-    class Config():
-        pass
-
-    config = Config()
+    config = configs.BaseConfig()
     for key, val in config_dict.items():
         setattr(config, key, val)
     return config
@@ -53,6 +52,7 @@ def varying_config(experiment, i):
     # Set up new hyperparameter
     for key, index in zip(keys, indices):
         setattr(config, key, hp_ranges[key][index])
+    # TODO: move train outside of this
     train.train(config)
 
 def varying_config_sequential(experiment, i):
