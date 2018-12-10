@@ -51,6 +51,7 @@ def _generate_from_hallem(config=None):
     plt.plot(x, gaus(x, *popt), 'ro', label='fit')
     plt.show()
 
+
 def _generate_repeat(config=None):
     '''
     :return:
@@ -72,6 +73,36 @@ def _generate_repeat(config=None):
     return x.astype(np.float32), y.astype(np.float32)
 
 
+def relabel(train_labels, val_labels, n_pre, n_post, rng=None):
+    """Relabeing classes.
+
+    Randomly relabel n_pre classes to n_post classes, assuming n_post<n_pre
+    Assume that label 0 is still mapped to label 0
+
+    Args:
+        train_labels: a list of labels
+        val_labels: a list of labels
+        n_pre: the number of labels before relabeling
+        n_post: the number of labels after relabeling
+        rng: random number generator
+
+    Returns:
+        new_train_labels: a list of labels after relabeling
+        new_val_labels: a list of labels after relabeling
+    """
+    if rng is None:
+        rng = np.random.RandomState()
+
+    # Generate the mapping from previous labels to new labels
+    # TODO: Consider balancing the number of old labels each new label gets
+    labelmap = rng.choice(range(1, n_post), size=(n_pre))
+    labelmap[0] = 0  # 0 still mapped to 0
+
+    new_train_labels = np.array([labelmap[l] for l in train_labels])
+    new_val_labels = np.array([labelmap[l] for l in val_labels])
+    return new_train_labels, new_val_labels
+
+
 def _generate_proto_threshold(config=None, seed=0):
     """Activate all ORNs randomly.
 
@@ -88,7 +119,10 @@ def _generate_proto_threshold(config=None, seed=0):
 
     rng = np.random.RandomState(seed)
 
-    N_CLASS = config.N_CLASS
+    if config.relabel:
+        N_PROTO = config.n_trueclass
+    else:
+        N_PROTO = config.N_CLASS
     N_ORN = config.N_ORN
     GEN_THRES = config.percent_generalization
     N_TRAIN = config.n_train
@@ -111,7 +145,7 @@ def _generate_proto_threshold(config=None, seed=0):
     lamb = 1
     bias = 0
 
-    prototypes = rng.uniform(0, lamb, (N_CLASS-1, N_ORN))
+    prototypes = rng.uniform(0, lamb, (N_PROTO-1, N_ORN))
     train_odors = rng.uniform(0, lamb, (N_TRAIN, N_ORN))
     val_odors = rng.uniform(0, lamb, (N_VAL, N_ORN))
     prototypes = add_bias(prototypes, bias)
@@ -150,6 +184,10 @@ def _generate_proto_threshold(config=None, seed=0):
         # Shuffle the labels
         rng.shuffle(train_labels)
         rng.shuffle(val_labels)
+
+    if config.relabel:
+        train_labels, val_labels = relabel(
+            train_labels, val_labels, N_PROTO, config.N_CLASS, rng)
 
     # Repeat odors for duplication of ORNs
     if not config.replicate_orn_with_tiling:

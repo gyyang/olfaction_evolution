@@ -35,6 +35,12 @@ class input_ProtoConfig(BaseConfig):
         self.replicate_orn_with_tiling = True
         self.N_ORN_DUPLICATION = 10
 
+        # If relabel is True, then randomly relabel the classes
+        # The number of true classes (pre-relabel) is n_trueclass
+        # The number of classes post relabeling is N_CLASS
+        self.relabel = False
+        self.n_trueclass = 1000
+
 
 class SingleLayerConfig(BaseConfig):
     def __init__(self):
