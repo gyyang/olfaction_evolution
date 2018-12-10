@@ -114,6 +114,11 @@ def train(config, reload=False):
                 # log['glo_score_w_glo'].append(glo_score_w_glo, config.N_ORN)
                 print('Glo score ' + str(glo_score))
 
+                sim_score, _ = tools.compute_sim_score(
+                    w_orn, config.N_ORN, glo_score_mode)
+                log['sim_score'].append(sim_score)
+                print('Sim score ' + str(sim_score))
+
             # Compute condition number
             # w_glo = sess.run(model.w_glo)
             # w_orn2kc = np.dot(w_orn, w_glo)

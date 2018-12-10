@@ -3,6 +3,7 @@ import json
 import pickle
 
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 import train
 import configs
@@ -131,6 +132,23 @@ def nicename(name):
         return name
 
 
+def _reshape_worn(w_orn, unique_orn, mode='tile'):
+    """Reshape w_orn."""
+    n_orn, n_pn = w_orn.shape
+    w_orn_by_pn = abs(w_orn)
+    n_duplicate_orn = n_orn // unique_orn
+    if mode == 'repeat':
+        w_orn_by_pn = np.reshape(w_orn_by_pn,
+                                 (unique_orn, n_duplicate_orn, n_pn))
+        w_orn_by_pn = np.swapaxes(w_orn_by_pn, 0, 1)
+    elif mode == 'tile':
+        w_orn_by_pn = np.reshape(w_orn_by_pn,
+                                 (n_duplicate_orn, unique_orn, n_pn))
+    else:
+        raise ValueError('Unknown mode' + str(mode))
+    return w_orn_by_pn
+
+
 def compute_glo_score(w_orn, unique_orn, mode='tile'):
     """Compute the glomeruli score in numpy.
 
@@ -159,26 +177,11 @@ def compute_glo_score(w_orn, unique_orn, mode='tile'):
         glo_scores: numpy array (n_pn,), all glomeruli scores
     """
     n_orn, n_pn = w_orn.shape
-    w_orn_by_pn = abs(w_orn)
-    n_duplicate_orn = n_orn // unique_orn
-    if mode == 'repeat':
-        w_orn_by_pn = np.reshape(w_orn_by_pn, (unique_orn, n_duplicate_orn, n_pn))
-        w_orn_by_pn = w_orn_by_pn.mean(axis=1)
-    elif mode == 'tile':
-        w_orn_by_pn = np.reshape(w_orn_by_pn, (n_duplicate_orn, unique_orn, n_pn))
-        w_orn_by_pn = w_orn_by_pn.mean(axis=0)
-    else:
-        raise ValueError('Unknown mode' + str(mode))
-    w_orn_by_pn = abs(w_orn_by_pn)
-
-    # this code does **not** work for arbitrary orn / pn sizes
-    n_pn_per_orn = n_orn // n_pn
-    # w_orn_by_pn = np.reshape(w_orn, (n_pn, n_pn_per_orn, n_pn))
-    # w_orn_by_pn = w_orn_by_pn.mean(axis=1)
-    # w_orn_by_pn = abs(w_orn_by_pn)
+    w_orn_by_pn = _reshape_worn(w_orn, unique_orn, mode)
+    w_orn_by_pn = w_orn_by_pn.mean(axis=0)
 
     glo_scores = list()
-    for i in range(n_pn):
+    for i in range(unique_orn):
         w_tmp = w_orn_by_pn[:, i]  # all projections to the i-th PN neuron
         indsort = np.argsort(w_tmp)[::-1]
         w_max = w_tmp[indsort[0]]
@@ -188,3 +191,46 @@ def compute_glo_score(w_orn, unique_orn, mode='tile'):
 
     avg_glo_score = np.mean(glo_scores)
     return avg_glo_score, glo_scores
+
+
+def compute_sim_score(w_orn, unique_orn, mode='tile'):
+    """Compute the similarity score in numpy.
+
+    This function returns the glomeruli score, a number between 0 and 1 that
+    measures how close the connectivity is to glomeruli connectivity.
+
+    For one glomeruli neuron, first we compute the average connections from
+    each ORN group. Then we sort the absolute connection weights by ORNs.
+    The glomeruli score is simply:
+        (Max weight - Second max weight) / (Max weight + Second max weight)
+
+    Args:
+        w_orn: numpy array (n_orn, n_pn). This matrix has to be organized
+        in the following ways:
+        In the mode=='repeat'
+            neurons from the same orn type are indexed consecutively
+            for example, neurons from the 0-th type would be 0, 1, 2, ...
+        In the mode=='tile'
+            neurons from the same orn type are spaced by the number of types,
+            for example, neurons from the 0-th type would be 0, 50, 100, ...
+        unique_orn: int, the number of unique ORNs
+        mode: the way w_orn is organized
+
+    Return:
+        avg_glo_score: scalar, average glomeruli score
+        glo_scores: numpy array (n_pn,), all glomeruli scores
+    """
+    n_orn, n_pn = w_orn.shape
+    w_orn_by_pn = _reshape_worn(w_orn, unique_orn, mode)
+    n_duplicate_orn = n_orn // unique_orn
+    if n_duplicate_orn == 1:
+        return 0, [0]*unique_orn
+
+    sim_scores = list()
+    for i in range(unique_orn):
+        w_tmp = w_orn_by_pn[:, i, :]
+        sim_tmp = cosine_similarity(w_tmp)
+        sim_scores.append(sim_tmp.mean())
+
+    avg_sim_score = np.mean(sim_scores)
+    return avg_sim_score, sim_scores
