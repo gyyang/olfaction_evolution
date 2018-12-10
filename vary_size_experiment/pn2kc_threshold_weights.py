@@ -40,7 +40,7 @@ def plot_distribution(data, savename, title, xrange, yrange):
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
     plt.hist(data, bins=50, range=[0, xrange], density=False)
     ax.set_xlabel('PN to KC Weight')
-    ax.set_ylabel('Distribution Density')
+    ax.set_ylabel('Number of Connections')
     name = title
     ax.set_title(name)
 
@@ -69,10 +69,13 @@ def plot_progress(ys, save_name, legends):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(rect)
 
-    for y in ys:
-        ax.plot(y)
+    cs = ['r','g','b']
+    ss = [':','-.','-']
+    for y, c, s in zip(ys, cs, ss):
+        ax.plot(y, alpha= .75, linestyle=s)
 
-    ax.legend(legends)
+    ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 0.4), fontsize=5)
+
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Validation accuracy')
     # plt.title('Final accuracy {:0.3f}'.format(y[-1]), fontsize=7)
@@ -87,8 +90,9 @@ def plot_progress(ys, save_name, legends):
     plt.tight_layout()
     plt.savefig(save_name + '.png', dpi=300)
 
-param = "kc_inputs"
-condition = "test/nodup_noloss_vs_loss"
+
+condition = "vary_KC_training"
+condition = "random"
 
 mpl.rcParams['font.size'] = 7
 fig_dir = os.path.join(os.getcwd(), condition, 'figures')
@@ -96,12 +100,10 @@ dir = os.path.join(os.getcwd(), condition, 'files')
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
 
 configs, glo_score, val_acc, val_loss, train_loss = utils.load_results(dir)
-parameters = [getattr(config, param) for config in configs]
-list_of_legends = [param +': ' + str(n) for n in parameters]
 save_name = os.path.join(fig_dir, 'val_acc')
-plot_progress(val_acc, save_name, ['No Loss', 'Loss'])
+plot_progress(val_acc, save_name, ['Trainable, no loss', 'Trainable, with loss', 'Fixed'])
 
-thres = 0.04
+thres = 0.05
 titles = ['Before Training', 'After Training']
 yrange = [1, 0.5]
 for i, d in enumerate(dirs):
@@ -115,6 +117,7 @@ for i, d in enumerate(dirs):
         distribution = w.flatten()
         save_name = os.path.join(fig_dir, 'distribution_' + str(i) + '_' + str(j))
         plot_distribution(distribution, save_name, title= titles[j], xrange= 1.0, yrange = 5000)
+
 
 
 def approximate_distribution():

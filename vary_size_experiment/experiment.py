@@ -145,14 +145,14 @@ def vary_dropout(i):
     hp_ranges['kc_dropout'] = [True, False]
     return config, hp_ranges
 
-def test(i):
+def whatthef(i):
     config = configs.FullConfig()
-    config.save_path = './test/nodup_noloss_vs_loss/files/' + str(i).zfill(2)
+    config.save_path = './random/files/' + str(i).zfill(2)
     config.data_dir = '../datasets/proto/nodup'
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.max_epoch = 8
+    config.max_epoch = 15
 
     config.skip_orn2pn = True
     config.direct_glo = False
@@ -162,7 +162,7 @@ def test(i):
     config.train_kc_bias = False
     config.kc_loss = True
 
-    config.initial_pn2kc = 0.1
+    # config.initial_pn2kc = 0.5
     config.train_pn2kc = True
     config.sparse_pn2kc = False
     config.mean_subtract_pn2kc = False
@@ -170,11 +170,12 @@ def test(i):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_loss'] = [False, True]
+    # hp_ranges['N_KC'] = [50, 100, 200, 400, 800, 1600, 2500, 5000, 10000, 20000]
+    hp_ranges['initial_pn2kc'] = [.2]
     return config, hp_ranges
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     for i in range(0,100):
-        tools.varying_config(test, i)
+        tools.varying_config(whatthef, i)

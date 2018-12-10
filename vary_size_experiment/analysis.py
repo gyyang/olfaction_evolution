@@ -7,8 +7,8 @@ import matplotlib as mpl
 import tools
 import utils
 
-param = "kc_loss"
-condition = "test/nodup_noloss_vs_loss"
+param = "initial_pn2kc"
+condition = "random"
 
 mpl.rcParams['font.size'] = 7
 fig_dir = os.path.join(os.getcwd(), condition, 'figures')
@@ -20,7 +20,7 @@ list_of_legends = [param +': ' + str(n) for n in parameters]
 data = [glo_score, val_acc, val_loss, train_loss]
 titles = ['glo score', 'val acc', 'val loss', 'train loss']
 utils.plot_summary(data, titles, fig_dir, list_of_legends, param)
-utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param, log=False, skip=2)
+utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param, log=True, skip=2)
 
 worn = utils.load_pickle(dir, 'w_orn')
 born = utils.load_pickle(dir, 'model/layer1/bias:0')
@@ -31,10 +31,10 @@ for p, cur_w in zip(parameters, wglo):
     glo_score, _ = tools.compute_glo_score(cur_w)
     utils.plot_weights(cur_w, str(p), arg_sort = 1, fig_dir = fig_dir, ylabel= 'from PNs', xlabel='to KCs', title= glo_score)
 #
-nr = 2
+nr = 5
 skip = 1
 fig, ax = plt.subplots(nrows=nr, ncols=3)
-thres = 0.04
+thres = 0.05
 for i, (l, cur_w) in enumerate(zip(list_of_legends[::skip], wglo[::skip])):
     ax[i,0].hist(cur_w.flatten(), bins=100, range= (0, thres))
     # ax[i,0].set_title(l)

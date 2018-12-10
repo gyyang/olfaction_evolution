@@ -82,7 +82,6 @@ def plot_summary_last_epoch(data, titles, fig_dir, parameters, title, log=True, 
         cur_ax.yaxis.set_ticks_position('left')
     plt.savefig(os.path.join(fig_dir, 'summary_last_epoch.png'))
 
-
 def adjust(ax):
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

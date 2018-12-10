@@ -117,6 +117,7 @@ nicename_dict = {
         'ORN_NOISE_STD': 'Noise level',
         'N_KC': 'Number of KCs',
         'N_ORN_DUPLICATION': 'ORNs per type',
+        'kc_inputs': 'Number of KC Inputs',
         'glo_score': 'GloScore',
         'val_acc': 'Accuracy'
         }
