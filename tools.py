@@ -130,7 +130,7 @@ def nicename(name):
         return name
 
 
-def compute_glo_score(w_orn, mode='repeat'):
+def compute_glo_score(w_orn, unique_orn, mode='tile'):
     """Compute the glomeruli score in numpy.
 
     This function returns the glomeruli score, a number between 0 and 1 that
@@ -150,13 +150,13 @@ def compute_glo_score(w_orn, mode='repeat'):
         In the mode=='tile'
             neurons from the same orn type are spaced by the number of types,
             for example, neurons from the 0-th type would be 0, 50, 100, ...
+        unique_orn: int, the number of unique ORNs
         mode: the way w_orn is organized
 
     Return:
         avg_glo_score: scalar, average glomeruli score
         glo_scores: numpy array (n_pn,), all glomeruli scores
     """
-    unique_orn = 50
     n_orn, n_pn = w_orn.shape
     w_orn_by_pn = abs(w_orn)
     n_duplicate_orn = n_orn // unique_orn

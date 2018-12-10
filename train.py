@@ -107,10 +107,11 @@ def train(config, reload=False):
             if config.model == 'full':
                 w_orn = sess.run(model.w_orn)
                 w_glo = sess.run(model.w_glo)
-                glo_score, _ = tools.compute_glo_score(w_orn, glo_score_mode)
+                glo_score, _ = tools.compute_glo_score(
+                    w_orn, config.N_ORN, glo_score_mode)
                 # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
                 log['glo_score'].append(glo_score)
-                # log['glo_score_w_glo'].append(glo_score_w_glo)
+                # log['glo_score_w_glo'].append(glo_score_w_glo, config.N_ORN)
                 print('Glo score ' + str(glo_score))
 
             # Compute condition number
