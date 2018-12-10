@@ -295,7 +295,7 @@ class FullModel(Model):
             kc = _normalize(kc, self.config.kc_norm_post, training)
 
         if self.config.kc_dropout:
-            kc = tf.layers.dropout(kc, 0.5, training=training)
+            kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training=training)
 
         if self.config.kc_loss:
             # self.loss += tf.reduce_mean(kc) * 10
@@ -341,7 +341,8 @@ def _signed_dense(x, n0, n1, training):
 
     w_orn = tf.abs(w1)
     glo_in_pre = tf.matmul(x, w_orn) + b_orn
-    glo_in = _normalize(glo_in_pre, 'batch_norm', training)
+    # glo_in = _normalize(glo_in_pre, 'batch_norm', training)
+    glo_in = _normalize(glo_in_pre, None, training)
     glo = tf.nn.relu(glo_in)
     return glo
 

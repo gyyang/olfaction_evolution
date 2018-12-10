@@ -28,9 +28,19 @@ indsort = np.argsort(res[y_key])
 
 ind_bio = list(res['NEURONS']).index([50, 2500])  # find the bio model
 
-plt.figure()
-plt.plot(res[y_key][indsort])
-plt.plot([0, n_model], [res[y_key][ind_bio]]*2)
+figsize = (1.5, 1.5)
+fig = plt.figure(figsize=figsize)
+ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
+ax.plot(res[y_key][indsort], 'o', ms=1)
+ax.plot([0, n_model], [res[y_key][ind_bio]]*2)
+ax.set_xlabel('Models')
+ax.set_ylabel(nicename(y_key))
+ax.spines["right"].set_visible(False)
+ax.spines["top"].set_visible(False)
+plt.savefig(os.path.join(figpath, 'random_hp.pdf'), transparent=True)
+plt.savefig(os.path.join(figpath, 'random_hp.png'), dpi=300)
+
+
 
 print(res['NEURONS'][indsort][-5:])
 
