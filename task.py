@@ -274,11 +274,6 @@ def save_proto(config=None, seed=0, folder_name=None):
         np.save(os.path.join(folder_path, name), result)
 
     #save parameters
-    save_name = os.path.join(folder_path, 'parameters.txt')
-    cur_dict = {k: v for k, v in config.__dict__.items()}
-    with open(save_name, 'w') as f:
-        for k, v in cur_dict.items():
-            f.write('%s: %s \n' % (k, v))
     tools.save_config(config, folder_path)
     return folder_path
 
