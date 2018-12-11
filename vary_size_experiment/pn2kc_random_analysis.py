@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import utils
 from sklearn.metrics.pairwise import cosine_similarity
-
+import matplotlib.patches as patches
 
 
 condition = "random"
@@ -48,29 +48,26 @@ def _shuffle(w_binary, arg):
             shuffled[ix_pns, i] = 1
             j+= n_connections
     else:
-        pass
-    # plt.plot(probability_per_pn)
-    # plt.plot(np.sum(shuffled,axis=1)/np.sum(w_binary))
-    # plt.show()
+        raise ValueError('Unknown shorting method {:s}'.format(arg))
     return shuffled
+
+def _extract_paircounts(mat):
+    n_pn = mat.shape[0]
+    n_kc = mat.shape[1]
+    counts_matrix = np.zeros((n_pn, n_pn))
+    for kc in range(n_kc):
+        vec = mat[:, kc]
+        ix = np.nonzero(vec)[0]
+        for i in ix:
+            for j in ix:
+                counts_matrix[i, j] += 1
+    lower = np.tril(counts_matrix, k=-1)
+    counts = lower[lower>0]
+    return counts, counts_matrix
 
 #frequency of identical pairs vs shuffled
 def pair_distribution(wglo, shuffle_arg):
     bin_range = 70
-
-    def _extract_paircounts(mat):
-        n_pn = mat.shape[0]
-        n_kc = mat.shape[1]
-        counts_matrix = np.zeros((n_pn, n_pn))
-        for kc in range(n_kc):
-            vec = mat[:, kc]
-            ix = np.nonzero(vec)[0]
-            for i in ix:
-                for j in ix:
-                    counts_matrix[i, j] += 1
-        lower = np.tril(counts_matrix, k=-1)
-        counts = lower[lower>0]
-        return counts, counts_matrix
 
     wglo[np.isnan(wglo)] = 0
     wglo_binary = wglo > thres
@@ -111,11 +108,6 @@ def pair_distribution(wglo, shuffle_arg):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
     plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
-
-    # lower = np.tril(shuffled_counts_matrix, k=-1)
-    # plt.imshow(lower)
-    # plt.colorbar()
-    # plt.show()
 
 
 # distribution of connections is not a bernoulli distribution, but is more compact
@@ -253,9 +245,35 @@ def plot_cosine_similarity(wglos, shuffle_arg, log= True):
     ax.yaxis.set_ticks_position('left')
     plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
 
+def display_matrix(wglo):
+
+    wglo[np.isnan(wglo)] = 0
+    wglo_binary = wglo > thres
+    trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
+    lower = np.tril(trained_counts_matrix, k=-1)
+
+    plt.imshow(lower)
+    # plt.imshow(lower, cmap=plt.cm.get_cmap('jet',10))
+    plt.colorbar()
+
+    def rect(pos):
+        r = plt.Rectangle(pos, 1, 1, facecolor="none", edgecolor="w", linewidth=2)
+        plt.gca().add_patch(r)
+    for i in range(50):
+        rect([i-.5,i-.5])
+
+    cmap = plt.get_cmap()
+    colors = cmap.colors
+    colors[0] = [0, 0, 0]
+    cmap.colors = colors
+    plt.set_cmap(cmap)
+    plt.show()
+
+display_matrix(wglos[-1])
+
 # plot_distribution(wglos[-1])
-for arg in ['random','preserve']:
-    plot_cosine_similarity(wglos, shuffle_arg=arg, log=False)
+# for arg in ['random','preserve']:
+    # plot_cosine_similarity(wglos, shuffle_arg=arg, log=False)
     # pair_distribution(wglos[-1], shuffle_arg=arg)
     # claw_distribution(wglos[-1], shuffle_arg=arg)
 

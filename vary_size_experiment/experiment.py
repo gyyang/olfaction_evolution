@@ -34,31 +34,30 @@ def vary_kc_claws(i):
 
 def temp(i):
     config = configs.FullConfig()
-    config.save_path = './random/files/' + str(i).zfill(2)
+    config.save_path = './why_7_not_15/files/' + str(i).zfill(2)
     config.data_dir = '../datasets/proto/nodup'
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.max_epoch = 15
+    config.max_epoch = 20
 
     config.skip_orn2pn = True
     config.direct_glo = False
 
-    config.kc_norm_post = None
-    config.sign_constraint_pn2kc = True
-    config.train_kc_bias = False
-    config.kc_loss = True
+    config.train_kc_bias = True
+    config.kc_loss = False
 
-    # config.initial_pn2kc = 0.5
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
+    config.initial_pn2kc = 0
+    config.initializer_pn2kc = 'normal'
+    config.train_pn2kc = False
+    config.sparse_pn2kc = True
+    config.kc_inputs = 49
     config.mean_subtract_pn2kc = False
-    config.save_every_epoch = True
+    config.save_every_epoch = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    # hp_ranges['N_KC'] = [50, 100, 200, 400, 800, 1600, 2500, 5000, 10000, 20000]
-    hp_ranges['initial_pn2kc'] = [.2]
+    hp_ranges['kc_inputs'] = [3, 5, 7, 9, 11, 15, 20, 30, 40, 50]
     return config, hp_ranges
 
 if __name__ == '__main__':
