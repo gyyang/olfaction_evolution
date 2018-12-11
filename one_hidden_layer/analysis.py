@@ -1,11 +1,8 @@
 import sys
 import os
-import pickle
 
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import configs
 import task
 import train
 from model import NormalizedMLP
@@ -13,14 +10,14 @@ import tensorflow as tf
 import numpy as np
 import one_hidden_layer.experiment as train_config
 
-rootpath = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(rootpath)  # This is hacky, should be fixed
+root_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(root_path)  # This is hacky, should be fixed
 
 
 mpl.rcParams['font.size'] = 7
 
 # new_rootpath = os.path.join(rootpath, 'files', train_config.save_path)
-fig_dir = os.path.join(rootpath, 'figures')
+fig_dir = os.path.join(root_path, 'figures')
 
 # Rebuild model to
 CurrentModel = NormalizedMLP
@@ -37,7 +34,6 @@ train_iter, next_element = train.make_input(train_x_ph, train_y_ph, config.batch
 model = CurrentModel(next_element[0], next_element[1], config=config)
 
 tf_config = tf.ConfigProto()
-tf_config.gpu_options.allow_growth = True
 
 with tf.Session(config=tf_config) as sess:
     sess.run(tf.global_variables_initializer())
@@ -45,7 +41,6 @@ with tf.Session(config=tf_config) as sess:
     sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                 train_y_ph: train_y})
     model.load()
-    print(tf.trainable_variables())
     results = sess.run([v for v in tf.trainable_variables() if v.name=='model/layer1/kernel:0'])
     orn_to_kc_w = results[0]
     print(orn_to_kc_w.shape)
