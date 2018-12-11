@@ -76,6 +76,8 @@ class FullConfig(BaseConfig):
         # ORN--> PN connections
         # If True, ORN --> PN connections are positive
         self.sign_constraint_orn2pn = True
+        # If True, ORN-PN connections are initialized to be constant
+        self.constant_initialization = True
         # If True, PN --> KC connections are trainable
         self.train_orn2pn = True
         # If True, train a direct glomeruli-like connections

@@ -221,8 +221,13 @@ class FullModel(Model):
             else:
                 range = _sparse_range(N_ORN)
 
-            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN), dtype=tf.float32,
-                                 initializer= tf.constant_initializer(range))
+            if self.config.constant_initialization:
+                initializer = tf.constant_initializer(range)
+            else:
+                initializer = None
+            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
+                                 dtype=tf.float32, initializer=initializer)
+
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(0))
 
@@ -265,8 +270,12 @@ class FullModel(Model):
             #     initializer = tf.constant_initializer(range)
             # else:
             #     initializer = tf.random_normal_initializer(0, range)
+            if self.config.constant_initialization:
+                initializer = tf.constant_initializer(range)
+            else:
+                initializer = None
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
-                                 initializer= tf.constant_initializer(range))
+                                 initializer=initializer)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(self.config.kc_bias))
 
@@ -340,9 +349,10 @@ def _signed_dense(x, n0, n1, training):
                             initializer=tf.zeros_initializer())
 
     w_orn = tf.abs(w1)
+    # w_orn = w1
     glo_in_pre = tf.matmul(x, w_orn) + b_orn
-    # glo_in = _normalize(glo_in_pre, 'batch_norm', training)
-    glo_in = _normalize(glo_in_pre, None, training)
+    glo_in = _normalize(glo_in_pre, 'batch_norm', training)
+    # glo_in = _normalize(glo_in_pre, None, training)
     glo = tf.nn.relu(glo_in)
     return glo
 

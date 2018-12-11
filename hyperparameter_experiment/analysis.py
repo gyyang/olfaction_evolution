@@ -19,7 +19,7 @@ from model import SingleLayerModel, FullModel
 mpl.rcParams['font.size'] = 7
 
 # save_name = 'standard'
-save_name = 'duplication'
+save_name = 'tmp_train_1_layer'
 
 save_path = os.path.join(rootpath, 'files', save_name)
 figpath = os.path.join(rootpath, 'figures')
@@ -183,5 +183,5 @@ def plot_activity():
 
 if __name__ == '__main__':
     # plot_progress()
-    plot_weights()
-    # plot_activity()
+    # plot_weights()
+    plot_activity()
