@@ -168,5 +168,60 @@ def plot_activity(save_path):
     plt.show()
 
 
+def plot_results(path, x_key, y_key, loop_key=None):
+    """Plot results for varying parameters experiments.
+
+    Args:
+        path: str, model save path
+        x_key: str, key for the x-axis variable
+        y_key: str, key for the y-axis variable
+        loop_key: str, key for the value to loop around
+    """
+    res = tools.load_all_results(path)
+
+    # Sort by x_key
+    ind_sort = np.argsort(res[x_key])
+    for key, val in res.items():
+        res[key] = val[ind_sort]
+
+    fig = plt.figure(figsize=(2, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    if loop_key:
+        for x in np.unique(res[loop_key]):
+            ind = res[loop_key] == x
+            x_plot = res[x_key][ind]
+            if x_key == 'N_KC':
+                x_plot = np.log(x_plot)
+            ax.plot(x_plot, res[y_key][ind], 'o-', label=str(x))
+    else:
+        ax.plot(res[x_key], res[y_key], 'o-')
+
+    if x_key == 'N_KC':
+        xticks = np.array([30, 100, 1000, 10000])
+        ax.set_xticks(np.log(xticks))
+    else:
+        xticks = res[x_key]
+        ax.set_xticks(xticks)
+    ax.set_xticklabels(xticks)
+    ax.set_xlabel(nicename(x_key))
+    ax.set_ylabel(nicename(y_key))
+    ax.set_yticks([0, 0.5, 1.0])
+    plt.ylim([0, 1])
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    if loop_key and y_key == 'glo_score':
+        l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
+        l.set_title(nicename(loop_key))
+
+    figname = y_key + 'vs' + x_key
+    if loop_key:
+        figname += '_vary' + loop_key
+    figname = os.path.join(figpath, figname)
+    plt.savefig(figname+'.pdf', transparent=True)
+    plt.savefig(figname+'.png', dpi=300)
+
+
 if __name__ == '__main__':
     pass
