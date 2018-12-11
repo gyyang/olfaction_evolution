@@ -11,6 +11,7 @@ if MODE == 'train':
     standard_experiment.train_orn2pn(save_path)
 else:
     standard_analysis.plot_progress(save_path)
+    standard_analysis.plot_weights(save_path)
 
 # Varying #PN and #KC
 if MODE == 'train':

@@ -23,6 +23,7 @@ figpath = os.path.join(rootpath, 'figures')
 
 
 def plot_progress(save_path):
+    """Plot progress through training."""
     save_name = save_path.split('/')[-1]
     log_name = os.path.join(save_path, 'log.pkl')
     with open(log_name, 'rb') as f:
@@ -56,12 +57,23 @@ def plot_progress(save_path):
 
 
 def plot_weights(save_path):
+    """Plot weights.
+
+    Currently this only plots the ORN-PN connectivity
+    """
     save_name = save_path.split('/')[-1]
+    config = tools.load_config(save_path)
     # Load network at the end of training
     model_dir = os.path.join(save_path, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
         w_orn = var_dict['w_orn']
+
+    if config.replicate_orn_with_tiling:
+        w_orn = np.reshape(
+            w_orn, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
+        w_orn = np.swapaxes(w_orn, 0, 1)
+        w_orn = np.reshape(w_orn, (-1, config.N_PN))
 
     # Sort for visualization
     ind_max = np.argmax(w_orn, axis=0)
