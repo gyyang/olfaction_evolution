@@ -4,8 +4,8 @@ import standard.experiment as standard_experiment
 from standard.experiment import local_train
 import standard.analysis as standard_analysis
 
-MODE = 'train'
-# MODE = 'analysis'
+# MODE = 'train'
+MODE = 'analysis'
 
 # Reproducing glomeruli-like activity
 # save_path = './files/standard/orn2pn'
@@ -38,9 +38,9 @@ if MODE == 'train':
     local_train(standard_experiment.vary_n_orn_duplication, save_path)
 else:
     standard_analysis.plot_results(
-        save_path, x_key='N_ORN_DUPLICATION', y_key='glo_score')
+        save_path, x_key='N_ORN_DUPLICATION', y_key='glo_score', loop_key='N_KC')
     standard_analysis.plot_results(
-        save_path, x_key='N_ORN_DUPLICATION', y_key='val_acc')
+        save_path, x_key='N_ORN_DUPLICATION', y_key='val_acc', loop_key='N_KC')
 
 # Reproducing sparse PN-KC connectivity
 if MODE == 'train':
