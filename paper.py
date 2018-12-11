@@ -1,14 +1,17 @@
 """File that summarizes all key results."""
 
-MODE = 'train'
-# MODE = 'analysis'
+# MODE = 'train'
+MODE = 'analysis'
 
 # Reproducing glomeruli-like activity
-import standard_experiment.experiment as standard_experiment
+import standard.experiment as standard_experiment
+import standard.analysis as standard_analysis
+save_path = './files/standard/orn2pn'
 if MODE == 'train':
-    standard_experiment.train_orn2pn()
+    standard_experiment.train_orn2pn(save_path)
 else:
-    pass
+    standard_analysis.plot_progress(save_path)
+    standard_analysis.plot_weights(save_path)
 
 # Varying #PN and #KC
 if MODE == 'train':
