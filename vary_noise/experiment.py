@@ -9,13 +9,24 @@ from collections import OrderedDict
 
 import configs
 import tools
+import train
 
 
-def vary_kc(i):
+def local_train(experiment, save_path):
+    """Train all models locally."""
+    # TODO: Think of a better place to put this function
+    for i in range(0, 50):
+        config = tools.varying_config(experiment, i)
+        if config:
+            print('[***] Hyper-parameter: %2d' % i)
+            config.save_path = os.path.join(save_path, str(i).zfill(6))
+            train.train(config)
+
+
+def vary_kc_configs(i):
     config = configs.FullConfig()
-    config.save_path = './files/vary_noise3/' + str(i).zfill(2)
-    config.data_dir = './datasets/proto/_100_generalization_onehot_s0'
-    config.max_epoch = 30
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 3
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -39,11 +50,4 @@ def vary_n_orn_duplication(i):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
-    # experiment = vary_kc
-    experiment = vary_n_orn_duplication
-
-    for i in range(0, 50):
-        print('[***] Hyper-parameter: %2d' % i)
-        tools.varying_config(experiment, i)
+    pass
