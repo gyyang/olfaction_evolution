@@ -35,7 +35,6 @@ def train_orn2pn2kc():
 
 def local_train(experiment, save_path):
     """Train all models locally."""
-    # TODO: Think of a better place to put this function
     for i in range(0, 1000):
         config = tools.varying_config(experiment, i)
         if config:
@@ -44,7 +43,7 @@ def local_train(experiment, save_path):
             train.train(config)
 
 
-def vary_kc_configs():
+def vary_kc_configs(_):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
@@ -56,7 +55,7 @@ def vary_kc_configs():
     return config, hp_ranges
 
 
-def vary_n_orn_duplication():
+def vary_n_orn_duplication(_):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
