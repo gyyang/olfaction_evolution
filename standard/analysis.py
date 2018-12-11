@@ -10,79 +10,53 @@ import matplotlib as mpl
 import tensorflow as tf
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)  # This is hacky, should be fixed
+sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 
 import tools
+from tools import nicename
 import task
 from model import SingleLayerModel, FullModel
 
 mpl.rcParams['font.size'] = 7
 
-# save_name = 'standard'
-save_name = 'tmp_train_1_layer'
-
-save_path = os.path.join(rootpath, 'files', save_name)
 figpath = os.path.join(rootpath, 'figures')
 
-log_name = os.path.join(save_path, 'log.pkl')
-with open(log_name, 'rb') as f:
-    log = pickle.load(f)
+
+def plot_progress(save_path):
+    save_name = save_path.split('/')[-1]
+    log_name = os.path.join(save_path, 'log.pkl')
+    with open(log_name, 'rb') as f:
+        log = pickle.load(f)
+
+    def _plot_progress(xkey, ykey):
+        figsize = (1.5, 1.2)
+        rect = [0.3, 0.3, 0.65, 0.5]
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_axes(rect)
+        ax.plot(log[xkey], log[ykey])
+        ax.set_xlabel(nicename(xkey))
+        ax.set_ylabel(nicename(ykey))
+        if ykey == 'val_acc':
+            plt.title('Final accuracy {:0.3f}'.format(log[ykey][-1]), fontsize=7)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks(np.arange(0, log[xkey][-1]+2, 10))
+        if ykey in ['val_acc', 'glo_score']:
+            ax.set_ylim([0, 1])
+            ax.yaxis.set_ticks([0, 0.5, 1.0])
+        ax.set_xlim([-1, len(log[xkey])])
+        plt.savefig(os.path.join(figpath, save_name + '_' + ykey + '.pdf'),
+                    transparent=True)
+
+    _plot_progress('epoch', 'val_loss')
+    _plot_progress('epoch', 'val_acc')
+    _plot_progress('epoch', 'glo_score')
 
 
-def plot_progress():
-    # Validation loss
-    fig = plt.figure(figsize=(1.5, 1.5))
-    ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
-    ax.plot(log['epoch'], np.log10(log['val_loss']))
-    ax.set_xlabel('Epochs')
-    ax.set_ylabel('Validation loss')
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
-    # ax.set_ylim([0, 1])
-    # plt.savefig(os.path.join(figpath, save_name + '_valacc.pdf'), transparent=True)
-
-
-    # Validation accuracy
-    figsize = (1.5, 1.2)
-    rect = [0.3, 0.3, 0.65, 0.5]
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes(rect)
-    ax.plot(log['epoch'], log['val_acc'])
-    # ax.set_xlabel('Epochs')
-    ax.set_ylabel('Validation accuracy')
-    plt.title('Final accuracy {:0.3f}'.format(log['val_acc'][-1]), fontsize=7)
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1]+2, 10))
-    ax.yaxis.set_ticks([0, 0.5, 1.0])
-    ax.set_ylim([0, 1])
-    ax.set_xlim([0, len(log['epoch'])])
-    plt.savefig(os.path.join(figpath, save_name + '_valacc.pdf'), transparent=True)
-
-    # Glo score
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes(rect)
-    ax.plot(log['epoch'], log['glo_score'])
-    ax.set_xlabel('Epochs')
-    ax.set_ylabel('Glo score')
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1]+2, 10))
-    ax.yaxis.set_ticks([0, 0.5, 1.0])
-    ax.set_ylim([0, 1])
-    ax.set_xlim([0, len(log['epoch'])])
-    plt.savefig(os.path.join(figpath, save_name+'_gloscore.pdf'), transparent=True)
-    # plt.savefig(os.path.join(figpath, save_name+'_gloscore.png'), transparent=True)
-
-
-def plot_weights():
+def plot_weights(save_path):
+    save_name = save_path.split('/')[-1]
     # Load network at the end of training
     model_dir = os.path.join(save_path, 'model.pkl')
     with open(model_dir, 'rb') as f:
@@ -129,7 +103,8 @@ def plot_weights():
         plt.title(key)
 
 
-def plot_activity():
+def plot_activity(save_path):
+    save_name = save_path.split('/')[-1]
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
     
@@ -182,6 +157,4 @@ def plot_activity():
 
 
 if __name__ == '__main__':
-    # plot_progress()
-    # plot_weights()
-    plot_activity()
+    pass

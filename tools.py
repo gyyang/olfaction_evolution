@@ -120,7 +120,9 @@ nicename_dict = {
         'N_ORN_DUPLICATION': 'ORNs per type',
         'kc_inputs': 'Number of KC Inputs',
         'glo_score': 'GloScore',
-        'val_acc': 'Accuracy'
+        'val_acc': 'Accuracy',
+        'val_loss': 'Loss',
+        'epoch': 'Epoch',
         }
 
 
