@@ -50,7 +50,7 @@ def varying_config(experiment, i):
     indices = np.unravel_index(i % n_max, dims=dims)
 
     if i >= n_max:
-        return
+        return False
 
     # Set up new hyperparameter
     for key, index in zip(keys, indices):
@@ -82,7 +82,7 @@ def varying_config_sequential(experiment, i):
     n_max = dims[0]
 
     if i >= n_max:
-        return
+        return False
 
     for key in keys:
         setattr(config, key, hp_ranges[key][i])
