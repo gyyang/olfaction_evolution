@@ -9,6 +9,7 @@ from model import NormalizedMLP
 import tensorflow as tf
 import numpy as np
 import one_hidden_layer.experiment as train_config
+import standard.analysis
 
 root_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(root_path)  # This is hacky, should be fixed
@@ -16,7 +17,9 @@ sys.path.append(root_path)  # This is hacky, should be fixed
 
 mpl.rcParams['font.size'] = 7
 
-# new_rootpath = os.path.join(rootpath, 'files', train_config.save_path)
+save_name = 'one_hidden_layer'
+save_path = os.path.join(root_path, 'files', save_name)
+
 fig_dir = os.path.join(root_path, 'figures')
 
 # Rebuild model to
@@ -47,3 +50,5 @@ with tf.Session(config=tf_config) as sess:
     U, S, V = np.linalg.svd(orn_to_kc_w)
     plt.plot(S)
     plt.show()
+
+standard.analysis.plot_weights()
