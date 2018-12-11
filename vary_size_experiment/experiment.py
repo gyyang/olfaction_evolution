@@ -32,7 +32,7 @@ def vary_kc_claws(i):
                              list(range(30, 50, 3))
     return config, hp_ranges
 
-def whatthef(i):
+def temp(i):
     config = configs.FullConfig()
     config.save_path = './random/files/' + str(i).zfill(2)
     config.data_dir = '../datasets/proto/nodup'
@@ -63,9 +63,5 @@ def whatthef(i):
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
-
-
-
-    # for i in range(0,100):
-    #     tools.varying_config(whatthef, i)
+    for i in range(0,100):
+        tools.varying_config(temp, i)
