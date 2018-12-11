@@ -41,7 +41,7 @@ def varying_config(experiment, i):
         config: new configuration
     """
     # Ranges of hyperparameters to loop over
-    config, hp_ranges = experiment(i)
+    config, hp_ranges = experiment()
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -74,7 +74,7 @@ def varying_config_sequential(experiment, i):
     Returns:
         config: new configuration
     """
-    config, hp_ranges = experiment(i)
+    config, hp_ranges = experiment()
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -188,7 +188,7 @@ def compute_glo_score(w_orn, unique_orn, mode='tile'):
     w_orn_by_pn = w_orn_by_pn.mean(axis=0)
 
     glo_scores = list()
-    for i in range(unique_orn):
+    for i in range(n_pn):
         w_tmp = w_orn_by_pn[:, i]  # all projections to the i-th PN neuron
         indsort = np.argsort(w_tmp)[::-1]
         w_max = w_tmp[indsort[0]]

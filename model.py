@@ -312,7 +312,7 @@ class FullModel(Model):
 
         if self.config.kc_loss:
             # self.loss += tf.reduce_mean(kc) * 10
-            self.kc_loss = tf.reduce_mean(tf.math.pow(w_glo, 0.5)) * 10
+            self.kc_loss = tf.reduce_mean(tf.math.pow(w_glo, 0.5)) * self.config.kc_loss_alpha
             self.loss += self.kc_loss
 
         if self.config.label_type == 'combinatorial':
