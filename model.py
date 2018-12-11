@@ -266,16 +266,20 @@ class FullModel(Model):
             else:
                 range = self.config.initial_pn2kc
 
-            # if self.config.uniform_pn2kc or self.config.train_pn2kc:
-            #     initializer = tf.constant_initializer(range)
-            # else:
-            #     initializer = tf.random_normal_initializer(0, range)
-            if self.config.constant_initialization:
+            if self.config.initializer_pn2kc == 'constant':
                 initializer = tf.constant_initializer(range)
+            elif self.config.initializer_pn2kc == 'uniform':
+                initializer = tf.random_uniform_initializer(0, range*2)
+            elif self.config.initializer_pn2kc == 'normal':
+                initializer = tf.random_normal_initializer(0, range)
+            elif self.config.initializer_pn2kc == 'learned':
+                initializer = tf.random_normal_initializer(range, .1)
             else:
                 initializer = None
+
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
-                                 initializer=initializer)
+                                 initializer= initializer)
+
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(self.config.kc_bias))
 
