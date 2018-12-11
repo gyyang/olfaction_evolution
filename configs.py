@@ -73,6 +73,9 @@ class FullConfig(BaseConfig):
         self.N_KC = 2500
 
         # ORN--> PN connections
+
+        # Initialization method for pn2kc: can take values uniform, random, or normal
+        self.initializer_orn2pn = 'normal'
         # If True, ORN --> PN connections are positive
         self.sign_constraint_orn2pn = True
         # If True, PN --> KC connections are trainable

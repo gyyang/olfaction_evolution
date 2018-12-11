@@ -6,7 +6,8 @@ import task
 import train
 import configs
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def train_orn2pn(save_path):
     task_config = task.input_ProtoConfig()
@@ -66,3 +67,17 @@ def vary_n_orn_duplication(_):
     hp_ranges['N_KC'] = [100, 2500]
     hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 5, 7, 10]
     return config, hp_ranges
+
+def temp(_):
+    config = configs.FullConfig()
+    config.data_dir = '../datasets/proto/standard'
+    config.max_epoch = 8
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['N_KC'] = [300, 2500, 10000]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
+    return config, hp_ranges
+
+if __name__ == '__main__':
+    local_train(temp, '../files/test')
