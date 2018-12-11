@@ -1,9 +1,8 @@
 """File that summarizes all key results."""
 
 import standard.experiment as standard_experiment
+from standard.experiment import local_train
 import standard.analysis as standard_analysis
-import vary_noise.experiment as vary_noise_experiment
-from vary_noise.experiment import local_train
 
 # MODE = 'train'
 MODE = 'analysis'
@@ -36,7 +35,7 @@ else:
 # Varying ORN duplication numbers
 save_path = './files/vary_n_orn_duplication'
 if MODE == 'train':
-    local_train(vary_noise_experiment.vary_n_orn_duplication, save_path)
+    local_train(standard_experiment.vary_n_orn_duplication, save_path)
 else:
     standard_analysis.plot_results(
         save_path, x_key='N_ORN_DUPLICATION', y_key='glo_score')
