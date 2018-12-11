@@ -7,15 +7,7 @@ import matplotlib as mpl
 import utils
 from sklearn.metrics.pairwise import cosine_similarity
 
-def get_similarity(mat):
-    similarity_matrix = cosine_similarity(mat)
-    diag_mask = ~np.eye(similarity_matrix.shape[0], dtype=bool)
 
-    #method 1
-    corrs = similarity_matrix[diag_mask]
-
-    average_correlation = np.mean(corrs)
-    return average_correlation, similarity_matrix
 
 condition = "random"
 thres = .05
@@ -25,12 +17,48 @@ dir = os.path.join(os.getcwd(), condition, 'files')
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
 wglos = utils.load_pickle(os.path.join(dirs[1],'epoch'), 'w_glo')
 
-#frequency of identical pairs vs shuffled
-def pair_distribution(wglo):
-    bin_range = 70
-    n_shuffle = 100
+def _shuffle(w_binary, arg):
+    '''Shuffles the connections in numpy
 
-    def extract_paircounts(mat):
+    this function returns the shuffled data using different methods
+
+    Args:
+        w_binary: connection matrix in binary format (1 = connection, 0 = no connection)
+        arg: method of shuffling
+        arg == 'random'
+            first the overall connection probability P is computed, and every connection has a P
+            probability of being a made.
+        arg == 'preserve'
+            randomly shuffles while preserving the distribution of claw counts and the distribution of
+            pns that kcs sample from
+        '''
+    if arg == 'random':
+        P = np.mean(w_binary.flatten())
+        shuffled = np.random.uniform(size=[w_binary.shape[0], w_binary.shape[1]]) < P
+    elif arg == 'preserve':
+        n_pns, n_kcs = w_binary.shape
+        connections_per_kc = np.sum(w_binary, axis=0)
+        probability_per_pn = np.sum(w_binary, axis=1) / np.sum(w_binary)
+
+        shuffled = np.zeros_like(w_binary)
+        j = 0
+        for i in range(n_kcs):
+            n_connections = connections_per_kc[i]
+            ix_pns = np.random.choice(n_pns, size=n_connections, replace=False, p=probability_per_pn)
+            shuffled[ix_pns, i] = 1
+            j+= n_connections
+    else:
+        pass
+    # plt.plot(probability_per_pn)
+    # plt.plot(np.sum(shuffled,axis=1)/np.sum(w_binary))
+    # plt.show()
+    return shuffled
+
+#frequency of identical pairs vs shuffled
+def pair_distribution(wglo, shuffle_arg):
+    bin_range = 70
+
+    def _extract_paircounts(mat):
         n_pn = mat.shape[0]
         n_kc = mat.shape[1]
         counts_matrix = np.zeros((n_pn, n_pn))
@@ -46,14 +74,13 @@ def pair_distribution(wglo):
 
     wglo[np.isnan(wglo)] = 0
     wglo_binary = wglo > thres
-    trained_counts, trained_counts_matrix = extract_paircounts(wglo_binary)
+    trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
 
-    probability_connection = np.mean(wglo_binary.flatten())
+    n_shuffle = 100
     shuffled_counts_matrix = np.zeros((n_shuffle, bin_range))
     for i in range(n_shuffle):
-        shuffled_wglo_binary = np.random.uniform(size=[wglo.shape[0], wglo.shape[1]]) < probability_connection
-        shuffled_counts, _ = extract_paircounts(shuffled_wglo_binary)
-
+        shuffled_wglo_binary = _shuffle(wglo_binary, arg= shuffle_arg)
+        shuffled_counts, _ = _extract_paircounts(shuffled_wglo_binary)
         y, _ = np.histogram(shuffled_counts, bins=bin_range, range=[0,bin_range], density=True)
         shuffled_counts_matrix[i,:] = y
 
@@ -83,25 +110,27 @@ def pair_distribution(wglo):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.savefig(save_name + '.png', dpi=300)
+    plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
 
     # lower = np.tril(shuffled_counts_matrix, k=-1)
     # plt.imshow(lower)
     # plt.colorbar()
     # plt.show()
-pair_distribution(wglos[-1])
 
 
 # distribution of connections is not a bernoulli distribution, but is more compact
-def claw_distribution(wglo):
+def claw_distribution(wglo, shuffle_arg):
     wglo[np.isnan(wglo)] = 0
     wglo_binary = wglo > thres
     sparsity = np.count_nonzero(wglo_binary > 0, axis= 0)
 
     shuffle_factor = 100
-    probability_connection = np.mean(wglo_binary.flatten())
-    shuffled_wglo_binary = np.random.uniform(size=[wglo.shape[0], wglo.shape[1] * shuffle_factor]) < probability_connection
-    shuffled_sparsity = np.count_nonzero(shuffled_wglo_binary > 0, axis= 0)
+    shuffled = []
+    for i in range(shuffle_factor):
+        shuffled_wglo_binary = _shuffle(wglo>thres, arg=shuffle_arg)
+        shuffled.append(shuffled_wglo_binary)
+    shuffled = np.concatenate(shuffled, axis= 1)
+    shuffled_sparsity = np.count_nonzero(shuffled > 0, axis= 0)
 
     save_name = os.path.join(fig_dir, 'Claw Distribution')
     fig = plt.figure(figsize=(3, 2))
@@ -126,8 +155,7 @@ def claw_distribution(wglo):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.savefig(save_name + '.png', dpi=300)
-claw_distribution(wglos[-1])
+    plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
 
 
 #all PNs make the same number of connections onto KCs
@@ -162,11 +190,20 @@ def plot_distribution(wglo):
     ax.yaxis.set_ticks_position('left')
 
     plt.savefig(savename + '.png', dpi=300)
-plot_distribution(wglos[-1])
 
 # average correlation of weights between KCs decrease as a function of training
 # and is similar to shuffled weights with the same connection probability
-def plot_cosine_similarity(wglos):
+def plot_cosine_similarity(wglos, shuffle_arg, log= True):
+    def _get_similarity(mat):
+        similarity_matrix = cosine_similarity(mat)
+        diag_mask = ~np.eye(similarity_matrix.shape[0], dtype=bool)
+
+        # method 1
+        corrs = similarity_matrix[diag_mask]
+
+        average_correlation = np.mean(corrs)
+        return average_correlation, similarity_matrix
+
     y = []
     for wglo in wglos:
         n_nans = np.sum(np.isnan(wglo))
@@ -174,16 +211,14 @@ def plot_cosine_similarity(wglos):
         mask = wglo > thres
         wglo *= mask
         print('There are %d NaNs in wglo' % n_nans)
-        corr, similarity_matrix = get_similarity(np.transpose(wglo))
+        corr, similarity_matrix = _get_similarity(np.transpose(wglo))
         y.append(corr)
 
     n_shuffle = 10
     shuffled_similarities = []
     for i in range(n_shuffle):
-        wglo_binary = wglo[-1].flatten() > thres
-        probability_connection = np.mean(wglo_binary)
-        shuffled = np.random.uniform(size=wglo.shape) < probability_connection
-        shuffled_similarity, _ = get_similarity(shuffled)
+        shuffled = _shuffle(wglos[-1]>thres, arg=shuffle_arg)
+        shuffled_similarity, _ = _get_similarity(shuffled)
         shuffled_similarities.append(shuffled_similarity)
     y_shuffled = np.mean(shuffled_similarities)
     save_name = os.path.join(fig_dir, 'Cosine Similarity')
@@ -194,25 +229,35 @@ def plot_cosine_similarity(wglos):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(rect)
 
+    if log == True:
+        y = -np.log(y)
+        y_shuffled = -np.log(y_shuffled)
+        yticks = [0, 1, 2, 3]
+        ylim = [0, 3]
+    else:
+        yticks = np.linspace(0, 1, 5)
+        ylim = [0, 1]
     ax.plot(y)
     ax.plot([0, 20], [y_shuffled, y_shuffled], '--', color='gray')
     ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 0.4), fontsize=5)
     xticks = [0, 5, 10, 15]
-    yticks = np.linspace(0, 1, 5)
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Cosine Similarity')
     ax.set_xticks(xticks)
     ax.set_yticks(yticks)
-    ax.set_ylim([0, 1])
+    ax.set_ylim(ylim)
     ax.set_xlim([0, len(y)-1])
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.savefig(save_name + '.png', dpi=300)
-plot_cosine_similarity(wglos)
+    plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
 
-
+# plot_distribution(wglos[-1])
+for arg in ['random','preserve']:
+    plot_cosine_similarity(wglos, shuffle_arg=arg, log=False)
+    # pair_distribution(wglos[-1], shuffle_arg=arg)
+    # claw_distribution(wglos[-1], shuffle_arg=arg)
 
 #
 #

@@ -31,10 +31,6 @@ class input_ProtoConfig(BaseConfig):
         # If True, shuffle the train and validation labels
         self.shuffle_label = False
 
-        # If False, ORNs are already replicated in the dataset
-        self.replicate_orn_with_tiling = True
-        self.N_ORN_DUPLICATION = 10
-
         # If relabel is True, then randomly relabel the classes
         # The number of true classes (pre-relabel) is n_trueclass
         # The number of classes post relabeling is N_CLASS
@@ -69,6 +65,9 @@ class FullConfig(BaseConfig):
         self.target_acc = None  # target accuracy
 
         # Overall architecture
+        # If False, ORNs are already replicated in the dataset
+        self.replicate_orn_with_tiling = True
+        self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
         self.ORN_NOISE_STD = 0.
         self.N_KC = 2500
