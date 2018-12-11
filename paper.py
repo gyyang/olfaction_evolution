@@ -5,11 +5,13 @@ from standard.hyper_parameter_train import local_train
 import standard.analysis as standard_analysis
 import os
 
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # MODE = 'train'
 MODE = 'analysis'
 TESTING = True
 run_ix = [1]
+
 
 save_paths = ['./files/standard/orn2pn',
               './files/vary_ORN_duplication',
