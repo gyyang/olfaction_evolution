@@ -152,6 +152,19 @@ def _glorot_std(n_in, n_out, sparse_degree):
     variance = 2 / (fan_in + fan_out)
     return np.sqrt(variance)
 
+def _initializer(range, arg):
+    if arg == 'constant':
+        initializer = tf.constant_initializer(range)
+    elif arg == 'uniform':
+        initializer = tf.random_uniform_initializer(0, range * 2)
+    elif arg == 'normal':
+        initializer = tf.random_normal_initializer(0, range)
+    elif arg == 'learned':
+        initializer = tf.random_normal_initializer(range, .1)
+    else:
+        initializer = None
+    return initializer
+
 class FullModel(Model):
     """Full 3-layer model."""
 
@@ -221,10 +234,7 @@ class FullModel(Model):
             else:
                 range = _sparse_range(N_ORN)
 
-            if self.config.constant_initialization:
-                initializer = tf.constant_initializer(range)
-            else:
-                initializer = None
+            initializer = _initializer(range, self.config.initializer_orn2pn)
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32, initializer=initializer)
 
@@ -266,17 +276,7 @@ class FullModel(Model):
             else:
                 range = self.config.initial_pn2kc
 
-            if self.config.initializer_pn2kc == 'constant':
-                initializer = tf.constant_initializer(range)
-            elif self.config.initializer_pn2kc == 'uniform':
-                initializer = tf.random_uniform_initializer(0, range*2)
-            elif self.config.initializer_pn2kc == 'normal':
-                initializer = tf.random_normal_initializer(0, range)
-            elif self.config.initializer_pn2kc == 'learned':
-                initializer = tf.random_normal_initializer(range, .1)
-            else:
-                initializer = None
-
+            initializer = _initializer(range, self.config.initializer_pn2kc)
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)
 
