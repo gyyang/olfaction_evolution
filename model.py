@@ -271,7 +271,7 @@ class FullModel(Model):
             elif self.config.initializer_pn2kc == 'learned':
                 initializer = tf.random_normal_initializer(range, .1)
             else:
-                raise ValueError('Unknown tf.initializer type {:s}'.format(self.config.initializer_pn2kc))
+                initializer = None
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)
