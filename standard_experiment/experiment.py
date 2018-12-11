@@ -17,3 +17,14 @@ def train_orn2pn():
     config.data_dir = './datasets/proto/standard'
     config.save_path = './files/standard/orn2pn'
     train.train(config)
+
+
+def train_orn2pn2kc():
+    # TODO: add check if dataset already exists
+    config = configs.FullConfig()
+    config.max_epoch = 30
+    config.sparse_pn2kc = True
+    config.train_pn2kc = False
+    config.data_dir = './datasets/proto/standard'
+    config.save_path = './files/standard/orn2pn'
+    train.train(config)
