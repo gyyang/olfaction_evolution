@@ -10,84 +10,70 @@ import matplotlib as mpl
 import tensorflow as tf
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)  # This is hacky, should be fixed
+sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 
 import tools
+from tools import nicename
 import task
 from model import SingleLayerModel, FullModel
 
 mpl.rcParams['font.size'] = 7
 
-# save_name = 'standard'
-save_name = 'duplication'
-
-save_path = os.path.join(rootpath, 'files', save_name)
 figpath = os.path.join(rootpath, 'figures')
 
-log_name = os.path.join(save_path, 'log.pkl')
-with open(log_name, 'rb') as f:
-    log = pickle.load(f)
+
+def plot_progress(save_path):
+    """Plot progress through training."""
+    save_name = save_path.split('/')[-1]
+    log_name = os.path.join(save_path, 'log.pkl')
+    with open(log_name, 'rb') as f:
+        log = pickle.load(f)
+
+    def _plot_progress(xkey, ykey):
+        figsize = (1.5, 1.2)
+        rect = [0.3, 0.3, 0.65, 0.5]
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_axes(rect)
+        ax.plot(log[xkey], log[ykey])
+        ax.set_xlabel(nicename(xkey))
+        ax.set_ylabel(nicename(ykey))
+        if ykey == 'val_acc':
+            plt.title('Final accuracy {:0.3f}'.format(log[ykey][-1]), fontsize=7)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks(np.arange(0, log[xkey][-1]+2, 10))
+        if ykey in ['val_acc', 'glo_score']:
+            ax.set_ylim([0, 1])
+            ax.yaxis.set_ticks([0, 0.5, 1.0])
+        ax.set_xlim([-1, len(log[xkey])])
+        plt.savefig(os.path.join(figpath, save_name + '_' + ykey + '.pdf'),
+                    transparent=True)
+
+    _plot_progress('epoch', 'val_loss')
+    _plot_progress('epoch', 'val_acc')
+    _plot_progress('epoch', 'glo_score')
 
 
-def plot_progress():
-    # Validation loss
-    fig = plt.figure(figsize=(1.5, 1.5))
-    ax = fig.add_axes([0.25, 0.25, 0.65, 0.65])
-    ax.plot(log['epoch'], np.log10(log['val_loss']))
-    ax.set_xlabel('Epochs')
-    ax.set_ylabel('Validation loss')
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1], 5))
-    # ax.set_ylim([0, 1])
-    # plt.savefig(os.path.join(figpath, save_name + '_valacc.pdf'), transparent=True)
+def plot_weights(save_path):
+    """Plot weights.
 
-
-    # Validation accuracy
-    figsize = (1.5, 1.2)
-    rect = [0.3, 0.3, 0.65, 0.5]
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes(rect)
-    ax.plot(log['epoch'], log['val_acc'])
-    # ax.set_xlabel('Epochs')
-    ax.set_ylabel('Validation accuracy')
-    plt.title('Final accuracy {:0.3f}'.format(log['val_acc'][-1]), fontsize=7)
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1]+2, 10))
-    ax.yaxis.set_ticks([0, 0.5, 1.0])
-    ax.set_ylim([0, 1])
-    ax.set_xlim([0, len(log['epoch'])])
-    plt.savefig(os.path.join(figpath, save_name + '_valacc.pdf'), transparent=True)
-
-    # Glo score
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes(rect)
-    ax.plot(log['epoch'], log['glo_score'])
-    ax.set_xlabel('Epochs')
-    ax.set_ylabel('Glo score')
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks(np.arange(0, log['epoch'][-1]+2, 10))
-    ax.yaxis.set_ticks([0, 0.5, 1.0])
-    ax.set_ylim([0, 1])
-    ax.set_xlim([0, len(log['epoch'])])
-    plt.savefig(os.path.join(figpath, save_name+'_gloscore.pdf'), transparent=True)
-    # plt.savefig(os.path.join(figpath, save_name+'_gloscore.png'), transparent=True)
-
-
-def plot_weights():
+    Currently this only plots the ORN-PN connectivity
+    """
+    save_name = save_path.split('/')[-1]
+    config = tools.load_config(save_path)
     # Load network at the end of training
     model_dir = os.path.join(save_path, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
         w_orn = var_dict['w_orn']
+
+    if config.replicate_orn_with_tiling:
+        w_orn = np.reshape(
+            w_orn, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
+        w_orn = np.swapaxes(w_orn, 0, 1)
+        w_orn = np.reshape(w_orn, (-1, config.N_PN))
 
     # Sort for visualization
     ind_max = np.argmax(w_orn, axis=0)
@@ -129,7 +115,8 @@ def plot_weights():
         plt.title(key)
 
 
-def plot_activity():
+def plot_activity(save_path):
+    save_name = save_path.split('/')[-1]
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
     
@@ -181,7 +168,60 @@ def plot_activity():
     plt.show()
 
 
+def plot_results(path, x_key, y_key, loop_key=None):
+    """Plot results for varying parameters experiments.
+
+    Args:
+        path: str, model save path
+        x_key: str, key for the x-axis variable
+        y_key: str, key for the y-axis variable
+        loop_key: str, key for the value to loop around
+    """
+    res = tools.load_all_results(path)
+
+    # Sort by x_key
+    ind_sort = np.argsort(res[x_key])
+    for key, val in res.items():
+        res[key] = val[ind_sort]
+
+    fig = plt.figure(figsize=(2, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    if loop_key:
+        for x in np.unique(res[loop_key]):
+            ind = res[loop_key] == x
+            x_plot = res[x_key][ind]
+            if x_key == 'N_KC':
+                x_plot = np.log(x_plot)
+            ax.plot(x_plot, res[y_key][ind], 'o-', label=str(x))
+    else:
+        ax.plot(res[x_key], res[y_key], 'o-')
+
+    if x_key == 'N_KC':
+        xticks = np.array([30, 100, 1000, 10000])
+        ax.set_xticks(np.log(xticks))
+    else:
+        xticks = res[x_key]
+        ax.set_xticks(xticks)
+    ax.set_xticklabels(xticks)
+    ax.set_xlabel(nicename(x_key))
+    ax.set_ylabel(nicename(y_key))
+    ax.set_yticks([0, 0.5, 1.0])
+    plt.ylim([0, 1])
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    if loop_key and y_key == 'glo_score':
+        l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
+        l.set_title(nicename(loop_key))
+
+    figname = y_key + 'vs' + x_key
+    if loop_key:
+        figname += '_vary' + loop_key
+    figname = os.path.join(figpath, figname)
+    plt.savefig(figname+'.pdf', transparent=True)
+    plt.savefig(figname+'.png', dpi=300)
+
+
 if __name__ == '__main__':
-    # plot_progress()
-    plot_weights()
-    # plot_activity()
+    pass
