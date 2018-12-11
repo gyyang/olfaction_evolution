@@ -15,7 +15,7 @@ import train
 def local_train(experiment, save_path):
     """Train all models locally."""
     # TODO: Think of a better place to put this function
-    for i in range(0, 50):
+    for i in range(0, 1000):
         config = tools.varying_config(experiment, i)
         if config:
             print('[***] Hyper-parameter: %2d' % i)
@@ -23,10 +23,10 @@ def local_train(experiment, save_path):
             train.train(config)
 
 
-def vary_kc_configs(i):
+def vary_kc_configs():
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 3
+    config.max_epoch = 30
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -35,17 +35,16 @@ def vary_kc_configs(i):
     return config, hp_ranges
 
 
-def vary_n_orn_duplication(i):
+def vary_n_orn_duplication():
     config = configs.FullConfig()
-    config.save_path = './files/vary_n_orn_duplication/' + str(i).zfill(2)
-    config.data_dir = './datasets/proto/_100_generalization_onehot_s0'
+    config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.N_KC = 100
     config.ORN_NOISE_STD = 0.5
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['N_ORN_DUPLICATION'] = [1, 10]
+    hp_ranges['N_KC'] = [100, 2500]
+    hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 5, 7, 10]
     return config, hp_ranges
 
 
