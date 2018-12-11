@@ -215,7 +215,7 @@ def plot_results(path, x_key, y_key, loop_key=None):
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
         l.set_title(nicename(loop_key))
 
-    figname = y_key + 'vs' + x_key
+    figname = y_key + '_vs_' + x_key
     if loop_key:
         figname += '_vary' + loop_key
     figname = os.path.join(figpath, figname)

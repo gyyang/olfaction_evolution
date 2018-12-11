@@ -92,7 +92,7 @@ def varying_config_sequential(experiment, i):
 def load_all_results(rootpath):
     """Load results from path.
 
-    Args:a
+    Args:
         rootpath: root path of all models loading results from
 
     Returns:

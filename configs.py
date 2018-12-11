@@ -73,10 +73,11 @@ class FullConfig(BaseConfig):
         self.N_KC = 2500
 
         # ORN--> PN connections
+
+        # Initialization method for pn2kc: can take values uniform, random, or normal
+        self.initializer_orn2pn = 'normal'
         # If True, ORN --> PN connections are positive
         self.sign_constraint_orn2pn = True
-        # If True, ORN-PN connections are initialized to be constant
-        self.constant_initialization = True
         # If True, PN --> KC connections are trainable
         self.train_orn2pn = True
         # If True, train a direct glomeruli-like connections
@@ -90,6 +91,9 @@ class FullConfig(BaseConfig):
 
 
         # PN --> KC connections
+
+        # Initialization method for pn2kc: can take values uniform, random, or normal
+        self.initializer_pn2kc = 'constant'
         # Initial value of pn2kc weights. if it is set to 0, network will initialize according to sparsity
         self.initial_pn2kc = 0
         # If True, ORN --> PN connections are positive

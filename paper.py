@@ -8,13 +8,13 @@ import standard.analysis as standard_analysis
 MODE = 'analysis'
 
 # Reproducing glomeruli-like activity
-# save_path = './files/standard/orn2pn'
-# if MODE == 'train':
-#     standard_experiment.train_orn2pn(save_path)
-# else:
-#     standard_analysis.plot_progress(save_path)
-#     standard_analysis.plot_weights(save_path)
-#     # TODO: Add activity distribution
+save_path = './files/standard/orn2pn'
+if MODE == 'train':
+    standard_experiment.train_orn2pn(save_path)
+else:
+    standard_analysis.plot_progress(save_path)
+    standard_analysis.plot_weights(save_path)
+    # TODO: Add activity distribution
 
 # Varying #PN and #KC
 if MODE == 'train':
@@ -22,7 +22,7 @@ if MODE == 'train':
 else:
     pass
 
-# Varying the noise level while varying #KC
+# # Varying the noise level while varying #KC
 save_path = './files/vary_noise'
 if MODE == 'train':
     local_train(standard_experiment.vary_kc_configs, save_path)
