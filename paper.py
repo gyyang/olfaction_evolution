@@ -12,13 +12,11 @@ import standard.analysis_pn2kc_random as pn2kc_random_analysis
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 TRAIN = False
 ANALYZE = True
-TESTING_EXPERIMENTS = True
-run_ix = [6]
 
 # experiments
 experiments = ['orn2pn', 'vary_ORN_duplication', 'vary_PN', 'vary_KC',
                'vary_KC_claws', 'train_KC_claws', 'random_KC_claws']
-# experiments = ['train_KC_claws', 'random_KC_claws']
+experiments = ['train_KC_claws']
 
 is_test = True
 
