@@ -5,6 +5,7 @@ from standard.hyper_parameter_train import local_train, local_sequential_train
 from train import train
 import standard.analysis as standard_analysis
 import standard.analysis_pn2kc_training as pn2kc_training_analysis
+import standard.analysis_pn2kc_random as pn2kc_random_analysis
 import os
 
 
@@ -12,7 +13,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 TRAIN = False
 ANALYZE = True
 TESTING_EXPERIMENTS = True
-run_ix = [5]
+run_ix = [6]
 
 
 save_paths = ['./files/orn2pn',
@@ -20,7 +21,8 @@ save_paths = ['./files/orn2pn',
               './files/vary_PN',
               './files/vary_KC',
               './files/vary_KC_claws',
-              './files/train_KC_claws'
+              './files/train_KC_claws',
+              './files/random_KC_claws'
               ]
 
 experiments = [standard_experiment.train_orn2pn, # Reproducing glomeruli-like activity
@@ -29,6 +31,7 @@ experiments = [standard_experiment.train_orn2pn, # Reproducing glomeruli-like ac
                standard_experiment.vary_kc_configs, # Vary nKC under different noise levels
                standard_experiment.vary_claw_configs, # Vary nClaws under different noise levels
                standard_experiment.train_claw_configs, # Compare training vs fixing weights for PN2KC
+               standard_experiment.random_claw_configs, # Analyze randomness of PN2KC connectivity
                ]
 
 run_methods = [local_train,
@@ -36,7 +39,8 @@ run_methods = [local_train,
                local_train,
                local_train,
                local_train,
-               local_sequential_train
+               local_sequential_train,
+               local_train
                ]
 
 analysis_methods_per_experiment = [
@@ -59,7 +63,8 @@ analysis_methods_per_experiment = [
     [lambda x: standard_analysis.plot_progress(x, alpha= .75, linestyles= [':', '-.', '-'],
                                                legends= ['Trainable, no loss', 'Trainable, with loss', 'Fixed']),
      pn2kc_training_analysis.plot_distribution,
-     pn2kc_training_analysis.plot_sparsity]
+     pn2kc_training_analysis.plot_sparsity],
+    [lambda x: pn2kc_random_analysis.pair_distribution(x, 'preserve')]
 ]
 
 def wrapper(experiment):
