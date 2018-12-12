@@ -10,6 +10,7 @@ import configs
 testing_epochs = 6
 def train_orn2pn(save_path, argTest=False):
     '''
+    Most basic experiment. Train ORN2PN.
     Result:
         Show that GloScore increases as a function of training
     '''
@@ -106,6 +107,7 @@ def vary_claw_configs(argTest=False):
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
     config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True
 
     # Ranges of hyperparameters to loop over
