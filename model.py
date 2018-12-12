@@ -211,6 +211,9 @@ class FullModel(Model):
             print('Training variables')
             for v in var_list:
                 print(v)
+            print('Fixed variables')
+            for v in excludes:
+                print(v)
 
         self.saver = tf.train.Saver()
 

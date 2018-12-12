@@ -147,8 +147,12 @@ def train(config, reload=False):
                 if config.save_every_epoch:
                     model.save_pickle(ep)
                 # Train
+                batch_start_time = time.time()
                 for b in range(n_batch-1):
                     _ = sess.run(model.train_op)
+                    if time.time() - batch_start_time > 120:  # Show progress after 2 minutes.
+                        print('Trained {} batches, total {} batches'.format(b, n_batch))
+                        batch_start_time = time.time()
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                 acc = acc[1]
