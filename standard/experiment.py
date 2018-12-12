@@ -137,7 +137,6 @@ def train_claw_configs(argTest=False):
     config.max_epoch = 30
     config.replicate_orn_with_tiling = False
     config.skip_orn2pn = True
-    config.initial_pn2kc = 0
     config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
@@ -146,6 +145,7 @@ def train_claw_configs(argTest=False):
     hp_ranges['sparse_pn2kc'] = [False, False, True]
     hp_ranges['train_kc_bias'] = [False, False, True]
     hp_ranges['kc_loss'] = [False, True, False]
+    hp_ranges['initial_pn2kc'] = [.1, .1, 0]
 
     if argTest:
         config.max_epoch = testing_epochs

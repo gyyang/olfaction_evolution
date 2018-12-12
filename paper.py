@@ -12,7 +12,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 TRAIN = False
 ANALYZE = True
 TESTING_EXPERIMENTS = True
-run_ix = [0, 5]
+run_ix = [5]
 
 
 save_paths = ['./files/orn2pn',
@@ -57,7 +57,9 @@ analysis_methods_per_experiment = [
     [lambda x: standard_analysis.plot_results(x, x_key='kc_inputs', y_key='val_acc',
                                               loop_key='ORN_NOISE_STD')],
     [lambda x: standard_analysis.plot_progress(x, alpha= .75, linestyles= [':', '-.', '-'],
-                                               legends= ['Trainable, no loss', 'Trainable, with loss', 'Fixed'])]
+                                               legends= ['Trainable, no loss', 'Trainable, with loss', 'Fixed']),
+     pn2kc_training_analysis.plot_distribution,
+     pn2kc_training_analysis.plot_sparsity]
 ]
 
 def wrapper(experiment):
