@@ -2,14 +2,14 @@ import os
 from collections import OrderedDict
 
 import task
-import train
 import configs
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 6
-def train_orn2pn(save_path, argTest=False):
+testing_epochs = 5
+def train_orn2pn(argTest=False):
     '''
+    Most basic experiment. Train ORN2PN.
     Result:
         Show that GloScore increases as a function of training
     '''
@@ -21,11 +21,11 @@ def train_orn2pn(save_path, argTest=False):
     config.sparse_pn2kc = True
     config.train_pn2kc = False
     config.data_dir = './datasets/proto/standard'
-    config.save_path = save_path
-
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy_var'] = [True]
     if argTest:
         config.max_epoch = testing_epochs
-    train.train(config)
+    return config, hp_ranges
 
 def vary_orn_duplication_configs(argTest=False):
     '''
@@ -80,6 +80,8 @@ def vary_kc_configs(argTest=False):
     Vary number of KCs while also training ORN2PN.
     Results:
         GloScore and Accuracy peaks at >2500 KCs for all noise values
+        GloScore does not depend on noise. Should be lower for higher noise values
+        GloScore depends on nKC. Should be lower for lower nKC
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -106,15 +108,18 @@ def vary_claw_configs(argTest=False):
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
     config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['kc_inputs'] = list(range(1,15, 2)) + list(range(15,30, 3)) + \
                              list(range(30, 50, 5))
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
     if argTest:
         config.max_epoch = testing_epochs
         hp_ranges['kc_inputs'] = [3, 7, 15, 50]
+        hp_ranges['ORN_NOISE_STD'] = [0, 0.5]
     return config, hp_ranges
 
 def train_claw_configs(argTest=False):
@@ -133,6 +138,7 @@ def train_claw_configs(argTest=False):
     config.replicate_orn_with_tiling = False
     config.skip_orn2pn = True
     config.initial_pn2kc = 0
+    config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()

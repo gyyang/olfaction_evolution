@@ -89,7 +89,7 @@ def varying_config_sequential(experiment, i):
     return config
 
 
-def load_all_results(rootpath):
+def load_all_results(rootpath, argLast= True):
     """Load results from path.
 
     Args:
@@ -109,7 +109,10 @@ def load_all_results(rootpath):
             log = pickle.load(f)
         config = load_config(d)
         for key, val in log.items():
-            res[key].append(val[-1])  # store last value in log
+            if argLast:
+                res[key].append(val[-1])  # store last value in log
+            else:
+                res[key].append(val)
         for k in dir(config):
             if k[0] != '_':
                 res[k].append(getattr(config, k))
@@ -123,7 +126,7 @@ nicename_dict = {
         'ORN_NOISE_STD': 'Noise level',
         'N_KC': 'Number of KCs',
         'N_ORN_DUPLICATION': 'ORNs per type',
-        'kc_inputs': 'Number of KC Inputs',
+        'kc_inputs': 'Number of KC Claws',
         'glo_score': 'GloScore',
         'val_acc': 'Accuracy',
         'val_loss': 'Loss',

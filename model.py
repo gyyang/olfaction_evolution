@@ -215,18 +215,22 @@ class FullModel(Model):
         self.saver = tf.train.Saver()
 
     def _build(self, x, y, training):
-        ORN_DUP = self.config.N_ORN_DUPLICATION
-        N_ORN = self.config.N_ORN * ORN_DUP
         N_PN = self.config.N_PN
         N_KC = self.config.N_KC
         self.loss = 0
 
         if self.config.replicate_orn_with_tiling:
             # Replicating ORNs through tiling
+            ORN_DUP = self.config.N_ORN_DUPLICATION
+            N_ORN = self.config.N_ORN * ORN_DUP
+
             assert x.shape[-1] == self.config.N_ORN
             x = tf.tile(x, [1, ORN_DUP])
             x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
             # x = tf.keras.layers.GaussianNoise(self.config.ORN_NOISE_STD)(x)
+        else:
+            ORN_DUP = 1
+            N_ORN = self.config.N_ORN
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:
