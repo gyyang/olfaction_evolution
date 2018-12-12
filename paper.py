@@ -38,8 +38,8 @@ is_test = args.testing
 
 # experiments
 if args.experiment == 'all':
-    experiments = ['orn2pn', 'vary_ORN_duplication', 'vary_PN', 'vary_KC',
-                   'vary_KC_claws', 'train_KC_claws', 'random_KC_claws']
+    experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn', 'vary_kc',
+                   'vary_kc_claws', 'train_kc_claws', 'random_kc_claws']
 else:
     experiments = args.experiment
 
@@ -52,9 +52,9 @@ if 'orn2pn' in experiments:
         sa.plot_progress(path)
         sa.plot_weights(path)
 
-if 'vary_ORN_duplication' in experiments:
+if 'vary_orn_duplication' in experiments:
     # Vary ORN n duplication under different nKC
-    path = './files/vary_ORN_duplication'
+    path = './files/vary_orn_duplication'
     if TRAIN:
         local_train(se.vary_orn_duplication_configs(is_test), path)
     if ANALYZE:
@@ -63,9 +63,9 @@ if 'vary_ORN_duplication' in experiments:
         sa.plot_results(path, x_key='N_ORN_DUPLICATION',
                                        y_key='val_acc', loop_key='N_KC')
 
-if 'vary_PN' in experiments:
+if 'vary_pn' in experiments:
     # Vary nPN under different noise levels
-    path = './files/vary_PN'
+    path = './files/vary_pn'
     if TRAIN:
         local_train(se.vary_pn_configs(is_test), path)
     if ANALYZE:
@@ -74,9 +74,9 @@ if 'vary_PN' in experiments:
         sa.plot_results(path, x_key='N_PN', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
 
-if 'vary_KC' in experiments:
+if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
-    path = './files/vary_KC'
+    path = './files/vary_kc'
     if TRAIN:
         local_train(se.vary_kc_configs(is_test), path)
     if ANALYZE:
@@ -85,16 +85,16 @@ if 'vary_KC' in experiments:
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
 
-if 'var_KC_claws' in experiments:
-    path = './files/vary_KC_claws'
+if 'var_kc_claws' in experiments:
+    path = './files/vary_kc_claws'
     if TRAIN:
         local_train(se.vary_claw_configs(is_test), path)
     if ANALYZE:
         sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
 
-if 'train_KC_claws' in experiments:
-    path = './files/train_KC_claws'
+if 'train_kc_claws' in experiments:
+    path = './files/train_kc_claws'
     if TRAIN:
         local_sequential_train(se.train_claw_configs(is_test), path)
     if ANALYZE:
@@ -105,8 +105,8 @@ if 'train_KC_claws' in experiments:
         pn2kc_training_analysis.plot_sparsity(path)
 
 
-if 'random_KC_claws' in experiments:
-    path = './files/random_KC_claws'
+if 'random_kc_claws' in experiments:
+    path = './files/random_kc_claws'
     if TRAIN:
         local_train(se.random_claw_configs(is_test), path)
     if ANALYZE:
