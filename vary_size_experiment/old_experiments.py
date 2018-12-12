@@ -6,48 +6,6 @@ import numpy as np
 import tools
 import train
 
-
-
-def vary_pn(i):
-    config = configs.FullConfig()
-    config.data_dir = '../datasets/proto/_100_generalization_onehot_dup_0noise'
-    config.N_ORN = 50
-    config.N_ORN_DUPLICATION = 10
-    config.max_epoch = 5
-    config.save_path = './vary_PN/files/' + str(i).zfill(2)
-
-    hp_ranges = OrderedDict()
-    hp_ranges['N_PN'] = [10,30,50,100]
-    # hp_ranges['N_PN'] = [200]
-    return config, hp_ranges
-
-def vary_kc(i):
-    config = configs.FullConfig()
-    config.data_dir = '../datasets/proto/_100_generalization_onehot'
-    config.N_ORN = 50
-    config.N_PN = 50
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
-    config.train_kc_bias = True
-    config.max_epoch = 8
-    config.save_path = './vary_KC/files/' + str(i).zfill(2)
-
-    hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [50, 200, 800, 2500, 5000, 10000, 20000]
-    return config, hp_ranges
-
-def vary_kc_bias(i):
-    config = configs.FullConfig()
-    config.data_dir = '../datasets/proto/_100_generalization_onehot'
-    config.N_ORN = 50
-    config.N_PN = 50
-    config.N_ORN_DUPLICATION = 10
-    config.max_epoch = 5
-    config.save_path = './vary_KC_bias/files/' + str(i).zfill(2)
-    hp_ranges = OrderedDict()
-    hp_ranges['kc_bias'] = [-4,-3,-2,-1,0]
-    return config, hp_ranges
-
 def no_pn_layer(i):
     config = configs.FullConfig()
     config.save_path = './no_pn_layer/test/files/' + str(i).zfill(2)

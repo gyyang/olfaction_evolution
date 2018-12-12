@@ -5,7 +5,6 @@ import pickle
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-import train
 import configs
 
 
@@ -37,9 +36,12 @@ def varying_config(experiment, i):
         i: integer, indexing the specific hyperparameter setting to be used
 
        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1], there are 8 possible combinations
+
+    Return:
+        config: new configuration
     """
     # Ranges of hyperparameters to loop over
-    config, hp_ranges = experiment(i)
+    config, hp_ranges = experiment()
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -48,13 +50,13 @@ def varying_config(experiment, i):
     indices = np.unravel_index(i % n_max, dims=dims)
 
     if i >= n_max:
-        return
+        return False
 
     # Set up new hyperparameter
     for key, index in zip(keys, indices):
         setattr(config, key, hp_ranges[key][index])
-    # TODO: move train outside of this
-    train.train(config)
+    return config
+
 
 def varying_config_sequential(experiment, i):
     """Training specific combinations of hyper-parameter settings
@@ -68,8 +70,11 @@ def varying_config_sequential(experiment, i):
 
        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
        possible combinations are {'a':0,'b':0,'c':0}, and {'a':1,'b':1,'c':1}
+
+    Returns:
+        config: new configuration
     """
-    config, hp_ranges = experiment(i)
+    config, hp_ranges = experiment()
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -77,17 +82,17 @@ def varying_config_sequential(experiment, i):
     n_max = dims[0]
 
     if i >= n_max:
-        return
+        return False
 
     for key in keys:
         setattr(config, key, hp_ranges[key][i])
-    train.train(config)
+    return config
 
 
 def load_all_results(rootpath):
     """Load results from path.
 
-    Args:a
+    Args:
         rootpath: root path of all models loading results from
 
     Returns:
@@ -183,7 +188,7 @@ def compute_glo_score(w_orn, unique_orn, mode='tile'):
     w_orn_by_pn = w_orn_by_pn.mean(axis=0)
 
     glo_scores = list()
-    for i in range(unique_orn):
+    for i in range(n_pn):
         w_tmp = w_orn_by_pn[:, i]  # all projections to the i-th PN neuron
         indsort = np.argsort(w_tmp)[::-1]
         w_max = w_tmp[indsort[0]]

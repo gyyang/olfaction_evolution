@@ -7,8 +7,8 @@ import matplotlib as mpl
 import tools
 import utils
 
-param = "initial_pn2kc"
-condition = "random"
+param = "kc_inputs"
+condition = "why_7_not_15"
 
 mpl.rcParams['font.size'] = 7
 fig_dir = os.path.join(os.getcwd(), condition, 'figures')
@@ -20,7 +20,7 @@ list_of_legends = [param +': ' + str(n) for n in parameters]
 data = [glo_score, val_acc, val_loss, train_loss]
 titles = ['glo score', 'val acc', 'val loss', 'train loss']
 utils.plot_summary(data, titles, fig_dir, list_of_legends, param)
-utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param, log=True, skip=2)
+utils.plot_summary_last_epoch(data, titles, fig_dir, parameters, param, log=False, skip=1)
 
 worn = utils.load_pickle(dir, 'w_orn')
 born = utils.load_pickle(dir, 'model/layer1/bias:0')
@@ -28,7 +28,7 @@ wglo = utils.load_pickle(dir, 'w_glo')
 bglo = utils.load_pickle(dir, 'model/layer2/bias:0')
 
 for p, cur_w in zip(parameters, wglo):
-    glo_score, _ = tools.compute_glo_score(cur_w)
+    glo_score, _ = tools.compute_glo_score(cur_w, unique_orn=configs[0].N_ORN)
     utils.plot_weights(cur_w, str(p), arg_sort = 1, fig_dir = fig_dir, ylabel= 'from PNs', xlabel='to KCs', title= glo_score)
 #
 nr = 5
