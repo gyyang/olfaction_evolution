@@ -1,9 +1,10 @@
 """File that summarizes all key results."""
 
 import standard.experiment as standard_experiment
-from standard.hyper_parameter_train import basic_train, local_train, local_sequential_train
+from standard.hyper_parameter_train import local_train, local_sequential_train
 from train import train
 import standard.analysis as standard_analysis
+import standard.analysis_pn2kc_training as pn2kc_training_analysis
 import os
 
 
@@ -11,7 +12,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 TRAIN = False
 ANALYZE = True
 TESTING_EXPERIMENTS = True
-run_ix = [5]
+run_ix = [0, 5]
 
 
 save_paths = ['./files/orn2pn',
@@ -55,7 +56,8 @@ analysis_methods_per_experiment = [
                                               loop_key='ORN_NOISE_STD')],
     [lambda x: standard_analysis.plot_results(x, x_key='kc_inputs', y_key='val_acc',
                                               loop_key='ORN_NOISE_STD')],
-    [standard_analysis.plot_progress]
+    [lambda x: standard_analysis.plot_progress(x, alpha= .75, linestyles= [':', '-.', '-'],
+                                               legends= ['Trainable, no loss', 'Trainable, with loss', 'Fixed'])]
 ]
 
 def wrapper(experiment):

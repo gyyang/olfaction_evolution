@@ -22,20 +22,30 @@ mpl.rcParams['font.size'] = 7
 figpath = os.path.join(rootpath, 'figures')
 
 
-def plot_progress(save_path):
+def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
     save_name = save_path.split('/')[-1]
     log = tools.load_all_results(save_path, argLast=False)
-
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect)
-        for i in range(log[ykey].shape[0]):
-            ax.plot(log[xkey][i,:], log[ykey][i,:])
+
+        ys = log[ykey]
+        xs = log[xkey]
+        if linestyles is not None:
+            for x, y, s in zip(xs, ys, linestyles):
+                ax.plot(x, y, alpha= alpha, linestyle=s)
+        else:
+            for x, y in zip(xs, ys):
+                ax.plot(x, y, alpha= alpha)
+
+        if legends is not None:
+            ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
+
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
         if ykey == 'val_acc' and log[ykey].shape[0] == 1:
@@ -48,7 +58,7 @@ def plot_progress(save_path):
         if ykey in ['val_acc', 'glo_score']:
             ax.set_ylim([0, 1])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
-        ax.set_xlim([-1, len(log[xkey][i,:])])
+        ax.set_xlim([-1, len(log[xkey][0,:])])
 
         path = os.path.join(figpath, save_name)
         os.makedirs(path,exist_ok=True)
