@@ -10,9 +10,9 @@ import os
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-TRAIN = False
+TRAIN = True
 ANALYZE = True
-TESTING_EXPERIMENTS = True
+TESTING_EXPERIMENTS = False
 run_ix = [6]
 
 
