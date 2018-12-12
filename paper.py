@@ -24,6 +24,7 @@ parser.add_argument('-d', '--device', help='CUDA device number', default=0, type
 parser.add_argument('-t', '--train', help='Training', action='store_true')
 parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
+parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='all')
 args = parser.parse_args()
 
 print(args)
@@ -33,8 +34,11 @@ ANALYZE = args.analyze
 is_test = args.testing
 
 # experiments
-experiments = ['orn2pn', 'vary_ORN_duplication', 'vary_PN', 'vary_KC',
-               'vary_KC_claws', 'train_KC_claws', 'random_KC_claws']
+if args.experiment == 'all':
+    experiments = ['orn2pn', 'vary_ORN_duplication', 'vary_PN', 'vary_KC',
+                   'vary_KC_claws', 'train_KC_claws', 'random_KC_claws']
+else:
+    experiments = args.experiment
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
