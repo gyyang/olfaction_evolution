@@ -1,15 +1,20 @@
 import os
-import pickle
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import tools
 from tools import nicename
+import pickle
 import utils
 from scipy.optimize import curve_fit
 from scipy.misc import factorial
 
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
+mpl.rcParams['font.size'] = 7
+figpath = os.path.join(rootpath, 'figures')
 
 def plot_sparsity(data, savename, title, xrange=50, yrange= .5):
     fig = plt.figure(figsize=(2.5, 2))
@@ -62,7 +67,36 @@ def plot_distribution(data, savename, title, xrange, yrange):
     plt.tight_layout()
     plt.savefig(savename + '.png', dpi=300)
 
-def plot_progress(ys, save_name, legends):
+def plot_progress(save_path):
+    legends = ['Trainable, no loss', 'Trainable, with loss', 'Fixed']
+    save_name = save_path.split('/')[-1]
+    log = tools.load_all_results(save_path, argLast=False)
+
+    def _plot_progress(xkey, ykey):
+        figsize = (1.5, 1.2)
+        rect = [0.3, 0.3, 0.65, 0.5]
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_axes(rect)
+        ax.plot(log[xkey], log[ykey])
+        ax.set_xlabel(nicename(xkey))
+        ax.set_ylabel(nicename(ykey))
+        if ykey == 'val_acc':
+            plt.title('Final accuracy {:0.3f}'.format(log[ykey][-1]), fontsize=7)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks(np.arange(0, log[xkey][-1]+2, 10))
+        if ykey in ['val_acc', 'glo_score']:
+            ax.set_ylim([0, 1])
+            ax.yaxis.set_ticks([0, 0.5, 1.0])
+        ax.set_xlim([-1, len(log[xkey])])
+
+        path = os.path.join(figpath, save_name)
+        os.makedirs(path,exist_ok=True)
+        plt.savefig(os.path.join(path, save_name + '_' + ykey + '.pdf'),
+                    transparent=True)
+
     # Validation accuracy
     figsize = (2, 2)
     rect = [0.3, 0.3, 0.65, 0.5]
@@ -90,18 +124,17 @@ def plot_progress(ys, save_name, legends):
     plt.tight_layout()
     plt.savefig(save_name + '.png', dpi=300)
 
+dir = "../files/train_KC_claws"
+plot_progress(dir)
 
-condition = "vary_KC_training"
-condition = "random"
 
-mpl.rcParams['font.size'] = 7
-fig_dir = os.path.join(os.getcwd(), condition, 'figures')
-dir = os.path.join(os.getcwd(), condition, 'files')
+save_name = dir.split('/')[-1]
+path = os.path.join(figpath, save_name)
+os.makedirs(path,exist_ok=True)
+
 dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-
 configs, glo_score, val_acc, val_loss, train_loss = utils.load_results(dir)
-save_name = os.path.join(fig_dir, 'val_acc')
-plot_progress(val_acc, save_name, ['Trainable, no loss', 'Trainable, with loss', 'Fixed'])
+save_name = os.path.join(path, 'val_acc')
 
 thres = 0.05
 titles = ['Before Training', 'After Training']
@@ -112,10 +145,10 @@ for i, d in enumerate(dirs):
 
     for j, w in enumerate(wglo):
         sparsity = np.count_nonzero(w > thres, axis=0)
-        save_name = os.path.join(fig_dir, 'sparsity_' + str(i) + '_' + str(j))
+        save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
         plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])
         distribution = w.flatten()
-        save_name = os.path.join(fig_dir, 'distribution_' + str(i) + '_' + str(j))
+        save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
         plot_distribution(distribution, save_name, title= titles[j], xrange= 1.0, yrange = 5000)
 
 
@@ -154,10 +187,3 @@ def approximate_distribution():
         # plt.plot(x,gauss(x,*params[-3:]),color='green',lw=3,label='model')
         plt.hist(data,bins=bins, range=range)
         plt.show()
-
-
-
-# configs, glo_score, val_acc, val_loss, train_loss = utils.load_results(dir)
-# parameters = [getattr(config, param) for config in configs]
-# list_of_legends = [param +': ' + str(n) for n in parameters]
-# data = [glo_score, val_acc, val_loss, train_loss]

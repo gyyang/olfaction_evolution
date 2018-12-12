@@ -2,6 +2,11 @@ import tools
 import train
 import os
 
+def basic_train(experiment, save_path):
+    config = experiment()
+    config.save_path = save_path
+    train.train(config)
+
 def local_train(experiment, save_path):
     """Train all models locally."""
     for i in range(0, 1000):

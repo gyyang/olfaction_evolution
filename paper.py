@@ -1,36 +1,43 @@
 """File that summarizes all key results."""
 
 import standard.experiment as standard_experiment
-from standard.hyper_parameter_train import local_train
+from standard.hyper_parameter_train import basic_train, local_train, local_sequential_train
+from train import train
 import standard.analysis as standard_analysis
 import os
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-MODE = 'train'
-# MODE = 'analysis'
-TESTING = True
-run_ix = [4]
+# MODE = 'train'
+TRAIN = True
+ANALYZE = True
+TESTING_EXPERIMENTS = True
+run_ix = [0]
 
 
 save_paths = ['./files/standard/orn2pn',
               './files/vary_ORN_duplication',
               './files/vary_PN',
               './files/vary_KC',
-              './files/vary_KC_claws'
+              './files/vary_KC_claws',
+              './files/train_KC_claws'
               ]
 
 experiments = [standard_experiment.train_orn2pn, # Reproducing glomeruli-like activity
                standard_experiment.vary_orn_duplication_configs, # Vary ORN n duplication under different nKC
                standard_experiment.vary_pn_configs, # Vary nPN under different noise levels
-               standard_experiment.vary_kc_configs,
-               standard_experiment.vary_claw_configs] # Vary nKC under different noise levels
+               standard_experiment.vary_kc_configs, # Vary nKC under different noise levels
+               standard_experiment.vary_claw_configs, # Vary nClaws under different noise levels
+               standard_experiment.train_claw_configs, # Compare training vs fixing weights for PN2KC
+               ]
 
-run_methods = [lambda f, x: f(x),
+run_methods = [basic_train,
                local_train,
                local_train,
                local_train,
-               local_train]
+               local_train,
+               local_sequential_train
+               ]
 
 analysis_methods_per_experiment = [
     [standard_analysis.plot_progress,
@@ -47,19 +54,20 @@ analysis_methods_per_experiment = [
                                               loop_key='ORN_NOISE_STD'),
      lambda x: standard_analysis.plot_results(x, x_key='N_KC', y_key='val_acc',
                                               loop_key='ORN_NOISE_STD')],
-    [lambda x: standard_analysis.plot_results(x, x_key='kc_inputs', y_key='glo_score'),
-     lambda x: standard_analysis.plot_results(x, x_key='kc_inputs', y_key='val_acc')]
+    [lambda x: standard_analysis.plot_results(x, x_key='kc_inputs', y_key='val_acc',
+                                              loop_key='ORN_NOISE_STD')],
+    []
 ]
 
 def wrapper(experiment):
-    return lambda: experiment(TESTING)
+    return lambda: experiment(TESTING_EXPERIMENTS)
 
 for i in run_ix:
     save_path = save_paths[i]
     experiment = wrapper(experiments[i])
     run_method = run_methods[i]
     analysis_methods = analysis_methods_per_experiment[i]
-    if MODE == 'train':
+    if TRAIN:
         run_method(experiment, save_path)
 
     for analysis_method in analysis_methods:
@@ -108,37 +116,37 @@ for i in run_ix:
 #         save_path, x_key='N_ORN_DUPLICATION', y_key='val_acc')
 
 # Reproducing sparse PN-KC connectivity
-if MODE == 'train':
+if TRAIN == 'train':
     pass
 else:
     pass
 
 # Varying PN-KC connectivity sparseness
-if MODE == 'train':
+if TRAIN == 'train':
     pass
 else:
     pass
 
 # Reproducing random connectivity
-if MODE == 'train':
+if TRAIN == 'train':
     pass
 else:
     pass
 
 # The impact of various normalization
-if MODE == 'train':
+if TRAIN == 'train':
     pass
 else:
     pass
 
 # The impact of various task variants
-if MODE == 'train':
+if TRAIN == 'train':
     pass
 else:
     pass
 
 # A search of various hyperparameters
-if MODE == 'train':
+if TRAIN == 'train':
     pass
 else:
     pass
