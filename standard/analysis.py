@@ -28,6 +28,7 @@ def _easy_save(save_path, str='', dpi=300):
     figname = os.path.join(path, save_name + str)
     plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
     plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
+    plt.close()
 
 def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
     """Plot progress through training.

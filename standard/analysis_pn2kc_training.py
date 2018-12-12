@@ -25,15 +25,14 @@ def plot_sparsity(dir):
     def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-        plt.hist(data, bins=xrange, range=[0, xrange], density=True)
+        plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
         ax.set_xlabel('PN inputs per KC')
         ax.set_ylabel('Fraction of KCs')
         name = title
         ax.set_title(name)
 
         xticks = [1, 7, 15, 25, 50]
-        ax.set_xticks([x - .5 for x in xticks])
-        ax.set_xticklabels([str(x) for x in xticks])
+        ax.set_xticks(xticks)
         ax.set_yticks(np.linspace(0, yrange, 3))
         plt.ylim([0, yrange])
         plt.xlim([0, xrange])
