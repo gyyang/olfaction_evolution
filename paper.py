@@ -8,6 +8,9 @@ python paper.py -d=0 --train --analyze
 
 To analyze pretrained networks, run
 python paper.py -d=0 --analyze
+
+To run specific experiments (e.g. orn2pn, vary_pn), run
+python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
 """
 
 import os
