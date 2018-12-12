@@ -21,12 +21,18 @@ mpl.rcParams['font.size'] = 7
 
 figpath = os.path.join(rootpath, 'figures')
 
+def _easy_save(save_path, str='', dpi=300):
+    save_name = save_path.split('/')[-1]
+    path = os.path.join(figpath, save_name)
+    os.makedirs(path, exist_ok=True)
+    figname = os.path.join(path, save_name + str)
+    plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
+    plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
 
 def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
-    save_name = save_path.split('/')[-1]
     log = tools.load_all_results(save_path, argLast=False)
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)
@@ -60,11 +66,7 @@ def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
             ax.yaxis.set_ticks([0, 0.5, 1.0])
         ax.set_xlim([-1, len(log[xkey][0,:])])
 
-        path = os.path.join(figpath, save_name)
-        os.makedirs(path,exist_ok=True)
-        figname = os.path.join(path, save_name + '_' + ykey)
-        plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
-        plt.savefig(os.path.join(figname + '.png'), dpi=300)
+        _easy_save(save_path, '_' + ykey)
 
     _plot_progress('epoch', 'val_loss')
     _plot_progress('epoch', 'val_acc')
@@ -78,7 +80,6 @@ def plot_weights(root_path):
     """
     dirs = [os.path.join(root_path, n) for n in os.listdir(root_path)]
     save_path = dirs[0]
-    save_name = os.path.split(root_path)[-1]
     config = tools.load_config(save_path)
     # Load network at the end of training
     model_dir = os.path.join(save_path, 'model.pkl')
@@ -119,12 +120,8 @@ def plot_weights(root_path):
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
     plt.axis('tight')
+    _easy_save(root_path, '_worn')
 
-    path = os.path.join(figpath, save_name)
-    os.makedirs(path, exist_ok=True)
-    plt.savefig(os.path.join(path, save_name + '_worn.pdf'),
-                transparent=True)
-    # plt.show()
 
     # Plot distribution of various connections
     # keys = var_dict.keys()
@@ -136,7 +133,6 @@ def plot_weights(root_path):
 
 
 def plot_activity(save_path):
-    save_name = save_path.split('/')[-1]
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
     
@@ -174,7 +170,7 @@ def plot_activity(save_path):
         
         results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
     
-    
+    save_name = save_path.split('/')[-1]
     plt.figure()
     plt.hist(glo_act.flatten(), bins=100)
     plt.title('Glo activity distribution')
@@ -235,16 +231,11 @@ def plot_results(path, x_key, y_key, loop_key=None):
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
         l.set_title(nicename(loop_key))
 
-    figname = y_key + '_vs_' + x_key
+    figname = '_' + y_key + '_vs_' + x_key
     if loop_key:
         figname += '_vary' + loop_key
 
-    save_name = path.split('/')[-1]
-    path = os.path.join(figpath, save_name)
-    os.makedirs(path, exist_ok=True)
-    figname = os.path.join(path, figname)
-    plt.savefig(figname+'.pdf', transparent=True)
-    plt.savefig(figname+'.png', dpi=300)
+    _easy_save(path, figname)
 
 
 if __name__ == '__main__':
