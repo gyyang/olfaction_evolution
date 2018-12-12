@@ -10,13 +10,14 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # MODE = 'train'
 MODE = 'analysis'
 TESTING = True
-run_ix = [1]
+run_ix = [0, 1, 2, 3]
 
 
 save_paths = ['./files/standard/orn2pn',
               './files/vary_ORN_duplication',
               './files/vary_PN',
               './files/vary_KC',
+              './files/vary_KC_claws'
               ]
 
 experiments = [standard_experiment.train_orn2pn, # Reproducing glomeruli-like activity

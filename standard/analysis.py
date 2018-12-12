@@ -48,7 +48,10 @@ def plot_progress(save_path):
             ax.set_ylim([0, 1])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
         ax.set_xlim([-1, len(log[xkey])])
-        plt.savefig(os.path.join(figpath, save_name + '_' + ykey + '.pdf'),
+
+        path = os.path.join(figpath, save_name)
+        os.makedirs(path,exist_ok=True)
+        plt.savefig(os.path.join(path, save_name + '_' + ykey + '.pdf'),
                     transparent=True)
 
     _plot_progress('epoch', 'val_loss')
@@ -102,9 +105,12 @@ def plot_weights(save_path):
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
     plt.axis('tight')
-    plt.savefig(os.path.join(figpath, save_name + '_worn.pdf'),
+
+    path = os.path.join(figpath, save_name)
+    os.makedirs(path, exist_ok=True)
+    plt.savefig(os.path.join(path, save_name + '_worn.pdf'),
                 transparent=True)
-    plt.show()
+    # plt.show()
 
     # Plot distribution of various connections
     # keys = var_dict.keys()
@@ -218,7 +224,11 @@ def plot_results(path, x_key, y_key, loop_key=None):
     figname = y_key + '_vs_' + x_key
     if loop_key:
         figname += '_vary' + loop_key
-    figname = os.path.join(figpath, figname)
+
+    save_name = path.split('/')[-1]
+    path = os.path.join(figpath, save_name)
+    os.makedirs(path, exist_ok=True)
+    figname = os.path.join(path, figname)
     plt.savefig(figname+'.pdf', transparent=True)
     plt.savefig(figname+'.png', dpi=300)
 
