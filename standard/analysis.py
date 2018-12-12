@@ -23,48 +23,52 @@ figpath = os.path.join(rootpath, 'figures')
 
 
 def plot_progress(save_path):
-    """Plot progress through training."""
+    """Plot progress through training.
+        Fixed to allow for multiple plots
+    """
     save_name = save_path.split('/')[-1]
-    log_name = os.path.join(save_path, 'log.pkl')
-    with open(log_name, 'rb') as f:
-        log = pickle.load(f)
+    log = tools.load_all_results(save_path, argLast=False)
 
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect)
-        ax.plot(log[xkey], log[ykey])
+        for i in range(log[ykey].shape[0]):
+            ax.plot(log[xkey][i,:], log[ykey][i,:])
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
-        if ykey == 'val_acc':
-            plt.title('Final accuracy {:0.3f}'.format(log[ykey][-1]), fontsize=7)
+        if ykey == 'val_acc' and log[ykey].shape[0] == 1:
+            plt.title('Final accuracy {:0.3f}'.format(log[ykey][0,-1]), fontsize=7)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        ax.xaxis.set_ticks(np.arange(0, log[xkey][-1]+2, 10))
+        ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
         if ykey in ['val_acc', 'glo_score']:
             ax.set_ylim([0, 1])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
-        ax.set_xlim([-1, len(log[xkey])])
+        ax.set_xlim([-1, len(log[xkey][i,:])])
 
         path = os.path.join(figpath, save_name)
         os.makedirs(path,exist_ok=True)
-        plt.savefig(os.path.join(path, save_name + '_' + ykey + '.pdf'),
-                    transparent=True)
+        figname = os.path.join(path, save_name + '_' + ykey)
+        plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
+        plt.savefig(os.path.join(figname + '.png'), dpi=300)
 
     _plot_progress('epoch', 'val_loss')
     _plot_progress('epoch', 'val_acc')
     _plot_progress('epoch', 'glo_score')
 
 
-def plot_weights(save_path):
+def plot_weights(root_path):
     """Plot weights.
 
     Currently this only plots the ORN-PN connectivity
     """
-    save_name = save_path.split('/')[-1]
+    dirs = [os.path.join(root_path, n) for n in os.listdir(root_path)]
+    save_path = dirs[0]
+    save_name = os.path.split(root_path)[-1]
     config = tools.load_config(save_path)
     # Load network at the end of training
     model_dir = os.path.join(save_path, 'model.pkl')

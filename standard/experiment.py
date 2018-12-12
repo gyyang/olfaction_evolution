@@ -21,10 +21,11 @@ def train_orn2pn(argTest=False):
     config.sparse_pn2kc = True
     config.train_pn2kc = False
     config.data_dir = './datasets/proto/standard'
-
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy_var'] = [True]
     if argTest:
         config.max_epoch = testing_epochs
-    return config
+    return config, hp_ranges
 
 def vary_orn_duplication_configs(argTest=False):
     '''

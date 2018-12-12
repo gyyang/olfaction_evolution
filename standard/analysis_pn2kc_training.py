@@ -77,7 +77,14 @@ def plot_progress(save_path):
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect)
-        ax.plot(log[xkey], log[ykey])
+
+        cs = ['r', 'g', 'b']
+        ss = [':', '-.', '-']
+        ys = log[ykey]
+        for y, c, s in zip(ys, cs, ss):
+            ax.plot(log[xkey], y, alpha=.75, linestyle=s)
+
+        ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 0.4), fontsize=5)
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
         if ykey == 'val_acc':
@@ -94,35 +101,15 @@ def plot_progress(save_path):
 
         path = os.path.join(figpath, save_name)
         os.makedirs(path,exist_ok=True)
-        plt.savefig(os.path.join(path, save_name + '_' + ykey + '.pdf'),
-                    transparent=True)
+        figname = os.path.join(path, save_name + '_' + ykey)
+        plt.savefig(figname+'.pdf',transparent=True)
+        plt.savefig(figname+'.png',dpi=300)
 
-    # Validation accuracy
-    figsize = (2, 2)
-    rect = [0.3, 0.3, 0.65, 0.5]
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes(rect)
 
-    cs = ['r','g','b']
-    ss = [':','-.','-']
-    for y, c, s in zip(ys, cs, ss):
-        ax.plot(y, alpha= .75, linestyle=s)
 
-    ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 0.4), fontsize=5)
 
-    ax.set_xlabel('Epochs')
-    ax.set_ylabel('Validation accuracy')
-    # plt.title('Final accuracy {:0.3f}'.format(y[-1]), fontsize=7)
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks(np.arange(0, y[-1]+2, 10))
-    ax.yaxis.set_ticks([0, 0.5, 1.0])
-    ax.set_ylim([0, 1])
-    ax.set_xlim([0, len(y)-1])
-    plt.tight_layout()
-    plt.savefig(save_name + '.png', dpi=300)
+
+
 
 dir = "../files/train_KC_claws"
 plot_progress(dir)

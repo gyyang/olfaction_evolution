@@ -8,14 +8,13 @@ import os
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-# MODE = 'train'
-TRAIN = True
+TRAIN = False
 ANALYZE = True
 TESTING_EXPERIMENTS = True
-run_ix = [0]
+run_ix = [5]
 
 
-save_paths = ['./files/standard/orn2pn',
+save_paths = ['./files/orn2pn',
               './files/vary_ORN_duplication',
               './files/vary_PN',
               './files/vary_KC',
@@ -31,7 +30,7 @@ experiments = [standard_experiment.train_orn2pn, # Reproducing glomeruli-like ac
                standard_experiment.train_claw_configs, # Compare training vs fixing weights for PN2KC
                ]
 
-run_methods = [basic_train,
+run_methods = [local_train,
                local_train,
                local_train,
                local_train,
@@ -56,7 +55,7 @@ analysis_methods_per_experiment = [
                                               loop_key='ORN_NOISE_STD')],
     [lambda x: standard_analysis.plot_results(x, x_key='kc_inputs', y_key='val_acc',
                                               loop_key='ORN_NOISE_STD')],
-    []
+    [standard_analysis.plot_progress]
 ]
 
 def wrapper(experiment):
