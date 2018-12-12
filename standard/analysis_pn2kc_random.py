@@ -4,21 +4,17 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import utils
+import tools
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.patches as patches
+from standard.analysis import _easy_save
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 fig_dir = os.path.join(rootpath, 'figures')
 
-condition = "random"
 thres = .05
 mpl.rcParams['font.size'] = 7
-
-# dir = '../files/random_KC_claws'
-# dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-# wglos = utils.load_pickle(os.path.join(dirs[0],'epoch'), 'w_glo')
 
 def _shuffle(w_binary, arg):
     '''Shuffles the connections in numpy
@@ -68,18 +64,25 @@ def _extract_paircounts(mat):
     counts = lower[lower>0]
     return counts, counts_matrix
 
+def _get_claws(dir):
+    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    wglos = tools.load_pickle(os.path.join(dirs[0], 'epoch'), 'w_glo')
+    wglo_binaries = []
+    for i, wglo in enumerate(wglos):
+        wglo[np.isnan(wglo)] = 0
+        wglo_binaries.append(wglo > thres)
+        wglos[i] = wglos
+    return wglo_binaries, wglos
+
 #frequency of identical pairs vs shuffled
 def pair_distribution(dir, shuffle_arg):
     bin_range = 100
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    wglos = utils.load_pickle(os.path.join(dirs[0], 'epoch'), 'w_glo')
-    wglo = wglos[-1]
+    wglo_binaries, _ = _get_claws(dir)
+    wglo_binary = wglo_binaries[-1]
 
-    wglo[np.isnan(wglo)] = 0
-    wglo_binary = wglo > thres
     trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
 
-    n_shuffle = 10
+    n_shuffle = 100
     shuffled_counts_matrix = np.zeros((n_shuffle, bin_range))
     for i in range(n_shuffle):
         shuffled_wglo_binary = _shuffle(wglo_binary, arg= shuffle_arg)
@@ -98,9 +101,8 @@ def pair_distribution(dir, shuffle_arg):
     yticks = np.linspace(0, yrange, 3)
     legends = ['Trained','Shuffled']
 
-    save_name = os.path.join(fig_dir, 'Pair Distribution')
-    plt.hist(trained_counts, bins=bin_range, range=[0,bin_range], density=True, alpha = 0.5)
-    plt.errorbar(range(bin_range), shuffled_mean, shuffled_std)
+    plt.hist(trained_counts, bins=bin_range, range=[0,bin_range], density=True, alpha = .5)
+    plt.errorbar(range(bin_range), shuffled_mean, shuffled_std, elinewidth=.75, linewidth=.75)
     ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 0.4), fontsize=5)
     ax.set_xlabel('Number of KCs')
     ax.set_ylabel('Fraction of Pairs')
@@ -113,24 +115,24 @@ def pair_distribution(dir, shuffle_arg):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
+
+    _easy_save(dir, '_Pair_Distribution_' + shuffle_arg, dpi=500)
 
 
 # distribution of connections is not a bernoulli distribution, but is more compact
-def claw_distribution(wglo, shuffle_arg):
-    wglo[np.isnan(wglo)] = 0
-    wglo_binary = wglo > thres
+def claw_distribution(dir, shuffle_arg):
+    wglo_binaries, _ = _get_claws(dir)
+    wglo_binary = wglo_binaries[-1]
     sparsity = np.count_nonzero(wglo_binary > 0, axis= 0)
 
-    shuffle_factor = 100
+    shuffle_factor = 50
     shuffled = []
     for i in range(shuffle_factor):
-        shuffled_wglo_binary = _shuffle(wglo>thres, arg=shuffle_arg)
+        shuffled_wglo_binary = _shuffle(wglo_binary, arg=shuffle_arg)
         shuffled.append(shuffled_wglo_binary)
     shuffled = np.concatenate(shuffled, axis= 1)
     shuffled_sparsity = np.count_nonzero(shuffled > 0, axis= 0)
 
-    save_name = os.path.join(fig_dir, 'Claw Distribution')
     fig = plt.figure(figsize=(3, 2))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
     xrange = 20
@@ -140,7 +142,7 @@ def claw_distribution(wglo, shuffle_arg):
     legends = ['Trained','Shuffled']
 
     plt.hist(sparsity, bins=xrange, range= (0, xrange), alpha= .5, density=True, align='left')
-    plt.hist(shuffled_sparsity,bins=20, range= (0, xrange), alpha=.5, density=True, align='left')
+    plt.hist(shuffled_sparsity,bins=xrange, range= (0, xrange), alpha=.5, density=True, align='left')
     ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 0.4), fontsize=5)
     ax.set_xlabel('Claws per KC')
     ax.set_ylabel('Fraction of KCs')
@@ -153,15 +155,16 @@ def claw_distribution(wglo, shuffle_arg):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
+
+    _easy_save(dir, '_Claw_Distribution_' + shuffle_arg, dpi=500)
 
 
 #all PNs make the same number of connections onto KCs
-def plot_distribution(wglo):
-    wglo[np.isnan(wglo)] = 0
-    wglo_binary = wglo > thres
+def plot_distribution(dir):
+    wglo_binaries, _ = _get_claws(dir)
+    wglo_binary = wglo_binaries[-1]
+
     weights_per_pn = np.mean(wglo_binary, axis=1)
-    savename = os.path.join(fig_dir, 'PN distribution')
     p_connection = np.mean(wglo_binary.flatten())
 
     fig = plt.figure(figsize=(3, 2))
@@ -186,12 +189,11 @@ def plot_distribution(wglo):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-
-    plt.savefig(savename + '.png', dpi=300)
+    _easy_save(dir, '_PN_Distribution', dpi=500)
 
 # average correlation of weights between KCs decrease as a function of training
 # and is similar to shuffled weights with the same connection probability
-def plot_cosine_similarity(wglos, shuffle_arg, log= True):
+def plot_cosine_similarity(dir, shuffle_arg, log= True):
     def _get_similarity(mat):
         similarity_matrix = cosine_similarity(mat)
         diag_mask = ~np.eye(similarity_matrix.shape[0], dtype=bool)
@@ -202,24 +204,19 @@ def plot_cosine_similarity(wglos, shuffle_arg, log= True):
         average_correlation = np.mean(corrs)
         return average_correlation, similarity_matrix
 
+    wglo_binaries, wglos = _get_claws(dir)
     y = []
-    for wglo in wglos:
-        n_nans = np.sum(np.isnan(wglo))
-        wglo[np.isnan(wglo)] = 0
-        mask = wglo > thres
-        wglo *= mask
-        print('There are %d NaNs in wglo' % n_nans)
+    for wglo in wglo_binaries:
         corr, similarity_matrix = _get_similarity(np.transpose(wglo))
         y.append(corr)
 
     n_shuffle = 10
     shuffled_similarities = []
     for i in range(n_shuffle):
-        shuffled = _shuffle(wglos[-1]>thres, arg=shuffle_arg)
+        shuffled = _shuffle(wglo_binaries[-1]>thres, arg=shuffle_arg)
         shuffled_similarity, _ = _get_similarity(shuffled)
         shuffled_similarities.append(shuffled_similarity)
     y_shuffled = np.mean(shuffled_similarities)
-    save_name = os.path.join(fig_dir, 'Cosine Similarity')
     legends = ['Trained', 'Shuffled']
 
     figsize = (2, 2)
@@ -237,7 +234,7 @@ def plot_cosine_similarity(wglos, shuffle_arg, log= True):
         ylim = [0, 1]
     ax.plot(y)
     ax.plot([0, 20], [y_shuffled, y_shuffled], '--', color='gray')
-    ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 0.4), fontsize=5)
+    ax.legend(legends, fontsize=5)
     xticks = [0, 5, 10, 15]
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Cosine Similarity')
@@ -249,7 +246,8 @@ def plot_cosine_similarity(wglos, shuffle_arg, log= True):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.savefig(save_name + '_' + shuffle_arg + '.png', dpi=300)
+
+    _easy_save(dir, '_Cosine_Similarity_' + shuffle_arg, dpi=500)
 
 def display_matrix(wglo):
 
@@ -274,27 +272,4 @@ def display_matrix(wglo):
     cmap.colors = colors
     plt.set_cmap(cmap)
     plt.show()
-
-# display_matrix(wglos[-1])
-
-# plot_distribution(wglos[-1])
-# for arg in ['random','preserve']:
-    # plot_cosine_similarity(wglos, shuffle_arg=arg, log=False)
-    # pair_distribution(wglos[-1], shuffle_arg=arg)
-    # claw_distribution(wglos[-1], shuffle_arg=arg)
-
-#
-#
-#
-# nr, nc = 3, 2
-# fig, ax = plt.subplots(nrows=nr, ncols = nc)
-# for i, d in enumerate(dirs):
-#     wglo = utils.load_pickle(os.path.join(d,'epoch'), 'w_glo')
-#     mask = wglo[0] > 0
-#     data = wglo[0][mask].flatten()
-#     ax[i,0].hist(data, bins=100, range=(0, .5))
-#     changes = (wglo[-1][mask] - wglo[0][mask]).flatten()
-#     ax[i,1].hist(changes, bins=100, range=(-1.5, 1.5))
-# plt.tight_layout()
-# plt.savefig(os.path.join(fig_dir, 'kc_weight_changes.png'))
 

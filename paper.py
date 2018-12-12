@@ -10,9 +10,9 @@ import os
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-TRAIN = True
+TRAIN = False
 ANALYZE = True
-TESTING_EXPERIMENTS = False
+TESTING_EXPERIMENTS = True
 run_ix = [6]
 
 
@@ -64,7 +64,13 @@ analysis_methods_per_experiment = [
                                                legends= ['Trainable, no loss', 'Trainable, with loss', 'Fixed']),
      pn2kc_training_analysis.plot_distribution,
      pn2kc_training_analysis.plot_sparsity],
-    [lambda x: pn2kc_random_analysis.pair_distribution(x, 'preserve')]
+    [pn2kc_random_analysis.plot_distribution,
+     lambda x: pn2kc_random_analysis.claw_distribution(x, 'random'),
+     lambda x: pn2kc_random_analysis.plot_cosine_similarity(x, 'preserve', log=False),
+     lambda x: pn2kc_random_analysis.plot_cosine_similarity(x, 'random', log=False),
+     lambda x: pn2kc_random_analysis.pair_distribution(x, 'preserve'),
+     lambda x: pn2kc_random_analysis.pair_distribution(x, 'random')
+     ]
 ]
 
 def wrapper(experiment):
@@ -77,9 +83,9 @@ for i in run_ix:
     analysis_methods = analysis_methods_per_experiment[i]
     if TRAIN:
         run_method(experiment, save_path)
-
-    for analysis_method in analysis_methods:
-        analysis_method(save_path)
+    if ANALYZE:
+        for analysis_method in analysis_methods:
+            analysis_method(save_path)
 
 
 
