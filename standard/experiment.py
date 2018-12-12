@@ -137,7 +137,6 @@ def train_claw_configs(argTest=False):
     config.max_epoch = 30
     config.replicate_orn_with_tiling = False
     config.skip_orn2pn = True
-    config.initial_pn2kc = 0
     config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
@@ -146,6 +145,37 @@ def train_claw_configs(argTest=False):
     hp_ranges['sparse_pn2kc'] = [False, False, True]
     hp_ranges['train_kc_bias'] = [False, False, True]
     hp_ranges['kc_loss'] = [False, True, False]
+    hp_ranges['initial_pn2kc'] = [.1, .1, 0]
+
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+def random_claw_configs(argTest=False):
+    '''
+    NOTE: this should be trained with varying_config_sequential
+
+    Train (with or without loss) or fix connections from PN2KC while skipping ORN2PN
+    Results:
+        Accuracy from training PN2KC weights = fixed PN2KC weights
+        Accuracy from Training PN2KC weights with KC loss = without KC loss
+        Training PN2KC weights with loss should result in KC claw count of 6-7
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.replicate_orn_with_tiling = False
+    config.skip_orn2pn = True
+    config.save_every_epoch = True
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+    config.train_kc_bias = False
+    config.kc_loss = True
+    config.initial_pn2kc = .1
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy_var'] = [True]
 
     if argTest:
         config.max_epoch = testing_epochs

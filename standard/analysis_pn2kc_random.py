@@ -1,5 +1,5 @@
 import os
-import pickle
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,14 +8,17 @@ import utils
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.patches as patches
 
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
+fig_dir = os.path.join(rootpath, 'figures')
 
 condition = "random"
 thres = .05
 mpl.rcParams['font.size'] = 7
-fig_dir = os.path.join(os.getcwd(), condition, 'figures')
-dir = os.path.join(os.getcwd(), condition, 'files')
-dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-wglos = utils.load_pickle(os.path.join(dirs[1],'epoch'), 'w_glo')
+
+# dir = '../files/random_KC_claws'
+# dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+# wglos = utils.load_pickle(os.path.join(dirs[0],'epoch'), 'w_glo')
 
 def _shuffle(w_binary, arg):
     '''Shuffles the connections in numpy
@@ -66,14 +69,17 @@ def _extract_paircounts(mat):
     return counts, counts_matrix
 
 #frequency of identical pairs vs shuffled
-def pair_distribution(wglo, shuffle_arg):
-    bin_range = 70
+def pair_distribution(dir, shuffle_arg):
+    bin_range = 100
+    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    wglos = utils.load_pickle(os.path.join(dirs[0], 'epoch'), 'w_glo')
+    wglo = wglos[-1]
 
     wglo[np.isnan(wglo)] = 0
     wglo_binary = wglo > thres
     trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
 
-    n_shuffle = 100
+    n_shuffle = 10
     shuffled_counts_matrix = np.zeros((n_shuffle, bin_range))
     for i in range(n_shuffle):
         shuffled_wglo_binary = _shuffle(wglo_binary, arg= shuffle_arg)
@@ -269,7 +275,7 @@ def display_matrix(wglo):
     plt.set_cmap(cmap)
     plt.show()
 
-display_matrix(wglos[-1])
+# display_matrix(wglos[-1])
 
 # plot_distribution(wglos[-1])
 # for arg in ['random','preserve']:
