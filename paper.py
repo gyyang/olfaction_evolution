@@ -1,6 +1,17 @@
-"""File that summarizes all key results."""
+"""File that summarizes all key results.
+
+To train and analyze all models quicly, run in command line
+python paper.py -d=0 --train --analyze --testing
+
+To reproduce the results from paper, run
+python paper.py -d=0 --train --analyze
+
+To analyze pretrained networks, run
+python paper.py -d=0 --analyze
+"""
 
 import os
+import argparse
 
 import standard.experiment as se
 from standard.hyper_parameter_train import local_train, local_sequential_train
@@ -8,19 +19,22 @@ import standard.analysis as sa
 import standard.analysis_pn2kc_training as pn2kc_training_analysis
 import standard.analysis_pn2kc_random as pn2kc_random_analysis
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
+parser.add_argument('-t', '--train', help='Training', action='store_true')
+parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
+parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
+args = parser.parse_args()
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-TRAIN = False
-ANALYZE = True
-TESTING_EXPERIMENTS = True
-run_ix = [6]
+print(args)
+os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
+TRAIN = args.train
+ANALYZE = args.analyze
+is_test = args.testing
 
 # experiments
 experiments = ['orn2pn', 'vary_ORN_duplication', 'vary_PN', 'vary_KC',
                'vary_KC_claws', 'train_KC_claws', 'random_KC_claws']
-# experiments = ['train_KC_claws', 'random_KC_claws']
-
-is_test = True
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
