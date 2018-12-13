@@ -315,8 +315,8 @@ class FullModel(Model):
             kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training=training)
 
         if self.config.kc_loss:
-            # self.loss += tf.reduce_mean(kc) * 10
-            self.kc_loss = tf.reduce_mean(tf.pow(w_glo, 0.5)) * self.config.kc_loss_alpha
+            # self.kc_loss = tf.reduce_mean(tf.pow(tf.abs(w_glo), 0.5)) * self.config.kc_loss_alpha
+            self.kc_loss = tf.reduce_mean(tf.tanh(self.config.kc_loss_beta * w_glo)) * self.config.kc_loss_alpha
             self.loss += self.kc_loss
 
         if self.config.label_type == 'combinatorial':

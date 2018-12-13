@@ -118,7 +118,6 @@ def pair_distribution(dir, shuffle_arg):
 
     _easy_save(dir, '_Pair_Distribution_' + shuffle_arg, dpi=500)
 
-
 # distribution of connections is not a bernoulli distribution, but is more compact
 def claw_distribution(dir, shuffle_arg):
     wglo_binaries, _ = _get_claws(dir)
@@ -232,10 +231,11 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
     else:
         yticks = np.linspace(0, 1, 5)
         ylim = [0, 1]
+    xlim = len(y)
     ax.plot(y)
-    ax.plot([0, 20], [y_shuffled, y_shuffled], '--', color='gray')
+    ax.plot([0, xlim], [y_shuffled, y_shuffled], '--', color='gray')
     ax.legend(legends, fontsize=5)
-    xticks = [0, 5, 10, 15]
+    xticks =np.arange(0, xlim, 10)
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Cosine Similarity')
     ax.set_xticks(xticks)

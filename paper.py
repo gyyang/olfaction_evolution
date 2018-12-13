@@ -1,6 +1,6 @@
 """File that summarizes all key results.
 
-To train and analyze all models quicly, run in command line
+To train and analyze all models quickly, run in command line
 python paper.py -d=0 --train --analyze --testing
 
 To reproduce the results from paper, run
@@ -39,9 +39,15 @@ is_test = args.testing
 # experiments
 if args.experiment == 'core':
     experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn', 'vary_kc',
-                   'vary_kc_claws', 'train_kc_claws', 'random_kc_claws']
+                   'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc']
 else:
     experiments = args.experiment
+
+# #peter specific
+# TRAIN = True
+# ANALYZE = True
+# is_test = True
+# experiments = ['train_orn2pn2kc']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -123,3 +129,18 @@ if 'vary_norm' in experiments:
         local_train(se.vary_norm(is_test), path)
     if ANALYZE:
         pass
+
+if 'train_orn2pn2kc' in experiments:
+    path = './files/train_orn2pn2kc'
+    if TRAIN:
+        local_train(se.train_orn2pn2kc_configs(is_test), path)
+    if ANALYZE:
+        sa.plot_progress(
+            path, alpha=.75, linestyles=[':', '-.', '-'],
+            legends=['No Noise', ' 0.5 Noise', '1.0 Noise']),
+        # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score')
+        # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
+        sa.plot_weights(path)
+        pn2kc_training_analysis.plot_distribution(path)
+        pn2kc_training_analysis.plot_sparsity(path)
+
