@@ -31,7 +31,6 @@ def vary_train_pn2kc_initial_value_configs(argTest=False):
     if argTest:
         config.max_epoch = 10
         hp_ranges['initial_pn2kc'] = [.01, .04, .3, 1]
-
     return config, hp_ranges
 
 
@@ -55,9 +54,12 @@ def vary_kc_loss_alpha_configs(argTest=False):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_loss_alpha'] = [.1, .5, 1, 2, 5, 10, 20, 50]
+    hp_ranges['kc_loss_alpha'] = [.1, .3, 1, 3, 10, 30, 100]
+    hp_ranges['kc_loss_beta'] = [.1, .3, 1, 3, 10, 30, 100]
+    #exclude based on accuracy, based on nKC with no connections
 
     if argTest:
-        config.max_epoch = 10
-        hp_ranges['kc_loss_alpha'] = [.1, 1, 10, 50]
+        config.max_epoch = 5
+        hp_ranges['kc_loss_alpha'] = [.1, 1, 10, 100]
+        hp_ranges['kc_loss_beta'] = [.1, 1, 10, 100]
     return config, hp_ranges
