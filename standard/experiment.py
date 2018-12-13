@@ -213,9 +213,9 @@ def train_orn2pn2kc_configs(argTest):
 
     if argTest:
         config.max_epoch = testing_epochs
-        config.max_epoch = 5
         hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
+
 
 def temp(argTest):
     config = configs.FullConfig()

@@ -140,6 +140,9 @@ nicename_dict = {
         'val_acc': 'Accuracy',
         'val_loss': 'Loss',
         'epoch': 'Epoch',
+        'kc_loss_alpha': r'$\alpha$',
+        'kc_loss_beta': r'$\beta$',
+        'initial_pn2kc': 'Initial PN2KC Weights'
         }
 
 

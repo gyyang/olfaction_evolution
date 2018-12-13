@@ -17,6 +17,7 @@ import os
 import argparse
 
 import standard.experiment as se
+import standard.experiment_controls_pn2kc as pn2kc_control_experiments
 from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as pn2kc_training_analysis
@@ -39,15 +40,16 @@ is_test = args.testing
 # experiments
 if args.experiment == 'all':
     experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn', 'vary_kc',
-                   'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc']
+                   'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
+                   'vary_pn2kc_loss', 'vary_pn2kc_initial_value']
 else:
     experiments = args.experiment
 
 # #peter specific
-# TRAIN = True
-# ANALYZE = True
-# is_test = True
-# experiments = ['train_orn2pn2kc']
+TRAIN = True
+ANALYZE = True
+is_test = True
+experiments = ['vary_pn2kc_initial_value']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -136,4 +138,23 @@ if 'train_orn2pn2kc' in experiments:
         sa.plot_weights(path)
         pn2kc_training_analysis.plot_distribution(path)
         pn2kc_training_analysis.plot_sparsity(path)
+
+if 'vary_pn2kc_initial_value' in experiments:
+    path = './files/vary_pn2kc_initial_value'
+    if TRAIN:
+        local_train(pn2kc_control_experiments.vary_pn2kc_initial_value_configs(is_test), path)
+    if ANALYZE:
+        # sa.plot_results(path, x_key='initial_pn2kc', y_key='glo_score')
+        # sa.plot_results(path, x_key='initial_pn2kc', y_key='val_acc')
+        # pn2kc_training_analysis.plot_distribution(path)
+        # pn2kc_training_analysis.plot_sparsity(path)
+        pn2kc_training_analysis.plot_pn2kc_initial_value(path)
+
+if 'vary_pn2kc_loss' in experiments:
+    path = './files/vary_pn2kc_loss'
+    if TRAIN:
+        local_train(pn2kc_control_experiments.vary_pn2kc_loss_configs(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
+        sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
 

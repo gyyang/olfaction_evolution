@@ -21,13 +21,15 @@ mpl.rcParams['font.size'] = 7
 
 figpath = os.path.join(rootpath, 'figures')
 
-def _easy_save(save_path, str='', dpi=300):
+def _easy_save(save_path, str='', dpi=300, pdf=True):
     save_name = save_path.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path, exist_ok=True)
     figname = os.path.join(path, save_name + str)
-    plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
     plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
+
+    if pdf:
+        plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
     plt.close()
 
 def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
@@ -194,6 +196,11 @@ def plot_results(path, x_key, y_key, loop_key=None):
         y_key: str, key for the y-axis variable
         loop_key: str, key for the value to loop around
     """
+    log_plot_dict = {'N_KC': [30, 100, 1000, 10000],
+                     'kc_loss_alpha': [.1, 1, 10, 100],
+                     'kc_loss_beta': [.1, 1, 10, 100],
+                     'initial_pn2kc':[.01, .1, 1]}
+
     res = tools.load_all_results(path)
 
     # Sort by x_key
@@ -207,14 +214,17 @@ def plot_results(path, x_key, y_key, loop_key=None):
         for x in np.unique(res[loop_key]):
             ind = res[loop_key] == x
             x_plot = res[x_key][ind]
-            if x_key == 'N_KC':
+            if x_key in log_plot_dict.keys():
                 x_plot = np.log(x_plot)
             ax.plot(x_plot, res[y_key][ind], 'o-', label=str(x))
     else:
-        ax.plot(res[x_key], res[y_key], 'o-')
+        x_plot = res[x_key]
+        if x_key in log_plot_dict.keys():
+            x_plot = np.log(x_plot)
+        ax.plot(x_plot, res[y_key], 'o-')
 
-    if x_key == 'N_KC':
-        xticks = np.array([30, 100, 1000, 10000])
+    if x_key in log_plot_dict.keys():
+        xticks = np.array(log_plot_dict[x_key])
         ax.set_xticks(np.log(xticks))
     else:
         xticks = res[x_key]
@@ -228,6 +238,7 @@ def plot_results(path, x_key, y_key, loop_key=None):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
+
     if loop_key and y_key == 'glo_score':
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
         l.set_title(nicename(loop_key))

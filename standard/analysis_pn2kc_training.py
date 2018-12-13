@@ -7,6 +7,7 @@ import matplotlib as mpl
 import tools
 from tools import nicename
 import utils
+from standard.analysis import _easy_save
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
@@ -14,14 +15,46 @@ mpl.rcParams['font.size'] = 7
 figpath = os.path.join(rootpath, 'figures')
 thres = 0.05
 
-def plot_sparsity(dir):
-    save_name = dir.split('/')[-1]
-    path = os.path.join(figpath, save_name)
-    os.makedirs(path,exist_ok=True)
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    titles = ['Before Training', 'After Training']
-    yrange = [1, 0.5]
+def plot_pn2kc_initial_value(dir):
+    def _plot(x, y, yticks, ylabel, savename):
+        fig = plt.figure(figsize=(2.5, 2))
+        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+        plt.plot(np.log(x), y)
+        # plt.plot([7, 7], [0, yrange], '--', color='gray')
 
+        ax.set_xlabel(nicename('initial_pn2kc'))
+        ax.set_ylabel(ylabel)
+
+        xticks = [.01, .1, 1]
+        ax.set_xticks(np.log(xticks))
+        ax.set_xticklabels(xticks)
+        ax.set_yticks(yticks)
+        plt.ylim([0, yticks[-1]])
+        plt.xlim([np.log(xticks[0]), np.log(xticks[-1])])
+
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        _easy_save(savename, str = '_'+ ylabel, pdf=False)
+
+    res = tools.load_all_results(dir)
+    x = res['initial_pn2kc']
+    wglos = tools.load_pickle(dir, 'w_glo')
+    yticks_zero = [0., .5, 1]
+    yticks_mean = [1, 3, 5, 7, 10, 15]
+    xrange = wglos[0].shape[0]
+    zero_claws = []
+    mean_claws = []
+    for wglo in wglos:
+        sparsity = np.count_nonzero(wglo > thres, axis=0)
+        y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
+        zero_claws.append(y[0])
+        mean_claws.append(np.mean(sparsity))
+    _plot(x, zero_claws, yticks_zero, 'KCs with 0 Claws', dir)
+    _plot(x, mean_claws, yticks_mean, 'Mean # of KC Claws', dir)
+
+def plot_sparsity(dir):
     def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -45,8 +78,14 @@ def plot_sparsity(dir):
 
         plt.savefig(savename + '.png', dpi=500)
 
+    save_name = dir.split('/')[-1]
+    path = os.path.join(figpath, save_name)
+    os.makedirs(path,exist_ok=True)
+    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    titles = ['Before Training', 'After Training']
+    yrange = [1, 0.5]
     for i, d in enumerate(dirs):
-        wglo = utils.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+        wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
         wglo = [wglo[0]] + [wglo[-1]]
         for j, w in enumerate(wglo):
             w[np.isnan(w)] = 0
@@ -88,7 +127,7 @@ def plot_distribution(dir):
         plt.savefig(savename + '.png', dpi=500)
 
     for i, d in enumerate(dirs):
-        wglo = utils.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+        wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
         wglo = [wglo[0]] + [wglo[-1]]
         for j, w in enumerate(wglo):
             w[np.isnan(w)] = 0
