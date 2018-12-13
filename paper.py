@@ -27,7 +27,7 @@ parser.add_argument('-d', '--device', help='CUDA device number', default=0, type
 parser.add_argument('-t', '--train', help='Training', action='store_true')
 parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
-parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='all')
+parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
 args = parser.parse_args()
 
 print(args)
@@ -37,7 +37,7 @@ ANALYZE = args.analyze
 is_test = args.testing
 
 # experiments
-if args.experiment == 'all':
+if args.experiment == 'core':
     experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn', 'vary_kc',
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws']
 else:
@@ -116,3 +116,10 @@ if 'random_kc_claws' in experiments:
         pn2kc_random_analysis.plot_cosine_similarity(path, 'random', log=False)
         pn2kc_random_analysis.pair_distribution(path, 'preserve')
         pn2kc_random_analysis.pair_distribution(path, 'random')
+
+if 'vary_norm' in experiments:
+    path = './files/vary_norm'
+    if TRAIN:
+        local_train(se.vary_norm(is_test), path)
+    if ANALYZE:
+        pass
