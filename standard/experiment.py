@@ -181,7 +181,7 @@ def random_claw_configs(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
-def train_orn2pn2kc(argTest):
+def train_orn2pn2kc_configs(argTest):
     '''
     Allow both ORN2PN and PN2KC connections to be trained simultaneously
     Results:
@@ -189,18 +189,21 @@ def train_orn2pn2kc(argTest):
         Claw count converges to ~7
         Results should be independent of noise
     '''
-    # TODO: add check if dataset already exists
-    # TODO(pw): to be finished
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
 
     config.replicate_orn_with_tiling = False
+    config.skip_orn2pn = True
+
+    config.kc_loss = True
+    config.kc_loss_alpha = 1
+
     config.train_pn2kc = True
     config.sparse_pn2kc = False
     config.train_kc_bias = False
-    config.kc_loss = True
-    config.initial_pn2kc = 0
+    config.initial_pn2kc = 0.1
+    config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -208,6 +211,8 @@ def train_orn2pn2kc(argTest):
 
     if argTest:
         config.max_epoch = testing_epochs
+        # config.max_epoch = 10
+        hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
 
 def temp(argTest):
