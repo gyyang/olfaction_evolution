@@ -126,11 +126,11 @@ def plot_weights(root_path):
 
     # Plot distribution of various connections
     # keys = var_dict.keys()
-    keys = ['model/layer1/bias:0', 'model/layer2/bias:0']
-    for key in keys:
-        fig = plt.figure(figsize=(2, 2))
-        plt.hist(var_dict[key].flatten())
-        plt.title(key)
+    # keys = ['model/layer1/bias:0', 'model/layer2/bias:0']
+    # for key in keys:
+    #     fig = plt.figure(figsize=(2, 2))
+    #     plt.hist(var_dict[key].flatten())
+    #     plt.title(key)
 
 
 def plot_activity(save_path):

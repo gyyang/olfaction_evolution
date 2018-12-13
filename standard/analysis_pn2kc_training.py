@@ -12,13 +12,13 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 mpl.rcParams['font.size'] = 7
 figpath = os.path.join(rootpath, 'figures')
+thres = 0.05
 
 def plot_sparsity(dir):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
     dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    thres = 0.05
     titles = ['Before Training', 'After Training']
     yrange = [1, 0.5]
 
@@ -26,6 +26,7 @@ def plot_sparsity(dir):
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
         plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
+        plt.plot([7, 7], [0, yrange], '--', color='gray')
         ax.set_xlabel('PN inputs per KC')
         ax.set_ylabel('Fraction of KCs')
         name = title
@@ -42,7 +43,7 @@ def plot_sparsity(dir):
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
 
-        plt.savefig(savename + '.png', dpi=300)
+        plt.savefig(savename + '.png', dpi=500)
 
     for i, d in enumerate(dirs):
         wglo = utils.load_pickle(os.path.join(d,'epoch'), 'w_glo')
@@ -84,7 +85,7 @@ def plot_distribution(dir):
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
 
-        plt.savefig(savename + '.png', dpi=300)
+        plt.savefig(savename + '.png', dpi=500)
 
     for i, d in enumerate(dirs):
         wglo = utils.load_pickle(os.path.join(d,'epoch'), 'w_glo')
@@ -96,9 +97,9 @@ def plot_distribution(dir):
             _plot_distribution(distribution, save_name, title= titles[j], xrange= 1.0, yrange = 5000)
 
 
-if __name__ == '__main__':
-    dir = "../files/train_KC_claws"
-    plot_sparsity(dir)
-    plot_distribution(dir)
+# if __name__ == '__main__':
+#     dir = "../files/train_KC_claws"
+#     plot_sparsity(dir)
+#     plot_distribution(dir)
 
 
