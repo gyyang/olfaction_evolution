@@ -43,11 +43,11 @@ if args.experiment == 'all':
 else:
     experiments = args.experiment
 
-#peter specific
-TRAIN = False
-ANALYZE = True
-is_test = True
-experiments = ['train_orn2pn2kc']
+# #peter specific
+# TRAIN = True
+# ANALYZE = True
+# is_test = True
+# experiments = ['train_orn2pn2kc']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity

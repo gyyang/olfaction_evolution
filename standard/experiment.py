@@ -193,17 +193,19 @@ def train_orn2pn2kc_configs(argTest):
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
 
-    config.replicate_orn_with_tiling = False
-    config.skip_orn2pn = True
+    config.replicate_orn_with_tiling = True
+    config.skip_orn2pn = False
 
-    config.kc_loss = True
+    config.kc_loss = False
     config.kc_loss_alpha = 1
+    config.kc_loss_beta = 10
 
     config.train_pn2kc = True
     config.sparse_pn2kc = False
     config.train_kc_bias = False
-    config.initial_pn2kc = 0.1
+    config.initial_pn2kc = 0
     config.save_every_epoch = True
+    config.initializer_pn2kc = 'normal'
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -211,7 +213,7 @@ def train_orn2pn2kc_configs(argTest):
 
     if argTest:
         config.max_epoch = testing_epochs
-        # config.max_epoch = 10
+        config.max_epoch = 5
         hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
 
