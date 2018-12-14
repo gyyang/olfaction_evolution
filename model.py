@@ -119,22 +119,41 @@ def get_sparse_mask(nx, ny, non):
         np.random.shuffle(mask[:, i])  # shuffling in-place
     return mask.astype(np.float32)
 
-
+import normalization
 def _normalize(inputs, norm_type, training=True):
     """Summarize different forms of normalization."""
     if norm_type is not None:
         if norm_type == 'layer_norm':
             # Apply layer norm before activation function
+            # outputs = tf.contrib.layers.layer_norm(
+            #     inputs, center=True, scale=True)
             outputs = tf.contrib.layers.layer_norm(
-                inputs, center=True, scale=True)
+                inputs, center=True, scale=False)
         elif norm_type == 'batch_norm':
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
                 inputs, center=True, scale=True, training=training)
+            # The keras version is not working properly because it's doesn't
+            # respect the reuse variable in scope
         elif norm_type == 'batch_norm_nocenterscale':
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
                 inputs, center=False, scale=False, training=training)
+        elif norm_type == 'custom':
+        #     s = tf.reduce_mean(inputs, axis=-1, keepdims=True)
+        #     in_tmp = tf.pow(inputs, 1.5)
+        #     s_tmp = tf.pow(s, 1.5)
+        #     outputs = in_tmp / (in_tmp + 1)
+        #     outputs = normalization.batch_normalization(
+        #         inputs, center=True, scale=True, training=training)
+        #     inputs = tf.nn.relu(inputs)
+
+            # s = tf.reduce_mean(inputs, axis=-1, keepdims=True)
+            # s = tf.pow(s, 1.5)
+            # inputs = tf.pow(inputs, 1.5)
+
+            # outputs = inputs / (inputs + s + 0.5)
+            outputs = normalization.layer_norm(inputs, center=False, scale=False)
         else:
             raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
     else:

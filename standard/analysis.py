@@ -34,6 +34,7 @@ def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
+    # TODO: This function no longer supports directly plot progress of save_path. Should fix.
     log = tools.load_all_results(save_path, argLast=False)
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)

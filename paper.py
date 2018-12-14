@@ -25,7 +25,7 @@ import standard.analysis_pn2kc_random as pn2kc_random_analysis
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
 parser.add_argument('-t', '--train', help='Training', action='store_true')
-parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
+parser.add_argument('-a', '--analyze', help='Analyzing', action='store_false')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
 args = parser.parse_args()
