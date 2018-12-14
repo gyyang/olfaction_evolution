@@ -8,6 +8,9 @@ import tools
 from tools import nicename
 import utils
 from standard.analysis import _easy_save
+import standard.analysis as sa
+from scipy.stats import rankdata
+from matplotlib.colors import LinearSegmentedColormap
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
@@ -15,34 +18,14 @@ mpl.rcParams['font.size'] = 7
 figpath = os.path.join(rootpath, 'figures')
 thres = 0.05
 
+def _set_colormap(nbins):
+    colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
+    cmap_name = 'my_list'
+    cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=nbins)
+    return cm
+
 def plot_pn2kc_initial_value(dir):
-    def _plot(x, y, yticks, ylabel, savename):
-        fig = plt.figure(figsize=(2.5, 2))
-        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-        plt.plot(np.log(x), y)
-        # plt.plot([7, 7], [0, yrange], '--', color='gray')
-
-        ax.set_xlabel(nicename('initial_pn2kc'))
-        ax.set_ylabel(ylabel)
-
-        xticks = [.01, .1, 1]
-        ax.set_xticks(np.log(xticks))
-        ax.set_xticklabels(xticks)
-        ax.set_yticks(yticks)
-        plt.ylim([0, yticks[-1]])
-        plt.xlim([np.log(xticks[0]), np.log(xticks[-1])])
-
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-        _easy_save(savename, str = '_'+ ylabel, pdf=False)
-
-    res = tools.load_all_results(dir)
-    x = res['initial_pn2kc']
     wglos = tools.load_pickle(dir, 'w_glo')
-    yticks_zero = [0., .5, 1]
-    yticks_mean = [1, 3, 5, 7, 10, 15]
     xrange = wglos[0].shape[0]
     zero_claws = []
     mean_claws = []
@@ -51,8 +34,94 @@ def plot_pn2kc_initial_value(dir):
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
         zero_claws.append(y[0])
         mean_claws.append(np.mean(sparsity))
-    _plot(x, zero_claws, yticks_zero, 'KCs with 0 Claws', dir)
-    _plot(x, mean_claws, yticks_mean, 'Mean # of KC Claws', dir)
+
+    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    for i, d in enumerate(dirs):
+        config = tools.load_config(d)
+        setattr(config, 'mean_claw', mean_claws[i])
+        setattr(config, 'zero_claw', zero_claws[i])
+        tools.save_config(config, d)
+
+    yticks_mean = [0, 2, 5, 7, 10, 15, 50]
+    yticks_zero = [0., .5, 1]
+    sa.plot_results(dir, x_key='initial_pn2kc',y_key='mean_claw', yticks = yticks_mean)
+    sa.plot_results(dir, x_key='initial_pn2kc',y_key='zero_claw', yticks = yticks_zero)
+
+def image_pn2kc_parameters(dir):
+    def _rank(coor):
+        rank = rankdata(coor,'dense')-1
+        vals, counts = np.unique(coor, return_counts=True)
+        vals = [int(val) if val >= 1 else val for val in vals.tolist()]
+        return rank, vals, counts
+
+    def _image(path, xkey, ykey, zkey, zticks):
+        res = tools.load_all_results(path)
+        x_coor = res[xkey]
+        y_coor = res[ykey]
+        z_coor = res[zkey]
+        x_rank, xs, x_counts = _rank(x_coor)
+        y_rank, ys, y_counts = _rank(y_coor)
+        image = np.zeros((np.max(x_counts), np.max(y_counts)))
+        image[x_rank, y_rank] = z_coor
+
+        rect = [0.15, 0.15, 0.65, 0.65]
+        rect_cb = [0.82, 0.15, 0.02, 0.65]
+
+        fig = plt.figure(figsize=(2.6, 2.6))
+        ax = fig.add_axes(rect)
+        cm = 'jet'
+        if zkey == 'mean_claw':
+            cm = plt.cm.get_cmap(cm, zticks[-1]-zticks[0])
+        im = ax.imshow(image, cmap=cm, vmin=zticks[0], vmax=zticks[-1], interpolation='none')
+        ax.set_xlabel(nicename(xkey))
+        ax.set_ylabel(nicename(ykey))
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
+        ax.tick_params('both', length=0)
+        ax.set_xticks(range(x_counts[0]))
+        ax.set_yticks(range(y_counts[0]))
+        ax.set_xticklabels(xs)
+        ax.set_yticklabels(ys)
+
+        ax = fig.add_axes(rect_cb)
+        cb = plt.colorbar(im, cax=ax)
+        if zkey == 'mean_claw':
+            cb.set_ticks([x+.5 for x in zticks])
+            cb.set_ticklabels(zticks)
+        else:
+            cb.set_ticks(zticks)
+        cb.outline.set_linewidth(0.5)
+        cb.set_label(nicename(zkey), fontsize=7, labelpad=5)
+        plt.tick_params(axis='both', which='major', labelsize=7)
+        cb.ax.tick_params('both',length=0)
+        plt.axis('tight')
+        _easy_save(path, '_' + nicename(zkey), pdf=False)
+
+
+    wglos = tools.load_pickle(dir, 'w_glo')
+    xrange = wglos[0].shape[0]
+    zero_claws = []
+    mean_claws = []
+    for wglo in wglos:
+        sparsity = np.count_nonzero(wglo > thres, axis=0)
+        y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
+        zero_claws.append(y[0])
+        mean_claws.append(np.mean(sparsity))
+
+    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    for i, d in enumerate(dirs):
+        config = tools.load_config(d)
+        setattr(config, 'mean_claw', mean_claws[i])
+        setattr(config, 'zero_claw', zero_claws[i])
+        tools.save_config(config, d)
+
+    _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='val_acc', zticks=[0, .5, 1])
+    _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='zero_claw', zticks=[0, .5, 1])
+    _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='mean_claw', zticks=[0, 4, 7, 10, 11])
+
 
 def plot_sparsity(dir):
     def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):

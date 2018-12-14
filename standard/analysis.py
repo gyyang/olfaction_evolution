@@ -187,7 +187,7 @@ def plot_activity(save_path):
     plt.show()
 
 
-def plot_results(path, x_key, y_key, loop_key=None):
+def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -232,14 +232,15 @@ def plot_results(path, x_key, y_key, loop_key=None):
     ax.set_xticklabels(xticks)
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
-    ax.set_yticks([0, 0.5, 1.0])
-    plt.ylim([0, 1])
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
 
-    if loop_key and y_key == 'glo_score':
+    if yticks is None:
+        ax.set_yticks([0, 0.5, 1.0])
+        plt.ylim([0, 1])
+    else:
+        ax.set_yticks(yticks)
+        plt.ylim(yticks[0]- .1 * yticks[-1], 1.1 * yticks[-1])
+
+    if loop_key:
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
         l.set_title(nicename(loop_key))
 
@@ -247,6 +248,10 @@ def plot_results(path, x_key, y_key, loop_key=None):
     if loop_key:
         figname += '_vary' + loop_key
 
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
     _easy_save(path, figname)
 
 

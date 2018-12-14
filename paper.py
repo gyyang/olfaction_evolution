@@ -46,10 +46,10 @@ else:
     experiments = args.experiment
 
 # #peter specific
-TRAIN = True
+TRAIN = False
 ANALYZE = True
 is_test = True
-experiments = ['vary_pn2kc_initial_value']
+experiments = ['vary_pn2kc_loss']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -144,10 +144,9 @@ if 'vary_pn2kc_initial_value' in experiments:
     if TRAIN:
         local_train(pn2kc_control_experiments.vary_pn2kc_initial_value_configs(is_test), path)
     if ANALYZE:
-        # sa.plot_results(path, x_key='initial_pn2kc', y_key='glo_score')
-        # sa.plot_results(path, x_key='initial_pn2kc', y_key='val_acc')
-        # pn2kc_training_analysis.plot_distribution(path)
-        # pn2kc_training_analysis.plot_sparsity(path)
+        sa.plot_results(path, x_key='initial_pn2kc', y_key='val_acc')
+        pn2kc_training_analysis.plot_distribution(path)
+        pn2kc_training_analysis.plot_sparsity(path)
         pn2kc_training_analysis.plot_pn2kc_initial_value(path)
 
 if 'vary_pn2kc_loss' in experiments:
@@ -155,6 +154,8 @@ if 'vary_pn2kc_loss' in experiments:
     if TRAIN:
         local_train(pn2kc_control_experiments.vary_pn2kc_loss_configs(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
-        sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
+        pn2kc_training_analysis.image_pn2kc_parameters(path)
+        # pn2kc_training_analysis.plot_distribution(path)
+        # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
+        # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
 

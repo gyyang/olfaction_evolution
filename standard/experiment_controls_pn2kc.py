@@ -29,10 +29,13 @@ def vary_pn2kc_initial_value_configs(argTest=False):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['initial_pn2kc'] = [.01, .02, .04, .08, .15, .3, .5, .7, 1]
+    hp_ranges['initial_pn2kc'] = [.01, .02, .04, .08, .15, .3, .5, .7, 1, 1.5, 2]
+    hp_ranges['kc_norm_pre'] = [None]
+    # hp_ranges['initializer_pn2kc'] = ['normal','constant']
 
     if argTest:
-        config.max_epoch = 10
+        config.max_epoch = 30
+        hp_ranges['initial_pn2kc'] = [1]
 
     return config, hp_ranges
 
