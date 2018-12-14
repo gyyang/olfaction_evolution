@@ -140,20 +140,7 @@ def _normalize(inputs, norm_type, training=True):
             outputs = tf.layers.batch_normalization(
                 inputs, center=False, scale=False, training=training)
         elif norm_type == 'custom':
-        #     s = tf.reduce_mean(inputs, axis=-1, keepdims=True)
-        #     in_tmp = tf.pow(inputs, 1.5)
-        #     s_tmp = tf.pow(s, 1.5)
-        #     outputs = in_tmp / (in_tmp + 1)
-        #     outputs = normalization.batch_normalization(
-        #         inputs, center=True, scale=True, training=training)
-        #     inputs = tf.nn.relu(inputs)
-
-            # s = tf.reduce_mean(inputs, axis=-1, keepdims=True)
-            # s = tf.pow(s, 1.5)
-            # inputs = tf.pow(inputs, 1.5)
-
-            # outputs = inputs / (inputs + s + 0.5)
-            outputs = normalization.layer_norm(inputs, center=False, scale=False)
+            outputs = normalization.custom_norm(inputs, center=False, scale=True)
         else:
             raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
     else:
@@ -225,7 +212,13 @@ class FullModel(Model):
 
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
-                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+                # self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+
+                gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
+                self.gradient_norm = [tf.norm(gv[0]) for gv in gvs]
+                self.var_names = [gv[1].name for gv in gvs]
+                self.train_op = optimizer.apply_gradients(gvs)
+
 
             print('Training variables')
             for v in var_list:
@@ -279,10 +272,15 @@ class FullModel(Model):
                 w_orn = tf.abs(w_orn)
 
             glo_in_pre = tf.matmul(x, w_orn) + b_orn
+            self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
             glo_in = _normalize(glo_in_pre, self.config.pn_norm_pre, training)
             if self.config.skip_orn2pn:
                 glo_in = x
+
+            self.glo_in_mean = tf.reduce_mean(glo_in, axis=1)
+
             glo = tf.nn.relu(glo_in)
+
             glo = _normalize(glo, self.config.pn_norm_post, training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
@@ -358,6 +356,10 @@ class FullModel(Model):
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
+
+
+        # print('USING L2 LOSS on ORN-PN weights!!')
+        # self.loss += tf.reduce_sum(tf.square(w_orn)) * 0.01
 
         self.w_orn = w_orn
         self.w_glo = w_glo
