@@ -42,12 +42,12 @@ def plot_pn2kc_initial_value(dir):
         setattr(config, 'zero_claw', zero_claws[i])
         tools.save_config(config, d)
 
-    yticks_mean = [0, 2, 5, 7, 10, 15, 50]
+    yticks_mean = [0, 3, 7, 15, 50]
     yticks_zero = [0., .5, 1]
     sa.plot_results(dir, x_key='initial_pn2kc',y_key='mean_claw', yticks = yticks_mean)
     sa.plot_results(dir, x_key='initial_pn2kc',y_key='zero_claw', yticks = yticks_zero)
 
-def image_pn2kc_parameters(dir):
+def image_pn2kc_parameters(dir, figpath=figpath):
     def _rank(coor):
         rank = rankdata(coor,'dense')-1
         vals, counts = np.unique(coor, return_counts=True)

@@ -17,11 +17,11 @@ import os
 import argparse
 
 import standard.experiment as se
-import standard.experiment_controls_pn2kc as pn2kc_control_experiments
+import standard.experiment_controls_pn2kc as experiments_controls_pn2kc
 from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
-import standard.analysis_pn2kc_training as pn2kc_training_analysis
-import standard.analysis_pn2kc_random as pn2kc_random_analysis
+import standard.analysis_pn2kc_training as analysis_pn2kc_training
+import standard.analysis_pn2kc_random as analysis_pn2kc_random
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
@@ -46,10 +46,11 @@ else:
     experiments = args.experiment
 
 # #peter specific
-TRAIN = False
-ANALYZE = True
-is_test = True
-experiments = ['vary_pn2kc_loss']
+# TRAIN = False
+# ANALYZE = True
+# is_test = True
+# experiments = ['orn2pn','random_kc_claws','train_kc_claws',
+#                'vary_pn2kc_initial_value','vary_pn2kc_loss']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -109,8 +110,8 @@ if 'train_kc_claws' in experiments:
         sa.plot_progress(
             path, alpha=.75, linestyles=[':', '-.', '-'],
             legends=['Trainable, no loss', 'Trainable, with loss', 'Fixed']),
-        pn2kc_training_analysis.plot_distribution(path)
-        pn2kc_training_analysis.plot_sparsity(path)
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path)
 
 
 if 'random_kc_claws' in experiments:
@@ -118,12 +119,12 @@ if 'random_kc_claws' in experiments:
     if TRAIN:
         local_train(se.random_claw_configs(is_test), path)
     if ANALYZE:
-        pn2kc_random_analysis.plot_distribution(path)
-        pn2kc_random_analysis.claw_distribution(path, 'random')
-        pn2kc_random_analysis.plot_cosine_similarity(path, 'preserve', log=False)
-        pn2kc_random_analysis.plot_cosine_similarity(path, 'random', log=False)
-        pn2kc_random_analysis.pair_distribution(path, 'preserve')
-        pn2kc_random_analysis.pair_distribution(path, 'random')
+        analysis_pn2kc_random.plot_distribution(path)
+        analysis_pn2kc_random.claw_distribution(path, 'random')
+        analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
+        analysis_pn2kc_random.plot_cosine_similarity(path, 'random', log=False)
+        analysis_pn2kc_random.pair_distribution(path, 'preserve')
+        analysis_pn2kc_random.pair_distribution(path, 'random')
 
 if 'train_orn2pn2kc' in experiments:
     path = './files/train_orn2pn2kc'
@@ -136,25 +137,25 @@ if 'train_orn2pn2kc' in experiments:
         # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score')
         # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
         sa.plot_weights(path)
-        pn2kc_training_analysis.plot_distribution(path)
-        pn2kc_training_analysis.plot_sparsity(path)
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path)
 
 if 'vary_pn2kc_initial_value' in experiments:
     path = './files/vary_pn2kc_initial_value'
     if TRAIN:
-        local_train(pn2kc_control_experiments.vary_pn2kc_initial_value_configs(is_test), path)
+        local_train(experiments_controls_pn2kc.vary_pn2kc_initial_value_configs(is_test), path)
     if ANALYZE:
         sa.plot_results(path, x_key='initial_pn2kc', y_key='val_acc')
-        pn2kc_training_analysis.plot_distribution(path)
-        pn2kc_training_analysis.plot_sparsity(path)
-        pn2kc_training_analysis.plot_pn2kc_initial_value(path)
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path)
+        analysis_pn2kc_training.plot_pn2kc_initial_value(path)
 
 if 'vary_pn2kc_loss' in experiments:
     path = './files/vary_pn2kc_loss'
     if TRAIN:
-        local_train(pn2kc_control_experiments.vary_pn2kc_loss_configs(is_test), path)
+        local_train(experiments_controls_pn2kc.vary_pn2kc_loss_configs(is_test), path)
     if ANALYZE:
-        pn2kc_training_analysis.image_pn2kc_parameters(path)
+        analysis_pn2kc_training.image_pn2kc_parameters(path)
         # pn2kc_training_analysis.plot_distribution(path)
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
