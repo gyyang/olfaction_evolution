@@ -180,6 +180,7 @@ def _noise(x, arg, std):
         pass
     else:
         raise ValueError('Unknown noise model {:s}'.format(arg))
+    return x
 
 
 class FullModel(Model):

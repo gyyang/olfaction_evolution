@@ -6,7 +6,7 @@ import configs
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 10
+testing_epochs = 6
 def train_orn2pn(argTest=False):
     '''
     Most basic experiment. Train ORN2PN.
@@ -107,9 +107,10 @@ def vary_claw_configs(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+    config.skip_orn2pn = False
+    config.direct_glo = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -117,8 +118,8 @@ def vary_claw_configs(argTest=False):
                              list(range(30, 50, 5))
     hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
     if argTest:
-        config.max_epoch = 12
-        hp_ranges['kc_inputs'] = [3, 5, 7, 9, 11, 15, 20, 30, 40, 50]
+        config.max_epoch = testing_epochs
+        hp_ranges['kc_inputs'] = [3, 7, 11, 15, 35, 50]
         hp_ranges['ORN_NOISE_STD'] = [0, 0.5]
     return config, hp_ranges
 
