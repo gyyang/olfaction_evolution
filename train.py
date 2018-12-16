@@ -91,12 +91,14 @@ def train(config, reload=False):
         # weight_over_time = []
         for ep in range(config.max_epoch):
             # Validation
-            val_loss, val_acc = sess.run([val_model.loss, val_model.acc],
+            val_loss, val_acc, glo_in_pre_mean, glo_in_mean = sess.run([val_model.loss, val_model.acc, val_model.glo_in_pre_mean, val_model.glo_in_mean],
                                          {val_x_ph: val_x, val_y_ph: val_y})
             val_acc = val_acc[1]
             print('[*] Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
+            print('GLO_IN_PRE_MEAN ' + str(np.mean(glo_in_pre_mean)))
+            print('GLO_IN_MEAN ' + str(np.mean(glo_in_mean)))
 
             log['epoch'].append(ep)
             log['train_loss'].append(loss)
@@ -150,7 +152,14 @@ def train(config, reload=False):
                 for b in range(n_batch-1):
                     _ = sess.run(model.train_op)
                 # Compute training loss and accuracy using last batch
-                loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                # loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                loss, acc, _, gnorm, glo_in_mean = sess.run(
+                    [model.loss, model.acc, model.train_op, model.gradient_norm, model.glo_in_mean])
+                print('GRADIENT NORM')
+                print(model.var_names)
+                print(gnorm)
+                # print('GLO_IN_MEAN')
+                # print(glo_in_mean)
                 acc = acc[1]
 
 
