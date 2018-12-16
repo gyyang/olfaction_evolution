@@ -203,6 +203,8 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
                      'kc_loss_beta': [.1, 1, 10, 100],
                      'initial_pn2kc':[.01, .1, 1]}
 
+    plot_dict = {'kc_inputs': [3, 7, 15, 20, 30, 40, 50]}
+
     res = tools.load_all_results(path)
 
     # Sort by x_key
@@ -225,9 +227,15 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
             x_plot = np.log(x_plot)
         ax.plot(x_plot, res[y_key], 'o-')
 
+    if x_key == 'kc_inputs':
+        ax.plot([7, 7], [0, 1], '--', color = 'gray')
+
     if x_key in log_plot_dict.keys():
         xticks = np.array(log_plot_dict[x_key])
         ax.set_xticks(np.log(xticks))
+    elif x_key in plot_dict.keys():
+        xticks = np.array(plot_dict[x_key])
+        ax.set_xticks(xticks)
     else:
         xticks = res[x_key]
         ax.set_xticks(xticks)

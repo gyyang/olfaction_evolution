@@ -171,6 +171,18 @@ def _initializer(range, arg):
         initializer = None
     return initializer
 
+def _noise(x, arg, std):
+    if arg == 'additive':
+        x += tf.random_normal(x.shape, stddev=std)
+    elif arg == 'multiplicative':
+        x += x * tf.random_normal(x.shape, stddev=std)
+    elif arg == None:
+        pass
+    else:
+        raise ValueError('Unknown noise model {:s}'.format(arg))
+    return x
+
+
 class FullModel(Model):
     """Full 3-layer model."""
 
@@ -239,11 +251,7 @@ class FullModel(Model):
             assert x.shape[-1] == self.config.N_ORN
             x = tf.tile(x, [1, ORN_DUP])
 
-            if self.config.NOISE_MODEL == 'additive':
-                x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
-            elif self.config.NOISE_MODEL == 'multiplicative':
-                x += x * tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
-            # x = tf.keras.layers.GaussianNoise(self.config.ORN_NOISE_STD)(x)
+            x = _noise(x, self.config.NOISE_MODEL, self.config.ORN_NOISE_STD)
         else:
             ORN_DUP = 1
             N_ORN = self.config.N_ORN

@@ -136,12 +136,27 @@ def vary_kc_dropout_configs(argTest):
 
 def vary_initialization_method_configs(argTest):
     '''
-    Vary initialization scheme to be constant or normal.
+    Vary initialization scheme to be constant or normal as a function of KC claw count
     Results:
         Accuracy should depend on the initialization condition for fixed weights
         Accuracy should be low for claws > 40 for uniform initialization, as negative bias will not cancel correlations
         Accuracy should be high for claws > 50 for normal initialization, as negative bias will cancel out correlations
-    :param argTest:
-    :return:
     '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['kc_inputs'] = list(range(1,15, 2)) + list(range(15,30, 3)) + \
+                             list(range(30, 50, 5))
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
+    if argTest:
+        config.max_epoch = testing_epochs
+        hp_ranges['kc_inputs'] = [3, 5, 7, 9, 11, 15, 20, 30, 40, 50]
+        hp_ranges['initializer_pn2kc'] = ['constant','normal']
+    return config, hp_ranges
     pass

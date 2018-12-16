@@ -46,10 +46,10 @@ else:
     experiments = args.experiment
 
 # #peter specific
-# TRAIN = True
-# ANALYZE = True
-# is_test = True
-# experiments = ['vary_kc_claws']
+TRAIN = True
+ANALYZE = True
+is_test = True
+experiments = ['vary_kc_claws']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity

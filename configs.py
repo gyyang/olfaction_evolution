@@ -72,7 +72,7 @@ class FullConfig(BaseConfig):
         self.N_KC = 2500
 
         #noise model
-        #model for noise: can be additive or multiplicative
+        #model for noise: can be 'additive'. 'multiplicative', or None
         self.NOISE_MODEL = 'additive'
         self.ORN_NOISE_STD = 0.
 
