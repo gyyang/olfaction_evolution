@@ -216,6 +216,28 @@ def train_orn2pn2kc_configs(argTest):
         hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
 
+def vary_norm(argTest):
+    '''
+    Vary normalization methods
+    Results:
+
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+
+    config.train_pn2kc = False
+    config.sparse_pn2kc = True
+    config.train_kc_bias = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['pn_norm_pre'] = [None, 'batch_norm', 'layer_norm']
+    hp_ranges['kc_norm_pre'] = [None, 'batch_norm', 'layer_norm']
+
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
 
 def temp(argTest):
     config = configs.FullConfig()
