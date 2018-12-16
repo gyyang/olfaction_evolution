@@ -226,7 +226,11 @@ class FullModel(Model):
 
             assert x.shape[-1] == self.config.N_ORN
             x = tf.tile(x, [1, ORN_DUP])
-            x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
+
+            if self.config.NOISE_MODEL == 'additive':
+                x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
+            elif self.config.NOISE_MODEL == 'multiplicative':
+                x += x * tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
             # x = tf.keras.layers.GaussianNoise(self.config.ORN_NOISE_STD)(x)
         else:
             ORN_DUP = 1

@@ -41,16 +41,15 @@ is_test = args.testing
 if args.experiment == 'all':
     experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn', 'vary_kc',
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
-                   'vary_pn2kc_loss', 'vary_pn2kc_initial_value']
+                   'vary_pn2kc_loss', 'vary_pn2kc_initial_value','vary_pn2kc_noise']
 else:
     experiments = args.experiment
 
 # #peter specific
-# TRAIN = False
+# TRAIN = True
 # ANALYZE = True
 # is_test = True
-# experiments = ['orn2pn','random_kc_claws','train_kc_claws',
-#                'vary_pn2kc_initial_value','vary_pn2kc_loss']
+# experiments = ['vary_kc_claws']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -94,7 +93,7 @@ if 'vary_kc' in experiments:
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
 
-if 'var_kc_claws' in experiments:
+if 'vary_kc_claws' in experiments:
     path = './files/vary_kc_claws'
     if TRAIN:
         local_train(se.vary_claw_configs(is_test), path)
@@ -134,8 +133,8 @@ if 'train_orn2pn2kc' in experiments:
         sa.plot_progress(
             path, alpha=.75, linestyles=[':', '-.', '-'],
             legends=['No Noise', ' 0.5 Noise', '1.0 Noise']),
-        # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score')
-        # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score')
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
         sa.plot_weights(path)
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path)
@@ -148,7 +147,8 @@ if 'vary_pn2kc_initial_value' in experiments:
         sa.plot_results(path, x_key='initial_pn2kc', y_key='val_acc')
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path)
-        analysis_pn2kc_training.plot_pn2kc_initial_value(path)
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='initial_pn2kc')
+        analysis_pn2kc_training.plot_weight_distribution_per_kc(path)
 
 if 'vary_pn2kc_loss' in experiments:
     path = './files/vary_pn2kc_loss'
@@ -160,3 +160,14 @@ if 'vary_pn2kc_loss' in experiments:
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
 
+if 'vary_pn2kc_noise' in experiments:
+    path = './files/vary_pn2kc_noise'
+    if TRAIN:
+        local_train(experiments_controls_pn2kc.vary_pn2kc_noise_configs(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc', loop_key= 'N_ORN_DUPLICATION')
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', loop_key='N_ORN_DUPLICATION')
+
+        # pn2kc_training_analysis.plot_distribution(path)
+        # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
+        # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')

@@ -69,8 +69,12 @@ class FullConfig(BaseConfig):
         self.replicate_orn_with_tiling = True
         self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
-        self.ORN_NOISE_STD = 0.
         self.N_KC = 2500
+
+        #noise model
+        #model for noise: can be additive or multiplicative
+        self.NOISE_MODEL = 'additive'
+        self.ORN_NOISE_STD = 0.
 
         # ORN--> PN connections
 

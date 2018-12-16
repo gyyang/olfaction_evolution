@@ -39,6 +39,35 @@ def vary_pn2kc_initial_value_configs(argTest=False):
 
     return config, hp_ranges
 
+def vary_pn2kc_noise_configs(argTest=False):
+    '''
+    Train (with loss) from PN2KC with perfect ORN2PN connectivity, while varying levels of noise + dup
+    Results:
+        Claw count of 6-7 should be independent of noise and number of ORN duplicates
+
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 10
+    config.replicate_orn_with_tiling = True
+    config.direct_glo = True
+    config.skip_orn2pn = False
+
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+    config.train_kc_bias = False
+    config.kc_loss = True
+    config.save_every_epoch = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['ORN_NOISE_STD'] = [0, .2, .4, .6, .8, 1]
+
+    if argTest:
+        config.max_epoch = 8
+        hp_ranges['ORN_NOISE_STD'] = [0, .5, 1]
+        hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 100]
+    return config, hp_ranges
 
 def vary_pn2kc_loss_configs(argTest=False):
     '''
@@ -107,9 +136,11 @@ def vary_kc_dropout_configs(argTest):
 
 def vary_initialization_method_configs(argTest):
     '''
-    Vary initialization scheme to be uniform, constant, or normal.
+    Vary initialization scheme to be constant or normal.
     Results:
-        Accuracy should be independent of all initialization schemes for fixed / trainable
+        Accuracy should depend on the initialization condition for fixed weights
+        Accuracy should be low for claws > 40 for uniform initialization, as negative bias will not cancel correlations
+        Accuracy should be high for claws > 50 for normal initialization, as negative bias will cancel out correlations
     :param argTest:
     :return:
     '''

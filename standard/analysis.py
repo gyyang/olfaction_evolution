@@ -53,7 +53,8 @@ def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
                 ax.plot(x, y, alpha= alpha)
 
         if legends is not None:
-            ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
+            # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
+            ax.legend(legends, fontsize=4)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))

@@ -11,6 +11,7 @@ from standard.analysis import _easy_save
 import standard.analysis as sa
 from scipy.stats import rankdata
 from matplotlib.colors import LinearSegmentedColormap
+from scipy.stats import kurtosis
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
@@ -24,11 +25,12 @@ def _set_colormap(nbins):
     cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=nbins)
     return cm
 
-def plot_pn2kc_initial_value(dir):
+def plot_pn2kc_claw_stats(dir, x_key, loop_key=None):
     wglos = tools.load_pickle(dir, 'w_glo')
     xrange = wglos[0].shape[0]
     zero_claws = []
     mean_claws = []
+
     for wglo in wglos:
         sparsity = np.count_nonzero(wglo > thres, axis=0)
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
@@ -42,12 +44,12 @@ def plot_pn2kc_initial_value(dir):
         setattr(config, 'zero_claw', zero_claws[i])
         tools.save_config(config, d)
 
-    yticks_mean = [0, 3, 7, 15, 50]
+    yticks_mean = [0, 3, 7, 15, 20]
     yticks_zero = [0., .5, 1]
-    sa.plot_results(dir, x_key='initial_pn2kc',y_key='mean_claw', yticks = yticks_mean)
-    sa.plot_results(dir, x_key='initial_pn2kc',y_key='zero_claw', yticks = yticks_zero)
+    sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key)
+    sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key)
 
-def image_pn2kc_parameters(dir, figpath=figpath):
+def image_pn2kc_parameters(dir):
     def _rank(coor):
         rank = rankdata(coor,'dense')-1
         vals, counts = np.unique(coor, return_counts=True)
@@ -122,6 +124,66 @@ def image_pn2kc_parameters(dir, figpath=figpath):
     _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='zero_claw', zticks=[0, .5, 1])
     _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='mean_claw', zticks=[0, 4, 7, 10, 11])
 
+
+def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
+    '''
+    Plots the distribution of sorted PN2KC weights
+    Assumptions thus far:
+    indices are no loss, loss, sparse and fixed
+    sparse and fixed data is at index 2
+    :param path:
+    :return:
+    '''
+
+    def _plot(means, stds):
+        fig = plt.figure(figsize=(2.5, 2))
+        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+
+        for i, (mean, std) in enumerate(zip(means, stds)):
+            x = np.arange(0, mean.size)
+            if np.mean(std) > .001:
+                plt.plot(x, mean)
+                plt.fill_between(x, mean - std, mean + std, alpha=.5)
+            else:
+                plt.step(x, mean)
+
+        plt.plot([0, xrange], [thres, thres], '--', color='gray')
+        ax.legend(legend)
+
+        ax.set_xlabel('Connections from PNs, Sorted')
+        ax.set_ylabel('Connection Weight')
+        xticks = np.array([1, 5, 7, 9, 11, xrange])
+        yticks = np.arange(0, yrange, .25)
+        ax.set_xticks(xticks - 1)
+        ax.set_xticklabels(xticks)
+        ax.set_yticks(yticks)
+        plt.ylim([-.01, yrange])
+        plt.xlim([0, xrange])
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
+        _easy_save(path, str='_weights_per_kc', pdf=False)
+
+    if loopkey is None:
+        legend = ['Trained, no loss', 'Trained, loss', 'Sparse and fixed']
+    else:
+        res = tools.load_all_results(path)
+        legend = res[loopkey]
+    wglos = tools.load_pickle(path, 'w_glo')
+    means = []
+    stds = []
+    yrange = .6
+    for wglo in wglos:
+        wglo[np.isnan(wglo)] = 0
+        sorted_wglo = np.sort(wglo, axis=0)
+        sorted_wglo = np.flip(sorted_wglo, axis=0)
+        mean = np.mean(sorted_wglo, axis=1)
+        std = np.std(sorted_wglo, axis=1)
+        means.append(mean)
+        stds.append(std)
+    _plot(means, stds)
 
 def plot_sparsity(dir):
     def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
