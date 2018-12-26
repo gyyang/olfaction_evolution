@@ -35,6 +35,7 @@ def train(config, reload=False, verbose=False):
     dataset_config = tools.load_config(config.data_dir)
     dataset_config.update(config)
     config = dataset_config
+    print(config)
 
     if not os.path.exists(config.save_path):
         os.makedirs(config.save_path)

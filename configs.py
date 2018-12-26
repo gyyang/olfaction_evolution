@@ -8,6 +8,8 @@ class BaseConfig(object):
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
 
+    def __str__(self):
+        return str(self.__dict__)
 
 class input_ProtoConfig(BaseConfig):
     def __init__(self):
