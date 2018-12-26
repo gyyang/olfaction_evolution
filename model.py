@@ -148,9 +148,12 @@ def _normalize(inputs, norm_type, training=True):
 
     return outputs
 
+
 def _sparse_range(sparse_degree):
+    """Generate range of random variables given connectivity degree."""
     range = 2.0 / sparse_degree
     return range
+
 
 def _glorot_std(n_in, n_out, sparse_degree):
     fan_in = sparse_degree
@@ -158,7 +161,9 @@ def _glorot_std(n_in, n_out, sparse_degree):
     variance = 2 / (fan_in + fan_out)
     return np.sqrt(variance)
 
+
 def _initializer(range, arg):
+    """Specify initializer given range and type."""
     if arg == 'constant':
         initializer = tf.constant_initializer(range)
     elif arg == 'uniform':
@@ -171,7 +176,9 @@ def _initializer(range, arg):
         initializer = None
     return initializer
 
+
 def _noise(x, arg, std):
+    """Add noise to input."""
     if arg == 'additive':
         x += tf.random_normal(x.shape, stddev=std)
     elif arg == 'multiplicative':

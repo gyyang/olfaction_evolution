@@ -11,6 +11,7 @@ class BaseConfig(object):
     def __str__(self):
         return str(self.__dict__)
 
+
 class input_ProtoConfig(BaseConfig):
     def __init__(self):
         super(input_ProtoConfig, self).__init__()
