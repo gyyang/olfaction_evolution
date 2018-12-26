@@ -189,18 +189,6 @@ def _generate_proto_threshold(config=None, seed=0):
         train_labels, val_labels = relabel(
             train_labels, val_labels, N_PROTO, config.N_CLASS, rng)
 
-    # Repeat odors for duplication of ORNs
-    # if not config.replicate_orn_with_tiling:
-    #     N_ORN_PER_PN = config.N_ORN_DUPLICATION
-    #     repeat = lambda x: np.repeat(x, repeats=N_ORN_PER_PN, axis=1)
-    #     train_odors = repeat(train_odors)
-    #     val_odors = repeat(val_odors)
-    #
-    #     # noise is added after getting labels
-    #     ORN_NOISE_STD = config.ORN_NOISE_STD
-    #     train_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=train_odors.shape)
-    #     val_odors += rng.normal(loc=0, scale=ORN_NOISE_STD, size=val_odors.shape)
-
     assert train_odors.dtype == np.float32
 
     return train_odors, train_labels, val_odors, val_labels
