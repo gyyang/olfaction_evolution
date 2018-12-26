@@ -261,8 +261,7 @@ def plot_distribution(dir):
             ax2 = fig.add_axes([0.2, 0.75, 0.7, 0.1])
             n, bins, _ = ax2.hist(data, bins=50, range=[0, xrange], density=False)
             ax.hist(data, bins=50, range=[0, xrange], density=False)
-            ax2.set_ylim(0.9*np.max(n), 1.1*np.max(n))  # outliers only
-            ax.set_ylim(0, yrange)  # most of the data
+
             # hide the spines between ax and ax2
             ax2.spines['bottom'].set_visible(False)
             ax2.spines["top"].set_visible(False)
@@ -281,7 +280,6 @@ def plot_distribution(dir):
             kwargs.update(transform=ax.transAxes)  # switch to the bottom axes
             ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
 
-
             name = title
             ax2.set_title(name)
 
@@ -294,9 +292,11 @@ def plot_distribution(dir):
             yticklabels = ['0', '1K', '2K', '3K', '4K', '5K']
             ax.set_yticks(yticks)
             ax.set_yticklabels(yticklabels)
+            ax.set_ylim(0, yrange)  # most of the data
 
             ax2.set_yticks([np.max(n)])
             ax2.set_yticklabels(['{:d}K'.format(int(np.max(n)/1000))])
+            ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
 
         plt.savefig(savename + '.png', dpi=500)
 
@@ -307,7 +307,8 @@ def plot_distribution(dir):
             w[np.isnan(w)] = 0
             distribution = w.flatten()
             save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
-            _plot_distribution(distribution, save_name, title= titles[j], xrange= 1.0, yrange = 5000)
+            _plot_distribution(distribution, save_name,
+                               title=titles[j], xrange=1.0, yrange=5000)
 
 
 # if __name__ == '__main__':

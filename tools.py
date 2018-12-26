@@ -32,7 +32,6 @@ def load_pickle(dir, var):
     out = []
     ns = sorted([int(n) for n in os.listdir(dir)])  # sort by epochs
     dirs = [os.path.join(dir, str(n)) for n in ns]
-    print(dirs)
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
