@@ -40,6 +40,9 @@ class input_ProtoConfig(BaseConfig):
         self.relabel = False
         self.n_trueclass = 1000
 
+        # if True, concentration is varied independently of the odor identity
+        self.vary_concentration = False
+
 
 class SingleLayerConfig(BaseConfig):
     def __init__(self):

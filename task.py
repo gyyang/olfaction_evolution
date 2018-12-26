@@ -109,6 +109,7 @@ def _generate_proto_threshold(
         percent_generalization,
         n_train,
         n_val,
+        vary_concentration,
         distort_input,
         shuffle_label,
         relabel,
@@ -130,6 +131,8 @@ def _generate_proto_threshold(
         percent_generalization: float, percentage of odors that generalize
         n_train: int, number of training examples
         n_val: int, number of validation examples
+        vary_concentration: bool. if True, prototypes are all unit vectors,
+            concentrations are varied independently from odor identity
         distort_input: bool. if True, distort the input space
         shuffle_label: bool. if True, shuffle the class label for each example
         relabel: bool. if True, true classes are relabeled to get the output classes
@@ -144,10 +147,8 @@ def _generate_proto_threshold(
     """
     rng = np.random.RandomState(seed)
 
-    if relabel:
-        n_proto = n_trueclass
-    else:
-        n_proto = n_class
+    # the number of prototypes
+    n_proto = n_trueclass if relabel else n_class
 
     def get_labels(prototypes, odors):
         dist = euclidean_distances(prototypes, odors)
@@ -178,28 +179,38 @@ def _generate_proto_threshold(
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
 
+    # ORN activity for computing labels
+    train_odors_forlabels, val_odors_forlabels = train_odors, val_odors
+
     if distort_input:
         # Distort the distance metric with random MLP
         Ms = [rng.randn(n_orn, n_orn) / np.sqrt(n_orn) for _ in range(5)]
-
         relu = lambda x: x * (x > 0.)
 
-        def transform(x):
+        def _transform(x):
             for M in Ms:
                 # x = np.tanh(np.dot(x, M))
                 x = relu(np.dot(x, M))
                 x = x / np.std(x) * 0.3
             return x
 
-        prototypes_distort = transform(prototypes)
-        train_odors_distort = transform(train_odors)
-        val_odors_distort = transform(val_odors)
-        train_labels = get_labels(prototypes_distort, train_odors_distort)
-        val_labels = get_labels(prototypes_distort, val_odors_distort)
+        prototypes = _transform(prototypes)
+        train_odors_forlabels = _transform(train_odors_forlabels)
+        val_odors_forlabels = _transform(val_odors_forlabels)
 
-    else:
-        train_labels = get_labels(prototypes, train_odors)
-        val_labels = get_labels(prototypes, val_odors)
+    if vary_concentration:
+        # normalize prototypes and train/val_odors_forlabels to unit vectors
+        def _normalize(x):
+            norm = np.linalg.norm(x, axis=1)
+            x = (x.T/norm).T
+            return x
+
+        prototypes = _normalize(prototypes)
+        train_odors_forlabels = _normalize(train_odors_forlabels)
+        val_odors_forlabels = _normalize(val_odors_forlabels)
+
+    train_labels = get_labels(prototypes, train_odors_forlabels)
+    val_labels = get_labels(prototypes, val_odors_forlabels)
 
     if shuffle_label:
         # Shuffle the labels
@@ -261,6 +272,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         percent_generalization=config.percent_generalization,
         n_train=config.n_train,
         n_val=config.n_val,
+        vary_concentration=config.vary_concentration,
         distort_input=config.distort_input,
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
