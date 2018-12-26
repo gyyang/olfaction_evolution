@@ -103,7 +103,17 @@ def relabel(train_labels, val_labels, n_pre, n_post, rng=None):
     return new_train_labels, new_val_labels
 
 
-def _generate_proto_threshold(config=None, seed=0):
+def _generate_proto_threshold(
+        n_orn,
+        n_class,
+        percent_generalization,
+        n_train,
+        n_val,
+        distort_input,
+        shuffle_label,
+        relabel,
+        n_trueclass,
+        seed=0):
     """Activate all ORNs randomly.
 
     Only a fraction (as defined by variable PERCENTILE) of odors will
@@ -113,25 +123,36 @@ def _generate_proto_threshold(config=None, seed=0):
 
     default label will be labels(0), prototype classes will be labels(a
     1:N_CLASS)
-    """
-    if config is None:
-        config = input_ProtoConfig()
 
+    Args:
+        n_orn: int, number of ORN types
+        n_class: int, number of output class
+        percent_generalization: float, percentage of odors that generalize
+        n_train: int, number of training examples
+        n_val: int, number of validation examples
+        distort_input: bool. if True, distort the input space
+        shuffle_label: bool. if True, shuffle the class label for each example
+        relabel: bool. if True, true classes are relabeled to get the output classes
+        n_trueclass: int, the number of True classes
+        seed: int, random seed to generate the dataset
+
+    Returns:
+        train_odors: np array (n_train, n_orn)
+        train_labels: np array (n_train, n_class)
+        val_odors: np array (n_val, n_orn)
+        val_labels: np array (n_val, n_class)
+    """
     rng = np.random.RandomState(seed)
 
-    if config.relabel:
-        N_PROTO = config.n_trueclass
+    if relabel:
+        n_proto = n_trueclass
     else:
-        N_PROTO = config.N_CLASS
-    N_ORN = config.N_ORN
-    GEN_THRES = config.percent_generalization
-    N_TRAIN = config.n_train
-    N_VAL = config.n_val
+        n_proto = n_class
 
     def get_labels(prototypes, odors):
         dist = euclidean_distances(prototypes, odors)
         highest_match = np.min(dist, axis=0)
-        threshold = np.percentile(highest_match.flatten(), GEN_THRES)
+        threshold = np.percentile(highest_match.flatten(), percent_generalization)
         default_class = threshold * np.ones((1, dist.shape[1]))
         dist = np.vstack((default_class, dist))
         return np.argmin(dist, axis=0)
@@ -145,9 +166,9 @@ def _generate_proto_threshold(config=None, seed=0):
     lamb = 1
     bias = 0
 
-    prototypes = rng.uniform(0, lamb, (N_PROTO-1, N_ORN))
-    train_odors = rng.uniform(0, lamb, (N_TRAIN, N_ORN))
-    val_odors = rng.uniform(0, lamb, (N_VAL, N_ORN))
+    prototypes = rng.uniform(0, lamb, (n_proto-1, n_orn))
+    train_odors = rng.uniform(0, lamb, (n_train, n_orn))
+    val_odors = rng.uniform(0, lamb, (n_val, n_orn))
     prototypes = add_bias(prototypes, bias)
     train_odors = add_bias(train_odors, bias)
     val_odors = add_bias(val_odors, bias)
@@ -157,9 +178,9 @@ def _generate_proto_threshold(config=None, seed=0):
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
 
-    if config.distort_input:
+    if distort_input:
         # Distort the distance metric with random MLP
-        Ms = [rng.randn(N_ORN, N_ORN) / np.sqrt(N_ORN) for _ in range(5)]
+        Ms = [rng.randn(n_orn, n_orn) / np.sqrt(n_orn) for _ in range(5)]
 
         relu = lambda x: x * (x > 0.)
 
@@ -180,14 +201,14 @@ def _generate_proto_threshold(config=None, seed=0):
         train_labels = get_labels(prototypes, train_odors)
         val_labels = get_labels(prototypes, val_odors)
 
-    if config.shuffle_label:
+    if shuffle_label:
         # Shuffle the labels
         rng.shuffle(train_labels)
         rng.shuffle(val_labels)
 
-    if config.relabel:
+    if relabel:
         train_labels, val_labels = relabel(
-            train_labels, val_labels, N_PROTO, config.N_CLASS, rng)
+            train_labels, val_labels, n_proto, n_class, rng)
 
     assert train_odors.dtype == np.float32
 
@@ -234,7 +255,17 @@ def save_proto(config=None, seed=0, folder_name=None):
         config = input_ProtoConfig()
 
     # make and save data
-    train_x, train_y, val_x, val_y = _generate_proto_threshold(config, seed=seed)
+    train_x, train_y, val_x, val_y = _generate_proto_threshold(
+        n_orn=config.N_ORN,
+        n_class=config.N_CLASS,
+        percent_generalization=config.percent_generalization,
+        n_train=config.n_train,
+        n_val=config.n_val,
+        distort_input=config.distort_input,
+        shuffle_label=config.shuffle_label,
+        relabel=config.relabel,
+        n_trueclass=config.n_trueclass,
+        seed=0)
 
     # Convert labels
     if config.use_combinatorial:
