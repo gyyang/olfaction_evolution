@@ -28,7 +28,7 @@ def make_input(x, y, batch_size):
     return train_iter, next_element
 
 
-def train(config, reload=False):
+def train(config, reload=False, verbose=False):
     tf.reset_default_graph()
 
     # Merge model config with config from dataset
@@ -90,15 +90,24 @@ def train(config, reload=False):
         total_time, start_time = 0, time.time()
         # weight_over_time = []
         for ep in range(config.max_epoch):
-            # Validation
-            val_loss, val_acc, glo_in_pre_mean, glo_in_mean = sess.run([val_model.loss, val_model.acc, val_model.glo_in_pre_mean, val_model.glo_in_mean],
-                                         {val_x_ph: val_x, val_y_ph: val_y})
+            if verbose:
+                # Validation
+                val_loss, val_acc, glo_in_pre_mean, glo_in_mean = sess.run(
+                    [val_model.loss, val_model.acc, val_model.glo_in_pre_mean,
+                     val_model.glo_in_mean],
+                    {val_x_ph: val_x, val_y_ph: val_y})
+            else:
+                # Validation
+                val_loss, val_acc = sess.run(
+                    [val_model.loss, val_model.acc],
+                    {val_x_ph: val_x, val_y_ph: val_y})
             val_acc = val_acc[1]
             print('[*] Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
-            print('GLO_IN_PRE_MEAN ' + str(np.mean(glo_in_pre_mean)))
-            print('GLO_IN_MEAN ' + str(np.mean(glo_in_mean)))
+            if verbose:
+                print('GLO_IN_PRE_MEAN ' + str(np.mean(glo_in_pre_mean)))
+                print('GLO_IN_MEAN ' + str(np.mean(glo_in_mean)))
 
             log['epoch'].append(ep)
             log['train_loss'].append(loss)
@@ -154,12 +163,14 @@ def train(config, reload=False):
                 # Compute training loss and accuracy using last batch
                 # loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                 loss, acc, _, gnorm, glo_in_mean = sess.run(
-                    [model.loss, model.acc, model.train_op, model.gradient_norm, model.glo_in_mean])
-                print('GRADIENT NORM')
-                print(model.var_names)
-                print(gnorm)
-                # print('GLO_IN_MEAN')
-                # print(glo_in_mean)
+                    [model.loss, model.acc, model.train_op,
+                     model.gradient_norm, model.glo_in_mean])
+                if verbose:
+                    print('GRADIENT NORM')
+                    print(model.var_names)
+                    print(gnorm)
+                    # print('GLO_IN_MEAN')
+                    # print(glo_in_mean)
                 acc = acc[1]
 
 
