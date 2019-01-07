@@ -8,6 +8,9 @@ class BaseConfig(object):
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
 
+    def __str__(self):
+        return str(self.__dict__)
+
 
 class input_ProtoConfig(BaseConfig):
     def __init__(self):
@@ -36,6 +39,9 @@ class input_ProtoConfig(BaseConfig):
         # The number of classes post relabeling is N_CLASS
         self.relabel = False
         self.n_trueclass = 1000
+
+        # if True, concentration is varied independently of the odor identity
+        self.vary_concentration = False
 
 
 class SingleLayerConfig(BaseConfig):

@@ -26,9 +26,12 @@ def load_config(save_path):
         setattr(config, key, val)
     return config
 
+
 def load_pickle(dir, var):
+    """Load pickle by epoch in sorted order."""
     out = []
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    ns = sorted([int(n) for n in os.listdir(dir)])  # sort by epochs
+    dirs = [os.path.join(dir, str(n)) for n in ns]
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
@@ -36,6 +39,7 @@ def load_pickle(dir, var):
             cur_val = var_dict[var]
             out.append(cur_val)
     return out
+
 
 def varying_config(experiment, i):
     """Training a specific hyperparameter settings.
