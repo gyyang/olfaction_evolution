@@ -39,10 +39,10 @@ def st(experiment, save_path, s=0,e=1000):
 def temp():
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 15
+    config.max_epoch = 8
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
-    config.ORN_NOISE_STD = 0
+    config.NOISE_MODEL = 'multiplicative'
 
     config.train_pn2kc = False
     config.sparse_pn2kc = True
@@ -53,10 +53,11 @@ def temp():
 
     config.skip_orn2pn = True
     config.direct_glo = False
+    config.initializer_pn2kc = 'constant'
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['ORN_NOISE_STD'] = [0, 0.3, 0.6]
-    hp_ranges['kc_inputs'] = [3, 7, 11, 15, 20,30, 40]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
+    hp_ranges['kc_inputs'] = [3, 7, 11, 15, 20, 30, 40, 50]
     return config, hp_ranges
 
 # def temp():
@@ -81,7 +82,7 @@ def temp():
 #     hp_ranges['ORN_NOISE_STD'] = [0, 0.2, .4, .6, .8]
 #     return config, hp_ranges
 
-path = './files_temp/vary_noise_kc_input_skip'
+path = './files_temp/vary_noise_kc_input_skip_multiplicative'
 t(temp(), path,s=0,e=100)
 
 # analysis_pn2kc_training.plot_distribution(path)

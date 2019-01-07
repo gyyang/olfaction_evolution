@@ -99,11 +99,14 @@ class SingleLayerModel(Model):
         self.acc = tf.constant(0.)
 
 
-def get_sparse_mask(nx, ny, non):
+def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
     """Generate a binary mask.
 
     The mask will be of size (nx, ny)
     For all the nx connections to each 1 of the ny units, only non connections are 1.
+
+    If complex == True, KCs cannot receive the connections from the same OR from duplicated ORN inputs.
+    Assumed to be 'repeat' style duplication.
 
     Args:
         nx: int
@@ -114,9 +117,17 @@ def get_sparse_mask(nx, ny, non):
         mask: numpy array (nx, ny)
     """
     mask = np.zeros((nx, ny))
-    mask[:non] = 1
-    for i in range(ny):
-        np.random.shuffle(mask[:, i])  # shuffling in-place
+
+    if not complex:
+        mask[:non] = 1
+        for i in range(ny):
+            np.random.shuffle(mask[:, i])  # shuffling in-place
+    else:
+        OR_ixs = [np.arange(i, nx, nOR) for i in range(nOR)] # only works for repeat style duplication
+        for i in range(ny):
+            ix = [np.random.choice(bag) for bag in OR_ixs]
+            ix = np.random.choice(ix, non, replace=False)
+            mask[ix,i] = 1
     return mask.astype(np.float32)
 
 import normalization
@@ -317,7 +328,10 @@ class FullModel(Model):
                                     initializer=tf.constant_initializer(self.config.kc_bias))
 
             if self.config.sparse_pn2kc:
-                w_mask = get_sparse_mask(N_USE, N_KC, self.config.kc_inputs)
+                if self.config.skip_orn2pn:
+                    w_mask = get_sparse_mask(N_USE, N_KC, self.config.kc_inputs, complex=True)
+                else:
+                    w_mask = get_sparse_mask(N_USE, N_KC, self.config.kc_inputs)
                 w_mask = tf.get_variable(
                     'mask', shape=(N_USE, N_KC), dtype=tf.float32,
                     initializer=tf.constant_initializer(w_mask),
