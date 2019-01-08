@@ -46,11 +46,11 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-# #peter specific
-TRAIN = True
-ANALYZE = True
-is_test = True
-experiments = ['vary_kc_dropout']
+# # #peter specific
+# TRAIN = True
+# ANALYZE = True
+# is_test = True
+# experiments = ['vary_kc_dropout']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -188,3 +188,9 @@ if 'vary_pn2kc_noise' in experiments:
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
 
+if 'multi_head' in experiments:
+    path = './files/multi_head'
+    if TRAIN:
+        local_train(se.train_multihead(is_test), path)
+    if ANALYZE:
+        pass
