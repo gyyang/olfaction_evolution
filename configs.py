@@ -46,6 +46,9 @@ class input_ProtoConfig(BaseConfig):
         # if True, concentration is varied independently of the odor identity
         self.vary_concentration = False
 
+        # If label_type == 'multi_head_sparse', the second head is valence
+        self.n_class_valence = 3
+
 
 class SingleLayerConfig(BaseConfig):
     def __init__(self):

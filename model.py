@@ -57,6 +57,7 @@ class Model(object):
         var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
         if self.config.receptor_layer:
             var_dict['w_or'] = sess.run(self.w_or)
+            var_dict['w_combined'] = np.matmul(sess.run(self.w_or), sess.run(self.w_orn))
         var_dict['w_orn'] = sess.run(self.w_orn)
         var_dict['w_glo'] = sess.run(self.w_glo)
         with open(fname, 'wb') as f:
@@ -259,63 +260,64 @@ class FullModel(Model):
         self.saver = tf.train.Saver()
 
     def _build(self, x, y, training):
-        N_PN = self.config.N_PN
-        N_KC = self.config.N_KC
+        config = self.config
+        N_PN = config.N_PN
+        N_KC = config.N_KC
         self.loss = 0
 
-        if self.config.receptor_layer:
+        if config.receptor_layer:
             # Define another layer, layer0, that connects receptors to ORNs
             with tf.variable_scope('layer0', reuse= tf.AUTO_REUSE):
-                N_OR = self.config.N_ORN
-                ORN_DUP = self.config.N_ORN_DUPLICATION
-                N_ORN = self.config.N_ORN * ORN_DUP
+                N_OR = config.N_ORN
+                ORN_DUP = config.N_ORN_DUPLICATION
+                N_ORN = config.N_ORN * ORN_DUP
                 range = 1/N_OR
-                initializer = _initializer(range, self.config.initializer_or2orn)
+                initializer = _initializer(range, config.initializer_or2orn)
                 w_or = tf.get_variable('kernel', shape=(N_OR, N_ORN), dtype=tf.float32,
                                      initializer=initializer)
-                if self.config.sign_constraint_or2orn:
+                if config.sign_constraint_or2orn:
                     w_or = tf.abs(w_or)
 
-                if self.config.or2orn_normalization:
+                if config.or2orn_normalization:
                     sums = tf.reduce_sum(w_or, axis=0)
                     w_or = tf.divide(w_or, sums)
 
-                if self.config.or_bias:
+                if config.or_bias:
                     b_or = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                             initializer=tf.constant_initializer(-0.01))
                 else:
                     b_or = 0
 
                 orn = tf.matmul(x, w_or) + b_or
-                orn = _noise(orn, self.config.NOISE_MODEL, self.config.ORN_NOISE_STD)
+                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
         else:
-            if self.config.replicate_orn_with_tiling:
+            if config.replicate_orn_with_tiling:
                 # Replicating ORNs through tiling
-                ORN_DUP = self.config.N_ORN_DUPLICATION
-                N_ORN = self.config.N_ORN * ORN_DUP
+                ORN_DUP = config.N_ORN_DUPLICATION
+                N_ORN = config.N_ORN * ORN_DUP
 
-                assert x.shape[-1] == self.config.N_ORN
+                assert x.shape[-1] == config.N_ORN
                 orn = tf.tile(x, [1, ORN_DUP])
-                orn = _noise(orn, self.config.NOISE_MODEL, self.config.ORN_NOISE_STD)
+                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
             else:
                 ORN_DUP = 1
-                N_ORN = self.config.N_ORN
+                N_ORN = config.N_ORN
                 orn = x
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
-            if self.config.direct_glo:
+            if config.direct_glo:
                 range = _sparse_range(ORN_DUP)
             else:
                 range = _sparse_range(N_ORN)
 
-            initializer = _initializer(range, self.config.initializer_orn2pn)
+            initializer = _initializer(range, config.initializer_orn2pn)
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32, initializer=initializer)
 
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer=tf.constant_initializer(0))
 
-            if self.config.direct_glo:
+            if config.direct_glo:
                 # alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
                 #                         initializer=tf.constant_initializer(0.5))
                 # w_orn = w1 + alpha * tf.eye(N_PN)
@@ -326,51 +328,51 @@ class FullModel(Model):
             else:
                 w_orn = w1
 
-            if self.config.sign_constraint_orn2pn:
+            if config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
 
-            if self.config.orn2pn_normalization:
+            if config.orn2pn_normalization:
                 sums = tf.reduce_sum(w_orn, axis=0)
                 w_orn = tf.divide(w_orn, sums)
 
             glo_in_pre = tf.matmul(orn, w_orn) + b_orn
             self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
-            glo_in = _normalize(glo_in_pre, self.config.pn_norm_pre, training)
-            if self.config.skip_orn2pn:
+            glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
+            if config.skip_orn2pn:
                 glo_in = orn
 
             self.glo_in_mean = tf.reduce_mean(glo_in, axis=1)
 
             glo = tf.nn.relu(glo_in)
 
-            glo = _normalize(glo, self.config.pn_norm_post, training)
+            glo = _normalize(glo, config.pn_norm_post, training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            if self.config.skip_orn2pn:
+            if config.skip_orn2pn:
                 N_USE = N_ORN
             else:
                 N_USE = N_PN
 
-            if self.config.initial_pn2kc == 0:
-                if self.config.sparse_pn2kc:
-                    range = _sparse_range(self.config.kc_inputs)
+            if config.initial_pn2kc == 0:
+                if config.sparse_pn2kc:
+                    range = _sparse_range(config.kc_inputs)
                 else:
                     range = _sparse_range(N_USE)
             else:
-                range = self.config.initial_pn2kc
+                range = config.initial_pn2kc
 
-            initializer = _initializer(range, self.config.initializer_pn2kc)
+            initializer = _initializer(range, config.initializer_pn2kc)
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)
 
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(self.config.kc_bias))
+                                    initializer=tf.constant_initializer(config.kc_bias))
 
-            if self.config.sparse_pn2kc:
-                if self.config.skip_orn2pn:
-                    w_mask = get_sparse_mask(N_USE, N_KC, self.config.kc_inputs, complex=True)
+            if config.sparse_pn2kc:
+                if config.skip_orn2pn:
+                    w_mask = get_sparse_mask(N_USE, N_KC, config.kc_inputs, complex=True)
                 else:
-                    w_mask = get_sparse_mask(N_USE, N_KC, self.config.kc_inputs)
+                    w_mask = get_sparse_mask(N_USE, N_KC, config.kc_inputs)
                 w_mask = tf.get_variable(
                     'mask', shape=(N_USE, N_KC), dtype=tf.float32,
                     initializer=tf.constant_initializer(w_mask),
@@ -379,45 +381,59 @@ class FullModel(Model):
             else:
                 w_glo = w2
 
-            if self.config.sign_constraint_pn2kc:
+            if config.sign_constraint_pn2kc:
                 w_glo = tf.abs(w_glo)
 
-            if self.config.mean_subtract_pn2kc:
+            if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
             # KC input before activation function
             kc_in = tf.matmul(glo, w_glo) + b_glo
-            kc_in = _normalize(kc_in, self.config.kc_norm_pre, training)
-            if 'skip_pn2kc' in dir(self.config) and self.config.skip_pn2kc:
+            kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+            if 'skip_pn2kc' in dir(self.config) and config.skip_pn2kc:
                 kc_in = glo
             kc = tf.nn.relu(kc_in)
-            kc = _normalize(kc, self.config.kc_norm_post, training)
+            kc = _normalize(kc, config.kc_norm_post, training)
 
-        if self.config.kc_dropout:
-            kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training=training)
+        if config.kc_dropout:
+            kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
 
-        if self.config.kc_loss:
-            # self.kc_loss = tf.reduce_mean(tf.pow(tf.abs(w_glo), 0.5)) * self.config.kc_loss_alpha
-            self.kc_loss = tf.reduce_mean(tf.tanh(self.config.kc_loss_beta * w_glo)) * self.config.kc_loss_alpha
+        if config.kc_loss:
+            # self.kc_loss = tf.reduce_mean(tf.pow(tf.abs(w_glo), 0.5)) * config.kc_loss_alpha
+            self.kc_loss = tf.reduce_mean(tf.tanh(config.kc_loss_beta * w_glo)) * config.kc_loss_alpha
             self.loss += self.kc_loss
 
-        if self.config.label_type == 'combinatorial':
-            n_logits = self.config.N_COMBINATORIAL_CLASS
+        if config.label_type == 'combinatorial':
+            n_logits = config.N_COMBINATORIAL_CLASS
         else:
-            n_logits = self.config.N_CLASS
+            n_logits = config.N_CLASS
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
-        if self.config.label_type == 'combinatorial':
+        if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
-        elif self.config.label_type == 'one_hot':
+        elif config.label_type == 'one_hot':
             self.loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
             self.acc = tf.metrics.accuracy(labels=tf.argmax(y, axis=-1),
                                            predictions=tf.argmax(logits,axis=-1))
-        elif self.config.label_type == 'sparse':
+        elif config.label_type == 'sparse':
             self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
             pred = tf.argmax(logits, axis=-1)
             self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
+        elif config.label_type == 'multi_head_sparse':
+            # second head
+            logits2 = tf.layers.dense(kc, config.n_class_valence,
+                                      name='layer3_2', reuse=tf.AUTO_REUSE)
+
+            y1, y2 = tf.unstack(y, axis=1)
+
+            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y1,
+                                                                logits=logits)
+            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y2,
+                                                                logits=logits2)
+            pred = tf.argmax(logits, axis=-1)
+            self.acc = tf.metrics.accuracy(labels=y1, predictions=pred)
+
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
@@ -425,7 +441,7 @@ class FullModel(Model):
 
         # print('USING L2 LOSS on ORN-PN weights!!')
         # self.loss += tf.reduce_sum(tf.square(w_orn)) * 0.01
-        if self.config.receptor_layer:
+        if config.receptor_layer:
             self.w_or = w_or
 
         self.w_orn = w_orn
