@@ -28,7 +28,7 @@ wglo = utils.load_pickle(dir, 'w_glo')
 bglo = utils.load_pickle(dir, 'model/layer2/bias:0')
 
 for p, cur_w in zip(parameters, wglo):
-    glo_score, _ = tools.compute_glo_score(cur_w, unique_orn=configs[0].N_ORN)
+    glo_score, _ = tools.compute_glo_score(cur_w, unique_ors=configs[0].N_ORN)
     utils.plot_weights(cur_w, str(p), arg_sort = 1, fig_dir = fig_dir, ylabel= 'from PNs', xlabel='to KCs', title= glo_score)
 #
 nr = 5

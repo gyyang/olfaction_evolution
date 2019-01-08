@@ -39,7 +39,8 @@ is_test = args.testing
 
 # experiments
 if args.experiment == 'core':
-    experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn', 'vary_kc',
+    experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn',
+                   'vary_kc', 'vary_kc_dropout',
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_pn2kc_initial_value','vary_pn2kc_noise']
 else:
@@ -49,7 +50,7 @@ else:
 TRAIN = True
 ANALYZE = True
 is_test = True
-experiments = ['vary_kc_claws']
+experiments = ['vary_kc_dropout']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -92,6 +93,14 @@ if 'vary_kc' in experiments:
                                        loop_key='ORN_NOISE_STD'),
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
+
+if 'vary_kc_dropout' in experiments:
+    path = './files/vary_kc_dropout'
+    if TRAIN:
+        local_train(experiments_controls_pn2kc.vary_kc_dropout_configs(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='N_KC', y_key='val_acc', loop_key= 'kc_dropout')
+        sa.plot_results(path, x_key='N_KC', y_key='glo_score', loop_key= 'kc_dropout')
 
 if 'vary_kc_claws' in experiments:
     path = './files/vary_kc_claws'
@@ -178,3 +187,4 @@ if 'vary_pn2kc_noise' in experiments:
         # pn2kc_training_analysis.plot_distribution(path)
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
+
