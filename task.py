@@ -175,6 +175,15 @@ def _generate_proto_threshold(
         val_labels: np array (n_val, n_class)
     """
     rng = np.random.RandomState(seed)
+    multi_head = label_type == 'multi_head_sparse'
+    n_good_odor = n_bad_odor = 5
+    p_good_odor = p_bad_odor = 0.05
+    n_train_good = int(p_good_odor*n_train)
+    n_val_good = int(p_good_odor*n_val)
+    n_train_bad = int(p_bad_odor * n_train)
+    n_val_bad = int(p_bad_odor * n_val)
+    n_train_neutral = n_train - n_train_good - n_train_bad
+    n_val_neutral = n_val - n_val_good - n_val_bad
 
     # the number of prototypes
     n_proto = n_trueclass if relabel else n_class
@@ -196,15 +205,53 @@ def _generate_proto_threshold(
     lamb = 1
     bias = 0
 
-    prototypes = rng.uniform(0, lamb, (n_proto-1, n_orn))
-    train_odors = rng.uniform(0, lamb, (n_train, n_orn))
-    val_odors = rng.uniform(0, lamb, (n_val, n_orn))
+    if multi_head:
+        n_neutral_odor = n_proto - 1 - n_good_odor - n_bad_odor
+        prototypes_neutral = rng.uniform(0, lamb, (n_neutral_odor, n_orn))
+        prototypes_good = np.zeros((n_good_odor, n_orn))
+        prototypes_good[range(n_good_odor), range(n_good_odor)] = 5.
+        prototypes_bad = np.zeros((n_bad_odor, n_orn))
+        prototypes_bad[range(n_bad_odor), range(n_good_odor, n_good_odor+n_bad_odor)] = 5.
+        prototypes = np.concatenate((prototypes_neutral, prototypes_good, prototypes_bad), axis=0)
+
+        train_odors_neutral = rng.uniform(0, lamb, (n_train_neutral, n_orn))
+        ind = rng.randint(n_good_odor, size=(n_train_good))
+        train_odors_good = prototypes_good[ind] + rng.uniform(0, 1, (n_train_good, n_orn))
+        ind = rng.randint(n_bad_odor, size=(n_train_bad))
+        train_odors_bad = prototypes_bad[ind] + rng.uniform(0, 1, (n_train_bad, n_orn))
+        train_odors = np.concatenate((train_odors_neutral, train_odors_good, train_odors_bad), axis=0)
+        train_labels_valence = np.array([0]*n_train_neutral+[1]*n_train_good+[2]*n_train_bad)
+        ind_shuffle = np.arange(n_train)
+        rng.shuffle(ind_shuffle)
+        train_odors = train_odors[ind_shuffle, :]
+        train_labels_valence = train_labels_valence[ind_shuffle]
+
+        val_odors_neutral = rng.uniform(0, lamb, (n_val_neutral, n_orn))
+        ind = rng.randint(n_good_odor, size=(n_val_good))
+        val_odors_good = prototypes_good[ind] + rng.uniform(0, 1, (n_val_good, n_orn))
+        ind = rng.randint(n_bad_odor, size=(n_val_bad))
+        val_odors_bad = prototypes_bad[ind] + rng.uniform(0, 1, (n_val_bad, n_orn))
+        val_odors = np.concatenate(
+            (val_odors_neutral, val_odors_good, val_odors_bad), axis=0)
+        val_labels_valence = np.array([0]*n_val_neutral+[1]*n_val_good+[2]*n_val_bad)
+        ind_shuffle = np.arange(n_val)
+        rng.shuffle(ind_shuffle)
+        val_odors = val_odors[ind_shuffle, :]
+        val_labels_valence = val_labels_valence[ind_shuffle]
+
+    else:
+        prototypes = rng.uniform(0, lamb, (n_proto-1, n_orn))
+        train_odors = rng.uniform(0, lamb, (n_train, n_orn))
+        val_odors = rng.uniform(0, lamb, (n_val, n_orn))
+
     prototypes = add_bias(prototypes, bias)
     train_odors = add_bias(train_odors, bias)
     val_odors = add_bias(val_odors, bias)
+
     prototypes.clip(min=0)
     train_odors.clip(min=0)
     val_odors.clip(min=0)
+
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
 
@@ -251,13 +298,6 @@ def _generate_proto_threshold(
             train_labels, val_labels, n_proto, n_class, rng)
 
     assert train_odors.dtype == np.float32
-
-    if label_type == 'multi_head_sparse':
-        # generating labels for valence
-        train_labels_valence = rng.randint(
-            n_class_valence, size=(n_train,), dtype=np.int32)
-        val_labels_valence = rng.randint(
-            n_class_valence, size=(n_val,), dtype=np.int32)
 
     # Convert labels
     if label_type == 'combinatorial':
