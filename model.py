@@ -57,6 +57,7 @@ class Model(object):
         var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
         if self.config.receptor_layer:
             var_dict['w_or'] = sess.run(self.w_or)
+            var_dict['w_combined'] = np.matmul(sess.run(self.w_or), sess.run(self.w_orn))
         var_dict['w_orn'] = sess.run(self.w_orn)
         var_dict['w_glo'] = sess.run(self.w_glo)
         with open(fname, 'wb') as f:
@@ -331,7 +332,7 @@ class FullModel(Model):
                 w_orn = tf.abs(w_orn)
 
             if config.orn2pn_normalization:
-                sums = tf.reduce_sum(w_orn, axis=0)
+                sums = tf.reduce_sum(w_orn, axis=0, keepdims=True)
                 w_orn = tf.divide(w_orn, sums)
 
             glo_in_pre = tf.matmul(orn, w_orn) + b_orn

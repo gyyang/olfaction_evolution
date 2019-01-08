@@ -66,7 +66,7 @@ def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
         ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
-        if ykey in ['val_acc', 'glo_score']:
+        if ykey in ['val_acc', 'glo_score', 'or_glo_score', 'combined_glo_score']:
             ax.set_ylim([0, 1])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
         ax.set_xlim([-1, len(log[xkey][0,:])])
@@ -76,32 +76,44 @@ def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
     _plot_progress('epoch', 'val_loss')
     _plot_progress('epoch', 'val_acc')
     _plot_progress('epoch', 'glo_score')
+    try:
+        _plot_progress('epoch', 'or_glo_score')
+        _plot_progress('epoch', 'combined_glo_score')
+    except:
+        pass
 
 
-def plot_weights(root_path):
+def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
     """Plot weights.
 
-    Currently this only plots the ORN-PN connectivity
+    Currently this plots OR2ORN, ORN2PN, and OR2PN
     """
+    #TODO: fix code
     dirs = [os.path.join(root_path, n) for n in os.listdir(root_path)]
-    save_path = dirs[0]
+    save_path = dirs[dir_ix]
     config = tools.load_config(save_path)
     # Load network at the end of training
     model_dir = os.path.join(save_path, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
-        w_orn = var_dict['w_orn']
+        w_orn = var_dict[var_name]
 
-    if config.replicate_orn_with_tiling:
-        w_orn = np.reshape(
-            w_orn, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
-        w_orn = np.swapaxes(w_orn, 0, 1)
-        w_orn = np.reshape(w_orn, (-1, config.N_PN))
+    # if not hasattr(config, 'receptor_layer') or config.receptor_layer == False:
+    #     if config.replicate_orn_with_tiling:
+    #         w_orn = np.reshape(
+    #             w_orn, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
+    #         w_orn = np.swapaxes(w_orn, 0, 1)
+    #         w_orn = np.reshape(w_orn, (-1, config.N_PN))
 
     # Sort for visualization
-    ind_max = np.argmax(w_orn, axis=0)
-    ind_sort = np.argsort(ind_max)
-    w_plot = w_orn[:, ind_sort]
+    if sort_axis == 0:
+        ind_max = np.argmax(w_orn, axis=0)
+        ind_sort = np.argsort(ind_max)
+        w_plot = w_orn[:, ind_sort]
+    else:
+        ind_max = np.argmax(w_orn, axis=1)
+        ind_sort = np.argsort(ind_max)
+        w_plot = w_orn[ind_sort, :]
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
@@ -110,13 +122,26 @@ def plot_weights(root_path):
     vlim = np.round(np.max(abs(w_plot)), decimals=1)
     im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
                    interpolation='none')
+
+    if var_name == 'w_orn':
+        plt.title('ORN-PN connectivity after training', fontsize=7)
+        ax.set_xlabel('To PNs', labelpad=-5)
+        ax.set_ylabel('From ORNs', labelpad=-5)
+    elif var_name == 'w_or':
+        plt.title('OR-ORN expression array after training', fontsize=7)
+        ax.set_xlabel('ORN', labelpad=-5)
+        ax.set_ylabel('Unique OR', labelpad=-5)
+    elif var_name == 'w_combined':
+        plt.title('OR-PN combined connectivity', fontsize=7)
+        ax.set_xlabel('PN', labelpad=-5)
+        ax.set_ylabel('OR', labelpad=-5)
+    else:
+        raise ValueError('unknown variable name for weight matrix: {}'.format(var_name))
+
     plt.axis('tight')
-    plt.title('ORN-PN connectivity after training', fontsize=7)
     for loc in ['bottom', 'top', 'left', 'right']:
         ax.spines[loc].set_visible(False)
     ax.tick_params('both', length=0)
-    ax.set_xlabel('To PNs', labelpad=-5)
-    ax.set_ylabel('From ORNs', labelpad=-5)
     ax.set_xticks([0, w_plot.shape[1]])
     ax.set_yticks([0, w_plot.shape[0]])
     ax = fig.add_axes(rect_cb)
@@ -125,7 +150,7 @@ def plot_weights(root_path):
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
     plt.axis('tight')
-    _easy_save(root_path, '_worn')
+    _easy_save(root_path, '_' + var_name + '_' + str(dir_ix))
 
 
     # Plot distribution of various connections

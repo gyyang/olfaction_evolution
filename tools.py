@@ -142,6 +142,8 @@ nicename_dict = {
         'N_ORN_DUPLICATION': 'ORNs per type',
         'kc_inputs': 'Number of KC Claws',
         'glo_score': 'GloScore',
+        'or_glo_score': 'OR to ORN GloScore',
+        'combined_glo_score': 'OR to PN GloScore',
         'val_acc': 'Accuracy',
         'val_loss': 'Loss',
         'epoch': 'Epoch',
@@ -178,8 +180,13 @@ def _reshape_worn(w_orn, unique_orn, mode='tile'):
         raise ValueError('Unknown mode' + str(mode))
     return w_orn_by_pn
 
+def _reshape_worn_by_wor(w_orn, w_or):
+    ind_max = np.argmax(w_or, axis=0)
+    w_orn = w_orn[ind_max,:]
+    return w_orn, ind_max
 
-def compute_glo_score(w_orn, unique_ors, mode='tile', receptor_matrix = None):
+
+def compute_glo_score(w_orn, unique_ors, mode='tile', w_or = None):
     """Compute the glomeruli score in numpy.
 
     This function returns the glomeruli score, a number between 0 and 1 that
@@ -211,7 +218,7 @@ def compute_glo_score(w_orn, unique_ors, mode='tile', receptor_matrix = None):
         w_orn_by_pn = _reshape_worn(w_orn, unique_ors, mode)
         w_orn_by_pn = w_orn_by_pn.mean(axis=0)
     elif mode == 'matrix':
-        ind_max = np.argmax(receptor_matrix, axis=0)
+        _, ind_max = _reshape_worn_by_wor(w_orn, w_or)
         w_orn_by_pn = np.zeros((unique_ors, unique_ors))
         for i in range(unique_ors):
             out = np.mean(w_orn[ind_max == i, :], axis=0)
