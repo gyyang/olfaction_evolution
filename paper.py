@@ -52,7 +52,8 @@ else:
 TRAIN = True
 ANALYZE = True
 is_test = True
-experiments = ['vary_kc_dropout']
+# experiments = ['vary_or2orn_noise','vary_or2orn_normalization']
+experiments = ['or2orn']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -61,7 +62,7 @@ if 'orn2pn' in experiments:
         local_train(se.train_orn2pn(is_test), path)
     if ANALYZE:
         sa.plot_progress(path)
-        sa.plot_weights(path)
+        sa.plot_weights(path, sort_axis=1)
 
 if 'vary_orn_duplication' in experiments:
     # Vary ORN n duplication under different nKC
@@ -192,11 +193,11 @@ if 'vary_pn2kc_noise' in experiments:
 if 'or2orn' in experiments:
     path = './files/or2orn'
     if TRAIN:
-        local_train(experiments_receptor.vary_noise(is_test), path)
+        local_train(experiments_receptor.basic(is_test), path)
     if ANALYZE:
         sa.plot_progress(path)
         sa.plot_weights(path, var_name = 'w_or')
-        sa.plot_weights(path, var_name = 'w_orn')
+        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1)
         sa.plot_weights(path, var_name = 'w_combined')
 
 if 'vary_or2orn_noise' in experiments:
@@ -208,9 +209,13 @@ if 'vary_or2orn_noise' in experiments:
         sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score')
         sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='or_glo_score')
         sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='combined_glo_score')
+        sa.plot_weights(path, var_name='w_or', dir_ix=0)
+        sa.plot_weights(path, var_name='w_or', dir_ix=1)
+        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
+        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=1)
 
 if 'vary_or2orn_normalization' in experiments:
-    path = './files/or2orn_noise'
+    path = './files/or2orn_normalization'
     if TRAIN:
         local_train(experiments_receptor.vary_normalization(is_test), path)
     if ANALYZE:

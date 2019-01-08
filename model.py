@@ -332,7 +332,7 @@ class FullModel(Model):
                 w_orn = tf.abs(w_orn)
 
             if config.orn2pn_normalization:
-                sums = tf.reduce_sum(w_orn, axis=0)
+                sums = tf.reduce_sum(w_orn, axis=0, keepdims=True)
                 w_orn = tf.divide(w_orn, sums)
 
             glo_in_pre = tf.matmul(orn, w_orn) + b_orn
