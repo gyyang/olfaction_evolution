@@ -421,8 +421,8 @@ class FullModel(Model):
             self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
         elif config.label_type == 'multi_head_sparse':
             # second head
-            logits2 = tf.layers.dense(kc, n_logits, name='layer3_2',
-                                     reuse=tf.AUTO_REUSE)
+            logits2 = tf.layers.dense(kc, config.n_class_valence,
+                                      name='layer3_2', reuse=tf.AUTO_REUSE)
 
             y1, y2 = tf.unstack(y, axis=1)
 

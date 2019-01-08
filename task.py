@@ -138,6 +138,7 @@ def _generate_proto_threshold(
         n_trueclass,
         n_combinatorial_classes=None,
         combinatorial_density=None,
+        n_class_valence=None,
         seed=0):
     """Activate all ORNs randomly.
 
@@ -164,6 +165,7 @@ def _generate_proto_threshold(
         n_trueclass: int, the number of True classes
         n_combinatorial_classes: int, the number of combinatorial classes
         combinatorial_density: float, the density of combinatorial code
+        n_class_valence: int, the number of valence class
         seed: int, random seed to generate the dataset
 
     Returns:
@@ -250,6 +252,13 @@ def _generate_proto_threshold(
 
     assert train_odors.dtype == np.float32
 
+    if label_type == 'multi_head_sparse':
+        # generating labels for valence
+        train_labels_valence = rng.randint(
+            n_class_valence, size=(n_train,), dtype=np.int32)
+        val_labels_valence = rng.randint(
+            n_class_valence, size=(n_val,), dtype=np.int32)
+
     # Convert labels
     if label_type == 'combinatorial':
         key = _generate_combinatorial_label(
@@ -263,8 +272,8 @@ def _generate_proto_threshold(
     elif label_type == 'sparse':
         pass
     elif label_type == 'multi_head_sparse':
-        train_labels = np.stack([train_labels, train_labels]).T
-        val_labels = np.stack([val_labels, val_labels]).T
+        train_labels = np.stack([train_labels, train_labels_valence]).T
+        val_labels = np.stack([val_labels, val_labels_valence]).T
     else:
         raise ValueError('Unknown label type: ', str(label_type))
 
@@ -307,6 +316,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         n_trueclass=config.n_trueclass,
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
+        n_class_valence=config.n_class_valence,
         seed=0)
 
     if folder_name is None:
