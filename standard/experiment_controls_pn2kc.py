@@ -6,7 +6,7 @@ import task
 import train
 import configs
 
-testing_epochs = 5
+testing_epochs = 8
 
 def vary_pn2kc_initial_value_configs(argTest=False):
     '''
@@ -100,7 +100,7 @@ def vary_pn2kc_loss_configs(argTest=False):
 
 def vary_kc_dropout_configs(argTest):
     '''
-    Vary KC dropout
+    Vary KC dropout. Observe the requirement for nKC as a function of dropout
     Results:
 
     '''
@@ -109,28 +109,27 @@ def vary_kc_dropout_configs(argTest):
     config.max_epoch = 30
 
     config.replicate_orn_with_tiling = True
+    config.ORN_NOISE_STD = 0
     config.skip_orn2pn = False
 
     config.kc_loss = False
     config.kc_loss_alpha = 1
     config.kc_loss_beta = 10
 
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-    config.train_kc_bias = False
+    config.train_pn2kc = False
+    config.sparse_pn2kc = True
+    config.train_kc_bias = True
     config.initial_pn2kc = 0
-    config.save_every_epoch = True
-    config.initializer_pn2kc = 'normal'
+    config.save_every_epoch = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['kc_dropout'] = [0, .1, .3, .5, .7, .9]
-    hp_ranges['ORN_NOISE_STD'] = [0, .5, 1]
+    hp_ranges['N_KC'] = [50, 100, 200, 400, 800, 1600, 2500, 5000, 10000]
 
     if argTest:
         config.max_epoch=testing_epochs
-        hp_ranges['kc_dropout'] = [0, .4, .8]
-        hp_ranges['ORN_NOISE_STD'] = [0, .5]
+        hp_ranges['kc_dropout'] = [0, .25, .5, .75]
 
     return config, hp_ranges
 
