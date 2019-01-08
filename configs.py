@@ -8,6 +8,9 @@ class BaseConfig(object):
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
 
+    def __str__(self):
+        return str(self.__dict__)
+
 
 class input_ProtoConfig(BaseConfig):
     def __init__(self):
@@ -19,10 +22,13 @@ class input_ProtoConfig(BaseConfig):
         self.n_val = 8192
 
         self.N_CLASS = 100
+        #TODO: this name should really be N_OR. fix without breaking code
         self.N_ORN = 50
 
+        # label type can be either combinatorial, one_hot, sparse
+        self.label_type = 'sparse'
+
         self.percent_generalization = 100
-        self.use_combinatorial = False
         self.n_combinatorial_classes = 20
         self.combinatorial_density = .3
         # If True, the enclidean distance used for nearest neighbor is
@@ -36,6 +42,12 @@ class input_ProtoConfig(BaseConfig):
         # The number of classes post relabeling is N_CLASS
         self.relabel = False
         self.n_trueclass = 1000
+
+        # if True, concentration is varied independently of the odor identity
+        self.vary_concentration = False
+
+        # If label_type == 'multi_head_sparse', the second head is valence
+        self.n_class_valence = 3
 
 
 class SingleLayerConfig(BaseConfig):
@@ -69,8 +81,25 @@ class FullConfig(BaseConfig):
         self.replicate_orn_with_tiling = True
         self.N_ORN_DUPLICATION = 10
         self.N_PN = 50
-        self.ORN_NOISE_STD = 0.
         self.N_KC = 2500
+
+        #noise model
+        #model for noise: can be 'additive'. 'multiplicative', or None
+        self.NOISE_MODEL = 'additive'
+        self.ORN_NOISE_STD = 0.
+
+        # Receptor --> ORN connections
+
+        # If True, create an receptor layer
+        self.receptor_layer = False
+        # Initialization method for or2orn: can take values uniform, random, or normal
+        self.initializer_or2orn = 'uniform'
+        # If True, OR --> ORN connections are positive
+        self.sign_constraint_or2orn = True
+        # If True, normalize by or2orn weight matrix by L1 norm (sum of weights onto every ORN add up to 1)
+        self.or2orn_normalization = True
+        # If True, add bias to receptor weights
+        self.or_bias = False
 
         # ORN--> PN connections
 
@@ -88,6 +117,8 @@ class FullConfig(BaseConfig):
         self.pn_norm_post = None
         # If True, skip the ORN --> PN connections
         self.skip_orn2pn = False
+        # If True, normalize by orn2pn weight matrix by L1 norm (sum of weights onto every PN add up to 1)
+        self.orn2pn_normalization = False
 
 
         # PN --> KC connections
@@ -128,7 +159,4 @@ class FullConfig(BaseConfig):
         self.skip_pn2kc = False
         # number of inputs onto KCs
         self.kc_inputs = 7
-
-        # label type can be either combinatorial, one_hot, sparse
-        self.label_type = 'one_hot'
 

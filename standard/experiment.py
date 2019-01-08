@@ -6,7 +6,7 @@ import configs
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 5
+testing_epochs = 6
 def train_orn2pn(argTest=False):
     '''
     Most basic experiment. Train ORN2PN.
@@ -103,13 +103,15 @@ def vary_claw_configs(argTest=False):
     Vary number of inputs to KCs while skipping ORN2PN layer
     Results:
         Accuracy should be high at around claw values of 7-15
+        # Noise dependence
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+    config.skip_orn2pn = False
+    config.direct_glo = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -118,8 +120,8 @@ def vary_claw_configs(argTest=False):
     hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['kc_inputs'] = [3, 7, 15, 50]
-        hp_ranges['ORN_NOISE_STD'] = [0, 0.5]
+        hp_ranges['kc_inputs'] = [3, 7, 11, 15, 20, 35, 50]
+        hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
 def train_claw_configs(argTest=False):
@@ -213,7 +215,6 @@ def train_orn2pn2kc_configs(argTest):
 
     if argTest:
         config.max_epoch = testing_epochs
-        config.max_epoch = 5
         hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
 

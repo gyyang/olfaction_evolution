@@ -21,19 +21,22 @@ mpl.rcParams['font.size'] = 7
 
 figpath = os.path.join(rootpath, 'figures')
 
-def _easy_save(save_path, str='', dpi=300):
+def _easy_save(save_path, str='', dpi=300, pdf=True):
     save_name = save_path.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path, exist_ok=True)
     figname = os.path.join(path, save_name + str)
-    plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
     plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
+
+    if pdf:
+        plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
     plt.close()
 
 def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
+    # TODO: This function no longer supports directly plot progress of save_path. Should fix.
     log = tools.load_all_results(save_path, argLast=False)
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)
@@ -51,7 +54,8 @@ def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
                 ax.plot(x, y, alpha= alpha)
 
         if legends is not None:
-            ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
+            # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
+            ax.legend(legends, fontsize=4)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -185,7 +189,7 @@ def plot_activity(save_path):
     plt.show()
 
 
-def plot_results(path, x_key, y_key, loop_key=None):
+def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -194,6 +198,13 @@ def plot_results(path, x_key, y_key, loop_key=None):
         y_key: str, key for the y-axis variable
         loop_key: str, key for the value to loop around
     """
+    log_plot_dict = {'N_KC': [30, 100, 1000, 10000],
+                     'kc_loss_alpha': [.1, 1, 10, 100],
+                     'kc_loss_beta': [.1, 1, 10, 100],
+                     'initial_pn2kc':[.01, .1, 1]}
+
+    plot_dict = {'kc_inputs': [3, 7, 15, 20, 30, 40, 50]}
+
     res = tools.load_all_results(path)
 
     # Sort by x_key
@@ -207,28 +218,39 @@ def plot_results(path, x_key, y_key, loop_key=None):
         for x in np.unique(res[loop_key]):
             ind = res[loop_key] == x
             x_plot = res[x_key][ind]
-            if x_key == 'N_KC':
+            if x_key in log_plot_dict.keys():
                 x_plot = np.log(x_plot)
             ax.plot(x_plot, res[y_key][ind], 'o-', label=str(x))
     else:
-        ax.plot(res[x_key], res[y_key], 'o-')
+        x_plot = res[x_key]
+        if x_key in log_plot_dict.keys():
+            x_plot = np.log(x_plot)
+        ax.plot(x_plot, res[y_key], 'o-')
 
-    if x_key == 'N_KC':
-        xticks = np.array([30, 100, 1000, 10000])
+    if x_key == 'kc_inputs':
+        ax.plot([7, 7], [0, 1], '--', color = 'gray')
+
+    if x_key in log_plot_dict.keys():
+        xticks = np.array(log_plot_dict[x_key])
         ax.set_xticks(np.log(xticks))
+    elif x_key in plot_dict.keys():
+        xticks = np.array(plot_dict[x_key])
+        ax.set_xticks(xticks)
     else:
         xticks = res[x_key]
         ax.set_xticks(xticks)
     ax.set_xticklabels(xticks)
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
-    ax.set_yticks([0, 0.5, 1.0])
-    plt.ylim([0, 1])
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    if loop_key and y_key == 'glo_score':
+
+    if yticks is None:
+        ax.set_yticks([0, 0.5, 1.0])
+        plt.ylim([0, 1])
+    else:
+        ax.set_yticks(yticks)
+        plt.ylim(yticks[0]- .1 * yticks[-1], 1.1 * yticks[-1])
+
+    if loop_key:
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
         l.set_title(nicename(loop_key))
 
@@ -236,6 +258,10 @@ def plot_results(path, x_key, y_key, loop_key=None):
     if loop_key:
         figname += '_vary' + loop_key
 
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
     _easy_save(path, figname)
 
 
