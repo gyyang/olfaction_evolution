@@ -55,6 +55,8 @@ class Model(object):
 
         sess = tf.get_default_session()
         var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        if self.config.receptor_layer:
+            var_dict['w_or'] = sess.run(self.w_or)
         var_dict['w_orn'] = sess.run(self.w_orn)
         var_dict['w_glo'] = sess.run(self.w_glo)
         with open(fname, 'wb') as f:
@@ -261,18 +263,44 @@ class FullModel(Model):
         N_KC = self.config.N_KC
         self.loss = 0
 
-        if self.config.replicate_orn_with_tiling:
-            # Replicating ORNs through tiling
-            ORN_DUP = self.config.N_ORN_DUPLICATION
-            N_ORN = self.config.N_ORN * ORN_DUP
+        if self.config.receptor_layer:
+            # Define another layer, layer0, that connects receptors to ORNs
+            with tf.variable_scope('layer0', reuse= tf.AUTO_REUSE):
+                N_OR = self.config.N_ORN
+                ORN_DUP = self.config.N_ORN_DUPLICATION
+                N_ORN = self.config.N_ORN * ORN_DUP
+                range = 1/N_OR
+                initializer = _initializer(range, self.config.initializer_or2orn)
+                w_or = tf.get_variable('kernel', shape=(N_OR, N_ORN), dtype=tf.float32,
+                                     initializer=initializer)
+                if self.config.sign_constraint_or2orn:
+                    w_or = tf.abs(w_or)
 
-            assert x.shape[-1] == self.config.N_ORN
-            x = tf.tile(x, [1, ORN_DUP])
+                if self.config.or2orn_normalization:
+                    sums = tf.reduce_sum(w_or, axis=0)
+                    w_or = tf.divide(w_or, sums)
 
-            x = _noise(x, self.config.NOISE_MODEL, self.config.ORN_NOISE_STD)
+                if self.config.or_bias:
+                    b_or = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
+                                            initializer=tf.constant_initializer(-0.01))
+                else:
+                    b_or = 0
+
+                orn = tf.matmul(x, w_or) + b_or
+                orn = _noise(orn, self.config.NOISE_MODEL, self.config.ORN_NOISE_STD)
         else:
-            ORN_DUP = 1
-            N_ORN = self.config.N_ORN
+            if self.config.replicate_orn_with_tiling:
+                # Replicating ORNs through tiling
+                ORN_DUP = self.config.N_ORN_DUPLICATION
+                N_ORN = self.config.N_ORN * ORN_DUP
+
+                assert x.shape[-1] == self.config.N_ORN
+                orn = tf.tile(x, [1, ORN_DUP])
+                orn = _noise(orn, self.config.NOISE_MODEL, self.config.ORN_NOISE_STD)
+            else:
+                ORN_DUP = 1
+                N_ORN = self.config.N_ORN
+                orn = x
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if self.config.direct_glo:
@@ -301,11 +329,15 @@ class FullModel(Model):
             if self.config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
 
-            glo_in_pre = tf.matmul(x, w_orn) + b_orn
+            if self.config.orn2pn_normalization:
+                sums = tf.reduce_sum(w_orn, axis=0)
+                w_orn = tf.divide(w_orn, sums)
+
+            glo_in_pre = tf.matmul(orn, w_orn) + b_orn
             self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
             glo_in = _normalize(glo_in_pre, self.config.pn_norm_pre, training)
             if self.config.skip_orn2pn:
-                glo_in = x
+                glo_in = orn
 
             self.glo_in_mean = tf.reduce_mean(glo_in, axis=1)
 
@@ -393,6 +425,8 @@ class FullModel(Model):
 
         # print('USING L2 LOSS on ORN-PN weights!!')
         # self.loss += tf.reduce_sum(tf.square(w_orn)) * 0.01
+        if self.config.receptor_layer:
+            self.w_or = w_or
 
         self.w_orn = w_orn
         self.w_glo = w_glo

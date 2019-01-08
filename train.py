@@ -117,19 +117,40 @@ def train(config, reload=False, verbose=False):
             log['val_acc'].append(val_acc)
 
             if config.model == 'full':
-                w_orn = sess.run(model.w_orn)
-                w_glo = sess.run(model.w_glo)
-                glo_score, _ = tools.compute_glo_score(
-                    w_orn, config.N_ORN, glo_score_mode)
-                # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
-                log['glo_score'].append(glo_score)
-                # log['glo_score_w_glo'].append(glo_score_w_glo, config.N_ORN)
-                print('Glo score ' + str(glo_score))
+                if config.receptor_layer:
+                    w_or = sess.run(model.w_or)
+                    or_glo_score, _ = tools.compute_glo_score(
+                        w_or, config.N_ORN, glo_score_mode)
+                    print('OR receptor glo score ' + str(or_glo_score))
+                    log['or_glo_score'].append(or_glo_score)
 
-                sim_score, _ = tools.compute_sim_score(
-                    w_orn, config.N_ORN, glo_score_mode)
-                log['sim_score'].append(sim_score)
-                print('Sim score ' + str(sim_score))
+                    w_orn = sess.run(model.w_orn)
+                    glo_score, _ = tools.compute_glo_score(
+                        w_orn, config.N_ORN, 'matrix', w_or)
+                    print('Glo score ' + str(glo_score))
+                    log['glo_score'].append(glo_score)
+
+                    w_combined = np.matmul(w_or, w_orn)
+                    combined_glo_score, _ = tools.compute_glo_score(
+                        w_combined, config.N_ORN, glo_score_mode)
+                    print('Combined glo score ' + str(combined_glo_score))
+                    log['combined_glo_score'].append(combined_glo_score)
+
+                else:
+                    w_orn = sess.run(model.w_orn)
+                    glo_score, _ = tools.compute_glo_score(
+                        w_orn, config.N_ORN, glo_score_mode)
+                    log['glo_score'].append(glo_score)
+                    print('Glo score ' + str(glo_score))
+
+                    sim_score, _ = tools.compute_sim_score(
+                        w_orn, config.N_ORN, glo_score_mode)
+                    log['sim_score'].append(sim_score)
+                    print('Sim score ' + str(sim_score))
+
+                    # w_glo = sess.run(model.w_glo)
+                    # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
+                    # log['glo_score_w_glo'].append(glo_score_w_glo, config.N_ORN)
 
             # Compute condition number
             # w_glo = sess.run(model.w_glo)

@@ -30,8 +30,9 @@ def load_config(save_path):
 def load_pickle(dir, var):
     """Load pickle by epoch in sorted order."""
     out = []
-    ns = sorted([int(n) for n in os.listdir(dir)])  # sort by epochs
-    dirs = [os.path.join(dir, str(n)) for n in ns]
+    unsorted_dirs = os.listdir(dir)
+    ixs = np.argsort([int(n) for n in unsorted_dirs])  # sort by epochs
+    dirs = [os.path.join(dir, unsorted_dirs[n]) for n in ixs]
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
@@ -178,7 +179,7 @@ def _reshape_worn(w_orn, unique_orn, mode='tile'):
     return w_orn_by_pn
 
 
-def compute_glo_score(w_orn, unique_orn, mode='tile'):
+def compute_glo_score(w_orn, unique_ors, mode='tile', receptor_matrix = None):
     """Compute the glomeruli score in numpy.
 
     This function returns the glomeruli score, a number between 0 and 1 that
@@ -198,7 +199,7 @@ def compute_glo_score(w_orn, unique_orn, mode='tile'):
         In the mode=='tile'
             neurons from the same orn type are spaced by the number of types,
             for example, neurons from the 0-th type would be 0, 50, 100, ...
-        unique_orn: int, the number of unique ORNs
+        unique_ors: int, the number of unique ORNs
         mode: the way w_orn is organized
 
     Return:
@@ -206,8 +207,18 @@ def compute_glo_score(w_orn, unique_orn, mode='tile'):
         glo_scores: numpy array (n_pn,), all glomeruli scores
     """
     n_orn, n_pn = w_orn.shape
-    w_orn_by_pn = _reshape_worn(w_orn, unique_orn, mode)
-    w_orn_by_pn = w_orn_by_pn.mean(axis=0)
+    if mode == 'tile' or mode == 'repeat':
+        w_orn_by_pn = _reshape_worn(w_orn, unique_ors, mode)
+        w_orn_by_pn = w_orn_by_pn.mean(axis=0)
+    elif mode == 'matrix':
+        ind_max = np.argmax(receptor_matrix, axis=0)
+        w_orn_by_pn = np.zeros((unique_ors, unique_ors))
+        for i in range(unique_ors):
+            out = np.mean(w_orn[ind_max == i, :], axis=0)
+            out[np.isnan(out)] = 0
+            w_orn_by_pn[i, :] = out
+    else:
+        raise ValueError('reshaping format is not recognized {}'.format(mode))
 
     glo_scores = list()
     for i in range(n_pn):
@@ -218,7 +229,7 @@ def compute_glo_score(w_orn, unique_orn, mode='tile'):
         glo_score = (w_max - w_second) / (w_max + w_second)
         glo_scores.append(glo_score)
 
-    avg_glo_score = np.mean(glo_scores)
+    avg_glo_score = np.round(np.mean(glo_scores),4)
     return avg_glo_score, glo_scores
 
 

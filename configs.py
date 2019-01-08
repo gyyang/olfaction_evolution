@@ -22,6 +22,7 @@ class input_ProtoConfig(BaseConfig):
         self.n_val = 8192
 
         self.N_CLASS = 100
+        #TODO: this name should really be N_OR. fix without breaking code
         self.N_ORN = 50
 
         self.percent_generalization = 100
@@ -82,6 +83,19 @@ class FullConfig(BaseConfig):
         self.NOISE_MODEL = 'additive'
         self.ORN_NOISE_STD = 0.
 
+        # Receptor --> ORN connections
+
+        # If True, create an receptor layer
+        self.receptor_layer = False
+        # Initialization method for or2orn: can take values uniform, random, or normal
+        self.initializer_or2orn = 'uniform'
+        # If True, OR --> ORN connections are positive
+        self.sign_constraint_or2orn = True
+        # If True, normalize by or2orn weight matrix by L1 norm (sum of weights onto every ORN add up to 1)
+        self.or2orn_normalization = True
+        # If True, add bias to receptor weights
+        self.or_bias = False
+
         # ORN--> PN connections
 
         # Initialization method for pn2kc: can take values uniform, random, or normal
@@ -98,6 +112,8 @@ class FullConfig(BaseConfig):
         self.pn_norm_post = None
         # If True, skip the ORN --> PN connections
         self.skip_orn2pn = False
+        # If True, normalize by orn2pn weight matrix by L1 norm (sum of weights onto every PN add up to 1)
+        self.orn2pn_normalization = False
 
 
         # PN --> KC connections
