@@ -57,6 +57,7 @@ class Model(object):
         var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
         if self.config.receptor_layer:
             var_dict['w_or'] = sess.run(self.w_or)
+            var_dict['w_combined'] = np.matmul(sess.run(self.w_or), sess.run(self.w_orn))
         var_dict['w_orn'] = sess.run(self.w_orn)
         var_dict['w_glo'] = sess.run(self.w_glo)
         with open(fname, 'wb') as f:

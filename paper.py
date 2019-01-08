@@ -18,6 +18,7 @@ import argparse
 
 import standard.experiment as se
 import standard.experiment_controls_pn2kc as experiments_controls_pn2kc
+import standard.experiments_receptor as experiments_receptor
 from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
@@ -42,7 +43,8 @@ if args.experiment == 'core':
     experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn',
                    'vary_kc', 'vary_kc_dropout',
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
-                   'vary_pn2kc_loss', 'vary_pn2kc_initial_value','vary_pn2kc_noise']
+                   'vary_pn2kc_loss', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
+                   'or2orn', 'vary_or2orn_noise', 'vary_or2orn_normalization']
 else:
     experiments = args.experiment
 
@@ -183,8 +185,36 @@ if 'vary_pn2kc_noise' in experiments:
     if ANALYZE:
         sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc', loop_key= 'N_ORN_DUPLICATION')
         analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', loop_key='N_ORN_DUPLICATION')
-
         # pn2kc_training_analysis.plot_distribution(path)
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
 
+if 'or2orn' in experiments:
+    path = './files/or2orn'
+    if TRAIN:
+        local_train(experiments_receptor.vary_noise(is_test), path)
+    if ANALYZE:
+        sa.plot_progress(path)
+        sa.plot_weights(path, var_name = 'w_or')
+        sa.plot_weights(path, var_name = 'w_orn')
+        sa.plot_weights(path, var_name = 'w_combined')
+
+if 'vary_or2orn_noise' in experiments:
+    path = './files/or2orn_noise'
+    if TRAIN:
+        local_train(experiments_receptor.vary_noise(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score')
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='or_glo_score')
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='combined_glo_score')
+
+if 'vary_or2orn_normalization' in experiments:
+    path = './files/or2orn_noise'
+    if TRAIN:
+        local_train(experiments_receptor.vary_normalization(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='val_acc', loop_key='orn2pn_normalization')
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='glo_score', loop_key='orn2pn_normalization')
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='or_glo_score', loop_key='orn2pn_normalization')
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='combined_glo_score', loop_key='orn2pn_normalization')
