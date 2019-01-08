@@ -48,12 +48,11 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-# #peter specific
-TRAIN = True
-ANALYZE = True
-is_test = True
-# experiments = ['vary_or2orn_noise','vary_or2orn_normalization']
-experiments = ['or2orn']
+# # #peter specific
+# TRAIN = True
+# ANALYZE = True
+# is_test = True
+# experiments = ['vary_kc_dropout']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -223,3 +222,10 @@ if 'vary_or2orn_normalization' in experiments:
         sa.plot_results(path, x_key='or2orn_normalization', y_key='glo_score', loop_key='orn2pn_normalization')
         sa.plot_results(path, x_key='or2orn_normalization', y_key='or_glo_score', loop_key='orn2pn_normalization')
         sa.plot_results(path, x_key='or2orn_normalization', y_key='combined_glo_score', loop_key='orn2pn_normalization')
+        
+if 'multi_head' in experiments:
+    path = './files/multi_head'
+    if TRAIN:
+        local_train(se.train_multihead(is_test), path)
+    if ANALYZE:
+        pass
