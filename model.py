@@ -372,6 +372,20 @@ class FullModel(Model):
                                                            logits=logits)
             pred = tf.argmax(logits, axis=-1)
             self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
+        elif self.config.label_type == 'multi_head_sparse':
+            # second head
+            logits2 = tf.layers.dense(kc, n_logits, name='layer3_2',
+                                     reuse=tf.AUTO_REUSE)
+
+            y1, y2 = tf.unstack(y, axis=1)
+
+            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y1,
+                                                                logits=logits)
+            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y2,
+                                                                logits=logits2)
+            pred = tf.argmax(logits, axis=-1)
+            self.acc = tf.metrics.accuracy(labels=y1, predictions=pred)
+
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")

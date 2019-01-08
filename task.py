@@ -262,6 +262,9 @@ def _generate_proto_threshold(
         val_labels = _convert_one_hot_label(val_labels, n_class)
     elif label_type == 'sparse':
         pass
+    elif label_type == 'multi_head_sparse':
+        train_labels = np.stack([train_labels, train_labels]).T
+        val_labels = np.stack([val_labels, val_labels]).T
     else:
         raise ValueError('Unknown label type: ', str(label_type))
 
