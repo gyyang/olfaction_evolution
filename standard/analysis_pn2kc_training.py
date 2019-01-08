@@ -12,12 +12,16 @@ import standard.analysis as sa
 from scipy.stats import rankdata
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import kurtosis
+from scipy.stats import multivariate_normal
+
+from sklearn.mixture import GaussianMixture
+
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 mpl.rcParams['font.size'] = 7
 figpath = os.path.join(rootpath, 'figures')
-thres = 0.05
+THRES = 0.05
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
@@ -25,13 +29,64 @@ def _set_colormap(nbins):
     cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=nbins)
     return cm
 
-def plot_pn2kc_claw_stats(dir, x_key, loop_key=None):
+
+def infer_threshold(x, use_logx=True, visualize=False):
+    """Infers the threshold of a bi-modal distribution.
+
+    The log-input will be fit as a mixture of 2 gaussians.
+
+    Args:
+        x: an array containing the values to be fitted
+        use_logx: bool, if True, fit log-input
+
+    Returns:
+        thres: a scalar threshold that separates the two gaussians
+    """
+
+    x = np.asarray(x).flatten()
+    if use_logx:
+        x = np.log(x)
+    x = x[:, np.newaxis]
+
+    clf = GaussianMixture(n_components=2)
+    clf.fit(x)
+
+    x_tmp = np.linspace(x.min(), x.max(), 1000)
+
+    pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
+                                   clf.covariances_[0]) * clf.weights_[0]
+    pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
+                                   clf.covariances_[1]) * clf.weights_[1]
+
+    if clf.means_[0, 0] < clf.means_[1, 0]:
+        diff = pdf1 < pdf2
+    else:
+        diff = pdf1 > pdf2
+
+    thres_ = x_tmp[np.where(diff)[0][0]]
+    thres = np.exp(thres_) if use_logx else thres_
+
+    if visualize:
+        bins = np.linspace(x.min(), x.max(), 100)
+        fig = plt.figure(figsize=(3, 3))
+        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+        ax.hist(x[:, 0], bins=bins, density=True)
+        pdf = pdf1 + pdf2
+        ax.plot(x_tmp, pdf)
+        ax.plot([thres_, thres_], [0, pdf.max()])
+
+    return thres
+
+
+def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False):
     wglos = tools.load_pickle(dir, 'w_glo')
     xrange = wglos[0].shape[0]
     zero_claws = []
     mean_claws = []
 
     for wglo in wglos:
+        # dynamically infer threshold after training
+        thres = infer_threshold(w) if dynamic_thres else THRES
         sparsity = np.count_nonzero(wglo > thres, axis=0)
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
         zero_claws.append(y[0])
@@ -49,7 +104,7 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None):
     sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key)
     sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key)
 
-def image_pn2kc_parameters(dir):
+def image_pn2kc_parameters(dir, dynamic_thres=False):
     def _rank(coor):
         rank = rankdata(coor,'dense')-1
         vals, counts = np.unique(coor, return_counts=True)
@@ -108,6 +163,8 @@ def image_pn2kc_parameters(dir):
     zero_claws = []
     mean_claws = []
     for wglo in wglos:
+        # dynamically infer threshold after training
+        thres = infer_threshold(wglo) if dynamic_thres else THRES
         sparsity = np.count_nonzero(wglo > thres, axis=0)
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
         zero_claws.append(y[0])
@@ -135,7 +192,7 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
     :return:
     '''
 
-    def _plot(means, stds):
+    def _plot(means, stds, thres):
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
 
@@ -183,9 +240,10 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
         std = np.std(sorted_wglo, axis=1)
         means.append(mean)
         stds.append(std)
-    _plot(means, stds)
+    # TODO: figure out how to use dynamic threshold here
+    _plot(means, stds, THRES)
 
-def plot_sparsity(dir):
+def plot_sparsity(dir, dynamic_thres=False):
     def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -220,6 +278,14 @@ def plot_sparsity(dir):
         wglo = [wglo[0]] + [wglo[-1]]
         for j, w in enumerate(wglo):
             w[np.isnan(w)] = 0
+
+            # dynamically infer threshold after training
+            if j == 0:
+                thres = THRES
+            else:
+                thres = infer_threshold(w) if dynamic_thres else THRES
+                print('thres=', str(thres))
+
             sparsity = np.count_nonzero(w > thres, axis=0)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
             _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])

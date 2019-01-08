@@ -103,17 +103,41 @@ def relabel(train_labels, val_labels, n_pre, n_post, rng=None):
     return new_train_labels, new_val_labels
 
 
+def _convert_one_hot_label(labels, n_class):
+    """Convert labels to one-hot labels."""
+    label_one_hot = np.zeros((labels.size, n_class))
+    label_one_hot[np.arange(labels.size), labels] = 1
+    return label_one_hot
+
+
+def _generate_combinatorial_label(n_class, n_comb_class, density, rng):
+    masks = rng.rand(n_class + 1, n_comb_class)
+    label_to_combinatorial = masks < density
+
+    X = euclidean_distances(label_to_combinatorial)
+    np.fill_diagonal(X, 1)
+    assert np.any(X.flatten() == 0) == 0, "at least 2 combinatorial labels are the same"
+    return label_to_combinatorial
+
+
+def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
+    return label_to_combinatorial_encoding[labels, :]
+
+
 def _generate_proto_threshold(
         n_orn,
         n_class,
         percent_generalization,
         n_train,
         n_val,
+        label_type,
         vary_concentration,
         distort_input,
         shuffle_label,
         relabel,
         n_trueclass,
+        n_combinatorial_classes=None,
+        combinatorial_density=None,
         seed=0):
     """Activate all ORNs randomly.
 
@@ -131,12 +155,15 @@ def _generate_proto_threshold(
         percent_generalization: float, percentage of odors that generalize
         n_train: int, number of training examples
         n_val: int, number of validation examples
+        label_type: str, one of 'one_hot', 'sparse', 'combinatorial'
         vary_concentration: bool. if True, prototypes are all unit vectors,
             concentrations are varied independently from odor identity
         distort_input: bool. if True, distort the input space
         shuffle_label: bool. if True, shuffle the class label for each example
         relabel: bool. if True, true classes are relabeled to get the output classes
         n_trueclass: int, the number of True classes
+        n_combinatorial_classes: int, the number of combinatorial classes
+        combinatorial_density: float, the density of combinatorial code
         seed: int, random seed to generate the dataset
 
     Returns:
@@ -223,6 +250,21 @@ def _generate_proto_threshold(
 
     assert train_odors.dtype == np.float32
 
+    # Convert labels
+    if label_type == 'combinatorial':
+        key = _generate_combinatorial_label(
+            n_class, n_combinatorial_classes,
+            combinatorial_density, rng)
+        train_labels = _convert_to_combinatorial_label(train_labels, key)
+        val_labels = _convert_to_combinatorial_label(val_labels, key)
+    elif label_type == 'one_hot':
+        train_labels = _convert_one_hot_label(train_labels, n_class)
+        val_labels = _convert_one_hot_label(val_labels, n_class)
+    elif label_type == 'sparse':
+        pass
+    else:
+        raise ValueError('Unknown label type: ', str(label_type))
+
     return train_odors, train_labels, val_odors, val_labels
 
 
@@ -243,24 +285,6 @@ def _gen_folder_name(config, seed):
 
 def save_proto(config=None, seed=0, folder_name=None):
     """Save dataset in numpy format."""
-    def _convert_one_hot_label(labels, n_class):
-        """Convert labels to one-hot labels."""
-        label_one_hot = np.zeros((labels.size, n_class))
-        label_one_hot[np.arange(labels.size), labels] = 1
-        return label_one_hot
-
-    def _generate_combinatorial_label(n_class, n_comb_class, density):
-        rng = np.random.RandomState(seed)
-        masks = rng.rand(n_class + 1, n_comb_class)
-        label_to_combinatorial = masks < density
-
-        X = euclidean_distances(label_to_combinatorial)
-        np.fill_diagonal(X, 1)
-        assert np.any(X.flatten() == 0) == 0, "at least 2 combinatorial labels are the same"
-        return label_to_combinatorial
-
-    def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
-        return label_to_combinatorial_encoding[labels, :]
 
     if config is None:
         config = input_ProtoConfig()
@@ -272,22 +296,15 @@ def save_proto(config=None, seed=0, folder_name=None):
         percent_generalization=config.percent_generalization,
         n_train=config.n_train,
         n_val=config.n_val,
+        label_type=config.label_type,
         vary_concentration=config.vary_concentration,
         distort_input=config.distort_input,
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
         n_trueclass=config.n_trueclass,
+        n_combinatorial_classes=config.n_combinatorial_classes,
+        combinatorial_density=config.combinatorial_density,
         seed=0)
-
-    # Convert labels
-    if config.use_combinatorial:
-        key = _generate_combinatorial_label(
-            config.N_CLASS, config.n_combinatorial_classes, config.combinatorial_density)
-        train_y = _convert_to_combinatorial_label(train_y, key)
-        val_y = _convert_to_combinatorial_label(val_y, key)
-    else:
-        train_y = _convert_one_hot_label(train_y, config.N_CLASS)
-        val_y = _convert_one_hot_label(val_y, config.N_CLASS)
 
     if folder_name is None:
         folder_name = _gen_folder_name(config, seed)

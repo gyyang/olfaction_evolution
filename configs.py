@@ -25,8 +25,10 @@ class input_ProtoConfig(BaseConfig):
         #TODO: this name should really be N_OR. fix without breaking code
         self.N_ORN = 50
 
+        # label type can be either combinatorial, one_hot, sparse
+        self.label_type = 'sparse'
+
         self.percent_generalization = 100
-        self.use_combinatorial = False
         self.n_combinatorial_classes = 20
         self.combinatorial_density = .3
         # If True, the enclidean distance used for nearest neighbor is
@@ -154,7 +156,4 @@ class FullConfig(BaseConfig):
         self.skip_pn2kc = False
         # number of inputs onto KCs
         self.kc_inputs = 7
-
-        # label type can be either combinatorial, one_hot, sparse
-        self.label_type = 'one_hot'
 
