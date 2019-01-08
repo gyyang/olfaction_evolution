@@ -41,7 +41,7 @@ def receptor():
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.NOISE_MODEL = 'additive'
-    config.ORN_NOISE_STD = 0
+    config.ORN_NOISE_STD = 0.25
 
     config.orn2pn_normalization = True
     config.save_every_epoch= True
