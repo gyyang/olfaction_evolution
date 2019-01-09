@@ -48,6 +48,10 @@ class input_ProtoConfig(BaseConfig):
 
         # If label_type == 'multi_head_sparse', the second head is valence
         self.n_class_valence = 3
+        # If has_special_odors is True, then some odors will activate single ORs
+        self.has_special_odors = True
+        # the number of prototypes that leads to each non-neutral response
+        self.n_proto_valence = 5
 
 
 class SingleLayerConfig(BaseConfig):

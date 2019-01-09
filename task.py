@@ -139,6 +139,7 @@ def _generate_proto_threshold(
         n_combinatorial_classes=None,
         combinatorial_density=None,
         n_class_valence=None,
+        n_proto_valence=None,
         has_special_odors=False,
         seed=0):
     """Activate all ORNs randomly.
@@ -177,14 +178,6 @@ def _generate_proto_threshold(
     """
     rng = np.random.RandomState(seed)
     multi_head = label_type == 'multi_head_sparse'
-    n_good_odor = n_bad_odor = 5
-    p_good_odor = p_bad_odor = 0.05
-    n_train_good = int(p_good_odor*n_train)
-    n_val_good = int(p_good_odor*n_val)
-    n_train_bad = int(p_bad_odor * n_train)
-    n_val_bad = int(p_bad_odor * n_val)
-    n_train_neutral = n_train - n_train_good - n_train_bad
-    n_val_neutral = n_val - n_val_good - n_val_bad
 
     # the number of prototypes
     n_proto = n_trueclass if relabel else n_class
@@ -205,6 +198,16 @@ def _generate_proto_threshold(
 
     lamb = 1
     bias = 0
+
+    if multi_head:
+        n_good_odor = n_bad_odor = n_proto_valence
+        p_good_odor = p_bad_odor = 1.0*n_proto_valence/n_proto
+        n_train_good = int(p_good_odor*n_train)
+        n_val_good = int(p_good_odor*n_val)
+        n_train_bad = int(p_bad_odor * n_train)
+        n_val_bad = int(p_bad_odor * n_val)
+        n_train_neutral = n_train - n_train_good - n_train_bad
+        n_val_neutral = n_val - n_val_good - n_val_bad
 
     if multi_head and has_special_odors:
         # TODO(gryang): make this code not so ugly
@@ -368,6 +371,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,
+        n_proto_valence=config.n_proto_valence,
         has_special_odors=config.has_special_odors,
         seed=0)
 
