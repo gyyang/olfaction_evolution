@@ -164,3 +164,8 @@ class FullConfig(BaseConfig):
         # number of inputs onto KCs
         self.kc_inputs = 7
 
+        # Computing loss
+        # Only meaningful for multi_head configuration
+        self.train_head1 = True
+        self.train_head2 = True
+

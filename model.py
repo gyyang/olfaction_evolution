@@ -248,8 +248,8 @@ class FullModel(Model):
                 # self.train_op = optimizer.minimize(self.loss, var_list=var_list)
 
                 gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
-                self.gradient_norm = [tf.norm(gv[0]) for gv in gvs]
-                self.var_names = [gv[1].name for gv in gvs]
+                self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
+                self.var_names = [v.name for g, v in gvs if g is not None]
                 self.train_op = optimizer.apply_gradients(gvs)
 
 
@@ -428,10 +428,12 @@ class FullModel(Model):
 
             y1, y2 = tf.unstack(y, axis=1)
 
-            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y1,
-                                                                logits=logits)
-            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y2,
-                                                                logits=logits2)
+            if config.train_head1:
+                self.loss += tf.losses.sparse_softmax_cross_entropy(
+                    labels=y1, logits=logits)
+            if config.train_head2:
+                self.loss += tf.losses.sparse_softmax_cross_entropy(
+                    labels=y2, logits=logits2)
             pred = tf.argmax(logits, axis=-1)
             self.acc = tf.metrics.accuracy(labels=y1, predictions=pred)
 
