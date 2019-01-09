@@ -64,6 +64,33 @@ class Model(object):
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
 
+    def lesion_units(self, name, units, verbose=False):
+        """Lesion units given by units.
+
+        Args:
+            name: name of the layer to lesion
+            units : can be None, an integer index, or a list of integer indices
+        """
+        sess = tf.get_default_session()
+        # Convert to numpy array
+        if units is None:
+            return
+        elif not hasattr(units, '__iter__'):
+            units = np.array([units])
+        else:
+            units = np.array(units)
+
+        # This lesioning will work for both RNN and GRU
+        v = [tmp for tmp in tf.trainable_variables() if tmp.name == name][0]
+        # Connection weights
+        v_val = sess.run(v)
+        v_val[units, :] = 0
+        sess.run(v.assign(v_val))
+
+        if verbose:
+            print('Lesioned units:')
+            print(units)
+
 
 class SingleLayerModel(Model):
     """Single layer model."""
@@ -257,8 +284,8 @@ class FullModel(Model):
             for v in var_list:
                 print(v)
 
-        # self.saver = tf.train.Saver()
-        self.saver = tf.train.Saver(tf.trainable_variables())
+        self.saver = tf.train.Saver()
+        # self.saver = tf.train.Saver(tf.trainable_variables())
 
     def _build(self, x, y, training):
         config = self.config
