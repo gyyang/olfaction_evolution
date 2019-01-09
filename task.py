@@ -3,53 +3,9 @@ import shutil
 
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 
 import tools
 from configs import input_ProtoConfig
-
-
-def _make_hallem_dataset(config=None):
-    '''
-    :param config:
-    :return: hallem carlson dataset in matrix format
-
-    110 odors * 24 ORNs, with spontaneous activity subtracted
-    '''
-    N_ODORS = 110
-    N_ORNS = 24
-    if config is None:
-        config = input_ProtoConfig()
-    file = config.hallem_path
-    with open(file) as f:
-        vec = f.readlines()
-    vec = [int(x.strip()) for x in vec]
-    mat = np.reshape(vec, (N_ODORS+1, N_ORNS),'F')
-    spontaneous_activity = mat[-1,:]
-    odor_activation = mat[:-1,:] - spontaneous_activity
-    return odor_activation
-
-def _generate_from_hallem(config=None):
-    if config is None:
-        config = input_ProtoConfig()
-    odor_activation = _make_hallem_dataset(config)
-    corr_coef = np.corrcoef(np.transpose(odor_activation))
-    mask = ~np.eye(corr_coef.shape[0], dtype=bool)
-    data = corr_coef[mask].flatten()
-    y, x = np.histogram(data, bins=100)
-    x = [(a + b) / 2 for a, b in zip(x[:-1], x[1:])]
-
-    def gaus(x, a, x0, sigma):
-        return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
-
-    popt, pcov = curve_fit(gaus, x, y)
-
-    # plt.plot(x, y, 'b+', label='data')
-    plt.hist(data, bins=100, label='data')
-    plt.figure()
-    plt.plot(x, gaus(x, *popt), 'ro', label='fit')
-    plt.show()
 
 
 def _generate_repeat(config=None):
@@ -136,6 +92,7 @@ def _generate_proto_threshold(
         shuffle_label,
         relabel,
         n_trueclass,
+        realistic,
         n_combinatorial_classes=None,
         combinatorial_density=None,
         n_class_valence=None,
@@ -255,6 +212,16 @@ def _generate_proto_threshold(
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
 
+    import matplotlib.pyplot as plt
+
+    plt.figure()
+    plt.hist(np.sum(val_odors, axis=1))
+    plt.show()
+
+    if realistic:
+        train_odors *= np.random.uniform(0, 1, train_odors.shape[0]).reshape(-1,1)
+        val_odors *= np.random.uniform(0, 1, val_odors.shape[0]).reshape(-1,1)
+
     # ORN activity for computing labels
     train_odors_forlabels, val_odors_forlabels = train_odors, val_odors
 
@@ -354,6 +321,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
         n_trueclass=config.n_trueclass,
+        realistic = config.realistic,
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,

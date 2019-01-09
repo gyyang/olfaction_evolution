@@ -49,6 +49,9 @@ class input_ProtoConfig(BaseConfig):
         # If label_type == 'multi_head_sparse', the second head is valence
         self.n_class_valence = 3
 
+        # If True, activity is forced to follow naturalistic distribution
+        self.realistic = True
+
 
 class SingleLayerConfig(BaseConfig):
     def __init__(self):
