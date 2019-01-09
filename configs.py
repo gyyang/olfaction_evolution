@@ -50,7 +50,7 @@ class input_ProtoConfig(BaseConfig):
         self.n_class_valence = 3
 
         # If True, activity is forced to follow naturalistic distribution
-        self.realistic = True
+        self.realistic = False
 
 
 class SingleLayerConfig(BaseConfig):

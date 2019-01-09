@@ -29,63 +29,19 @@ def st(experiment, save_path, s=0,e=1000):
             config.save_path = os.path.join(save_path, str(i).zfill(6))
             train.train(config)
 
-def receptor():
+def test():
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 8
-
-    config.receptor_layer = True
-    config.sign_constraint_or2orn = True
-    config.or2orn_normalization = True
-
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.NOISE_MODEL = 'additive'
-    config.ORN_NOISE_STD = 0.25
-
-    config.orn2pn_normalization = True
-    config.save_every_epoch= True
-
+    config.pn_norm_post = 'abbott'
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['dummy'] = [0]
     return config, hp_ranges
 
 path = './files_temp/receptor_expression'
-t(receptor(), path,s=0,e=100)
-#
-path = os.path.join(path, '000000', 'epoch')
-w_ors = tools.load_pickle(path, 'w_or')
-w_orn = tools.load_pickle(path, 'w_orn')
-glo_scores = []
+t(test(), path, s=0, e=100)
 
-for w0, w1 in zip(w_ors, w_orn):
-    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(20, 14))
-    axs[0].imshow(w0)
-    axs[0].set_title('W_OR')
-    axs[1].imshow(w1)
-    axs[1].set_title('W_ORN')
-    tools.compute_glo_score(w1, 50)
-    out = np.matmul(w0, w1)
-    ind_max = np.argmax(out, axis=0)
-    ind_sort = np.argsort(ind_max)
-    out = out[:, ind_sort]
-    axs[2].imshow(out)
-    axs[2].set_title('Multiplied')
-    glo_scores.append(tools.compute_glo_score(out, 50)[0])
-    plt.show()
-print(glo_scores)
-
-w0 = w_ors[-1]
-w1 = w_orn[-1]
-n_orn = 50
-
-ind_max = np.argmax(w0, axis=0)
-w_out = np.zeros((n_orn, n_orn))
-for i in range(n_orn):
-    mask = ind_max == i
-    masked = w1[mask,:]
-    w_out[i,:] = np.mean(masked, axis= 0)
 
 # def temp():
 #     config = configs.FullConfig()

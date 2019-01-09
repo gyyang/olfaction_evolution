@@ -103,7 +103,7 @@ def train(config, reload=False, verbose=False):
                     [val_model.loss, val_model.acc],
                     {val_x_ph: val_x, val_y_ph: val_y})
             val_acc = val_acc[1]
-            print('[*] Epoch {:d}'.format(ep))
+            print('[*' + '*'*50 + '*] Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
             if verbose:

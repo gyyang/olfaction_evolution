@@ -136,6 +136,11 @@ def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
 import normalization
 def _normalize(inputs, norm_type, training=True):
     """Summarize different forms of normalization."""
+    exp = 1.5
+    r_max = 10
+    rho = 2
+    # r_max = 165
+    # rho = np.power(12, exp)
     if norm_type is not None:
         if norm_type == 'layer_norm':
             # Apply layer norm before activation function
@@ -155,6 +160,19 @@ def _normalize(inputs, norm_type, training=True):
                 inputs, center=False, scale=False, training=training)
         elif norm_type == 'custom':
             outputs = normalization.custom_norm(inputs, center=False, scale=True)
+        elif norm_type == 'wilson':
+            num = r_max * tf.pow(inputs, exp)
+            den = tf.pow(inputs, exp) + rho
+            outputs =  tf.divide(num, den)
+        elif norm_type == 'abbott':
+            m = 0.05
+            sums = tf.reduce_sum(inputs, axis=1, keepdims=True)
+            num = r_max * tf.pow(inputs, exp)
+            den = tf.pow(inputs, exp) + rho + tf.pow(m * sums, exp)
+            outputs =  tf.divide(num, den)
+        elif norm_type == 'activity':
+            sums = tf.reduce_sum(inputs, axis=1, keepdims=True)
+            outputs = tf.divide(inputs, sums)
         else:
             raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
     else:
