@@ -411,6 +411,7 @@ class FullModel(Model):
             n_logits = config.N_CLASS
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
+        self.acc2 = tf.constant([0., 0.])  # for the code to work
         if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         elif config.label_type == 'one_hot':
@@ -429,14 +430,23 @@ class FullModel(Model):
 
             y1, y2 = tf.unstack(y, axis=1)
 
+            loss1 = tf.losses.sparse_softmax_cross_entropy(
+                labels=y1, logits=logits)
+            loss2 = tf.losses.sparse_softmax_cross_entropy(
+                labels=y2, logits=logits2)
+
+            pred1 = tf.argmax(logits, axis=-1)
+            acc1 = tf.metrics.accuracy(labels=y1, predictions=pred1)
+            pred2 = tf.argmax(logits2, axis=-1)
+            acc2 = tf.metrics.accuracy(labels=y2, predictions=pred2)
+
             if config.train_head1:
-                self.loss += tf.losses.sparse_softmax_cross_entropy(
-                    labels=y1, logits=logits)
+                self.loss += loss1
             if config.train_head2:
-                self.loss += tf.losses.sparse_softmax_cross_entropy(
-                    labels=y2, logits=logits2)
-            pred = tf.argmax(logits, axis=-1)
-            self.acc = tf.metrics.accuracy(labels=y1, predictions=pred)
+                self.loss += loss2
+
+            self.acc = acc1
+            self.acc2 = acc2
 
         else:
             raise ValueError("""labels are in any of the following formats:
