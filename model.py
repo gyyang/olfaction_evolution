@@ -257,7 +257,8 @@ class FullModel(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        # self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(tf.trainable_variables())
 
     def _build(self, x, y, training):
         config = self.config
