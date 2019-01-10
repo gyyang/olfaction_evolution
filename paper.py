@@ -49,11 +49,11 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-# #peter specific
-TRAIN = True
-ANALYZE = True
-is_test = True
-experiments = ['pn_normalization']
+# # #peter specific
+# TRAIN = True
+# ANALYZE = True
+# is_test = True
+# experiments = ['pn_normalization']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
