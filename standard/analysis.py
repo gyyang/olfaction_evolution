@@ -30,6 +30,7 @@ def _easy_save(save_path, str='', dpi=300, pdf=True):
 
     if pdf:
         plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
+    plt.show()
     plt.close()
 
 def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
