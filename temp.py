@@ -42,48 +42,31 @@ def test():
 path = './files_temp/receptor_expression'
 t(test(), path, s=0, e=100)
 
-# def temp():
-#     config = configs.FullConfig()
-#     config.data_dir = './datasets/proto/standard'
-#     config.max_epoch = 8
-#     config.replicate_orn_with_tiling = True
-#     config.N_ORN_DUPLICATION = 10
-#     config.NOISE_MODEL = 'multiplicative'
-#
-#     config.train_pn2kc = False
-#     config.sparse_pn2kc = True
-#     config.train_kc_bias = True
-#     config.kc_loss = False
-#     config.initial_pn2kc = 0
-#     config.save_every_epoch = False
-#
-#     config.skip_orn2pn = True
-#     config.direct_glo = False
-#     config.initializer_pn2kc = 'constant'
-#     # Ranges of hyperparameters to loop over
-#     hp_ranges = OrderedDict()
-#     hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
-#     hp_ranges['kc_inputs'] = [3, 7, 11, 15, 20, 30, 40, 50]
-#     return config, hp_ranges
+def temp():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/mask'
+    config.max_epoch = 3
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['pn_norm_post'] = ['biology']
+    return config, hp_ranges
 
-# path = './files_temp/vary_noise_kc_input_skip_multiplicative'
-# t(temp(), path,s=0,e=100)
-# analysis_pn2kc_training.plot_distribution(path)
-# analysis_pn2kc_training.plot_sparsity(path)
-# analysis_pn2kc_training.plot_pn2kc_initial_value(path)
-# analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD')
-# analysis_pn2kc_training.plot_weight_distribution_per_kc(path,xrange=20, loopkey='ORN_NOISE_STD')
-# sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD')
+path = './files/pn_normalization'
 
-# wglos = tools.load_pickle(path, 'w_glo')
-# for wglo in wglos:
-#     wglo= tools._reshape_worn(wglo, 50, mode='tile')
-#     wglo = wglo.mean(axis=0)
-#     sorted_wglo = np.sort(wglo, axis=0)
-#     sorted_wglo = np.flip(sorted_wglo, axis=0)
-#     mean = np.mean(sorted_wglo, axis=1)
-#     std = np.std(sorted_wglo, axis=1)
-#     plt.plot(mean)
-    # plt.show()
-#
-# plt.show()
+# local_train(temp(), path)
+
+try:
+    rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
+    print('rmax: {}'.format(rmax))
+    rho = tools.load_pickle(path, 'model/layer1/rho:0')
+    print('rho: {}'.format(rho))
+    m = tools.load_pickle(path, 'model/layer1/m:0')
+    print('m: {}'.format(m))
+except:
+    pass
+
+try:
+    gamma = tools.load_pickle(path, 'model/layer1/LayerNorm/gamma:0')
+    print('gamma params: {}'.format(gamma))
+except:
+    pass
