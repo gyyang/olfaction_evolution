@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import tools
 from tools import nicename
-import utils
 from standard.analysis import _easy_save
 import standard.analysis as sa
 from scipy.stats import rankdata

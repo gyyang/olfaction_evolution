@@ -18,12 +18,9 @@ def temp():
     hp_ranges['pn_norm_post'] = ['biology']
     return config, hp_ranges
 
-path = './files_temp/normalization'
+path = './files/pn_normalization'
 
 # local_train(temp(), path)
-sa.plot_results(path, x_key='pn_norm_post', y_key='val_acc', loop_key='data_dir')
-sa.plot_results(path, x_key='pn_norm_post', y_key='glo_score', loop_key='data_dir')
-sa.plot_weights(path, sort_axis=1)
 
 try:
     rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
@@ -42,10 +39,10 @@ except:
     pass
 
 
-dirs = [os.path.join(path, n) for n in os.listdir(path)]
-d = dirs[0]
-glo_act, glo_in, glo_in_pre, kc = utils.get_model_vars(d)
 
+#
+d = dirs[2]
+glo_act, glo_in, glo_in_pre, kc = utils.get_model_vars(d)
 fig, ax = plt.subplots(nrows=3, ncols=2)
 i=0
 var = glo_in
