@@ -109,7 +109,8 @@ def _generate_proto_threshold(
         shuffle_label,
         relabel,
         n_trueclass,
-        realistic,
+        realistic_orn_mean,
+        realistic_orn_mask,
         n_combinatorial_classes=None,
         combinatorial_density=None,
         n_class_valence=None,
@@ -202,18 +203,17 @@ def _generate_proto_threshold(
         train_odors = rng.uniform(0, max_activation, (n_train, n_orn))
         val_odors = rng.uniform(0, max_activation, (n_val, n_orn))
 
-    biological_mask = True
-    realistic = False
-
-    if biological_mask:
+    if realistic_orn_mask:
         prototypes = _mask_orn_activation(prototypes)
         train_odors = _mask_orn_activation(train_odors)
         val_odors = _mask_orn_activation(val_odors)
 
-    if realistic:
+    if realistic_orn_mean:
         prototypes *= np.random.uniform(0, 1, prototypes.shape[0]).reshape(-1,1)
         train_odors *= np.random.uniform(0, 1, train_odors.shape[0]).reshape(-1,1)
         val_odors *= np.random.uniform(0, 1, val_odors.shape[0]).reshape(-1,1)
+    print(realistic_orn_mask)
+    print(realistic_orn_mean)
 
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
@@ -320,7 +320,8 @@ def save_proto(config=None, seed=0, folder_name=None):
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
         n_trueclass=config.n_trueclass,
-        realistic = config.realistic,
+        realistic_orn_mean= config.realistic_orn_mask,
+        realistic_orn_mask= config.realistic_orn_mean,
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,

@@ -49,8 +49,10 @@ class input_ProtoConfig(BaseConfig):
         # If label_type == 'multi_head_sparse', the second head is valence
         self.n_class_valence = 3
 
-        # If True, activity is forced to follow naturalistic distribution
-        self.realistic = False
+        # If True, a random mask is imposed upon ORN activity for each odor
+        self.realistic_orn_mask = False
+        # If True, total orn activity follows an uniform distribution
+        self.realistic_orn_mean = False
 
 
 class SingleLayerConfig(BaseConfig):

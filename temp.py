@@ -31,9 +31,9 @@ def st(experiment, save_path, s=0,e=1000):
 
 def test():
     config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 8
-    config.pn_norm_post = 'abbott'
+    config.data_dir = './datasets/proto/mask'
+    config.max_epoch = 3
+    config.pn_norm_post = 'activity'
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['dummy'] = [0]
@@ -41,7 +41,6 @@ def test():
 
 path = './files_temp/receptor_expression'
 t(test(), path, s=0, e=100)
-
 
 # def temp():
 #     config = configs.FullConfig()

@@ -103,7 +103,8 @@ def train(config, reload=False, verbose=False):
                     [val_model.loss, val_model.acc],
                     {val_x_ph: val_x, val_y_ph: val_y})
             val_acc = val_acc[1]
-            print('[*' + '*'*50 + '*] Epoch {:d}'.format(ep))
+            print('[*' + '*'*50 + '*]')
+            print('Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
             if verbose:
@@ -183,11 +184,11 @@ def train(config, reload=False, verbose=False):
                 for b in range(n_batch-1):
                     _ = sess.run(model.train_op)
                 # Compute training loss and accuracy using last batch
-                # loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
-                loss, acc, _, gnorm, glo_in_mean = sess.run(
-                    [model.loss, model.acc, model.train_op,
-                     model.gradient_norm, model.glo_in_mean])
+                loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                 if verbose:
+                    loss, acc, _, gnorm, glo_in_mean = sess.run(
+                        [model.loss, model.acc, model.train_op,
+                         model.gradient_norm, model.glo_in_mean])
                     print('GRADIENT NORM')
                     print(model.var_names)
                     print(gnorm)

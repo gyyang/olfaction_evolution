@@ -136,11 +136,6 @@ def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
 import normalization
 def _normalize(inputs, norm_type, training=True):
     """Summarize different forms of normalization."""
-    exp = 1.5
-    r_max = 10
-    rho = 2
-    # r_max = 165
-    # rho = np.power(12, exp)
     if norm_type is not None:
         if norm_type == 'layer_norm':
             # Apply layer norm before activation function
@@ -160,21 +155,22 @@ def _normalize(inputs, norm_type, training=True):
                 inputs, center=False, scale=False, training=training)
         elif norm_type == 'custom':
             outputs = normalization.custom_norm(inputs, center=False, scale=True)
-        elif norm_type == 'wilson':
-            num = r_max * tf.pow(inputs, exp)
-            den = tf.pow(inputs, exp) + rho
-            outputs =  tf.divide(num, den)
-        elif norm_type == 'abbott':
-            m = 0.05
+        elif norm_type == 'biology':
+            exp = 1.5
+            r_max = tf.get_variable('r_max', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(5))
+            rho = tf.get_variable('rho', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(1))
+            m = tf.get_variable('m', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(.05))
             sums = tf.reduce_sum(inputs, axis=1, keepdims=True)
             num = r_max * tf.pow(inputs, exp)
             den = tf.pow(inputs, exp) + rho + tf.pow(m * sums, exp)
             outputs =  tf.divide(num, den)
         elif norm_type == 'activity':
-            sums = tf.reduce_sum(inputs, axis=1, keepdims=True)
-            outputs = tf.divide(inputs, sums)
+            r_max = tf.get_variable('r_max', shape=(1, 50), dtype=tf.float32, initializer=tf.constant_initializer(40))
+            sums = tf.reduce_sum(inputs, axis=1, keepdims=True) + 1e-6
+            outputs = r_max * tf.divide(inputs, sums)
         else:
-            raise ValueError('Unknown pn_norm type {:s}'.format(norm_type))
+            print('Unknown pn_norm type {:s}. Outputs = Inputs'.format(norm_type))
+            outputs = inputs
     else:
         outputs = inputs
 
@@ -336,11 +332,6 @@ class FullModel(Model):
                                     initializer=tf.constant_initializer(0))
 
             if config.direct_glo:
-                # alpha = tf.get_variable('alpha', shape=(1,), dtype=tf.float32,
-                #                         initializer=tf.constant_initializer(0.5))
-                # w_orn = w1 + alpha * tf.eye(N_PN)
-                # w_orn = w1 * tf.eye(N_PN)
-                # mask = np.repeat(np.eye(N_PN)/ (1.0 * ORN_DUP), repeats= ORN_DUP, axis=0)
                 mask = np.tile(np.eye(N_PN), (ORN_DUP,1))
                 w_orn = w1 * mask
             else:
@@ -353,16 +344,16 @@ class FullModel(Model):
                 sums = tf.reduce_sum(w_orn, axis=0, keepdims=True)
                 w_orn = tf.divide(w_orn, sums)
 
-            glo_in_pre = tf.matmul(orn, w_orn) + b_orn
-            self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
-            glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
             if config.skip_orn2pn:
                 glo_in = orn
+            else:
+                glo_in_pre = tf.matmul(orn, w_orn) + b_orn
+                glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
 
-            self.glo_in_mean = tf.reduce_mean(glo_in, axis=1)
+            # self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
+            # self.glo_in_mean = tf.reduce_mean(glo_in, axis=1)
 
             glo = tf.nn.relu(glo_in)
-
             glo = _normalize(glo, config.pn_norm_post, training)
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
