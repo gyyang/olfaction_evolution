@@ -41,6 +41,7 @@ is_test = args.testing
 # experiments
 if args.experiment == 'core':
     experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn',
+                   'pn_normalization',
                    'vary_kc', 'vary_kc_dropout',
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
@@ -48,11 +49,11 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-# # #peter specific
-# TRAIN = True
-# ANALYZE = True
-# is_test = True
-# experiments = ['vary_kc_dropout']
+# #peter specific
+TRAIN = True
+ANALYZE = True
+is_test = True
+experiments = ['pn_normalization']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -188,6 +189,15 @@ if 'vary_pn2kc_noise' in experiments:
         # pn2kc_training_analysis.plot_distribution(path)
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
         # sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
+
+if 'pn_normalization' in experiments:
+    path = './files/pn_normalization'
+    if TRAIN:
+        local_train(se.pn_normalization(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='pn_norm_post', y_key='val_acc', loop_key='data_dir')
+        sa.plot_results(path, x_key='pn_norm_post', y_key='glo_score', loop_key='data_dir')
+        sa.plot_weights(path, sort_axis=1)
 
 if 'or2orn' in experiments:
     path = './files/or2orn'

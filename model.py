@@ -156,10 +156,10 @@ def _normalize(inputs, norm_type, training=True):
         elif norm_type == 'custom':
             outputs = normalization.custom_norm(inputs, center=False, scale=True)
         elif norm_type == 'biology':
-            exp = 1.5
+            exp = 1
             r_max = tf.get_variable('r_max', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(5))
             rho = tf.get_variable('rho', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(1))
-            m = tf.get_variable('m', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(.05))
+            m = tf.get_variable('m', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(0.01))
             sums = tf.reduce_sum(inputs, axis=1, keepdims=True)
             num = r_max * tf.pow(inputs, exp)
             den = tf.pow(inputs, exp) + rho + tf.pow(m * sums, exp)
