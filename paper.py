@@ -23,6 +23,7 @@ from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
+import standard.analysis_multihead as analysis_multihead
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
@@ -238,4 +239,4 @@ if 'multi_head' in experiments:
     if TRAIN:
         local_train(se.train_multihead(is_test), path)
     if ANALYZE:
-        pass
+        analysis_multihead.main()
