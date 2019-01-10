@@ -4,76 +4,32 @@ import shutil
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-
 import tools
 from configs import input_ProtoConfig
 
 
-def _make_hallem_dataset(config=None):
-    '''
-    :param config:
-    :return: hallem carlson dataset in matrix format
-
-    110 odors * 24 ORNs, with spontaneous activity subtracted
-    '''
-    N_ODORS = 110
-    N_ORNS = 24
-    if config is None:
-        config = input_ProtoConfig()
-    file = config.hallem_path
-    with open(file) as f:
-        vec = f.readlines()
-    vec = [int(x.strip()) for x in vec]
-    mat = np.reshape(vec, (N_ODORS+1, N_ORNS),'F')
-    spontaneous_activity = mat[-1,:]
-    odor_activation = mat[:-1,:] - spontaneous_activity
-    return odor_activation
-
-def _generate_from_hallem(config=None):
-    if config is None:
-        config = input_ProtoConfig()
-    odor_activation = _make_hallem_dataset(config)
-    corr_coef = np.corrcoef(np.transpose(odor_activation))
-    mask = ~np.eye(corr_coef.shape[0], dtype=bool)
-    data = corr_coef[mask].flatten()
-    y, x = np.histogram(data, bins=100)
-    x = [(a + b) / 2 for a, b in zip(x[:-1], x[1:])]
-
-    def gaus(x, a, x0, sigma):
-        return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
-
-    popt, pcov = curve_fit(gaus, x, y)
-
-    # plt.plot(x, y, 'b+', label='data')
-    plt.hist(data, bins=100, label='data')
-    plt.figure()
-    plt.plot(x, gaus(x, *popt), 'ro', label='fit')
-    plt.show()
+def _get_labels(prototypes, odors, percent_generalization):
+    dist = euclidean_distances(prototypes, odors)
+    highest_match = np.min(dist, axis=0)
+    threshold = np.percentile(highest_match.flatten(), percent_generalization)
+    default_class = threshold * np.ones((1, dist.shape[1]))
+    dist = np.vstack((default_class, dist))
+    return np.argmin(dist, axis=0)
 
 
-def _generate_repeat(config=None):
-    '''
-    :return:
-    x = noisy ORN channels. n_samples X n_orn * neurons_per_orn
-    y = noiseless PN channels
-    '''
-    if config is None:
-        config = input_ProtoConfig()
+def _mask_orn_activation(prototypes):
+    mask = np.zeros_like(prototypes)
+    n_samples = mask.shape[0]
+    n_orn = mask.shape[1]
+    mask = np.zeros_like(prototypes, dtype=int)
+    n_orn_active = np.random.random_integers(1, n_orn, size=n_samples)
+    for i in range(n_samples):
+        mask[i, :n_orn_active[i]] = 1
+        np.random.shuffle(mask[i, :])
+    out = np.multiply(prototypes, mask)
+    return out
 
-    N_SAMPLES = config.n_train
-    N_ORN = config.N_ORN
-    NEURONS_PER_ORN = config.N_ORN_DUPLICATION
-    NOISE_STD = config.ORN_NOISE_STD
-
-    y = np.random.uniform(low=0, high=1, size= (N_SAMPLES, N_ORN))
-    x = np.repeat(y, repeats=NEURONS_PER_ORN, axis=1)
-    n = np.random.normal(loc=0, scale=NOISE_STD, size=x.shape)
-    x += n
-    return x.astype(np.float32), y.astype(np.float32)
-
-
-def relabel(train_labels, val_labels, n_pre, n_post, rng=None):
+def _relabel(train_labels, val_labels, n_pre, n_post, rng=None):
     """Relabeing classes.
 
     Randomly relabel n_pre classes to n_post classes, assuming n_post<n_pre
@@ -123,6 +79,23 @@ def _generate_combinatorial_label(n_class, n_comb_class, density, rng):
 def _convert_to_combinatorial_label(labels, label_to_combinatorial_encoding):
     return label_to_combinatorial_encoding[labels, :]
 
+def junk_code():
+    # def add_bias(matrix, bias):
+    #     """Add correlated bias."""
+    #     bias_vector = rng.normal(0, bias, size=matrix.shape[0])
+    #     matrix += bias_vector.reshape(-1,1)
+    #     return matrix
+    # 
+    # lamb = 1
+    # bias = 0
+    # prototypes = add_bias(prototypes, bias)
+    # train_odors = add_bias(train_odors, bias)
+    # val_odors = add_bias(val_odors, bias)
+    # 
+    # prototypes.clip(min=0)
+    # train_odors.clip(min=0)
+    # val_odors.clip(min=0)
+    pass
 
 def _generate_proto_threshold(
         n_orn,
@@ -136,6 +109,8 @@ def _generate_proto_threshold(
         shuffle_label,
         relabel,
         n_trueclass,
+        realistic_orn_mean,
+        realistic_orn_mask,
         n_combinatorial_classes=None,
         combinatorial_density=None,
         n_class_valence=None,
@@ -182,23 +157,7 @@ def _generate_proto_threshold(
     # the number of prototypes
     n_proto = n_trueclass if relabel else n_class
 
-    def get_labels(prototypes, odors):
-        dist = euclidean_distances(prototypes, odors)
-        highest_match = np.min(dist, axis=0)
-        threshold = np.percentile(highest_match.flatten(), percent_generalization)
-        default_class = threshold * np.ones((1, dist.shape[1]))
-        dist = np.vstack((default_class, dist))
-        return np.argmin(dist, axis=0)
-
-    def add_bias(matrix, bias):
-        """Add correlated bias."""
-        bias_vector = rng.normal(0, bias, size=matrix.shape[0])
-        matrix += bias_vector.reshape(-1,1)
-        return matrix
-
-    lamb = 1
-    bias = 0
-
+    max_activation = 1
     if multi_head:
         n_good_odor = n_bad_odor = n_proto_valence
         p_good_odor = p_bad_odor = 1.0*n_proto_valence/n_proto
@@ -212,14 +171,14 @@ def _generate_proto_threshold(
     if multi_head and has_special_odors:
         # TODO(gryang): make this code not so ugly
         n_neutral_odor = n_proto - 1 - n_good_odor - n_bad_odor
-        prototypes_neutral = rng.uniform(0, lamb, (n_neutral_odor, n_orn))
+        prototypes_neutral = rng.uniform(0, max_activation, (n_neutral_odor, n_orn))
         prototypes_good = np.zeros((n_good_odor, n_orn))
         prototypes_good[range(n_good_odor), range(n_good_odor)] = 5.
         prototypes_bad = np.zeros((n_bad_odor, n_orn))
         prototypes_bad[range(n_bad_odor), range(n_good_odor, n_good_odor+n_bad_odor)] = 5.
         prototypes = np.concatenate((prototypes_neutral, prototypes_good, prototypes_bad), axis=0)
 
-        train_odors_neutral = rng.uniform(0, lamb, (n_train_neutral, n_orn))
+        train_odors_neutral = rng.uniform(0, max_activation, (n_train_neutral, n_orn))
         ind = rng.randint(n_good_odor, size=(n_train_good))
         train_odors_good = prototypes_good[ind] + rng.uniform(0, 1, (n_train_good, n_orn))
         ind = rng.randint(n_bad_odor, size=(n_train_bad))
@@ -231,7 +190,7 @@ def _generate_proto_threshold(
         train_odors = train_odors[ind_shuffle, :]
         train_labels_valence = train_labels_valence[ind_shuffle]
 
-        val_odors_neutral = rng.uniform(0, lamb, (n_val_neutral, n_orn))
+        val_odors_neutral = rng.uniform(0, max_activation, (n_val_neutral, n_orn))
         ind = rng.randint(n_good_odor, size=(n_val_good))
         val_odors_good = prototypes_good[ind] + rng.uniform(0, 1, (n_val_good, n_orn))
         ind = rng.randint(n_bad_odor, size=(n_val_bad))
@@ -245,17 +204,21 @@ def _generate_proto_threshold(
         val_labels_valence = val_labels_valence[ind_shuffle]
 
     else:
-        prototypes = rng.uniform(0, lamb, (n_proto-1, n_orn))
-        train_odors = rng.uniform(0, lamb, (n_train, n_orn))
-        val_odors = rng.uniform(0, lamb, (n_val, n_orn))
+        prototypes = rng.uniform(0, max_activation, (n_proto-1, n_orn))
+        train_odors = rng.uniform(0, max_activation, (n_train, n_orn))
+        val_odors = rng.uniform(0, max_activation, (n_val, n_orn))
 
-    prototypes = add_bias(prototypes, bias)
-    train_odors = add_bias(train_odors, bias)
-    val_odors = add_bias(val_odors, bias)
+    if realistic_orn_mask:
+        prototypes = _mask_orn_activation(prototypes)
+        train_odors = _mask_orn_activation(train_odors)
+        val_odors = _mask_orn_activation(val_odors)
 
-    prototypes.clip(min=0)
-    train_odors.clip(min=0)
-    val_odors.clip(min=0)
+    if realistic_orn_mean:
+        prototypes *= np.random.uniform(0, 1, prototypes.shape[0]).reshape(-1,1)
+        train_odors *= np.random.uniform(0, 1, train_odors.shape[0]).reshape(-1,1)
+        val_odors *= np.random.uniform(0, 1, val_odors.shape[0]).reshape(-1,1)
+    print(realistic_orn_mask)
+    print(realistic_orn_mean)
 
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
@@ -290,8 +253,20 @@ def _generate_proto_threshold(
         train_odors_forlabels = _normalize(train_odors_forlabels)
         val_odors_forlabels = _normalize(val_odors_forlabels)
 
-    train_labels = get_labels(prototypes, train_odors_forlabels)
-    val_labels = get_labels(prototypes, val_odors_forlabels)
+    train_labels = _get_labels(prototypes, train_odors_forlabels, percent_generalization)
+    val_labels = _get_labels(prototypes, val_odors_forlabels, percent_generalization)
+
+    debug = False
+    if debug:
+        plt.hist(np.sum(train_odors, axis=1))
+        plt.show()
+        sums = np.sum(train_odors, axis=1, keepdims=True)
+        lol = np.divide(train_odors, sums)
+        plt.hist(np.sum(lol, axis=1))
+        plt.show()
+        plt.hist(train_labels, bins=100)
+        plt.show()
+        return
 
     if shuffle_label:
         # Shuffle the labels
@@ -336,16 +311,7 @@ def _generate_proto_threshold(
 
 def _gen_folder_name(config, seed):
     """Automatically generate folder name."""
-    auto_folder_name = '_' + str(
-        config.percent_generalization) + '_generalization'
-
-    # Convert labels
-    if config.use_combinatorial:
-        auto_folder_name += '_combinatorial'
-    else:
-        auto_folder_name += '_onehot'
-
-    auto_folder_name += '_s' + str(seed)
+    auto_folder_name = '_s' + str(seed)
     return auto_folder_name
 
 
@@ -368,6 +334,8 @@ def save_proto(config=None, seed=0, folder_name=None):
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
         n_trueclass=config.n_trueclass,
+        realistic_orn_mean= config.realistic_orn_mask,
+        realistic_orn_mask= config.realistic_orn_mean,
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,
@@ -414,9 +382,6 @@ def load_data(dataset, data_dir):
 
     if dataset == 'proto':
             train_x, train_y, val_x, val_y = _load_proto(data_dir)
-    elif dataset == 'repeat':
-        train_x, train_y = _generate_repeat()
-        val_x, val_y = _generate_repeat()
     else:
         raise ValueError('Unknown dataset type ' + str(dataset))
     return train_x, train_y, val_x, val_y

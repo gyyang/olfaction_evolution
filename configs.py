@@ -53,6 +53,11 @@ class input_ProtoConfig(BaseConfig):
         # the number of prototypes that leads to each non-neutral response
         self.n_proto_valence = 5
 
+        # If True, a random mask is imposed upon ORN activity for each odor
+        self.realistic_orn_mask = False
+        # If True, total orn activity follows an uniform distribution
+        self.realistic_orn_mean = False
+
 
 class SingleLayerConfig(BaseConfig):
     def __init__(self):
