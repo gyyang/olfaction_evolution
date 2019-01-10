@@ -218,6 +218,24 @@ def train_orn2pn2kc_configs(argTest):
         hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
 
+def pn_normalization(argTest):
+    '''
+    Assesses the effect of PN normalization on glo score and performance
+    Results:
+
+    :param argTest:
+    :return:
+    '''
+    config = configs.FullConfig()
+    config.max_epoch = 30
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/mask']
+    hp_ranges['pn_norm_post'] = ['None', 'activity', 'custom', 'biology']
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
 def vary_norm(argTest):
     '''
     Vary normalization methods
