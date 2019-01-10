@@ -23,6 +23,7 @@ from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
+import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
 
 parser = argparse.ArgumentParser()
@@ -50,7 +51,7 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-# # #peter specific
+# #peter specific
 # TRAIN = True
 # ANALYZE = True
 # is_test = True
@@ -198,7 +199,11 @@ if 'pn_normalization' in experiments:
     if ANALYZE:
         sa.plot_results(path, x_key='pn_norm_post', y_key='val_acc', loop_key='data_dir')
         sa.plot_results(path, x_key='pn_norm_post', y_key='glo_score', loop_key='data_dir')
-        sa.plot_weights(path, sort_axis=1)
+        analysis_activity.image_activity(path, 'glo_out')
+        analysis_activity.image_activity(path, 'kc_out')
+        analysis_activity.distribution_activity(path, 'glo_out')
+        analysis_activity.distribution_activity(path, 'kc_out')
+        analysis_activity.sparseness_activity(path, 'kc_out')
 
 if 'or2orn' in experiments:
     path = './files/or2orn'
@@ -223,6 +228,16 @@ if 'vary_or2orn_noise' in experiments:
         sa.plot_weights(path, var_name='w_or', dir_ix=1)
         sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
         sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=1)
+
+if 'vary_or2orn_duplication' in experiments:
+    path = './files/or2orn_orn_duplication'
+    if TRAIN:
+        local_train(experiments_receptor.vary_receptor_duplication(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc')
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='glo_score')
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='or_glo_score')
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='combined_glo_score')
 
 if 'vary_or2orn_normalization' in experiments:
     path = './files/or2orn_normalization'

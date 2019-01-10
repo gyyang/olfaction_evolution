@@ -74,3 +74,24 @@ def vary_normalization(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def vary_receptor_duplication(argTest=False):
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+    config.orn2pn_normalization = True
+    # config.pn_norm_pre = 'batch_norm'
+
+    config.replicate_orn_with_tiling = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 10, 30, 100, 300]
+
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+

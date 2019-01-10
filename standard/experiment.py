@@ -6,7 +6,7 @@ import configs
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 6
+testing_epochs = 15
 def train_orn2pn(argTest=False):
     '''
     Most basic experiment. Train ORN2PN.
@@ -231,7 +231,7 @@ def pn_normalization(argTest):
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/mask']
-    hp_ranges['pn_norm_post'] = ['None', 'activity', 'custom', 'biology']
+    hp_ranges['pn_norm_post'] = ['None', 'biology']
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
