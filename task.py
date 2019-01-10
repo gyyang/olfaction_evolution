@@ -114,6 +114,8 @@ def _generate_proto_threshold(
         n_combinatorial_classes=None,
         combinatorial_density=None,
         n_class_valence=None,
+        n_proto_valence=None,
+        has_special_odors=False,
         seed=0):
     """Activate all ORNs randomly.
 
@@ -151,20 +153,23 @@ def _generate_proto_threshold(
     """
     rng = np.random.RandomState(seed)
     multi_head = label_type == 'multi_head_sparse'
-    n_good_odor = n_bad_odor = 5
-    p_good_odor = p_bad_odor = 0.05
-    n_train_good = int(p_good_odor*n_train)
-    n_val_good = int(p_good_odor*n_val)
-    n_train_bad = int(p_bad_odor * n_train)
-    n_val_bad = int(p_bad_odor * n_val)
-    n_train_neutral = n_train - n_train_good - n_train_bad
-    n_val_neutral = n_val - n_val_good - n_val_bad
 
     # the number of prototypes
     n_proto = n_trueclass if relabel else n_class
 
     max_activation = 1
     if multi_head:
+        n_good_odor = n_bad_odor = n_proto_valence
+        p_good_odor = p_bad_odor = 1.0*n_proto_valence/n_proto
+        n_train_good = int(p_good_odor*n_train)
+        n_val_good = int(p_good_odor*n_val)
+        n_train_bad = int(p_bad_odor * n_train)
+        n_val_bad = int(p_bad_odor * n_val)
+        n_train_neutral = n_train - n_train_good - n_train_bad
+        n_val_neutral = n_val - n_val_good - n_val_bad
+
+    if multi_head and has_special_odors:
+        # TODO(gryang): make this code not so ugly
         n_neutral_odor = n_proto - 1 - n_good_odor - n_bad_odor
         prototypes_neutral = rng.uniform(0, max_activation, (n_neutral_odor, n_orn))
         prototypes_good = np.zeros((n_good_odor, n_orn))
@@ -287,6 +292,15 @@ def _generate_proto_threshold(
     elif label_type == 'sparse':
         pass
     elif label_type == 'multi_head_sparse':
+        if not has_special_odors:
+            # labels 0-4 will be good, 5-9 will be bad, others will be neutral
+            train_labels_valence = np.zeros_like(train_labels)
+            train_labels_valence[(0<=train_labels)*(train_labels<5)] = 1
+            train_labels_valence[(5 <= train_labels) * (train_labels < 10)] = 2
+            val_labels_valence = np.zeros_like(val_labels)
+            val_labels_valence[(0 <= val_labels) * (val_labels < 5)] = 1
+            val_labels_valence[(5 <= val_labels) * (val_labels < 10)] = 2
+
         train_labels = np.stack([train_labels, train_labels_valence]).T
         val_labels = np.stack([val_labels, val_labels_valence]).T
     else:
@@ -325,6 +339,8 @@ def save_proto(config=None, seed=0, folder_name=None):
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,
+        n_proto_valence=config.n_proto_valence,
+        has_special_odors=config.has_special_odors,
         seed=0)
 
     if folder_name is None:

@@ -64,6 +64,33 @@ class Model(object):
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
 
+    def lesion_units(self, name, units, verbose=False):
+        """Lesion units given by units.
+
+        Args:
+            name: name of the layer to lesion
+            units : can be None, an integer index, or a list of integer indices
+        """
+        sess = tf.get_default_session()
+        # Convert to numpy array
+        if units is None:
+            return
+        elif not hasattr(units, '__iter__'):
+            units = np.array([units])
+        else:
+            units = np.array(units)
+
+        # This lesioning will work for both RNN and GRU
+        v = [tmp for tmp in tf.trainable_variables() if tmp.name == name][0]
+        # Connection weights
+        v_val = sess.run(v)
+        v_val[units, :] = 0
+        sess.run(v.assign(v_val))
+
+        if verbose:
+            print('Lesioned units:')
+            print(units)
+
 
 class SingleLayerModel(Model):
     """Single layer model."""
@@ -262,8 +289,8 @@ class FullModel(Model):
                 # self.train_op = optimizer.minimize(self.loss, var_list=var_list)
 
                 gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
-                self.gradient_norm = [tf.norm(gv[0]) for gv in gvs]
-                self.var_names = [gv[1].name for gv in gvs]
+                self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
+                self.var_names = [v.name for g, v in gvs if g is not None]
                 self.train_op = optimizer.apply_gradients(gvs)
 
 
@@ -272,6 +299,7 @@ class FullModel(Model):
                 print(v)
 
         self.saver = tf.train.Saver()
+        # self.saver = tf.train.Saver(tf.trainable_variables())
 
     def _build(self, x, y, training):
         config = self.config
@@ -418,6 +446,7 @@ class FullModel(Model):
             n_logits = config.N_CLASS
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
+        self.acc2 = tf.constant([0., 0.])  # for the code to work
         if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         elif config.label_type == 'one_hot':
@@ -436,12 +465,23 @@ class FullModel(Model):
 
             y1, y2 = tf.unstack(y, axis=1)
 
-            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y1,
-                                                                logits=logits)
-            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y2,
-                                                                logits=logits2)
-            pred = tf.argmax(logits, axis=-1)
-            self.acc = tf.metrics.accuracy(labels=y1, predictions=pred)
+            loss1 = tf.losses.sparse_softmax_cross_entropy(
+                labels=y1, logits=logits)
+            loss2 = tf.losses.sparse_softmax_cross_entropy(
+                labels=y2, logits=logits2)
+
+            pred1 = tf.argmax(logits, axis=-1)
+            acc1 = tf.metrics.accuracy(labels=y1, predictions=pred1)
+            pred2 = tf.argmax(logits2, axis=-1)
+            acc2 = tf.metrics.accuracy(labels=y2, predictions=pred2)
+
+            if config.train_head1:
+                self.loss += loss1
+            if config.train_head2:
+                self.loss += loss2
+
+            self.acc = acc1
+            self.acc2 = acc2
 
         else:
             raise ValueError("""labels are in any of the following formats:
