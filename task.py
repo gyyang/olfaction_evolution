@@ -306,7 +306,7 @@ def _generate_proto_threshold(
     else:
         raise ValueError('Unknown label type: ', str(label_type))
 
-    return train_odors, train_labels, val_odors, val_labels
+    return train_odors, train_labels, val_odors, val_labels, prototypes
 
 
 def _gen_folder_name(config, seed):
@@ -322,7 +322,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         config = input_ProtoConfig()
 
     # make and save data
-    train_x, train_y, val_x, val_y = _generate_proto_threshold(
+    train_x, train_y, val_x, val_y, prototypes = _generate_proto_threshold(
         n_orn=config.N_ORN,
         n_class=config.N_CLASS,
         percent_generalization=config.percent_generalization,
@@ -353,9 +353,11 @@ def save_proto(config=None, seed=0, folder_name=None):
         shutil.rmtree(folder_path)
         os.makedirs(folder_path)
 
-    for result, name in zip([train_x.astype(np.float32), train_y.astype(np.int32),
-                             val_x.astype(np.float32), val_y.astype(np.int32)],
-                            ['train_x', 'train_y', 'val_x', 'val_y']):
+    vars = [train_x.astype(np.float32), train_y.astype(np.int32),
+            val_x.astype(np.float32), val_y.astype(np.int32),
+            prototypes.astype(np.float32)]
+    varnames = ['train_x', 'train_y', 'val_x', 'val_y', 'prototype']
+    for result, name in zip(vars, varnames):
         np.save(os.path.join(folder_path, name), result)
 
     #save parameters
