@@ -29,6 +29,37 @@ def basic(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+
+def primordial(argTest=False):
+    config = configs.input_ProtoConfig()
+    config.n_class_valence = 3
+    config.n_proto_valence = 15
+    config.label_type = 'multi_head_sparse'
+    # task.save_proto(config, 'primordial')
+
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/primordial'
+    config.max_epoch = 30
+
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+    config.orn2pn_normalization = True
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+    config.ORN_NOISE_STD = 0
+
+    config.train_head1 = False
+    config.train_head2 = True
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['ORN_NOISE_STD'] = [0, .25]
+
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def vary_noise(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -94,4 +125,8 @@ def vary_receptor_duplication(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def vary_hyper_parameters(argTest=False):
+    #TODO: vary hyper-paramaeter values for Wilson/Olsen normalization
+    #TODO: check that the hyper-parameter values are similar to biology
 
+    pass

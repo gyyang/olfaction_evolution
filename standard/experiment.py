@@ -236,6 +236,25 @@ def pn_normalization(argTest):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def pn_normalization_direct(argTest):
+    '''
+    Assesses the effect of PN normalization on glo score and performance
+    Results:
+
+    :param argTest:
+    :return:
+    '''
+    config = configs.FullConfig()
+    config.direct_glo = True
+    config.max_epoch = 30
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/mask']
+    hp_ranges['pn_norm_post'] = ['None', 'biology']
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
 def vary_norm(argTest):
     '''
     Vary normalization methods

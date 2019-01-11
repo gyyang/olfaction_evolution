@@ -240,6 +240,7 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
     res = tools.load_all_results(path)
 
     # Sort by x_key
+    res[x_key][res[x_key] == None] = 'None'
     ind_sort = np.argsort(res[x_key])
     for key, val in res.items():
         res[key] = val[ind_sort]
