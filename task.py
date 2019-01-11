@@ -340,7 +340,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         n_class_valence=config.n_class_valence,
         n_proto_valence=config.n_proto_valence,
         has_special_odors=config.has_special_odors,
-        seed=0)
+        seed=seed)
 
     if folder_name is None:
         folder_name = _gen_folder_name(config, seed)
