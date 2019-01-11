@@ -159,8 +159,9 @@ def _generate_proto_threshold(
 
     max_activation = 1
     if multi_head:
+        ratio = int(n_proto /  n_orn)
         n_good_odor = n_bad_odor = n_proto_valence
-        p_good_odor = p_bad_odor = 1.0*n_proto_valence/n_proto
+        p_good_odor = p_bad_odor = 1.0* (n_proto_valence/n_proto) * ratio
         n_train_good = int(p_good_odor*n_train)
         n_val_good = int(p_good_odor*n_val)
         n_train_bad = int(p_bad_odor * n_train)
@@ -170,7 +171,7 @@ def _generate_proto_threshold(
 
     if multi_head and has_special_odors:
         # TODO(gryang): make this code not so ugly
-        n_neutral_odor = n_proto - 1 - n_good_odor - n_bad_odor
+        n_neutral_odor = n_proto - 1 - (n_good_odor + n_bad_odor)
         prototypes_neutral = rng.uniform(0, max_activation, (n_neutral_odor, n_orn))
         prototypes_good = np.zeros((n_good_odor, n_orn))
         prototypes_good[range(n_good_odor), range(n_good_odor)] = 5.
@@ -217,8 +218,6 @@ def _generate_proto_threshold(
         prototypes *= np.random.uniform(0, 1, prototypes.shape[0]).reshape(-1,1)
         train_odors *= np.random.uniform(0, 1, train_odors.shape[0]).reshape(-1,1)
         val_odors *= np.random.uniform(0, 1, val_odors.shape[0]).reshape(-1,1)
-    print(realistic_orn_mask)
-    print(realistic_orn_mean)
 
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
