@@ -40,6 +40,9 @@ loss = tf.losses.sparse_softmax_cross_entropy(labels=y,
 pred = tf.argmax(logits, axis=-1)
 acc = tf.metrics.accuracy(labels=y, predictions=pred)
 
+alphas = [0.1, 0.3, 1, 3, 10, 30, 100]
+losses = list()
+accs = list()
 
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth = True
@@ -47,6 +50,24 @@ with tf.Session(config=tf_config) as sess:
     sess.run(tf.global_variables_initializer())
     sess.run(tf.local_variables_initializer())
 
-    loss_, acc_ = sess.run([loss, acc], feed_dict={x: data_x, y: data_y, alpha:20})
+    data_x += np.random.randn(*data_x.shape) * 0.1
 
-    print(loss_, acc_)
+    
+    for a in alphas:
+        loss_, acc_, logits_ = sess.run([loss, acc, logits],
+                               feed_dict={x: data_x, y: data_y, alpha:a})
+        losses.append(loss_)
+        accs.append(acc_[1])
+    print(loss_, acc_[1])
+    
+
+plt.figure()
+plt.plot(alphas, losses, 'o-')
+
+plt.figure()
+plt.plot(alphas, accs, 'o-')
+
+# =============================================================================
+# plt.figure()
+# plt.hist(logits_.flatten())
+# =============================================================================
