@@ -12,7 +12,7 @@ def _get_labels(prototypes, odors, percent_generalization):
     dist = euclidean_distances(prototypes, odors)
     highest_match = np.min(dist, axis=0)
     threshold = np.percentile(highest_match.flatten(), percent_generalization)
-    default_class = threshold * np.ones((1, dist.shape[1]))
+    default_class = (1e-6+threshold) * np.ones((1, dist.shape[1]))
     dist = np.vstack((default_class, dist))
     return np.argmin(dist, axis=0)
 
