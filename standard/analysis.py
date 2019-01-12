@@ -21,7 +21,7 @@ mpl.rcParams['font.size'] = 7
 
 figpath = os.path.join(rootpath, 'figures')
 
-def _easy_save(save_path, str='', dpi=300, pdf=True):
+def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
     save_name = save_path.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path, exist_ok=True)
@@ -30,7 +30,8 @@ def _easy_save(save_path, str='', dpi=300, pdf=True):
 
     if pdf:
         plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
-    plt.show()
+    if show:
+        plt.show()
     plt.close()
 
 def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
