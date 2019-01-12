@@ -7,10 +7,6 @@ import pickle
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from scipy import stats
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
-from sklearn.neighbors.kde import KernelDensity
 import tensorflow as tf
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,16 +15,12 @@ sys.path.append(rootpath)  # This is hacky, should be fixed
 import task
 from model import FullModel
 import tools
-import standard.analysis_pn2kc_training as analysis_pn2kc_training
-from standard.analysis import _easy_save
 
 # foldername = 'multi_head'
 foldername = 'tmp_train'
 
 path = os.path.join(rootpath, 'files', foldername)
 figpath = os.path.join(rootpath, 'figures', foldername)
-
-# analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
 
 # TODO: clean up these paths
 path = os.path.join(path, '0')
@@ -62,7 +54,7 @@ def evaluate(noise_level):
     
     return val_loss, val_acc[1]
 
-noise_levels = [0, 0.1, 0.2]
+noise_levels = np.linspace(0, 0.3, 20)
 losses = list()
 accs = list()
 for noise_level in noise_levels:
@@ -74,14 +66,22 @@ for noise_level in noise_levels:
 from oracle import directreadout
 
 oa = directreadout.OracleAnalysis()
-accs_oracle, losses_oracle = oa.get_losses_by_noise(noise_levels)
+
+alphas = np.logspace(-1, 1, 4)
+accs_oracle, losses_oracle = oa.get_losses_by_noisealpha(noise_levels, alphas)
 
 plt.figure()
-plt.plot(noise_levels, accs_oracle, 'o-', color='black')
+plt.plot(noise_levels, accs_oracle[:, 0], 'o-', color='black')
 plt.plot(noise_levels, accs, 'o-', color='red')
+plt.xlabel('Noise level')
 plt.ylabel('Acc')
 
-plt.figure()
-plt.plot(noise_levels, losses_oracle, 'o-', color='black')
-plt.plot(noise_levels, losses, 'o-', color='red')
-plt.ylabel('Loss')
+# =============================================================================
+# for i in range(len(alphas)):
+#     plt.figure()
+#     plt.plot(noise_levels, losses_oracle[:, i], 'o-', color='black')
+#     plt.plot(noise_levels, losses, 'o-', color='red')
+#     plt.xlabel('Noise level')
+#     plt.ylabel('Loss')
+# 
+# =============================================================================

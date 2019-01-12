@@ -52,12 +52,12 @@ class OracleAnalysis():
         
         return acc, loss
 
-    def get_losses_by_alphas(self, alphas):
+    def get_losses_by_alphas(self, alphas, noise=0):
         # alphas = np.linspace(1, 6, 20)
         accs = list()
         losses = list()
         for alpha in alphas:
-            acc, loss = self.compute_loss(alpha=alpha)
+            acc, loss = self.compute_loss(noise=noise, alpha=alpha)
             accs.append(acc)
             losses.append(loss)
 
@@ -67,13 +67,31 @@ class OracleAnalysis():
         plt.figure()
         plt.plot(alphas, accs)
 
-    def get_losses_by_noise(self, noises):
+    def get_losses_by_noise(self, noises, alpha=1):
         accs = list()
         losses = list()
         for noise in noises:
-            acc, loss = self.compute_loss(noise=noise)
+            acc, loss = self.compute_loss(noise=noise, alpha=alpha)
             accs.append(acc)
             losses.append(loss)
+
+        return accs, losses
+
+    def get_losses_by_noisealpha(self, noises, alphas):
+        accs = list()
+        losses = list()
+        for noise in noises:
+            for alpha in alphas:
+                acc, loss = self.compute_loss(noise=noise, alpha=alpha)
+                accs.append(acc)
+                losses.append(loss)
+
+        accs = np.array(accs)
+        losses = np.array(losses)
+
+        shape = (len(noises), len(alphas))
+        accs = np.reshape(accs, shape)
+        losses = np.reshape(losses, shape)
 
         return accs, losses
 
