@@ -15,7 +15,7 @@ sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 import tools
 from tools import nicename
 import task
-from model import SingleLayerModel, FullModel
+from model import SingleLayerModel, FullModel, NormalizedMLP
 
 mpl.rcParams['font.size'] = 7
 
@@ -182,6 +182,8 @@ def load_activity(save_path):
         CurrentModel = FullModel
     elif config.model == 'singlelayer':
         CurrentModel = SingleLayerModel
+    elif config.model == 'normmlp':
+        CurrentModel = NormalizedMLP
     else:
         raise ValueError('Unknown model type ' + str(config.model))
     # Build validation model
@@ -234,14 +236,14 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
                      'kc_loss_alpha': [.1, 1, 10, 100],
                      'kc_loss_beta': [.1, 1, 10, 100],
                      'initial_pn2kc':[.01, .1, 1],
-                     'N_ORN_DUPLICATION':[1,3,10,30,100,300]}
+                     'N_ORN_DUPLICATION':[1,3,10,30,100,300],
+                     'n_trueclass':[20, 40, 80, 200, 500, 1000]}
 
     plot_dict = {'kc_inputs': [3, 7, 15, 20, 30, 40, 50]}
 
     res = tools.load_all_results(path)
 
     # Sort by x_key
-    res[x_key][res[x_key] == None] = 'None'
     ind_sort = np.argsort(res[x_key])
     for key, val in res.items():
         res[key] = val[ind_sort]
