@@ -6,7 +6,7 @@ import configs
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 15
+testing_epochs = 6
 def train_orn2pn(argTest=False):
     '''
     Most basic experiment. Train ORN2PN.
@@ -183,6 +183,34 @@ def random_claw_configs(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def vary_kc_activity_sparseness(argTest):
+    '''
+
+    :param argTest:
+    :return:
+    '''
+
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+
+    config.replicate_orn_with_tiling = True
+    config.direct_glo = True
+    config.initializer_orn2pn = 'constant'
+    config.kc_dropout = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['kc_dropout_rate'] = [0, .2, .4]
+    x = [20, 40, 60, 80, 100, 120, 140, 160, 200, 500, 1000]
+    hp_ranges['data_dir'] = ['./datasets/proto/_s' + str(i) + '_20' for i in x]
+    if argTest:
+        hp_ranges['kc_dropout_rate'] = [0, .5]
+        x = [20, 60, 120, 200, 500, 1000]
+        hp_ranges['data_dir'] = ['./datasets/proto/_s' + str(i) + '_20' for i in x]
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def train_orn2pn2kc_configs(argTest):
     '''
     Allow both ORN2PN and PN2KC connections to be trained simultaneously
@@ -230,7 +258,7 @@ def pn_normalization(argTest):
     config.max_epoch = 30
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/mask']
+    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/concentration']
     hp_ranges['pn_norm_post'] = ['None', 'biology']
     if argTest:
         config.max_epoch = testing_epochs
@@ -249,7 +277,7 @@ def pn_normalization_direct(argTest):
     config.max_epoch = 30
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/mask']
+    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/concentration']
     hp_ranges['pn_norm_post'] = ['None', 'biology']
     if argTest:
         config.max_epoch = testing_epochs

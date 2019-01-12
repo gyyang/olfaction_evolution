@@ -64,34 +64,32 @@ def make_datafiles():
 
 def temp_oracle():
     config = configs.FullConfig()
-    config.max_epoch = 5
-    config.N_ORN_DUPLICATION = 10
-    config.model = 'normmlp'
-    config.NEURONS = []
+    config.max_epoch = 10
+    config.model = 'full'
+    # config.model = 'normmlp'
 
-    # config = configs.FullConfig()
-    # config.max_epoch = 5
-    # config.kc_dropout = True
-    # config.kc_dropout_rate = 0
-    # config.direct_glo = True
-    # config.initializer_orn2pn = 'constant'
-    # config.N_ORN_DUPLICATION = 10
-    # config.ORN_NOISE_STD = 0
+    config.NEURONS = []
+    config.kc_dropout = True
+    config.kc_dropout_rate = 0
+    config.direct_glo = True
+    config.initializer_orn2pn = 'constant'
+    config.N_ORN_DUPLICATION = 10
+    config.ORN_NOISE_STD = 0
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     x = [20, 40, 60, 80, 100, 120, 140, 160, 200, 500, 1000]
     datasets = ['./datasets/proto/_s' + str(i) + '_20' for i in x]
-    hp_ranges['data_dir'] = ['./datasets/proto/_s20_20']
+    hp_ranges['model'] = ['normmlp', 'full']
+    hp_ranges['data_dir'] = datasets
     return config, hp_ranges
 
-path = './files_temp/relabel'
-t(temp_oracle(), path, s=0, e=100)
-analysis_activity.distribution_activity(path, 'kc_out')
+path = './files_temp/relabel_layers'
+# t(temp_oracle(), path, s=0, e=100)
+sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='model', sort=False)
+# sa.plot_results(path, x_key='data_dir', y_key='val_loss', loop_key='model', sort=False)
+# sa.plot_results(path, x_key='data_dir', y_key='train_loss', loop_key='model', sort=False)
 analysis_activity.sparseness_activity(path, 'kc_out')
-sa.plot_results(path, x_key='pn_norm_post', y_key='val_acc', loop_key='data_dir')
-sa.plot_results(path, x_key='pn_norm_post', y_key='val_loss', loop_key='data_dir')
-sa.plot_results(path, x_key='pn_norm_post', y_key='train_loss', loop_key='data_dir')
 
 # sa.plot_results(path, x_key='pn_norm_post', y_key='glo_score', loop_key='data_dir')
 #
