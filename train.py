@@ -28,7 +28,7 @@ def make_input(x, y, batch_size):
     return train_iter, next_element
 
 
-def train(config, reload=False, verbose=False):
+def train(config, reload=False):
     tf.reset_default_graph()
 
     # Merge model config with config from dataset
@@ -99,16 +99,8 @@ def train(config, reload=False, verbose=False):
         total_time, start_time = 0, time.time()
         # weight_over_time = []
         for ep in range(config.max_epoch):
-            if verbose:
-                # Validation
-                val_loss, val_acc, val_acc2, glo_in_pre_mean, glo_in_mean = sess.run(
-                    [val_model.loss, val_model.acc, val_model.acc2,
-                     val_model.glo_in_pre_mean, val_model.glo_in_mean],
-                    {val_x_ph: val_x, val_y_ph: val_y})
-            else:
-                # Validation
-                tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
-                # res = {name: r for name, r in zip(val_fetch_names, res)}
+            # Validation
+            tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
             res = dict()
             for name, r in zip(val_fetch_names, tmp):
                 res[name] = r[1] if 'acc' in name else r
@@ -117,9 +109,6 @@ def train(config, reload=False, verbose=False):
             print('Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, res['loss']))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, res['acc']))
-            if verbose:
-                print('GLO_IN_PRE_MEAN ' + str(np.mean(glo_in_pre_mean)))
-                print('GLO_IN_MEAN ' + str(np.mean(glo_in_mean)))
 
             log['epoch'].append(ep)
             log['train_loss'].append(loss)
@@ -128,8 +117,7 @@ def train(config, reload=False, verbose=False):
                 log['val_' + key].append(value)
 
             if config.label_type == 'multi_head_sparse':
-                print('Validation accuracy head 2 {:0.2f}'.format(val_acc2))
-                log['val_acc2'].append(val_acc2)
+                print('Validation accuracy head 2 {:0.2f}'.format(res['acc2']))
 
             if config.model == 'full':
                 if config.receptor_layer:
@@ -185,9 +173,9 @@ def train(config, reload=False, verbose=False):
                 pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
 
             if 'target_acc' in dir(config) and config.target_acc is not None:
-                if val_acc > config.target_acc:
+                if res['acc'] > config.target_acc:
                     print('Training reached target accuracy {:0.2f}>{:0.2f}'.format(
-                        val_acc, config.target_acc
+                        res['acc'], config.target_acc
                     ))
                     break
 
@@ -199,15 +187,6 @@ def train(config, reload=False, verbose=False):
                     _ = sess.run(model.train_op)
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
-                if verbose:
-                    loss, acc, _, gnorm, glo_in_mean = sess.run(
-                        [model.loss, model.acc, model.train_op,
-                         model.gradient_norm, model.glo_in_mean])
-                    print('GRADIENT NORM')
-                    print(model.var_names)
-                    print(gnorm)
-                    # print('GLO_IN_MEAN')
-                    # print(glo_in_mean)
                 acc = acc[1]
 
 
