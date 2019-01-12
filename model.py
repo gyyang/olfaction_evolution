@@ -446,7 +446,6 @@ class FullModel(Model):
             n_logits = config.N_CLASS
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
-        self.acc2 = tf.constant([0., 0.])  # for the code to work
         if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         elif config.label_type == 'one_hot':
@@ -658,8 +657,6 @@ class OracleNet(Model):
                                        predictions=tf.argmax(logits, axis=-1))
 
         self.logits = logits
-
-        self.acc2 = tf.constant([1., 1.])
 
     def save_pickle(self, epoch=None):
         """Save model using pickle."""
