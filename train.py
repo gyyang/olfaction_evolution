@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP
+from model import SingleLayerModel, FullModel, NormalizedMLP, OracleNet
 from configs import FullConfig, SingleLayerConfig
 import tools
 
@@ -54,6 +54,8 @@ def train(config, reload=False, verbose=False):
         CurrentModel = SingleLayerModel
     elif config.model == 'normmlp':
         CurrentModel = NormalizedMLP
+    elif config.model == 'oracle':
+        CurrentModel = OracleNet
     else:
         raise ValueError('Unknown model type ' + str(config.model))
 
