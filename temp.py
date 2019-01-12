@@ -86,7 +86,7 @@ def temp_oracle():
 
 path = './files_temp/relabel_layers'
 # t(temp_oracle(), path, s=0, e=100)
-sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='model', sort=False)
+sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='model')
 # sa.plot_results(path, x_key='data_dir', y_key='val_loss', loop_key='model', sort=False)
 # sa.plot_results(path, x_key='data_dir', y_key='train_loss', loop_key='model', sort=False)
 analysis_activity.sparseness_activity(path, 'kc_out')
