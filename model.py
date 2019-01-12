@@ -537,13 +537,13 @@ class NormalizedMLP(Model):
             config = FullConfig
         self.config = config
 
-        super(NormalizedMLP, self).__init__(self.config.save_path)
+        super(NormalizedMLP, self).__init__(config.save_path)
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
             self._build(x, y, training)
 
         if training:
-            optimizer = tf.train.AdamOptimizer(self.config.lr)
+            optimizer = tf.train.AdamOptimizer(config.lr)
 
             var_list = tf.trainable_variables()
 
@@ -558,15 +558,16 @@ class NormalizedMLP(Model):
         self.saver = tf.train.Saver()
 
     def _build(self, x, y, training):
-        ORN_DUP = self.config.N_ORN_DUPLICATION
-        N_ORN = self.config.N_ORN * ORN_DUP
-        NEURONS = [N_ORN] + list(self.config.NEURONS)
-        n_layer = len(self.config.NEURONS)  # number of hidden layers
+        config = self.config
+        ORN_DUP = config.N_ORN_DUPLICATION
+        N_ORN = config.N_ORN * ORN_DUP
+        NEURONS = [N_ORN] + list(config.NEURONS)
+        n_layer = len(config.NEURONS)  # number of hidden layers
 
         # Replicating ORNs through tiling
-        assert x.shape[-1] == self.config.N_ORN
+        assert x.shape[-1] == config.N_ORN
         x = tf.tile(x, [1, ORN_DUP])
-        x += tf.random_normal(x.shape, stddev=self.config.ORN_NOISE_STD)
+        x += tf.random_normal(x.shape, stddev=config.ORN_NOISE_STD)
 
         y_hat = x
 
@@ -577,13 +578,13 @@ class NormalizedMLP(Model):
                     y_hat, NEURONS[i_layer], NEURONS[i_layer+1], training)
 
         layername = 'layer' + str(n_layer + 1)
-        logits = tf.layers.dense(y_hat, self.config.N_CLASS,
+        logits = tf.layers.dense(y_hat, config.N_CLASS,
                                  name=layername, reuse=tf.AUTO_REUSE)
 
-        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
-        self.acc = tf.metrics.accuracy(labels=tf.argmax(y, axis=-1),
-                                       predictions=tf.argmax(logits,axis=-1))
-
+        self.loss = tf.losses.sparse_softmax_cross_entropy(
+            labels=y, logits=logits)
+        self.acc = tf.metrics.accuracy(labels=y,
+                                       predictions=tf.argmax(logits, axis=-1))
         self.logits = logits
 
     def save_pickle(self, epoch=None):
@@ -607,7 +608,7 @@ class OracleNet(Model):
             config = FullConfig
         self.config = config
 
-        super(OracleNet, self).__init__(self.config.save_path)
+        super(OracleNet, self).__init__(config.save_path)
 
         prototype = np.load(os.path.join(config.data_dir, 'prototype.npy'))
         w_oracle = 2 * prototype.T
@@ -622,7 +623,7 @@ class OracleNet(Model):
             self._build(x, y, training)
 
         if training:
-            optimizer = tf.train.AdamOptimizer(self.config.lr)
+            optimizer = tf.train.AdamOptimizer(config.lr)
 
             var_list = tf.trainable_variables()
 
