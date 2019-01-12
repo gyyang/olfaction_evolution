@@ -107,6 +107,7 @@ if 'vary_kc_activity' in experiments:
     if ANALYZE:
         sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
         analysis_activity.sparseness_activity(path, 'kc_out')
+        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
 if 'vary_kc_dropout' in experiments:
     path = './files/vary_kc_dropout'
