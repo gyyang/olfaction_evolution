@@ -372,10 +372,10 @@ class FullModel(Model):
                 sums = tf.reduce_sum(w_orn, axis=0, keepdims=True)
                 w_orn = tf.divide(w_orn, sums)
 
+            glo_in_pre = tf.matmul(orn, w_orn) + b_orn
             if config.skip_orn2pn:
                 glo_in = orn
             else:
-                glo_in_pre = tf.matmul(orn, w_orn) + b_orn
                 glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
 
             # self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
