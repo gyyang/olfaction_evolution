@@ -76,6 +76,12 @@ def train(config, reload=False, verbose=False):
 
     glo_score_mode = 'tile' if config.replicate_orn_with_tiling else 'repeat'
 
+    # validation fetches
+    val_fetch_names = ['loss', 'acc']
+    if config.label_type == 'multi_head_sparse':
+        val_fetch_names.append('acc2')
+    val_fetches = [getattr(val_model, f) for f in val_fetch_names]
+
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
@@ -101,16 +107,16 @@ def train(config, reload=False, verbose=False):
                     {val_x_ph: val_x, val_y_ph: val_y})
             else:
                 # Validation
-                val_loss, val_acc, val_acc2 = sess.run(
-                    [val_model.loss, val_model.acc, val_model.acc2],
-                    {val_x_ph: val_x, val_y_ph: val_y})
-            val_acc = val_acc[1]
-            val_acc2 = val_acc2[1]
+                tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
+                # res = {name: r for name, r in zip(val_fetch_names, res)}
+            res = dict()
+            for name, r in zip(val_fetch_names, tmp):
+                res[name] = r[1] if 'acc' in name else r
             
             print('[*' + '*'*50 + '*]')
             print('Epoch {:d}'.format(ep))
-            print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, val_loss))
-            print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, val_acc))
+            print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, res['loss']))
+            print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, res['acc']))
             if verbose:
                 print('GLO_IN_PRE_MEAN ' + str(np.mean(glo_in_pre_mean)))
                 print('GLO_IN_MEAN ' + str(np.mean(glo_in_mean)))
@@ -118,8 +124,8 @@ def train(config, reload=False, verbose=False):
             log['epoch'].append(ep)
             log['train_loss'].append(loss)
             log['train_acc'].append(acc)
-            log['val_loss'].append(val_loss)
-            log['val_acc'].append(val_acc)
+            for key, value in res.items():
+                log['val_' + key].append(value)
 
             if config.label_type == 'multi_head_sparse':
                 print('Validation accuracy head 2 {:0.2f}'.format(val_acc2))
