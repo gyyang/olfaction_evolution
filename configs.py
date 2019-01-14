@@ -111,6 +111,9 @@ class FullConfig(BaseConfig):
         self.or_bias = False
 
         # ORN--> PN connections
+        # whether to dropout at ORN layer
+        self.orn_dropout = False  # TODO: If True, now applied POST tiling, but consider PRE tiling
+        self.orn_dropout_rate = 0.1
 
         # Initialization method for pn2kc: can take values uniform, random, or normal
         self.initializer_orn2pn = 'normal'

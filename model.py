@@ -346,6 +346,11 @@ class FullModel(Model):
                 N_ORN = config.N_ORN
                 orn = x
 
+        if config.orn_dropout:
+            # This is interpreted as noise, so it's always on
+            orn = tf.layers.dropout(orn, config.orn_dropout_rate,
+                                    training=True)
+
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if config.direct_glo:
                 range = _sparse_range(ORN_DUP)
@@ -568,6 +573,10 @@ class NormalizedMLP(Model):
         x = tf.tile(x, [1, ORN_DUP])
         x += tf.random_normal(x.shape, stddev=config.ORN_NOISE_STD)
 
+        if config.orn_dropout:
+            x = tf.layers.dropout(x, config.orn_dropout_rate,
+                                    training=True)
+
         y_hat = x
 
         for i_layer in range(n_layer):
@@ -643,6 +652,10 @@ class OracleNet(Model):
         # Replicating ORNs through tiling
         assert x.shape[-1] == config.N_ORN
         x += tf.random_normal(x.shape, stddev=config.ORN_NOISE_STD)
+
+        if config.orn_dropout:
+            x = tf.layers.dropout(x, config.orn_dropout_rate,
+                                    training=True)
 
         w = tf.get_variable('kernel', shape=(config.N_ORN, config.N_CLASS), dtype=tf.float32,
                             initializer=tf.constant_initializer(self.w_oracle))
