@@ -62,7 +62,7 @@ class input_ProtoConfig(BaseConfig):
 class SingleLayerConfig(BaseConfig):
     def __init__(self):
         super(SingleLayerConfig, self).__init__()
-        self.dataset = 'repeat'
+        self.dataset = 'proto'
         self.model = 'singlelayer'
         self.lr = .001
         self.max_epoch = 100
@@ -76,6 +76,7 @@ class FullConfig(BaseConfig):
         super(FullConfig, self).__init__()
         self.dataset = 'proto'
         self.data_dir = './datasets/proto/_100_generalization_onehot_s0'
+        #model can be full, normmlp, or singlelayer
         self.model = 'full'
         self.save_path = './files/test'
         self.save_every_epoch = False

@@ -44,7 +44,7 @@ is_test = args.testing
 if args.experiment == 'core':
     experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn',
                    'pn_normalization',
-                   'vary_kc', 'vary_kc_dropout',
+                   'vary_kc', 'vary_kc_dropout', 'vary_kc_activity'
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
                    'or2orn', 'or2orn_primordial', 'vary_or2orn_noise', 'vary_or2orn_normalization']
@@ -52,10 +52,10 @@ else:
     experiments = args.experiment
 
 # #peter specific
-# TRAIN = True
+# TRAIN = False
 # ANALYZE = True
 # is_test = True
-# experiments = ['or2orn_primordial']
+# experiments = ['vary_kc_activity']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
@@ -98,6 +98,16 @@ if 'vary_kc' in experiments:
                                        loop_key='ORN_NOISE_STD'),
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
+
+if 'vary_kc_activity' in experiments:
+    # Vary KC activity under different number of relabels
+    path = './files/vary_kc_activity'
+    if TRAIN:
+        local_train(se.vary_kc_activity_sparseness(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
+        analysis_activity.sparseness_activity(path, 'kc_out')
+        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
 if 'vary_kc_dropout' in experiments:
     path = './files/vary_kc_dropout'

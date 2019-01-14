@@ -85,7 +85,7 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False):
 
     for wglo in wglos:
         # dynamically infer threshold after training
-        thres = infer_threshold(w) if dynamic_thres else THRES
+        thres = infer_threshold(wglo) if dynamic_thres else THRES
         sparsity = np.count_nonzero(wglo > thres, axis=0)
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
         zero_claws.append(y[0])

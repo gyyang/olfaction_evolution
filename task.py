@@ -29,7 +29,7 @@ def _mask_orn_activation(prototypes):
     out = np.multiply(prototypes, mask)
     return out
 
-def _relabel(train_labels, val_labels, n_pre, n_post, rng=None):
+def _relabel(train_labels, val_labels, n_pre, n_post, rng=None, random=False):
     """Relabeing classes.
 
     Randomly relabel n_pre classes to n_post classes, assuming n_post<n_pre
@@ -46,13 +46,18 @@ def _relabel(train_labels, val_labels, n_pre, n_post, rng=None):
         new_train_labels: a list of labels after relabeling
         new_val_labels: a list of labels after relabeling
     """
-    if rng is None:
-        rng = np.random.RandomState()
+    if random:
+        if rng is None:
+            rng = np.random.RandomState()
 
-    # Generate the mapping from previous labels to new labels
-    # TODO: Consider balancing the number of old labels each new label gets
-    labelmap = rng.choice(range(1, n_post), size=(n_pre))
-    labelmap[0] = 0  # 0 still mapped to 0
+        # Generate the mapping from previous labels to new labels
+        labelmap = rng.choice(range(1, n_post), size=(n_pre))
+        labelmap[0] = 0  # 0 still mapped to 0
+    else:
+        if not (n_pre/n_post).is_integer():
+            print('n_pre/n_post is not an integer, making uneven classes')
+        labelmap = np.tile(np.arange(n_post), int(np.ceil(n_pre/n_post)))
+        labelmap = labelmap[:n_pre]
 
     new_train_labels = np.array([labelmap[l] for l in train_labels])
     new_val_labels = np.array([labelmap[l] for l in val_labels])
@@ -210,11 +215,13 @@ def _generate_proto_threshold(
         val_odors = rng.uniform(0, max_activation, (n_val, n_orn))
 
     if realistic_orn_mask:
+        print('mask')
         prototypes = _mask_orn_activation(prototypes)
         train_odors = _mask_orn_activation(train_odors)
         val_odors = _mask_orn_activation(val_odors)
 
     if realistic_orn_mean:
+        print('mean')
         prototypes *= np.random.uniform(0, 1, prototypes.shape[0]).reshape(-1,1)
         train_odors *= np.random.uniform(0, 1, train_odors.shape[0]).reshape(-1,1)
         val_odors *= np.random.uniform(0, 1, val_odors.shape[0]).reshape(-1,1)
@@ -242,6 +249,7 @@ def _generate_proto_threshold(
         val_odors_forlabels = _transform(val_odors_forlabels)
 
     if vary_concentration:
+        print('concentration')
         # normalize prototypes and train/val_odors_forlabels to unit vectors
         def _normalize(x):
             norm = np.linalg.norm(x, axis=1)
@@ -265,7 +273,6 @@ def _generate_proto_threshold(
         plt.show()
         plt.hist(train_labels, bins=100)
         plt.show()
-        return
 
     if shuffle_label:
         # Shuffle the labels
@@ -273,7 +280,8 @@ def _generate_proto_threshold(
         rng.shuffle(val_labels)
 
     if relabel:
-        train_labels, val_labels = relabel(
+        print('relabel')
+        train_labels, val_labels = _relabel(
             train_labels, val_labels, n_proto, n_class, rng)
 
     assert train_odors.dtype == np.float32
@@ -333,8 +341,8 @@ def save_proto(config=None, seed=0, folder_name=None):
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
         n_trueclass=config.n_trueclass,
-        realistic_orn_mean= config.realistic_orn_mask,
-        realistic_orn_mask= config.realistic_orn_mean,
+        realistic_orn_mean= config.realistic_orn_mean,
+        realistic_orn_mask= config.realistic_orn_mask,
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,

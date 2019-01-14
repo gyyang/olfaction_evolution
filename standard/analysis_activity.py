@@ -125,6 +125,27 @@ def sparseness_activity(save_path, arg):
         data = np.count_nonzero(data > activity_threshold, axis=1) / data.shape[1]
         _distribution(data, save_path, name= 'spars_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
 
+def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key):
+    dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
+
+    mean_sparseness = []
+    for i, d in enumerate(dirs):
+        glo_in, glo_out, kc_out, results = sa.load_activity(d)
+        if arg == 'glo_out':
+            data = glo_out
+        elif arg == 'kc_out':
+            data = kc_out
+        else:
+            raise ValueError('data type not recognized for image plotting: {}'.format(arg))
+        activity_threshold = 0
+        data = np.count_nonzero(data > activity_threshold, axis=1) / data.shape[1]
+        mean_sparseness.append(data.mean())
+
+    for i, d in enumerate(dirs):
+        config = tools.load_config(d)
+        setattr(config, arg + '_sparse_mean', mean_sparseness[i])
+        tools.save_config(config, d)
+    sa.plot_results(save_path, x_key= x_key, y_key= arg + '_sparse_mean', loop_key=loop_key)
 
 
 
