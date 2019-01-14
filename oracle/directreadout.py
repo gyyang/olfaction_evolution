@@ -33,8 +33,11 @@ class OracleAnalysis():
         self.w_oracle = 2 * prototype.T
         self.b_oracle =  -np.diag(np.dot(prototype, prototype.T))
 
-    def compute_loss(self, noise=0, alpha=1):
+    def compute_loss(self, noise=0, alpha=1, orn_dropout_rate=0):
         data_x = self.data_x + np.random.randn(*self.data_x.shape) * noise
+
+        dropout_mask = np.random.rand(*data_x.shape) > orn_dropout_rate
+        data_x = data_x * dropout_mask
 
         y = np.dot(data_x, self.w_oracle) + self.b_oracle
 
@@ -77,6 +80,16 @@ class OracleAnalysis():
 
         return accs, losses
 
+    def get_losses_by_dropout(self, rates):
+        accs = list()
+        losses = list()
+        for rate in rates:
+            acc, loss = self.compute_loss(orn_dropout_rate=rate)
+            accs.append(acc)
+            losses.append(loss)
+
+        return accs, losses
+
     def get_losses_by_noisealpha(self, noises, alphas):
         accs = list()
         losses = list()
@@ -96,3 +109,13 @@ class OracleAnalysis():
         return accs, losses
 
 
+if __name__ == '__main__':
+    oa = OracleAnalysis()
+
+    rates = np.linspace(0, 0.9, 100)
+    accs_oracle, losses_oracle = oa.get_losses_by_dropout(rates)
+
+    plt.figure()
+    plt.plot(rates, accs_oracle, 'o-', color='black')
+    plt.xlabel('ORN drop out rate')
+    plt.ylabel('Acc')
