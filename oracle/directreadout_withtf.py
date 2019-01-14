@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 
-path = '../datasets/proto/test_data'
+path = '../datasets/proto/standard'
 
 names = ['train_x', 'train_y', 'val_x', 'val_y', 'prototype']
 results = [np.load(os.path.join(path, name + '.npy')) for name in names]

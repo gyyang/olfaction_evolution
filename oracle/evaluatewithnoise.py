@@ -90,7 +90,28 @@ def evaluate_withnoise():
     #     plt.ylabel('Loss')
     # 
     # =============================================================================
+    
 
+def evaluate_withdropout():
+    rates = np.linspace(0, 0.9, 20)
+    losses = list()
+    accs = list()
+    for rate in rates:
+        val_loss, val_acc = evaluate('orn_dropout_rate', rate)
+        losses.append(val_loss)
+        accs.append(val_acc)
+    
+    oa = directreadout.OracleAnalysis()
+    
+    accs_oracle, losses_oracle = oa.get_losses_by_dropout(rates)
+    
+    plt.figure()
+    plt.plot(rates, accs_oracle, 'o-', color='black')
+    plt.plot(rates, accs, 'o-', color='red')
+    plt.xlabel('Drop out rate')
+    plt.ylabel('Acc')
+    
 
 if __name__ == '__main__':
-    evaluate_withnoise()
+    # evaluate_withnoise()
+    evaluate_withdropout()
