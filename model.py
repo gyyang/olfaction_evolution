@@ -719,11 +719,17 @@ class AutoEncoder(Model):
     def _build(self, x, y, training):
         config = self.config
 
-        h = tf.layers.dense(x, config.N_KC)
+        kc_in = tf.layers.dense(x, config.N_KC)
 
-        logits = tf.layers.dense(h, config.n_orn)
+        # kc_in = tf.matmul(glo, w_glo) + b_glo
+        kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+        kc = tf.nn.relu(kc_in)
+        kc = _normalize(kc, config.kc_norm_post, training)
+
+        logits = tf.layers.dense(kc, config.n_orn)
 
         self.loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
+        # self.loss = tf.reduce_mean(tf.square(y - logits))
 
         pred = tf.to_float(tf.round(tf.sigmoid(logits)))
 

@@ -70,6 +70,9 @@ class InputAutoEncode(BaseConfig):
         self.n_class = 100
         self.n_orn = 50
 
+        self.proto_density = 0.5
+        self.p_flip = 0.2
+
 
 class SingleLayerConfig(BaseConfig):
     def __init__(self):
