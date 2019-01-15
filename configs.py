@@ -59,6 +59,15 @@ class input_ProtoConfig(BaseConfig):
         self.realistic_orn_mean = False
 
 
+class InputAutoEncode(BaseConfig):
+    def __init__(self):
+        super(InputAutoEncode, self).__init__()
+        self.path = os.path.join(os.getcwd(), 'datasets', 'autoencode')
+
+        self.n_class = 100
+        self.n_orn = 50
+
+
 class SingleLayerConfig(BaseConfig):
     def __init__(self):
         super(SingleLayerConfig, self).__init__()

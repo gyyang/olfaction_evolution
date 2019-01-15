@@ -676,3 +676,61 @@ class OracleNet(Model):
         """Save model using pickle."""
         pass
 
+
+
+
+
+class AutoEncoder(Model):
+    """Simple autoencoder network."""
+
+    def __init__(self, x, y, config=None, training=True):
+        """Make model.
+
+        Args:
+            x: tf placeholder or iterator element (batch_size, N_ORN * N_ORN_DUPLICATION)
+            y: tf placeholder or iterator element (batch_size, N_CLASS)
+            config: configuration class
+            training: bool
+        """
+        if config is None:
+            config = FullConfig
+        self.config = config
+
+        super(AutoEncoder, self).__init__(config.save_path)
+
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+
+        if training:
+            optimizer = tf.train.AdamOptimizer(config.lr)
+
+            var_list = tf.trainable_variables()
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+        self.saver = tf.train.Saver()
+
+    def _build(self, x, y, training):
+        config = self.config
+
+        # x += tf.random_normal(x.shape, stddev=config.ORN_NOISE_STD)
+
+        h = tf.layers.dense(x, config.n_orn)
+
+        logits = tf.layers.dense(h, config.n_orn)
+
+        self.loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
+
+        pred = tf.to_float(tf.round(tf.sigmoid(logits)))
+
+        self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle."""
+        pass

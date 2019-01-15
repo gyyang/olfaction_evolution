@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 import tools
-from configs import input_ProtoConfig
+from configs import input_ProtoConfig, InputAutoEncode
 
 
 def _get_labels(prototypes, odors, percent_generalization):
@@ -382,6 +382,35 @@ def save_proto_all():
             save_proto(config)
 
 
+def save_autoencode(config=None, seed=0, folder_name=None):
+    """Save dataset in numpy format."""
+
+    if config is None:
+        config = InputAutoEncode()
+
+    # make and save data
+    rng = np.random.RandomState(seed)
+    train_x = (rng.rand(config.n_class, config.n_orn) > 0.5).astype(np.float32)
+    train_y = val_x = val_y = prototypes = train_x
+
+    folder_path = os.path.join(config.path, folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    else:
+        shutil.rmtree(folder_path)
+        os.makedirs(folder_path)
+
+    vars = [train_x, train_y, val_x, val_y, prototypes]
+    varnames = ['train_x', 'train_y', 'val_x', 'val_y', 'prototype']
+    for result, name in zip(vars, varnames):
+        np.save(os.path.join(folder_path, name), result)
+
+    #save parameters
+    tools.save_config(config, folder_path)
+    return folder_path
+
+
+
 def load_data(dataset, data_dir):
     """Load dataset."""
     def _load_proto(path):
@@ -389,7 +418,7 @@ def load_data(dataset, data_dir):
         names = ['train_x', 'train_y', 'val_x', 'val_y']
         return [np.load(os.path.join(path, name + '.npy')) for name in names]
 
-    if dataset == 'proto':
+    if dataset in ['proto', 'autoencode']:
             train_x, train_y, val_x, val_y = _load_proto(data_dir)
     else:
         raise ValueError('Unknown dataset type ' + str(dataset))

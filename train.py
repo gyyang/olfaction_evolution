@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP, OracleNet
+from model import SingleLayerModel, FullModel, NormalizedMLP, OracleNet, AutoEncoder
 from configs import FullConfig, SingleLayerConfig
 import tools
 
@@ -56,6 +56,8 @@ def train(config, reload=False):
         CurrentModel = NormalizedMLP
     elif config.model == 'oracle':
         CurrentModel = OracleNet
+    elif config.model == 'autoencode':
+        CurrentModel = AutoEncoder
     else:
         raise ValueError('Unknown model type ' + str(config.model))
 
@@ -78,8 +80,12 @@ def train(config, reload=False):
 
     # validation fetches
     val_fetch_names = ['loss', 'acc']
-    if config.label_type == 'multi_head_sparse':
+    try:
+        _ = val_model.acc2
         val_fetch_names.append('acc2')
+    except AttributeError:
+        pass
+
     val_fetches = [getattr(val_model, f) for f in val_fetch_names]
 
     tf_config = tf.ConfigProto()
@@ -114,8 +120,10 @@ def train(config, reload=False):
             for key, value in res.items():
                 log['val_' + key].append(value)
 
-            if config.label_type == 'multi_head_sparse':
+            try:
                 print('Validation accuracy head 2 {:0.2f}'.format(res['acc2']))
+            except KeyError:
+                pass
 
             if config.model == 'full':
                 if config.receptor_layer:
