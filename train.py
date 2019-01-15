@@ -101,9 +101,7 @@ def train(config, reload=False):
         for ep in range(config.max_epoch):
             # Validation
             tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
-            res = dict()
-            for name, r in zip(val_fetch_names, tmp):
-                res[name] = r[1] if 'acc' in name else r
+            res = {name:r for name, r in zip(val_fetch_names, tmp)}
             
             print('[*' + '*'*50 + '*]')
             print('Epoch {:d}'.format(ep))
@@ -187,8 +185,6 @@ def train(config, reload=False):
                     _ = sess.run(model.train_op)
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
-                acc = acc[1]
-
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')

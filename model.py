@@ -455,13 +455,14 @@ class FullModel(Model):
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         elif config.label_type == 'one_hot':
             self.loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
-            self.acc = tf.metrics.accuracy(labels=tf.argmax(y, axis=-1),
-                                           predictions=tf.argmax(logits,axis=-1))
+            pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            labels = tf.argmax(y, axis=-1, output_type=tf.int32)
+            self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, labels)))
         elif config.label_type == 'sparse':
             self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
-            pred = tf.argmax(logits, axis=-1)
-            self.acc = tf.metrics.accuracy(labels=y, predictions=pred)
+            pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
         elif config.label_type == 'multi_head_sparse':
             # second head
             logits2 = tf.layers.dense(kc, config.n_class_valence,
@@ -474,10 +475,10 @@ class FullModel(Model):
             loss2 = tf.losses.sparse_softmax_cross_entropy(
                 labels=y2, logits=logits2)
 
-            pred1 = tf.argmax(logits, axis=-1)
-            acc1 = tf.metrics.accuracy(labels=y1, predictions=pred1)
-            pred2 = tf.argmax(logits2, axis=-1)
-            acc2 = tf.metrics.accuracy(labels=y2, predictions=pred2)
+            pred1 = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            acc1 = tf.reduce_mean(tf.to_float(tf.equal(pred1, y1)))
+            pred2 = tf.argmax(logits2, axis=-1, output_type=tf.int32)
+            acc2 = tf.reduce_mean(tf.to_float(tf.equal(pred2, y2)))
 
             if config.train_head1:
                 self.loss += loss1
@@ -591,8 +592,9 @@ class NormalizedMLP(Model):
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(
             labels=y, logits=logits)
-        self.acc = tf.metrics.accuracy(labels=y,
-                                       predictions=tf.argmax(logits, axis=-1))
+
+        pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
         self.logits = logits
 
     def save_pickle(self, epoch=None):
@@ -666,11 +668,11 @@ class OracleNet(Model):
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(
             labels=y, logits=logits)
-        self.acc = tf.metrics.accuracy(labels=y,
-                                       predictions=tf.argmax(logits, axis=-1))
-
+        pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
         self.logits = logits
 
     def save_pickle(self, epoch=None):
         """Save model using pickle."""
         pass
+
