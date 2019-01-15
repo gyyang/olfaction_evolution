@@ -719,9 +719,7 @@ class AutoEncoder(Model):
     def _build(self, x, y, training):
         config = self.config
 
-        # x += tf.random_normal(x.shape, stddev=config.ORN_NOISE_STD)
-
-        h = tf.layers.dense(x, config.n_orn)
+        h = tf.layers.dense(x, config.N_KC)
 
         logits = tf.layers.dense(h, config.n_orn)
 

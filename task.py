@@ -390,8 +390,21 @@ def save_autoencode(config=None, seed=0, folder_name=None):
 
     # make and save data
     rng = np.random.RandomState(seed)
-    train_x = (rng.rand(config.n_class, config.n_orn) > 0.5).astype(np.float32)
-    train_y = val_x = val_y = prototypes = train_x
+
+    prototypes = (rng.rand(config.n_class, config.n_orn) > 0.5).astype(np.float32)
+
+    train_ind = rng.choice(np.arange(config.n_class), size=(config.n_train,))
+    train_x = prototypes[train_ind]
+    train_y = prototypes[train_ind]
+    # flip the matrix element if the corresponding element in flip_matrix is 1
+    flip_matrix = rng.rand(*train_x.shape) < 0.1
+    train_x = abs(flip_matrix - train_x)
+
+    val_ind = rng.choice(np.arange(config.n_class), size=(config.n_val,))
+    val_x = prototypes[val_ind]
+    val_y = prototypes[val_ind]
+    flip_matrix = rng.rand(*val_x.shape) < 0.1
+    val_x = abs(flip_matrix - val_x)
 
     folder_path = os.path.join(config.path, folder_name)
     if not os.path.exists(folder_path):

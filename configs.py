@@ -64,6 +64,9 @@ class InputAutoEncode(BaseConfig):
         super(InputAutoEncode, self).__init__()
         self.path = os.path.join(os.getcwd(), 'datasets', 'autoencode')
 
+        self.n_train = 1000000
+        self.n_val = 8192
+
         self.n_class = 100
         self.n_orn = 50
 
