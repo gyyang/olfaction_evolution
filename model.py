@@ -677,9 +677,6 @@ class OracleNet(Model):
         pass
 
 
-
-
-
 class AutoEncoder(Model):
     """Simple autoencoder network."""
 
@@ -718,15 +715,48 @@ class AutoEncoder(Model):
 
     def _build(self, x, y, training):
         config = self.config
+        N_KC = config.N_KC
+        n_orn = config.n_orn
 
-        kc_in = tf.layers.dense(x, config.N_KC)
+        with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+            if config.initial_pn2kc == 0:
+                if config.sparse_pn2kc:
+                    range = _sparse_range(config.kc_inputs)
+                else:
+                    range = _sparse_range(n_orn)
+            else:
+                range = config.initial_pn2kc
 
-        # kc_in = tf.matmul(glo, w_glo) + b_glo
-        kc_in = _normalize(kc_in, config.kc_norm_pre, training)
-        kc = tf.nn.relu(kc_in)
-        kc = _normalize(kc, config.kc_norm_post, training)
+            initializer = _initializer(range, config.initializer_pn2kc)
+            w2 = tf.get_variable('kernel', shape=(config.n_orn, N_KC), dtype=tf.float32,
+                                 initializer= initializer)
 
-        logits = tf.layers.dense(kc, config.n_orn)
+            b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+                                    initializer=tf.constant_initializer(config.kc_bias))
+
+            if config.sparse_pn2kc:
+                w_mask = get_sparse_mask(n_orn, N_KC, config.kc_inputs)
+                w_mask = tf.get_variable(
+                    'mask', shape=(n_orn, N_KC), dtype=tf.float32,
+                    initializer=tf.constant_initializer(w_mask),
+                    trainable=False)
+                w_glo = tf.multiply(w2, w_mask)
+            else:
+                w_glo = w2
+
+            if config.sign_constraint_pn2kc:
+                w_glo = tf.abs(w_glo)
+
+            if config.mean_subtract_pn2kc:
+                w_glo -= tf.reduce_mean(w_glo, axis=0)
+
+            # KC input before activation function
+            kc_in = tf.matmul(x, w_glo) + b_glo
+            kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+            kc = tf.nn.relu(kc_in)
+            kc = _normalize(kc, config.kc_norm_post, training)
+
+        logits = tf.layers.dense(kc, config.n_orn, name='layer3')
 
         self.loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         # self.loss = tf.reduce_mean(tf.square(y - logits))
@@ -735,6 +765,23 @@ class AutoEncoder(Model):
 
         self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
 
+        self.w_glo = w_glo
+
     def save_pickle(self, epoch=None):
-        """Save model using pickle."""
-        pass
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, 'model.pkl')
+
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        var_dict['w_glo'] = sess.run(self.w_glo)
+        with open(fname, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Model weights saved in path: %s" % save_path)
