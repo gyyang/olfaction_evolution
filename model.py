@@ -538,6 +538,18 @@ class FullModel(Model):
         sess.run(w_out.assign(w_oracle))
         sess.run(b_out.assign(b_oracle))
 
+    def perturb_weights(self, scale):
+        sess = tf.get_default_session()
+
+        def perturb(w):
+            w *= np.random.uniform(1-scale, 1+scale, size=w.shape)
+            return w
+
+        v_values = [perturb(sess.run(v)) for v in tf.trainable_variables()]
+
+        for v_value, v in zip(v_values, tf.trainable_variables()):
+            sess.run(v.assign(v_value))
+
 
 
 def _signed_dense(x, n0, n1, training):
