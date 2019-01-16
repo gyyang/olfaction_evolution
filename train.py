@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP, OracleNet, AutoEncoder
+from model import SingleLayerModel, FullModel, NormalizedMLP, OracleNet, AutoEncoder, AutoEncoderSimple
 from configs import FullConfig, SingleLayerConfig
 import tools
 
@@ -58,6 +58,7 @@ def train(config, reload=False):
         CurrentModel = OracleNet
     elif config.model == 'autoencode':
         CurrentModel = AutoEncoder
+        # CurrentModel = AutoEncoderSimple
     else:
         raise ValueError('Unknown model type ' + str(config.model))
 
