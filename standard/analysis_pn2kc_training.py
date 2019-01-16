@@ -47,25 +47,25 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None):
         x = np.log(x)
     x = x[:, np.newaxis]
 
-    clf = GaussianMixture(n_components=2)
-    clf.fit(x)
-
-    x_tmp = np.linspace(x.min(), x.max(), 1000)
-
-    pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
-                                   clf.covariances_[0]) * clf.weights_[0]
-    pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
-                                   clf.covariances_[1]) * clf.weights_[1]
-
-    if clf.means_[0, 0] < clf.means_[1, 0]:
-        diff = pdf1 < pdf2
-    else:
-        diff = pdf1 > pdf2
-
-    thres_ = x_tmp[np.where(diff)[0][0]]
-
     if force_thres is not None:
         thres_ = np.log(force_thres) if use_logx else force_thres
+    else:
+        clf = GaussianMixture(n_components=2)
+        clf.fit(x)
+    
+        x_tmp = np.linspace(x.min(), x.max(), 1000)
+    
+        pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
+                                       clf.covariances_[0]) * clf.weights_[0]
+        pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
+                                       clf.covariances_[1]) * clf.weights_[1]
+    
+        if clf.means_[0, 0] < clf.means_[1, 0]:
+            diff = pdf1 < pdf2
+        else:
+            diff = pdf1 > pdf2
+    
+        thres_ = x_tmp[np.where(diff)[0][0]]
 
     thres = np.exp(thres_) if use_logx else thres_
 
@@ -74,9 +74,20 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None):
         fig = plt.figure(figsize=(3, 3))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
         ax.hist(x[:, 0], bins=bins, density=True)
-        pdf = pdf1 + pdf2
-        ax.plot(x_tmp, pdf)
-        ax.plot([thres_, thres_], [0, pdf.max()])
+        if force_thres is None:
+            pdf = pdf1 + pdf2
+            ax.plot(x_tmp, pdf)
+        ax.plot([thres_, thres_], [0, 1])
+
+        if use_logx:
+            x = np.exp(x)
+            thres_ = np.exp(thres_)
+            bins = np.linspace(x.min(), x.max(), 100)
+            fig = plt.figure(figsize=(3, 3))
+            ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+            ax.hist(x[:, 0], bins=bins, density=True)
+            ax.plot([thres_, thres_], [0, 1])
+            # ax.set_ylim([0, 1])
 
     return thres
 

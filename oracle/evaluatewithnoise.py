@@ -17,6 +17,9 @@ from model import FullModel
 import tools
 from oracle import directreadout
 
+mpl.rcParams['font.size'] = 7
+
+
 foldername = 'standard_net'
 
 path = os.path.join(rootpath, 'files', foldername)
@@ -58,7 +61,7 @@ def evaluate(name, value):
             [val_model.loss, val_model.acc],
             {val_x_ph: val_x, val_y_ph: val_y})
     
-    return val_loss, val_acc[1]
+    return val_loss, val_acc
 
 
 def evaluate_withnoise():
@@ -105,11 +108,14 @@ def evaluate_withdropout():
     
     accs_oracle, losses_oracle = oa.get_losses_by_dropout(rates)
     
-    plt.figure()
-    plt.plot(rates, accs_oracle, 'o-', color='black')
-    plt.plot(rates, accs, 'o-', color='red')
-    plt.xlabel('Drop out rate')
+    fig = plt.figure(figsize=(2,2))
+    ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
+    ax.plot(rates, accs_oracle, '-', color='black', label='oracle')
+    ax.plot(rates, accs, '-', color='red', label='standard')
+    plt.xlabel('ORN Drop out rate')
     plt.ylabel('Acc')
+    plt.legend()
+    plt.savefig('evaluate_withdropout.png', dpi=500)
     
 
 if __name__ == '__main__':
