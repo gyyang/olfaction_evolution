@@ -32,7 +32,7 @@ class OracleAnalysis():
         data_x = self.data_x + np.random.randn(*self.data_x.shape) * noise
 
         dropout_mask = np.random.rand(*data_x.shape) > orn_dropout_rate
-        data_x = data_x * dropout_mask
+        data_x = data_x * dropout_mask / (1-orn_dropout_rate)
 
         y = np.dot(data_x, self.w_oracle) + self.b_oracle
 
