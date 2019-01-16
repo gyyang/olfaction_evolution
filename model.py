@@ -42,27 +42,8 @@ class Model(object):
         print("Model restored from path: {:s}".format(save_path))
 
     def save_pickle(self, epoch=None):
-        """Save model using pickle.
-
-        This is quite space-inefficient. But it's easier to read out.
-        """
-        save_path = self.save_path
-        if epoch is not None:
-            save_path = os.path.join(save_path, 'epoch', str(epoch))
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-        fname = os.path.join(save_path, 'model.pkl')
-
-        sess = tf.get_default_session()
-        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
-        if self.config.receptor_layer:
-            var_dict['w_or'] = sess.run(self.w_or)
-            var_dict['w_combined'] = np.matmul(sess.run(self.w_or), sess.run(self.w_orn))
-        var_dict['w_orn'] = sess.run(self.w_orn)
-        var_dict['w_glo'] = sess.run(self.w_glo)
-        with open(fname, 'wb') as f:
-            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
-        print("Model weights saved in path: %s" % save_path)
+        """Save model using pickle."""
+        pass
 
     def lesion_units(self, name, units, verbose=False):
         """Lesion units given by units.
@@ -507,6 +488,29 @@ class FullModel(Model):
         self.kc = kc
         self.logits = logits
 
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, 'model.pkl')
+
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        if self.config.receptor_layer:
+            var_dict['w_or'] = sess.run(self.w_or)
+            var_dict['w_combined'] = np.matmul(sess.run(self.w_or), sess.run(self.w_orn))
+        var_dict['w_orn'] = sess.run(self.w_orn)
+        var_dict['w_glo'] = sess.run(self.w_glo)
+        with open(fname, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Model weights saved in path: %s" % save_path)
+
 
 
 def _signed_dense(x, n0, n1, training):
@@ -597,10 +601,6 @@ class NormalizedMLP(Model):
         self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
         self.logits = logits
 
-    def save_pickle(self, epoch=None):
-        """Save model using pickle."""
-        pass
-
 
 class OracleNet(Model):
     """Oracle network."""
@@ -672,10 +672,6 @@ class OracleNet(Model):
         self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
         self.logits = logits
 
-    def save_pickle(self, epoch=None):
-        """Save model using pickle."""
-        pass
-
 
 class AutoEncoder(Model):
     """Simple autoencoder network."""
@@ -746,6 +742,9 @@ class AutoEncoder(Model):
 
             if config.sign_constraint_pn2kc:
                 w_glo = tf.abs(w_glo)
+                # w_glo = tf.nn.sigmoid(w_glo)
+                # w_glo = tf.nn.softplus(w_glo)
+                # w_glo = tf.nn.relu(w_glo)
 
             if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
@@ -785,3 +784,62 @@ class AutoEncoder(Model):
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
+
+
+class AutoEncoderSimple(Model):
+    """Simple autoencoder network."""
+
+    def __init__(self, x, y, config=None, training=True):
+        """Make model.
+
+        Args:
+            x: tf placeholder or iterator element (batch_size, N_ORN * N_ORN_DUPLICATION)
+            y: tf placeholder or iterator element (batch_size, N_CLASS)
+            config: configuration class
+            training: bool
+        """
+        if config is None:
+            config = FullConfig
+        self.config = config
+
+        super(AutoEncoderSimple, self).__init__(config.save_path)
+
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+
+        if training:
+            optimizer = tf.train.AdamOptimizer(config.lr)
+
+            var_list = tf.trainable_variables()
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+        self.saver = tf.train.Saver()
+
+    def _build(self, x, y, training):
+        config = self.config
+        N_KC = config.N_KC
+        n_orn = config.n_orn
+
+
+        # KC input before activation function
+        kc = tf.layers.dense(x, config.N_KC, name='layer2')
+        kc = tf.nn.relu(kc)
+
+        logits = tf.layers.dense(kc, config.n_orn, name='layer3',
+                                 kernel_initializer=tf.zeros_initializer)
+
+        logits = logits + x
+
+        self.loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
+        # self.loss = tf.reduce_mean(tf.square(y - logits))
+
+        pred = tf.to_float(tf.round(tf.sigmoid(logits)))
+
+        self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
