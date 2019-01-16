@@ -20,8 +20,8 @@ from oracle import directreadout
 mpl.rcParams['font.size'] = 7
 
 
-# foldername = 'standard_net'
-foldername = 'standard_oracle'
+foldername = 'standard_net'
+# foldername = 'standard_oracle'
 
 path = os.path.join(rootpath, 'files', foldername)
 figpath = os.path.join(rootpath, 'figures', foldername)
@@ -48,14 +48,14 @@ def evaluate(name, value):
         config.orn_dropout_rate = value
     else:
         raise ValueError('Unknown name', str(name))
-    # val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
-    val_model = OracleNet(val_x_ph, val_y_ph, config=config, training=False)
+    val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
+    # val_model = OracleNet(val_x_ph, val_y_ph, config=config, training=False)
     
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
         sess.run(tf.global_variables_initializer())
-        # val_model.load()
+        val_model.load()
     
         # Validation
         val_loss, val_acc = sess.run(
@@ -66,7 +66,7 @@ def evaluate(name, value):
 
 
 def evaluate_withnoise():
-    noise_levels = np.linspace(0, 0.3, 20)
+    noise_levels = np.linspace(0, 0.3, 10)
     losses = list()
     accs = list()
     for noise_level in noise_levels:
@@ -76,39 +76,30 @@ def evaluate_withnoise():
     
     oa = directreadout.OracleAnalysis()
     
-    alphas = [4]
-    # alphas = np.logspace(-1, 1, 4)
+    # alphas = [4]
+    alphas = np.logspace(-1, 1, 4)
     accs_oracle, losses_oracle = oa.get_losses_by_noisealpha(noise_levels, alphas)
     
-    plt.figure()
-    plt.plot(noise_levels, accs_oracle[:, 0], 'o-', color='black')
-    plt.plot(noise_levels, accs, 'o-', color='red')
-    plt.xlabel('Noise level')
-    plt.ylabel('Acc')
-    
-    # =============================================================================
-    # for i in range(len(alphas)):
-    #     plt.figure()
-    #     plt.plot(noise_levels, losses_oracle[:, i], 'o-', color='black')
-    #     plt.plot(noise_levels, losses, 'o-', color='red')
-    #     plt.xlabel('Noise level')
-    #     plt.ylabel('Loss')
-    # 
-    # =============================================================================
-
     fig = plt.figure(figsize=(2,2))
     ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
-    ax.plot(noise_levels, losses_oracle[:, 0], '-', color='black', label='oracle')
-    # ax.plot(rates, losses, '-', color='red', label='standard')
-    ax.plot(noise_levels, losses, '-', color='red', label='oracle_tf')
-    plt.xlabel('ORN Drop out rate')
-    plt.ylabel('Loss')
+    ax.plot(noise_levels, accs_oracle[:, 0], 'o-', color='black', label='oracle')
+    ax.plot(noise_levels, accs, 'o-', color='red', label='standard')
+    plt.xlabel('Noise level')
+    plt.ylabel('Acc')
     plt.legend()
-    # plt.savefig('evaluateloss_withdropout.png', dpi=500)
+
+    for i in range(len(alphas)):
+        fig = plt.figure(figsize=(2,2))
+        ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
+        ax.plot(noise_levels, losses_oracle[:, i], 'o-', color='black', label='oracle')
+        ax.plot(noise_levels, losses, 'o-', color='red', label='standard')
+        plt.xlabel('Noise level')
+        plt.ylabel('Loss')
+        plt.legend()
 
 
 def evaluate_withdropout():
-    rates = np.linspace(0, 0.9, 5)
+    rates = np.linspace(0, 0.3, 10)
     losses = list()
     accs = list()
     for rate in rates:
@@ -118,13 +109,12 @@ def evaluate_withdropout():
     
     oa = directreadout.OracleAnalysis()
     
-    accs_oracle, losses_oracle = oa.get_losses_by_dropout(rates, alpha=4)
+    accs_oracle, losses_oracle = oa.get_losses_by_dropout(rates, alpha=2)
     
     fig = plt.figure(figsize=(2,2))
     ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
     ax.plot(rates, accs_oracle, '-', color='black', label='oracle')
-    # ax.plot(rates, accs, '-', color='red', label='standard')
-    ax.plot(rates, accs, '-', color='red', label='oracle_tf')
+    ax.plot(rates, accs, '-', color='red', label='standard')
     plt.xlabel('ORN Drop out rate')
     plt.ylabel('Acc')
     plt.legend()
@@ -133,8 +123,7 @@ def evaluate_withdropout():
     fig = plt.figure(figsize=(2,2))
     ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
     ax.plot(rates, losses_oracle, '-', color='black', label='oracle')
-    # ax.plot(rates, losses, '-', color='red', label='standard')
-    ax.plot(rates, losses, '-', color='red', label='oracle_tf')
+    ax.plot(rates, losses, '-', color='red', label='standard')
     plt.xlabel('ORN Drop out rate')
     plt.ylabel('Loss')
     plt.legend()
