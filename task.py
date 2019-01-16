@@ -10,10 +10,11 @@ from configs import input_ProtoConfig, InputAutoEncode
 
 def _get_labels(prototypes, odors, percent_generalization):
     dist = euclidean_distances(prototypes, odors)
-    highest_match = np.min(dist, axis=0)
-    threshold = np.percentile(highest_match.flatten(), percent_generalization)
-    default_class = (1e-6+threshold) * np.ones((1, dist.shape[1]))
-    dist = np.vstack((default_class, dist))
+    if percent_generalization < 100:
+        highest_match = np.min(dist, axis=0)
+        threshold = np.percentile(highest_match.flatten(), percent_generalization)
+        default_class = (1e-6+threshold) * np.ones((1, dist.shape[1]))
+        dist = np.vstack((default_class, dist))
     return np.argmin(dist, axis=0)
 
 
@@ -29,11 +30,11 @@ def _mask_orn_activation(prototypes):
     out = np.multiply(prototypes, mask)
     return out
 
+
 def _relabel(train_labels, val_labels, n_pre, n_post, rng=None, random=False):
-    """Relabeing classes.
+    """Relabeling classes.
 
     Randomly relabel n_pre classes to n_post classes, assuming n_post<n_pre
-    Assume that label 0 is still mapped to label 0
 
     Args:
         train_labels: a list of labels
@@ -49,10 +50,8 @@ def _relabel(train_labels, val_labels, n_pre, n_post, rng=None, random=False):
     if random:
         if rng is None:
             rng = np.random.RandomState()
-
         # Generate the mapping from previous labels to new labels
-        labelmap = rng.choice(range(1, n_post), size=(n_pre))
-        labelmap[0] = 0  # 0 still mapped to 0
+        labelmap = rng.choice(range(n_post), size=(n_pre))
     else:
         if not (n_pre/n_post).is_integer():
             print('n_pre/n_post is not an integer, making uneven classes')
@@ -161,6 +160,8 @@ def _generate_proto_threshold(
 
     # the number of prototypes
     n_proto = n_trueclass if relabel else n_class
+    if percent_generalization < 100:
+        n_proto -= 1
 
     max_activation = 1
     if multi_head:
@@ -176,7 +177,7 @@ def _generate_proto_threshold(
 
     if multi_head and has_special_odors:
         # TODO(gryang): make this code not so ugly
-        n_neutral_odor = n_proto - 1 - (n_good_odor + n_bad_odor)
+        n_neutral_odor = n_proto - (n_good_odor + n_bad_odor)
         prototypes_neutral = rng.uniform(0, max_activation, (n_neutral_odor, n_orn))
         prototypes_good = np.zeros((n_good_odor, n_orn))
         prototypes_good[range(n_good_odor), range(n_good_odor)] = 5.
@@ -210,7 +211,7 @@ def _generate_proto_threshold(
         val_labels_valence = val_labels_valence[ind_shuffle]
 
     else:
-        prototypes = rng.uniform(0, max_activation, (n_proto-1, n_orn))
+        prototypes = rng.uniform(0, max_activation, (n_proto, n_orn))
         train_odors = rng.uniform(0, max_activation, (n_train, n_orn))
         val_odors = rng.uniform(0, max_activation, (n_val, n_orn))
 
