@@ -225,6 +225,12 @@ def _noise(x, arg, std):
         raise ValueError('Unknown noise model {:s}'.format(arg))
     return x
 
+def _get_oracle(prototype_repr):
+    """Given prototype representation, return oracle weights."""
+    w_oracle = 2 * prototype_repr.T
+    b_oracle = -np.diag(np.dot(prototype_repr, prototype_repr.T))
+    return w_oracle, b_oracle
+
 
 class FullModel(Model):
     """Full 3-layer model."""
@@ -473,7 +479,6 @@ class FullModel(Model):
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
 
-
         # print('USING L2 LOSS on ORN-PN weights!!')
         # self.loss += tf.reduce_sum(tf.square(w_orn)) * 0.01
         if config.receptor_layer:
@@ -487,6 +492,9 @@ class FullModel(Model):
         self.kc_in = kc_in
         self.kc = kc
         self.logits = logits
+
+        self.pre_out = kc
+        self.x = x
 
     def save_pickle(self, epoch=None):
         """Save model using pickle.
@@ -510,6 +518,25 @@ class FullModel(Model):
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
+
+    def set_oracle_weights(self):
+        """Set the weights to be prototype matching oracle weights."""
+        config = self.config
+        sess = tf.get_default_session()
+        prototype = np.load(os.path.join(config.data_dir, 'prototype.npy'))
+        # Connection weights
+        prototype_repr = sess.run(self.pre_out, {self.x: prototype})
+        w_oracle, b_oracle = _get_oracle(prototype_repr)
+        w_oracle *= config.oracle_scale
+        b_oracle *= config.oracle_scale
+
+        w_out = [v for v in tf.trainable_variables() if
+                 v.name == 'model/layer3/kernel:0'][0]
+        b_out = [v for v in tf.trainable_variables() if
+                 v.name == 'model/layer3/bias:0'][0]
+
+        sess.run(w_out.assign(w_oracle))
+        sess.run(b_out.assign(b_oracle))
 
 
 
@@ -659,7 +686,11 @@ class OracleNet(Model):
         b = tf.get_variable('bias', shape=(config.N_CLASS,), dtype=tf.float32,
                             initializer=tf.constant_initializer(self.b_oracle))
 
-        logits = (tf.matmul(x, w) + b) * 4.0  # 4 gives near optimal solution
+        try:
+            alpha = config.alpha
+        except AttributeError:
+            alpha = 4.0
+        logits = (tf.matmul(x, w) + b) * alpha  # 4 gives near optimal solution
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(
             labels=y, logits=logits)
@@ -686,14 +717,7 @@ class DeepOracleNet(Model):
 
         super(DeepOracleNet, self).__init__(config.save_path)
 
-        prototype = np.load(os.path.join(config.data_dir, 'prototype.npy'))
-        w_oracle = 2 * prototype.T
-        b_oracle = - np.diag(np.dot(prototype, prototype.T))
-        w_oracle = np.concatenate((np.zeros((w_oracle.shape[0], 1)), w_oracle),
-                                  axis=1)
-        b_oracle = np.array([-100] + list(b_oracle))
-        self.w_oracle = w_oracle
-        self.b_oracle = b_oracle
+        self.prototype = np.load(os.path.join(config.data_dir, 'prototype.npy'))
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
             self._build(x, y, training)
@@ -713,6 +737,58 @@ class DeepOracleNet(Model):
 
         self.saver = tf.train.Saver()
 
+    def _get_oracle(self, prototype_repr):
+        """Given prototype representation, return oracle weights."""
+        w_oracle = 2 * prototype_repr.T
+        b_oracle = -np.diag(np.dot(prototype_repr, prototype_repr.T))
+        return w_oracle, b_oracle
+
+    def _build_pre_oracle(self, x, training):
+        config = self.config
+        ORN_DUP = config.N_ORN_DUPLICATION
+        n_orn = config.N_ORN * ORN_DUP
+        N_KC = config.N_KC
+        """Build pre-oracle network."""
+        with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+            if config.initial_pn2kc == 0:
+                if config.sparse_pn2kc:
+                    range = _sparse_range(config.kc_inputs)
+                else:
+                    range = _sparse_range(n_orn)
+            else:
+                range = config.initial_pn2kc
+
+            initializer = _initializer(range, config.initializer_pn2kc)
+            w2 = tf.get_variable('kernel', shape=(config.n_orn, N_KC), dtype=tf.float32,
+                                 initializer=initializer)
+
+            b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+                                    initializer=tf.constant_initializer(config.kc_bias))
+
+            if config.sparse_pn2kc:
+                w_mask = get_sparse_mask(n_orn, N_KC, config.kc_inputs)
+                w_mask = tf.get_variable(
+                    'mask', shape=(n_orn, N_KC), dtype=tf.float32,
+                    initializer=tf.constant_initializer(w_mask),
+                    trainable=False)
+                w_glo = tf.multiply(w2, w_mask)
+            else:
+                w_glo = w2
+
+            if config.sign_constraint_pn2kc:
+                w_glo = tf.abs(w_glo)
+
+            if config.mean_subtract_pn2kc:
+                w_glo -= tf.reduce_mean(w_glo, axis=0)
+
+            # KC input before activation function
+            kc_in = tf.matmul(x, w_glo) + b_glo
+            kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+            kc = tf.nn.relu(kc_in)
+            kc = _normalize(kc, config.kc_norm_post, training)
+
+        return kc
+
     def _build(self, x, y, training):
         config = self.config
         assert config.N_ORN_DUPLICATION == 1
@@ -725,18 +801,33 @@ class DeepOracleNet(Model):
             x = tf.layers.dropout(x, config.orn_dropout_rate,
                                     training=True)
 
-        w = tf.get_variable('kernel', shape=(config.N_ORN, config.N_CLASS), dtype=tf.float32,
-                            initializer=tf.constant_initializer(self.w_oracle))
-        b = tf.get_variable('bias', shape=(config.N_CLASS,), dtype=tf.float32,
-                            initializer=tf.constant_initializer(self.b_oracle))
+        pre_oracle_activity = self._build_pre_oracle(x, training)
 
-        logits = (tf.matmul(x, w) + b) * 4.0  # 4 gives near optimal solution
+        w_out = tf.get_variable('kernel', shape=(config.N_ORN, config.N_CLASS), dtype=tf.float32)
+        b_out = tf.get_variable('bias', shape=(config.N_CLASS,), dtype=tf.float32)
+
+        logits = (tf.matmul(pre_oracle_activity, w_out) + b_out) * 4.0
 
         self.loss = tf.losses.sparse_softmax_cross_entropy(
             labels=y, logits=logits)
         pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
         self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
         self.logits = logits
+
+        self.pre_oracle_activity = pre_oracle_activity
+        self.w_out = w_out
+        self.b_out = b_out
+
+    def set_oracle_weights(self):
+        sess = tf.get_default_session()
+        prototype = np.load(os.path.join(self.config.data_dir, 'prototype.npy'))
+        # Connection weights
+        prototype_repr = sess.run(self.pre_oracle_activity, {x: self.prototype})
+        w_oracle, b_oracle = self._get_oracle(prototype_repr)
+
+        sess.run(self.w_out.assign(w_oracle))
+        sess.run(self.b_out.assign(b_oracle))
+
 
 
 class AutoEncoder(Model):

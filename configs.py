@@ -188,6 +188,12 @@ class FullConfig(BaseConfig):
         # number of inputs onto KCs
         self.kc_inputs = 7
 
+        # Output connections
+        # If True, set the output weights to be the oracle (pattern-matching)
+        self.set_oracle = False
+        # Scale the oracle weights
+        self.oracle_scale = 1.0
+
         # Computing loss
         # Only meaningful for multi_head configuration
         self.train_head1 = True
