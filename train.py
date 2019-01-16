@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP, OracleNet, AutoEncoder, AutoEncoderSimple
+from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple
 from configs import FullConfig, SingleLayerConfig
 import tools
 
