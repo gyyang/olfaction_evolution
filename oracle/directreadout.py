@@ -20,11 +20,6 @@ class OracleAnalysis():
         results = [np.load(os.path.join(path, name + '.npy')) for name in names]
         train_x, train_y, val_x, val_y, prototype = results
         
-        # the 0 class is not used
-        assert np.min(train_y) == 1
-        train_y -= 1
-        val_y -= 1
-        
         # print(np.unique(train_y, return_counts=True))
         
         # Oracle network
@@ -80,11 +75,11 @@ class OracleAnalysis():
 
         return accs, losses
 
-    def get_losses_by_dropout(self, rates):
+    def get_losses_by_dropout(self, rates, alpha=1):
         accs = list()
         losses = list()
         for rate in rates:
-            acc, loss = self.compute_loss(orn_dropout_rate=rate)
+            acc, loss = self.compute_loss(orn_dropout_rate=rate, alpha=alpha)
             accs.append(acc)
             losses.append(loss)
 

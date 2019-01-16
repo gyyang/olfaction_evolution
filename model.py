@@ -621,6 +621,72 @@ class OracleNet(Model):
         super(OracleNet, self).__init__(config.save_path)
 
         prototype = np.load(os.path.join(config.data_dir, 'prototype.npy'))
+        self.w_oracle = 2 * prototype.T
+        self.b_oracle = - np.diag(np.dot(prototype, prototype.T))
+
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+
+        if training:
+            optimizer = tf.train.AdamOptimizer(config.lr)
+
+            var_list = tf.trainable_variables()
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+        self.saver = tf.train.Saver()
+
+    def _build(self, x, y, training):
+        config = self.config
+        assert config.N_ORN_DUPLICATION == 1
+
+        # Replicating ORNs through tiling
+        assert x.shape[-1] == config.N_ORN
+        x += tf.random_normal(x.shape, stddev=config.ORN_NOISE_STD)
+
+        if config.orn_dropout:
+            x = tf.layers.dropout(x, config.orn_dropout_rate,
+                                    training=True)
+
+        w = tf.get_variable('kernel', shape=(config.N_ORN, config.N_CLASS), dtype=tf.float32,
+                            initializer=tf.constant_initializer(self.w_oracle))
+        b = tf.get_variable('bias', shape=(config.N_CLASS,), dtype=tf.float32,
+                            initializer=tf.constant_initializer(self.b_oracle))
+
+        logits = (tf.matmul(x, w) + b) * 4.0  # 4 gives near optimal solution
+
+        self.loss = tf.losses.sparse_softmax_cross_entropy(
+            labels=y, logits=logits)
+        pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
+        self.logits = logits
+
+
+class DeepOracleNet(Model):
+    """Oracle network."""
+
+    def __init__(self, x, y, config=None, training=True):
+        """Make model.
+
+        Args:
+            x: tf placeholder or iterator element (batch_size, N_ORN * N_ORN_DUPLICATION)
+            y: tf placeholder or iterator element (batch_size, N_CLASS)
+            config: configuration class
+            training: bool
+        """
+        if config is None:
+            config = FullConfig
+        self.config = config
+
+        super(DeepOracleNet, self).__init__(config.save_path)
+
+        prototype = np.load(os.path.join(config.data_dir, 'prototype.npy'))
         w_oracle = 2 * prototype.T
         b_oracle = - np.diag(np.dot(prototype, prototype.T))
         w_oracle = np.concatenate((np.zeros((w_oracle.shape[0], 1)), w_oracle),
