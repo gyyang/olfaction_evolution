@@ -13,9 +13,8 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # This is hacky, should be fixed
 
 import task
-from model import FullModel, OracleNet
+from model import FullModel
 import tools
-from oracle import directreadout
 
 mpl.rcParams['font.size'] = 7
 
@@ -46,21 +45,29 @@ def _evaluate(name, value, model='full'):
     elif name == 'orn_dropout_rate':
         config.orn_dropout = True
         config.orn_dropout_rate = value
+    elif name == 'alpha':
+        config.oracle_scale = value
     else:
         raise ValueError('Unknown name', str(name))
-    if model == 'full':
-        CurrentModel = FullModel
-    elif model == 'oracle':
-        CurrentModel = OracleNet
-    else:
-        raise ValueError()
-    val_model = CurrentModel(val_x_ph, val_y_ph, config=config, training=False)
+    if model == 'oracle':
+        config.skip_orn2pn = True
+        config.skip_pn2kc = True
+        config.kc_dropout = False
+        config.set_oracle = True
+        # Helper model for oracle
+        oracle_x_ph = tf.placeholder(val_x.dtype, [config.N_CLASS, val_x.shape[1]])
+        oracle_y_ph = tf.placeholder(val_y.dtype, [config.N_CLASS])
+        oracle = FullModel(oracle_x_ph, oracle_y_ph, config=config, training=False)
+    
+    val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
     
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
         sess.run(tf.global_variables_initializer())
-        if model != 'oracle':
+        if model == 'oracle':
+            oracle.set_oracle_weights()
+        else:
             val_model.load()
     
         # Validation
@@ -86,6 +93,8 @@ def evaluate_plot(name):
         values = np.linspace(0, 0.3, 10)
     elif name == 'orn_noise_std':
         values = np.linspace(0, 0.3, 10)
+    elif name == 'alpha':
+        values = np.linspace(0.2, 8, 10)
     losses, accs = evaluate(name, values)
     losses_oracle, accs_oracle = evaluate(name, values, model='oracle')
     
@@ -110,4 +119,6 @@ def evaluate_plot(name):
 
 if __name__ == '__main__':
     # evaluate_withnoise()
-    evaluate_plot('orn_dropout_rate')
+    # evaluate_plot('orn_dropout_rate')
+    # evaluate_plot('orn_noise_std')
+    evaluate_plot('alpha')
