@@ -176,7 +176,7 @@ def evaluate_acrossmodels():
         l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0))
         l.set_title(name)
         figname = ylabel+model_var+name
-        # _easy_save('vary_kc_claws_new', figname)
+        _easy_save('vary_kc_claws_new', figname)
     
 
 if __name__ == '__main__':
