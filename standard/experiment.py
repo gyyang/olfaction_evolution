@@ -133,17 +133,17 @@ def vary_claw_configs_new(argTest=False):
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 10
+    config.max_epoch = 20
     config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True
     config.kc_dropout = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_inputs'] = [3, 7, 15, 30]
+    hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['kc_inputs'] = [3, 7, 11, 15, 20, 35, 50]
+        hp_ranges['kc_inputs'] = [3, 7, 15]
     return config, hp_ranges
 
 def train_claw_configs(argTest=False):
