@@ -27,12 +27,18 @@ def load_config(save_path):
     return config
 
 
-def load_pickle(dir, var):
-    """Load pickle by epoch in sorted order."""
-    out = []
+def get_allmodeldirs(dir):
+    """Return sorted model directories immediately below path."""
     unsorted_dirs = os.listdir(dir)
     ixs = np.argsort([int(n) for n in unsorted_dirs])  # sort by epochs
     dirs = [os.path.join(dir, unsorted_dirs[n]) for n in ixs]
+    return dirs
+
+
+def load_pickle(dir, var):
+    """Load pickle by epoch in sorted order."""
+    out = []
+    dirs = get_allmodeldirs(dir)
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
