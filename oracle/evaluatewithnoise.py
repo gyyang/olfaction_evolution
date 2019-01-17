@@ -16,6 +16,7 @@ import configs
 import task
 from model import FullModel
 import tools
+from standard.analysis import _easy_save
 
 mpl.rcParams['font.size'] = 7
 
@@ -23,13 +24,14 @@ mpl.rcParams['font.size'] = 7
 data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
 train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
 
-def _evaluate(name, value, model):
+def _evaluate(name, value, model, model_dir):
     if model == 'oracle':
-        path = os.path.join(rootpath, 'files', 'standard_shallow')
+        path = os.path.join(rootpath, 'files', 'standard_shallow', '0')
     else:
-        path = os.path.join(rootpath, 'files', model)
-    path = os.path.join(path, '0')
+        path = model_dir
+
     config = tools.load_config(path)
+
     # TODO: clean up these paths
     config.data_dir = rootpath + config.data_dir[1:]
     config.save_path = rootpath + config.save_path[1:]
@@ -85,11 +87,11 @@ def _evaluate(name, value, model):
     return val_loss, val_acc
 
 
-def evaluate(name, values, model='full'):
+def evaluate(name, values, model, model_dir):
     losses = list()
     accs = list()
     for value in values:
-        val_loss, val_acc = _evaluate(name, value, model)
+        val_loss, val_acc = _evaluate(name, value, model, model_dir)
         losses.append(val_loss)
         accs.append(val_acc)
     return losses, accs
@@ -111,7 +113,8 @@ def evaluate_plot(name):
     loss_dict = {}
     acc_dict = {}
     for model in models:
-        losses, accs = evaluate(name, values, model)
+        model_dir = os.path.join(rootpath, 'files', model, '0')
+        losses, accs = evaluate(name, values, model, model_dir)
         loss_dict[model] = losses
         acc_dict[model] = accs
     
@@ -133,6 +136,47 @@ def evaluate_plot(name):
     plt.ylabel('Loss')
     plt.legend()
     # plt.savefig('evaluateloss_'+name+'.png', dpi=500)
+
+
+def evaluate_acrossmodels():
+    name = 'weight_perturb'
+    values = [0, 0.01, 0.05, 0.1, 0.3]
+
+    path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
+    model_dirs = tools.get_allmodeldirs(path)
+
+    loss_dict = {}
+    acc_dict = {}
+
+    models = list()
+    model_var = 'kc_inputs'
+
+    for model_dir in model_dirs:
+        config = tools.load_config(model_dir)
+        model = getattr(config, model_var)
+        losses, accs = evaluate(name, values, model, model_dir)
+        loss_dict[model] = losses
+        acc_dict[model] = accs
+        models.append(model)
+
+    colors = plt.cm.cool(np.linspace(0, 1, len(values)))
+    
+    for ylabel in ['Acc', 'Loss']:
+        res_dict = acc_dict if ylabel == 'Acc' else loss_dict
+        fig = plt.figure(figsize=(4.0, 2.5))
+        ax = fig.add_axes([0.3, 0.3, 0.3, 0.6])
+
+        for i in range(len(values)):
+            res_plot = [res_dict[model][i] for model in models]
+            ax.plot(models, res_plot, 'o-', label=values[i], color=colors[i])
+        ax.set_xlabel(model_var)
+        ax.set_ylabel(ylabel)
+        if ylabel == 'Acc':
+            plt.ylim([0, 1])
+        l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0))
+        l.set_title(name)
+        figname = ylabel+model_var+name
+        # _easy_save('vary_kc_claws_new', figname)
     
 
 if __name__ == '__main__':
@@ -140,4 +184,8 @@ if __name__ == '__main__':
     # evaluate_plot('orn_dropout_rate')
     # evaluate_plot('orn_noise_std')
     # evaluate_plot('alpha')
-    evaluate_plot('weight_perturb')
+    # evaluate_plot('weight_perturb')
+    # evaluate_acrossmodels('weight_perturb')
+    evaluate_acrossmodels()
+
+
