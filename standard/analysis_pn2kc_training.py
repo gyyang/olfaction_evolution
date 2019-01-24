@@ -29,7 +29,7 @@ def _set_colormap(nbins):
     return cm
 
 
-def infer_threshold(x, use_logx=True, visualize=False):
+def infer_threshold(x, use_logx=True, visualize=False, force_thres=None):
     """Infers the threshold of a bi-modal distribution.
 
     The log-input will be fit as a mixture of 2 gaussians.
@@ -47,22 +47,26 @@ def infer_threshold(x, use_logx=True, visualize=False):
         x = np.log(x)
     x = x[:, np.newaxis]
 
-    clf = GaussianMixture(n_components=2)
-    clf.fit(x)
-
-    x_tmp = np.linspace(x.min(), x.max(), 1000)
-
-    pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
-                                   clf.covariances_[0]) * clf.weights_[0]
-    pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
-                                   clf.covariances_[1]) * clf.weights_[1]
-
-    if clf.means_[0, 0] < clf.means_[1, 0]:
-        diff = pdf1 < pdf2
+    if force_thres is not None:
+        thres_ = np.log(force_thres) if use_logx else force_thres
     else:
-        diff = pdf1 > pdf2
+        clf = GaussianMixture(n_components=2)
+        clf.fit(x)
+    
+        x_tmp = np.linspace(x.min(), x.max(), 1000)
+    
+        pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
+                                       clf.covariances_[0]) * clf.weights_[0]
+        pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
+                                       clf.covariances_[1]) * clf.weights_[1]
+    
+        if clf.means_[0, 0] < clf.means_[1, 0]:
+            diff = pdf1 < pdf2
+        else:
+            diff = pdf1 > pdf2
+    
+        thres_ = x_tmp[np.where(diff)[0][0]]
 
-    thres_ = x_tmp[np.where(diff)[0][0]]
     thres = np.exp(thres_) if use_logx else thres_
 
     if visualize:
@@ -70,9 +74,20 @@ def infer_threshold(x, use_logx=True, visualize=False):
         fig = plt.figure(figsize=(3, 3))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
         ax.hist(x[:, 0], bins=bins, density=True)
-        pdf = pdf1 + pdf2
-        ax.plot(x_tmp, pdf)
-        ax.plot([thres_, thres_], [0, pdf.max()])
+        if force_thres is None:
+            pdf = pdf1 + pdf2
+            ax.plot(x_tmp, pdf)
+        ax.plot([thres_, thres_], [0, 1])
+
+        if use_logx:
+            x = np.exp(x)
+            thres_ = np.exp(thres_)
+            bins = np.linspace(x.min(), x.max(), 100)
+            fig = plt.figure(figsize=(3, 3))
+            ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+            ax.hist(x[:, 0], bins=bins, density=True)
+            ax.plot([thres_, thres_], [0, 1])
+            # ax.set_ylim([0, 1])
 
     return thres
 
@@ -279,11 +294,14 @@ def plot_sparsity(dir, dynamic_thres=False):
             w[np.isnan(w)] = 0
 
             # dynamically infer threshold after training
-            if j == 0:
-                thres = THRES
+            if j == 0 or dynamic_thres is False:
+                force_thres = THRES
+            elif dynamic_thres == True:
+                force_thres = None
             else:
-                thres = infer_threshold(w, visualize=True) if dynamic_thres else THRES
-                print('thres=', str(thres))
+                force_thres = dynamic_thres
+            thres = infer_threshold(w, visualize=True, force_thres=force_thres)
+            print('thres=', str(thres))
 
             sparsity = np.count_nonzero(w > thres, axis=0)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))

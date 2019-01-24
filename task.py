@@ -5,15 +5,16 @@ import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 import tools
-from configs import input_ProtoConfig
+from configs import input_ProtoConfig, InputAutoEncode
 
 
 def _get_labels(prototypes, odors, percent_generalization):
     dist = euclidean_distances(prototypes, odors)
-    highest_match = np.min(dist, axis=0)
-    threshold = np.percentile(highest_match.flatten(), percent_generalization)
-    default_class = (1e-6+threshold) * np.ones((1, dist.shape[1]))
-    dist = np.vstack((default_class, dist))
+    if percent_generalization < 100:
+        highest_match = np.min(dist, axis=0)
+        threshold = np.percentile(highest_match.flatten(), percent_generalization)
+        default_class = (1e-6+threshold) * np.ones((1, dist.shape[1]))
+        dist = np.vstack((default_class, dist))
     return np.argmin(dist, axis=0)
 
 
@@ -29,11 +30,11 @@ def _mask_orn_activation(prototypes):
     out = np.multiply(prototypes, mask)
     return out
 
+
 def _relabel(train_labels, val_labels, n_pre, n_post, rng=None, random=False):
-    """Relabeing classes.
+    """Relabeling classes.
 
     Randomly relabel n_pre classes to n_post classes, assuming n_post<n_pre
-    Assume that label 0 is still mapped to label 0
 
     Args:
         train_labels: a list of labels
@@ -49,10 +50,8 @@ def _relabel(train_labels, val_labels, n_pre, n_post, rng=None, random=False):
     if random:
         if rng is None:
             rng = np.random.RandomState()
-
         # Generate the mapping from previous labels to new labels
-        labelmap = rng.choice(range(1, n_post), size=(n_pre))
-        labelmap[0] = 0  # 0 still mapped to 0
+        labelmap = rng.choice(range(n_post), size=(n_pre))
     else:
         if not (n_pre/n_post).is_integer():
             print('n_pre/n_post is not an integer, making uneven classes')
@@ -161,6 +160,8 @@ def _generate_proto_threshold(
 
     # the number of prototypes
     n_proto = n_trueclass if relabel else n_class
+    if percent_generalization < 100:
+        n_proto -= 1
 
     max_activation = 1
     if multi_head:
@@ -176,7 +177,7 @@ def _generate_proto_threshold(
 
     if multi_head and has_special_odors:
         # TODO(gryang): make this code not so ugly
-        n_neutral_odor = n_proto - 1 - (n_good_odor + n_bad_odor)
+        n_neutral_odor = n_proto - (n_good_odor + n_bad_odor)
         prototypes_neutral = rng.uniform(0, max_activation, (n_neutral_odor, n_orn))
         prototypes_good = np.zeros((n_good_odor, n_orn))
         prototypes_good[range(n_good_odor), range(n_good_odor)] = 5.
@@ -210,7 +211,7 @@ def _generate_proto_threshold(
         val_labels_valence = val_labels_valence[ind_shuffle]
 
     else:
-        prototypes = rng.uniform(0, max_activation, (n_proto-1, n_orn))
+        prototypes = rng.uniform(0, max_activation, (n_proto, n_orn))
         train_odors = rng.uniform(0, max_activation, (n_train, n_orn))
         val_odors = rng.uniform(0, max_activation, (n_val, n_orn))
 
@@ -382,6 +383,48 @@ def save_proto_all():
             save_proto(config)
 
 
+def save_autoencode(config=None, seed=0, folder_name=None):
+    """Save dataset in numpy format."""
+
+    if config is None:
+        config = InputAutoEncode()
+
+    # make and save data
+    rng = np.random.RandomState(seed)
+
+    prototypes = (rng.rand(config.n_class, config.n_orn) < config.proto_density).astype(np.float32)
+
+    train_ind = rng.choice(np.arange(config.n_class), size=(config.n_train,))
+    train_x = prototypes[train_ind]
+    train_y = prototypes[train_ind]
+    # flip the matrix element if the corresponding element in flip_matrix is 1
+    flip_matrix = rng.rand(*train_x.shape) < config.p_flip
+    train_x = abs(flip_matrix - train_x)
+
+    val_ind = rng.choice(np.arange(config.n_class), size=(config.n_val,))
+    val_x = prototypes[val_ind]
+    val_y = prototypes[val_ind]
+    flip_matrix = rng.rand(*val_x.shape) < config.p_flip
+    val_x = abs(flip_matrix - val_x)
+
+    folder_path = os.path.join(config.path, folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    else:
+        shutil.rmtree(folder_path)
+        os.makedirs(folder_path)
+
+    vars = [train_x, train_y, val_x, val_y, prototypes]
+    varnames = ['train_x', 'train_y', 'val_x', 'val_y', 'prototype']
+    for result, name in zip(vars, varnames):
+        np.save(os.path.join(folder_path, name), result)
+
+    #save parameters
+    tools.save_config(config, folder_path)
+    return folder_path
+
+
+
 def load_data(dataset, data_dir):
     """Load dataset."""
     def _load_proto(path):
@@ -389,7 +432,7 @@ def load_data(dataset, data_dir):
         names = ['train_x', 'train_y', 'val_x', 'val_y']
         return [np.load(os.path.join(path, name + '.npy')) for name in names]
 
-    if dataset == 'proto':
+    if dataset in ['proto', 'autoencode']:
             train_x, train_y, val_x, val_y = _load_proto(data_dir)
     else:
         raise ValueError('Unknown dataset type ' + str(dataset))

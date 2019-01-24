@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP, OracleNet, RNN
+from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN
 from configs import FullConfig, SingleLayerConfig
 import tools
 
@@ -56,6 +56,9 @@ def train(config, reload=False):
         CurrentModel = NormalizedMLP
     elif config.model == 'oracle':
         CurrentModel = OracleNet
+    elif config.model == 'autoencode':
+        CurrentModel = AutoEncoder
+        # CurrentModel = AutoEncoderSimple
     elif config.model == 'rnn':
         CurrentModel = RNN
     else:
@@ -72,6 +75,12 @@ def train(config, reload=False):
     val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
     val_model = CurrentModel(val_x_ph, val_y_ph, config=config, training=False)
 
+    if 'set_oracle' in dir(config) and config.set_oracle:
+        # Helper model for oracle
+        oracle_x_ph = tf.placeholder(val_x.dtype, [config.N_CLASS, val_x.shape[1]])
+        oracle_y_ph = tf.placeholder(val_y.dtype, [config.N_CLASS])
+        oracle = CurrentModel(oracle_x_ph, oracle_y_ph, config=config, training=False)
+
     # Make custom logger
     log = defaultdict(list)
     log_name = os.path.join(config.save_path, 'log.pkl')  # Consider json instead of pickle
@@ -80,21 +89,27 @@ def train(config, reload=False):
 
     # validation fetches
     val_fetch_names = ['loss', 'acc']
-    if config.label_type == 'multi_head_sparse':
+    try:
+        _ = val_model.acc2
         val_fetch_names.append('acc2')
+    except AttributeError:
+        pass
+
     val_fetches = [getattr(val_model, f) for f in val_fetch_names]
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
         sess.run(tf.global_variables_initializer())
-        sess.run(tf.local_variables_initializer())
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
         if reload:
             model.load()
             with open(log_name, 'rb') as f:
                 log = pickle.load(f)
+
+        if 'set_oracle' in dir(config) and config.set_oracle:
+            oracle.set_oracle_weights()
 
         loss = 0
         acc = 0
@@ -103,9 +118,7 @@ def train(config, reload=False):
         for ep in range(config.max_epoch):
             # Validation
             tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
-            res = dict()
-            for name, r in zip(val_fetch_names, tmp):
-                res[name] = r[1] if 'acc' in name else r
+            res = {name:r for name, r in zip(val_fetch_names, tmp)}
             
             print('[*' + '*'*50 + '*]')
             print('Epoch {:d}'.format(ep))
@@ -118,8 +131,10 @@ def train(config, reload=False):
             for key, value in res.items():
                 log['val_' + key].append(value)
 
-            if config.label_type == 'multi_head_sparse':
+            try:
                 print('Validation accuracy head 2 {:0.2f}'.format(res['acc2']))
+            except KeyError:
+                pass
 
             if config.model == 'full':
                 if config.receptor_layer:
@@ -189,8 +204,6 @@ def train(config, reload=False):
                     _ = sess.run(model.train_op)
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
-                acc = acc[1]
-
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')

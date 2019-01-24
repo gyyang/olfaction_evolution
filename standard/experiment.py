@@ -124,6 +124,28 @@ def vary_claw_configs(argTest=False):
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
+def vary_claw_configs_new(argTest=False):
+    '''
+    Vary number of inputs to KCs while skipping ORN2PN layer
+    Results:
+        Accuracy should be high at around claw values of 7-15
+        # Noise dependence
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 20
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.kc_dropout = False
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
+    if argTest:
+        config.max_epoch = testing_epochs
+        hp_ranges['kc_inputs'] = [3, 7, 15]
+    return config, hp_ranges
+
 def train_claw_configs(argTest=False):
     '''
     NOTE: this should be trained with varying_config_sequential

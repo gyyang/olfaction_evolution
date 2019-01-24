@@ -59,6 +59,21 @@ class input_ProtoConfig(BaseConfig):
         self.realistic_orn_mean = False
 
 
+class InputAutoEncode(BaseConfig):
+    def __init__(self):
+        super(InputAutoEncode, self).__init__()
+        self.path = os.path.join(os.getcwd(), 'datasets', 'autoencode')
+
+        self.n_train = 1000000
+        self.n_val = 8192
+
+        self.n_class = 100
+        self.n_orn = 50
+
+        self.proto_density = 0.5
+        self.p_flip = 0.2
+
+
 class SingleLayerConfig(BaseConfig):
     def __init__(self):
         super(SingleLayerConfig, self).__init__()
@@ -112,6 +127,9 @@ class FullConfig(BaseConfig):
         self.or_bias = False
 
         # ORN--> PN connections
+        # whether to dropout at ORN layer
+        self.orn_dropout = False  # TODO: If True, now applied POST tiling, but consider PRE tiling
+        self.orn_dropout_rate = 0.1
 
         # Initialization method for pn2kc: can take values uniform, random, or normal
         self.initializer_orn2pn = 'normal'
@@ -169,6 +187,12 @@ class FullConfig(BaseConfig):
         self.skip_pn2kc = False
         # number of inputs onto KCs
         self.kc_inputs = 7
+
+        # Output connections
+        # If True, set the output weights to be the oracle (pattern-matching)
+        self.set_oracle = False
+        # Scale the oracle weights
+        self.oracle_scale = 1.0
 
         # Computing loss
         # Only meaningful for multi_head configuration

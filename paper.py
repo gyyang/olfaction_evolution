@@ -125,6 +125,15 @@ if 'vary_kc_claws' in experiments:
         sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
 
+if 'vary_kc_claws_new' in experiments:
+    path = './files/vary_kc_claws_new'
+    if TRAIN:
+        local_train(se.vary_claw_configs_new(is_test), path)
+    if ANALYZE:
+        pass
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
+        #                                loop_key='ORN_NOISE_STD')
+
 if 'train_kc_claws' in experiments:
     path = './files/train_kc_claws'
     if TRAIN:
