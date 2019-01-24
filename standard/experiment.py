@@ -224,11 +224,11 @@ def vary_kc_activity_sparseness(argTest):
     hp_ranges = OrderedDict()
     hp_ranges['kc_dropout_rate'] = [0, .2, .4]
     x = [20, 40, 60, 80, 100, 120, 140, 160, 200, 500, 1000]
-    hp_ranges['data_dir'] = ['./datasets/proto/_s' + str(i) + '_20' for i in x]
+    hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_20' for i in x]
     if argTest:
         hp_ranges['kc_dropout_rate'] = [0, .5]
         x = [20, 60, 120, 200, 500, 1000]
-        hp_ranges['data_dir'] = ['./datasets/proto/_s' + str(i) + '_20' for i in x]
+        hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_20' for i in x]
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
@@ -303,6 +303,22 @@ def pn_normalization_direct(argTest):
     hp_ranges['pn_norm_post'] = ['None', 'biology']
     if argTest:
         config.max_epoch = testing_epochs
+    # TODO: hyperparameter search
+    # try:
+    #     rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
+    #     print('rmax: {}'.format(rmax))
+    #     rho = tools.load_pickle(path, 'model/layer1/rho:0')
+    #     print('rho: {}'.format(rho))
+    #     m = tools.load_pickle(path, 'model/layer1/m:0')
+    #     print('m: {}'.format(m))
+    # except:
+    #     pass
+    #
+    # try:
+    #     gamma = tools.load_pickle(path, 'model/layer1/LayerNorm/gamma:0')
+    #     print('gamma params: {}'.format(gamma))
+    # except:
+    #     pass
     return config, hp_ranges
 
 def vary_norm(argTest):
