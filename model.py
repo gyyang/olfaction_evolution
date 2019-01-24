@@ -516,6 +516,109 @@ def _signed_dense(x, n0, n1, training):
     glo = tf.nn.relu(glo_in)
     return glo
 
+class RNN(Model):
+
+    def __init__(self, x, y, config=None, training=True):
+
+        if config is None:
+            config = FullConfig
+        self.config = config
+
+        super(RNN, self).__init__(config.save_path)
+
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+
+        if training:
+            optimizer = tf.train.AdamOptimizer(config.lr)
+
+            var_list = tf.trainable_variables()
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+        self.saver = tf.train.Saver()
+
+    def _build(self, x, y, training):
+        config = self.config
+        ORN_DUP = config.N_ORN_DUPLICATION
+        N_ORN = config.N_ORN * ORN_DUP
+        NOISE = config.ORN_NOISE_STD
+        NEURONS = N_ORN + config.NEURONS
+        TIME_STEPS = config.TIME_STEPS
+
+        # Replicating ORNs through tiling
+        assert x.shape[-1] == config.N_ORN
+        x = tf.tile(x, [1, ORN_DUP])
+        x += tf.random_normal(x.shape, stddev=NOISE)
+
+        W_in_np = np.zeros([N_ORN, NEURONS])
+        np.fill_diagonal(W_in_np, 1)
+        W_in = tf.constant(W_in_np, dtype=tf.float32, name='W_in')
+        rnn_output = tf.matmul(x, W_in)
+
+        with tf.variable_scope('layer_rnn', reuse=tf.AUTO_REUSE):
+            # TODO: do not want ORNs to connect to each other, nor for them to have a bias
+            w_rnn = tf.get_variable('kernel', shape=(NEURONS, NEURONS), dtype=tf.float32)
+            w_rnn = tf.abs(w_rnn)
+            b_rnn = tf.get_variable('bias', shape=NEURONS, dtype=tf.float32)
+            for t in range(TIME_STEPS):
+                rnn_output = tf.matmul(rnn_output, w_rnn) + b_rnn
+
+        # TODO: implement RNN dropout
+        if config.dropout:
+            rnn_output = tf.layers.dropout(rnn_output, config.dropout_rate, training=training)
+
+        with tf.variable_scope('layer_out', reuse=tf.AUTO_REUSE):
+            # TODO: do not want ORNs to output to classes
+            w_out = tf.get_variable('kernel', shape=(NEURONS, config.N_CLASS), dtype=tf.float32)
+            w_out = tf.abs(w_out)
+            b_out = tf.get_variable('bias', shape=config.N_CLASS, dtype=tf.float32)
+            logits = tf.matmul(rnn_output, w_out) + b_out
+
+        loss = tf.losses.sparse_softmax_cross_entropy(
+            labels=y, logits=logits)
+        if config.WEIGHT_LOSS:
+            loss += config.WEIGHT_ALPHA * tf.reduce_mean(tf.tanh(w_rnn))
+            loss += config.WEIGHT_ALPHA * tf.reduce_mean(tf.tanh(w_out))
+
+        self.loss = loss
+        self.acc = tf.metrics.accuracy(labels=y,
+                                       predictions=tf.argmax(logits, axis=-1))
+
+        self.logits = logits
+        self.w_rnn = w_rnn
+        self.b_rnn = b_rnn
+        self.w_out = w_out
+        self.b_out = b_out
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, 'model.pkl')
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        var_dict['w_rnn'] = sess.run(self.w_rnn)
+        var_dict['b_rnn'] = sess.run(self.b_rnn)
+        var_dict['w_out'] = sess.run(self.w_out)
+        var_dict['b_out'] = sess.run(self.b_out)
+        with open(fname, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Model weights saved in path: %s" % save_path)
+
+
 
 class NormalizedMLP(Model):
     """Normalized multi-layer perceptron model.
@@ -543,13 +646,10 @@ class NormalizedMLP(Model):
 
         if training:
             optimizer = tf.train.AdamOptimizer(config.lr)
-
             var_list = tf.trainable_variables()
-
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
                 self.train_op = optimizer.minimize(self.loss, var_list=var_list)
-
             print('Training variables')
             for v in var_list:
                 print(v)

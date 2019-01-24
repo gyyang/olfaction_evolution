@@ -98,24 +98,24 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
     model_dir = os.path.join(save_path, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
-        w_orn = var_dict[var_name]
+        w_plot = var_dict[var_name]
 
     # if not hasattr(config, 'receptor_layer') or config.receptor_layer == False:
     #     if config.replicate_orn_with_tiling:
-    #         w_orn = np.reshape(
-    #             w_orn, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
-    #         w_orn = np.swapaxes(w_orn, 0, 1)
-    #         w_orn = np.reshape(w_orn, (-1, config.N_PN))
+    #         weight = np.reshape(
+    #             weight, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
+    #         weight = np.swapaxes(weight, 0, 1)
+    #         weight = np.reshape(weight, (-1, config.N_PN))
 
     # Sort for visualization
     if sort_axis == 0:
-        ind_max = np.argmax(w_orn, axis=0)
+        ind_max = np.argmax(w_plot, axis=0)
         ind_sort = np.argsort(ind_max)
-        w_plot = w_orn[:, ind_sort]
+        w_plot = w_plot[:, ind_sort]
     else:
-        ind_max = np.argmax(w_orn, axis=1)
+        ind_max = np.argmax(w_plot, axis=1)
         ind_sort = np.argsort(ind_max)
-        w_plot = w_orn[ind_sort, :]
+        w_plot = w_plot[ind_sort, :]
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
@@ -125,7 +125,7 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
     im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
                    interpolation='none')
 
-    if var_name == 'w_orn':
+    if var_name == 'weight':
         plt.title('ORN-PN connectivity after training', fontsize=7)
         ax.set_xlabel('To PNs', labelpad=-5)
         ax.set_ylabel('From ORNs', labelpad=-5)
@@ -138,7 +138,7 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
         ax.set_xlabel('PN', labelpad=-5)
         ax.set_ylabel('OR', labelpad=-5)
     else:
-        raise ValueError('unknown variable name for weight matrix: {}'.format(var_name))
+        print('unknown variable name for weight matrix: {}'.format(var_name))
 
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
