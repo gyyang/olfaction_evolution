@@ -188,6 +188,10 @@ class FullConfig(BaseConfig):
         # number of inputs onto KCs
         self.kc_inputs = 7
 
+        # New layer after KC
+        self.extra_layer = False
+        self.extra_layer_neurons = 200
+
         # Output connections
         # If True, set the output weights to be the oracle (pattern-matching)
         self.set_oracle = False

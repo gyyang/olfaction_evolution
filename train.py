@@ -111,6 +111,10 @@ def train(config, reload=False):
         if 'set_oracle' in dir(config) and config.set_oracle:
             oracle.set_oracle_weights()
 
+        if config.model == 'rnn' and config.DIAGONAL_INIT:
+            model.set_weights()
+
+
         loss = 0
         acc = 0
         total_time, start_time = 0, time.time()
