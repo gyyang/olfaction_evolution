@@ -52,10 +52,10 @@ else:
     experiments = args.experiment
 
 # #peter specific
-TRAIN = False
-ANALYZE = True
-is_test = True
-experiments = ['pn_normalization']
+# TRAIN = True
+# ANALYZE = True
+# is_test = True
+# experiments = ['vary_pn']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity

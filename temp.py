@@ -117,16 +117,35 @@ def temp1():
     # config.train_kc_bias = False
     # config.train_pn2kc = True
     # config.sparse_pn2kc = False
-    config.save_every_epoch = True
+    # config.save_every_epoch = True
     # config.kc_norm_pre = 'batch_norm'
 
     hp_ranges = OrderedDict()
     hp_ranges['extra_layer'] = [False, True]
     return config, hp_ranges
 
-path = './files_temp/relabel_extra_layer'
-t(temp1(), path, s=0, e=100)
-analysis_training.plot_sparsity(path, dynamic_thres=False)
-analysis_training.plot_distribution(path)
-sa.plot_results(path, x_key='extra_layer', y_key='val_acc')
+
+def basic():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 20
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+
+    # config.train_kc_bias = False
+    # config.train_pn2kc = True
+    # config.sparse_pn2kc = False
+    # config.save_every_epoch = True
+    # config.kc_norm_pre = 'batch_norm'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy'] = [True]
+    return config, hp_ranges
+
+path = './files_temp/dummy'
+t(basic(), path, s=0, e=100)
+# analysis_training.plot_sparsity(path, dynamic_thres=False)
+# analysis_training.plot_distribution(path)
+# sa.plot_results(path, x_key='extra_layer', y_key='val_acc')
 

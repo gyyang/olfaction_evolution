@@ -6,7 +6,7 @@ import configs
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 6
+testing_epochs = 10
 def train_orn2pn(argTest=False):
     '''
     Most basic experiment. Train ORN2PN.
@@ -66,12 +66,12 @@ def vary_pn_configs(argTest=False):
 
     hp_ranges = OrderedDict()
     hp_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500]
-    hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
 
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['N_PN'] = [20, 50, 200]
-        hp_ranges['ORN_NOISE_STD'] = [0, .5]
+        hp_ranges['N_PN'] = [50, 200]
+        hp_ranges['ORN_NOISE_STD'] = [0, .25]
 
     return config, hp_ranges
 

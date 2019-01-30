@@ -444,7 +444,7 @@ class FullModel(Model):
             n_logits = config.N_COMBINATORIAL_CLASS
         else:
             n_logits = config.N_CLASS
-        logits = tf.layers.dense(kc, n_logits, activation= tf.nn.relu, use_bias= True, name='layer3', reuse=tf.AUTO_REUSE)
+        logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
         if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
