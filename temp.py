@@ -127,24 +127,21 @@ def temp1():
 
 def basic():
     config = configs.FullConfig()
+    config.max_epoch = 16
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 20
 
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-
-    # config.train_kc_bias = False
-    # config.train_pn2kc = True
-    # config.sparse_pn2kc = False
-    # config.save_every_epoch = True
-    # config.kc_norm_pre = 'batch_norm'
-
+    config.kc_norm_pre = 'batch_norm'
+    config.sign_constraint_pn2kc = False
+    config.sparse_pn2kc = False
+    config.kc_bias = 0
+    config.train_pn2kc = True
+    config.train_kc_bias = True
     hp_ranges = OrderedDict()
-    hp_ranges['dummy'] = [True]
+    hp_ranges['sign_constraint_orn2pn'] = [True, False]
     return config, hp_ranges
 
-path = './files_temp/dummy'
-t(basic(), path, s=0, e=100)
+path = './files/orn2pn'
+t(basic(), path, s=1, e=100)
 # analysis_training.plot_sparsity(path, dynamic_thres=False)
 # analysis_training.plot_distribution(path)
 # sa.plot_results(path, x_key='extra_layer', y_key='val_acc')

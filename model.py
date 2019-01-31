@@ -339,17 +339,23 @@ class FullModel(Model):
                                     training=True)
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
-            if config.direct_glo:
-                range = _sparse_range(ORN_DUP)
+            if config.sign_constraint_orn2pn:
+                if config.direct_glo:
+                    range = _sparse_range(ORN_DUP)
+                else:
+                    range = _sparse_range(N_ORN)
+                initializer = _initializer(range, config.initializer_orn2pn)
+                bias_initializer = tf.constant_initializer(0)
             else:
-                range = _sparse_range(N_ORN)
+                initializer = tf.glorot_normal_initializer
+                bias_initializer = tf.glorot_normal_initializer
 
-            initializer = _initializer(range, config.initializer_orn2pn)
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
-                                 dtype=tf.float32, initializer=initializer)
+                                 dtype=tf.float32,
+                                 initializer=initializer)
 
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0))
+                                    initializer= bias_initializer)
 
             if config.direct_glo:
                 mask = np.tile(np.eye(N_PN), (ORN_DUP,1))
@@ -382,20 +388,24 @@ class FullModel(Model):
             else:
                 N_USE = N_PN
 
-            if config.initial_pn2kc == 0:
-                if config.sparse_pn2kc:
-                    range = _sparse_range(config.kc_inputs)
+            if config.sign_constraint_pn2kc:
+                if config.initial_pn2kc == 0:
+                    if config.sparse_pn2kc:
+                        range = _sparse_range(config.kc_inputs)
+                    else:
+                        range = _sparse_range(N_USE)
                 else:
-                    range = _sparse_range(N_USE)
+                    range = config.initial_pn2kc
+                initializer = _initializer(range, config.initializer_pn2kc)
+                bias_initializer = tf.constant_initializer(config.kc_bias)
             else:
-                range = config.initial_pn2kc
+                initializer = tf.glorot_normal_initializer
+                bias_initializer = tf.glorot_normal_initializer
 
-            initializer = _initializer(range, config.initializer_pn2kc)
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)
-
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(config.kc_bias))
+                                    initializer= bias_initializer)
 
             if config.sparse_pn2kc:
                 if config.skip_orn2pn:
@@ -761,12 +771,11 @@ class NormalizedMLP(Model):
                                     training=True)
 
         y_hat = x
-
         for i_layer in range(n_layer):
             layername = 'layer' + str(i_layer+1)
             with tf.variable_scope(layername, reuse=tf.AUTO_REUSE):
-                y_hat = _signed_dense(
-                    y_hat, NEURONS[i_layer], NEURONS[i_layer+1], training)
+                    y_hat = _signed_dense(
+                        y_hat, NEURONS[i_layer], NEURONS[i_layer+1], training)
 
         layername = 'layer' + str(n_layer + 1)
         logits = tf.layers.dense(y_hat, config.N_CLASS,
