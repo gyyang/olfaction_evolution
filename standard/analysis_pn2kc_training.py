@@ -98,9 +98,12 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False):
     zero_claws = []
     mean_claws = []
 
-    for wglo in wglos:
+    for i, wglo in enumerate(wglos):
         # dynamically infer threshold after training
-        thres = infer_threshold(wglo) if dynamic_thres else THRES
+        if dynamic_thres and i > 0:
+            thres = infer_threshold(wglo)
+        else:
+            thres = THRES
         sparsity = np.count_nonzero(wglo > thres, axis=0)
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
         zero_claws.append(y[0])
@@ -115,7 +118,8 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False):
 
     yticks_mean = [0, 3, 7, 15, 20]
     yticks_zero = [0., .5, 1]
-    sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key)
+    sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key,
+                    ax_args={'ylim':[1, 15],'yticks':[1, 5, 7, 9, 15]})
     sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key)
 
 def image_pn2kc_parameters(dir, dynamic_thres=False):
@@ -280,8 +284,7 @@ def plot_sparsity(dir, dynamic_thres=False):
         ax.yaxis.set_ticks_position('left')
 
         plt.savefig(savename + '.png', dpi=500)
-        plt.close()
-        plt.savefig(savename + '.pdf')
+        plt.savefig(savename + '.pdf', transparent=True)
         plt.close()
 
     save_name = dir.split('/')[-1]
@@ -371,7 +374,7 @@ def plot_distribution(dir):
 
             ax.set_xlabel('PN to KC Weight')
             ax.set_ylabel('Number of Connections')
-            xticks = [0, .2, .4, .6, .8, 1]
+            xticks = np.arange(0, xrange + 0.01, .5)
             ax.set_xticks(xticks)
             ax.set_xticklabels([str(x) for x in xticks])
             yticks = [0, 1000, 2000, 3000, 4000, 5000]
@@ -385,19 +388,8 @@ def plot_distribution(dir):
             ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
 
         plt.savefig(savename + '.png', dpi=500)
-<<<<<<< HEAD
-<<<<<<< HEAD
         plt.savefig(savename + '.pdf', transparent=True)
-=======
         plt.close()
-        plt.savefig(savename + '.pdf')
-        plt.close()
->>>>>>> 18606c5a735d891ca4c68e1f270e8cd762acb37f
-=======
-        plt.close()
-        plt.savefig(savename + '.pdf')
-        plt.close()
->>>>>>> 18606c5a735d891ca4c68e1f270e8cd762acb37f
 
     for i, d in enumerate(dirs):
         wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
