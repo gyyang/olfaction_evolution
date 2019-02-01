@@ -20,7 +20,7 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 mpl.rcParams['font.size'] = 7
 figpath = os.path.join(rootpath, 'figures')
-THRES = 0.05
+THRES = 0.08
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
@@ -235,10 +235,10 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
 
-        _easy_save(path, str='_weights_per_kc', pdf=False)
+        _easy_save(path, str='_weights_per_kc', pdf=True)
 
     if loopkey is None:
-        legend = ['Trained, no loss', 'Trained, loss', 'Sparse and fixed']
+        legend = ['Trained, no loss', 'Trained, with loss', 'Fixed']
     else:
         res = tools.load_all_results(path)
         legend = res[loopkey]
@@ -280,7 +280,9 @@ def plot_sparsity(dir, dynamic_thres=False):
         ax.yaxis.set_ticks_position('left')
 
         plt.savefig(savename + '.png', dpi=500)
+        plt.close()
         plt.savefig(savename + '.pdf', transparent=True)
+        plt.close()
 
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
@@ -301,7 +303,7 @@ def plot_sparsity(dir, dynamic_thres=False):
                 force_thres = None
             else:
                 force_thres = dynamic_thres
-            thres = infer_threshold(w, visualize=True, force_thres=force_thres)
+            thres = infer_threshold(w, visualize=False, force_thres=force_thres)
             print('thres=', str(thres))
 
             sparsity = np.count_nonzero(w > thres, axis=0)
@@ -383,7 +385,13 @@ def plot_distribution(dir):
             ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
 
         plt.savefig(savename + '.png', dpi=500)
+<<<<<<< HEAD
         plt.savefig(savename + '.pdf', transparent=True)
+=======
+        plt.close()
+        plt.savefig(savename + '.pdf')
+        plt.close()
+>>>>>>> 18606c5a735d891ca4c68e1f270e8cd762acb37f
 
     for i, d in enumerate(dirs):
         wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')

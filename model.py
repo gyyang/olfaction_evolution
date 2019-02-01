@@ -339,17 +339,23 @@ class FullModel(Model):
                                     training=True)
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
-            if config.direct_glo:
-                range = _sparse_range(ORN_DUP)
+            if config.sign_constraint_orn2pn:
+                if config.direct_glo:
+                    range = _sparse_range(ORN_DUP)
+                else:
+                    range = _sparse_range(N_ORN)
+                initializer = _initializer(range, config.initializer_orn2pn)
+                bias_initializer = tf.constant_initializer(0)
             else:
-                range = _sparse_range(N_ORN)
+                initializer = tf.glorot_normal_initializer
+                bias_initializer = tf.glorot_normal_initializer
 
-            initializer = _initializer(range, config.initializer_orn2pn)
             w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
-                                 dtype=tf.float32, initializer=initializer)
+                                 dtype=tf.float32,
+                                 initializer=initializer)
 
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(0))
+                                    initializer= bias_initializer)
 
             if config.direct_glo:
                 mask = np.tile(np.eye(N_PN), (ORN_DUP,1))
@@ -382,20 +388,24 @@ class FullModel(Model):
             else:
                 N_USE = N_PN
 
-            if config.initial_pn2kc == 0:
-                if config.sparse_pn2kc:
-                    range = _sparse_range(config.kc_inputs)
+            if config.sign_constraint_pn2kc:
+                if config.initial_pn2kc == 0:
+                    if config.sparse_pn2kc:
+                        range = _sparse_range(config.kc_inputs)
+                    else:
+                        range = _sparse_range(N_USE)
                 else:
-                    range = _sparse_range(N_USE)
+                    range = config.initial_pn2kc
+                initializer = _initializer(range, config.initializer_pn2kc)
+                bias_initializer = tf.constant_initializer(config.kc_bias)
             else:
-                range = config.initial_pn2kc
+                initializer = tf.glorot_normal_initializer
+                bias_initializer = tf.glorot_normal_initializer
 
-            initializer = _initializer(range, config.initializer_pn2kc)
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)
-
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(config.kc_bias))
+                                    initializer= bias_initializer)
 
             if config.sparse_pn2kc:
                 if config.skip_orn2pn:
@@ -426,6 +436,14 @@ class FullModel(Model):
 
         if config.kc_dropout:
             kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+
+        if config.extra_layer:
+            with tf.variable_scope('layer_extra', reuse=tf.AUTO_REUSE):
+                n_neurons = config.extra_layer_neurons
+                w3 = tf.get_variable('kernel', shape=(N_KC, n_neurons), dtype=tf.float32)
+                # w3 = tf.abs(w3)
+                b3 = tf.get_variable('bias', shape=(n_neurons,), dtype=tf.float32)
+                kc = tf.nn.relu(tf.matmul(kc, w3) + b3)
 
         if config.kc_loss:
             # self.kc_loss = tf.reduce_mean(tf.pow(tf.abs(w_glo), 0.5)) * config.kc_loss_alpha
@@ -565,6 +583,140 @@ def _signed_dense(x, n0, n1, training):
     glo = tf.nn.relu(glo_in)
     return glo
 
+class RNN(Model):
+
+    def __init__(self, x, y, config=None, training=True):
+
+        if config is None:
+            config = FullConfig
+        self.config = config
+
+        super(RNN, self).__init__(config.save_path)
+
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+
+        if training:
+            optimizer = tf.train.AdamOptimizer(config.lr)
+
+            var_list = tf.trainable_variables()
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+        self.saver = tf.train.Saver()
+
+    def _build(self, x, y, training):
+        config = self.config
+        ORN_DUP = config.N_ORN_DUPLICATION
+        N_ORN = config.N_ORN * ORN_DUP
+        NOISE = config.ORN_NOISE_STD
+        NEURONS = N_ORN + config.NEURONS
+        TIME_STEPS = config.TIME_STEPS
+
+        # Replicating ORNs through tiling
+        assert x.shape[-1] == config.N_ORN
+        x = tf.tile(x, [1, ORN_DUP])
+        x += tf.random_normal(x.shape, stddev=NOISE)
+
+        W_in_np = np.zeros([N_ORN, NEURONS])
+        np.fill_diagonal(W_in_np, 1)
+        W_in = tf.constant(W_in_np, dtype=tf.float32, name='W_in')
+        rnn_output = tf.matmul(x, W_in)
+
+        rnn_outputs = []
+        rnn_outputs.append(rnn_output)
+        with tf.variable_scope('layer_rnn', reuse=tf.AUTO_REUSE):
+            # TODO: do not want ORNs to connect to each other, nor for them to have a bias
+            initializer = _initializer(_sparse_range(config.N_ORN), arg='constant')
+            w_rnn = tf.get_variable('kernel', shape=(NEURONS, NEURONS), dtype=tf.float32, initializer=initializer)
+            w_rnn = tf.abs(w_rnn)
+            b_rnn = tf.get_variable('bias', shape=NEURONS, dtype=tf.float32, initializer=tf.constant_initializer(-1))
+            for t in range(TIME_STEPS):
+                rnn_output = tf.matmul(rnn_output, w_rnn) + b_rnn
+                rnn_output = tf.nn.relu(rnn_output)
+                rnn_outputs.append(rnn_output)
+
+        if config.BATCH_NORM:
+            rnn_output = _normalize(rnn_output, 'batch_norm', training)
+        if config.dropout:
+            rnn_output = tf.layers.dropout(rnn_output, config.dropout_rate, training=training)
+
+        # logits = tf.layers.dense(kc, n_logits, name='layer_out', reuse=tf.AUTO_REUSE)
+        with tf.variable_scope('layer_out', reuse=tf.AUTO_REUSE):
+            # TODO: do not want ORNs to output to classes
+            initializer = _initializer(_sparse_range(config.N_ORN), arg='uniform')
+            w_out = tf.get_variable('kernel', shape=(NEURONS, config.N_CLASS), dtype=tf.float32)
+            w_out = tf.abs(w_out)
+            b_out = tf.get_variable('bias', shape=config.N_CLASS, dtype=tf.float32)
+            logits = tf.matmul(rnn_output, w_out) + b_out
+
+        # debug
+        # w_rnn = tf.get_variable('kernel_', shape=(N_ORN, NEURONS), dtype=tf.float32)
+        # w_rnn = tf.abs(w_rnn)
+        # b_rnn = tf.get_variable('bias_', shape=NEURONS, dtype=tf.float32)
+        # w_out = tf.get_variable('kernel', shape=(NEURONS, config.N_CLASS), dtype=tf.float32)
+        # b_out = tf.get_variable('bias', shape=config.N_CLASS, dtype=tf.float32)
+        # rnn_output = tf.matmul(x, w_rnn) + b_rnn
+        # rnn_output = tf.nn.relu(rnn_output)
+        # rnn_output = tf.layers.dropout(rnn_output, config.dropout_rate, training=training)
+        # logits = tf.matmul(rnn_output, w_out) + b_out
+
+
+        loss = tf.losses.sparse_softmax_cross_entropy(
+            labels=y, logits=logits)
+        if config.WEIGHT_LOSS:
+            loss += config.WEIGHT_ALPHA * tf.reduce_mean(tf.tanh(w_rnn))
+            # loss += config.WEIGHT_ALPHA * tf.reduce_mean(tf.tanh(w_out))
+
+        self.loss = loss
+        pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
+
+        self.logits = logits
+        self.w_rnn = w_rnn
+        self.b_rnn = b_rnn
+        self.w_out = w_out
+        self.b_out = b_out
+        self.rnn_outputs = rnn_outputs
+
+    def set_weights(self):
+        """Set the weights to be prototype matching oracle weights."""
+        sess = tf.get_default_session()
+
+        w_rnn_tf = [v for v in tf.trainable_variables() if
+                 v.name == 'model/layer_rnn/kernel:0'][0]
+        w_rnn_values = sess.run(w_rnn_tf)
+        np.fill_diagonal(w_rnn_values, 1)
+        sess.run(w_rnn_tf.assign(w_rnn_values))
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, 'model.pkl')
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        var_dict['w_rnn'] = sess.run(self.w_rnn)
+        var_dict['b_rnn'] = sess.run(self.b_rnn)
+        var_dict['w_out'] = sess.run(self.w_out)
+        var_dict['b_out'] = sess.run(self.b_out)
+        with open(fname, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Model weights saved in path: %s" % save_path)
+
+
 
 class NormalizedMLP(Model):
     """Normalized multi-layer perceptron model.
@@ -592,13 +744,10 @@ class NormalizedMLP(Model):
 
         if training:
             optimizer = tf.train.AdamOptimizer(config.lr)
-
             var_list = tf.trainable_variables()
-
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
                 self.train_op = optimizer.minimize(self.loss, var_list=var_list)
-
             print('Training variables')
             for v in var_list:
                 print(v)
@@ -622,12 +771,11 @@ class NormalizedMLP(Model):
                                     training=True)
 
         y_hat = x
-
         for i_layer in range(n_layer):
             layername = 'layer' + str(i_layer+1)
             with tf.variable_scope(layername, reuse=tf.AUTO_REUSE):
-                y_hat = _signed_dense(
-                    y_hat, NEURONS[i_layer], NEURONS[i_layer+1], training)
+                    y_hat = _signed_dense(
+                        y_hat, NEURONS[i_layer], NEURONS[i_layer+1], training)
 
         layername = 'layer' + str(n_layer + 1)
         logits = tf.layers.dense(y_hat, config.N_CLASS,

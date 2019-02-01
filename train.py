@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple
+from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN
 from configs import FullConfig, SingleLayerConfig
 import tools
 
@@ -59,6 +59,8 @@ def train(config, reload=False):
     elif config.model == 'autoencode':
         CurrentModel = AutoEncoder
         # CurrentModel = AutoEncoderSimple
+    elif config.model == 'rnn':
+        CurrentModel = RNN
     else:
         raise ValueError('Unknown model type ' + str(config.model))
 
@@ -108,6 +110,10 @@ def train(config, reload=False):
 
         if 'set_oracle' in dir(config) and config.set_oracle:
             oracle.set_oracle_weights()
+
+        if config.model == 'rnn' and config.DIAGONAL_INIT:
+            model.set_weights()
+
 
         loss = 0
         acc = 0

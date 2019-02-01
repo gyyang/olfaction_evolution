@@ -2,6 +2,11 @@ import configs
 import task
 
 seed = 0
+
+def make_standard_dataset():
+    task_config = task.input_ProtoConfig()
+    task.save_proto(config=task_config, seed=0, folder_name='standard')
+
 def make_relabel_datasets():
     config = configs.input_ProtoConfig()
     for i in [20, 40, 60, 80, 100, 120, 140, 160, 200, 500, 1000]:

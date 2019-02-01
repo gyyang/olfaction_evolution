@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import tensorflow as tf
+import dict_methods
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
@@ -20,6 +21,7 @@ from model import SingleLayerModel, FullModel, NormalizedMLP
 mpl.rcParams['font.size'] = 7
 
 figpath = os.path.join(rootpath, 'figures')
+# figpath = r'C:\Users\Peter\Dropbox\olfaction_evolution\manuscript\plots'
 
 def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
     save_name = save_path.split('/')[-1]
@@ -34,12 +36,14 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
         plt.show()
     plt.close()
 
-def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
+def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, legends= None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
     # TODO: This function no longer supports directly plot progress of save_path. Should fix.
     log = tools.load_all_results(save_path, argLast=False)
+    if select_dict is not None:
+        log = dict_methods.filter(log, select_dict)
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)
         rect = [0.3, 0.3, 0.65, 0.5]
@@ -73,7 +77,11 @@ def plot_progress(save_path, linestyles=None, alpha = 1, legends= None):
             ax.yaxis.set_ticks([0, 0.5, 1.0])
         ax.set_xlim([-1, len(log[xkey][0,:])])
 
-        _easy_save(save_path, '_' + ykey)
+        figname = '_' + ykey
+        if select_dict:
+            for k, v in select_dict.items():
+                figname += k + '_' + str(v) + '_'
+        _easy_save(save_path, figname)
 
     _plot_progress('epoch', 'val_loss')
     _plot_progress('epoch', 'val_acc')
@@ -98,24 +106,24 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
     model_dir = os.path.join(save_path, 'model.pkl')
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
-        w_orn = var_dict[var_name]
+        w_plot = var_dict[var_name]
 
     # if not hasattr(config, 'receptor_layer') or config.receptor_layer == False:
     #     if config.replicate_orn_with_tiling:
-    #         w_orn = np.reshape(
-    #             w_orn, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
-    #         w_orn = np.swapaxes(w_orn, 0, 1)
-    #         w_orn = np.reshape(w_orn, (-1, config.N_PN))
+    #         weight = np.reshape(
+    #             weight, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
+    #         weight = np.swapaxes(weight, 0, 1)
+    #         weight = np.reshape(weight, (-1, config.N_PN))
 
     # Sort for visualization
     if sort_axis == 0:
-        ind_max = np.argmax(w_orn, axis=0)
+        ind_max = np.argmax(w_plot, axis=0)
         ind_sort = np.argsort(ind_max)
-        w_plot = w_orn[:, ind_sort]
+        w_plot = w_plot[:, ind_sort]
     else:
-        ind_max = np.argmax(w_orn, axis=1)
+        ind_max = np.argmax(w_plot, axis=1)
         ind_sort = np.argsort(ind_max)
-        w_plot = w_orn[ind_sort, :]
+        w_plot = w_plot[ind_sort, :]
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
@@ -125,7 +133,7 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
     im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
                    interpolation='none')
 
-    if var_name == 'w_orn':
+    if var_name == 'weight':
         plt.title('ORN-PN connectivity after training', fontsize=7)
         ax.set_xlabel('To PNs', labelpad=-5)
         ax.set_ylabel('From ORNs', labelpad=-5)
@@ -138,7 +146,7 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
         ax.set_xlabel('PN', labelpad=-5)
         ax.set_ylabel('OR', labelpad=-5)
     else:
-        raise ValueError('unknown variable name for weight matrix: {}'.format(var_name))
+        print('unknown variable name for weight matrix: {}'.format(var_name))
 
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
@@ -223,7 +231,8 @@ def plot_activity(save_path):
     plt.show()
 
 
-def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
+def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = None,
+                 ax_args={}, plot_args={}):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -233,6 +242,7 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
         loop_key: str, key for the value to loop around
     """
     log_plot_dict = {'N_KC': [30, 100, 1000, 10000],
+                     'N_PN': [20, 50, 100, 200],
                      'kc_loss_alpha': [.1, 1, 10, 100],
                      'kc_loss_beta': [.1, 1, 10, 100],
                      'initial_pn2kc':[.01, .1, 1],
@@ -242,6 +252,8 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
     plot_dict = {'kc_inputs': [3, 7, 15, 20, 30, 40, 50]}
 
     res = tools.load_all_results(path)
+    if select_dict is not None:
+        res = dict_methods.filter(res, select_dict)
 
     # Sort by x_key
     ind_sort = np.argsort(res[x_key])
@@ -249,19 +261,19 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
         res[key] = val[ind_sort]
 
     fig = plt.figure(figsize=(2, 2))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    ax = fig.add_axes([0.21, 0.2, 0.7, 0.7], **ax_args)
     if loop_key:
         for x in np.unique(res[loop_key]):
             ind = res[loop_key] == x
             x_plot = res[x_key][ind]
             if x_key in log_plot_dict.keys():
                 x_plot = np.log(x_plot)
-            ax.plot(x_plot, res[y_key][ind], 'o-', label=str(x))
+            ax.plot(x_plot, res[y_key][ind], 'o-', label=str(x), **plot_args)
     else:
         x_plot = res[x_key]
         if x_key in log_plot_dict.keys():
             x_plot = np.log(x_plot)
-        ax.plot(x_plot, res[y_key], 'o-')
+        ax.plot(x_plot, res[y_key], 'o-', **plot_args)
 
     if x_key == 'kc_inputs':
         ax.plot([7, 7], [0, 1], '--', color = 'gray')
@@ -293,6 +305,10 @@ def plot_results(path, x_key, y_key, loop_key=None, yticks = None):
     figname = '_' + y_key + '_vs_' + x_key
     if loop_key:
         figname += '_vary' + loop_key
+    if select_dict:
+        for k, v in select_dict.items():
+            figname += k + '_' + str(v) + '_'
+
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

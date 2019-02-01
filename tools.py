@@ -7,7 +7,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 import configs
 
-
 def save_config(config, save_path):
     """Save config."""
     # config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
@@ -144,6 +143,7 @@ def load_all_results(rootpath, argLast= True):
 
 nicename_dict = {
         'ORN_NOISE_STD': 'Noise level',
+        'N_PN': 'Number of PNs',
         'N_KC': 'Number of KCs',
         'N_ORN_DUPLICATION': 'ORNs per type',
         'kc_inputs': 'Number of KC Claws',
