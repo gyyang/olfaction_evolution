@@ -51,21 +51,11 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-TRAIN = True
-ANALYZE = False
-# is_test = True
-experiments = ['standard']
-
-if 'standard' in experiments:
-    # Reproducing most basic findings
-    path = './files/standard_net'
-    if TRAIN:
-        local_train(se.train_standardnet(is_test), path)
-    if ANALYZE:
-        sa.plot_progress(path)
-        sa.plot_weights(path, sort_axis=1)
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+# #peter specific
+# TRAIN = True
+# ANALYZE = False
+# is_test = False
+# experiments = ['vary_pn','vary_kc', 'train_kc_claws','random_kc_claws']
 
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity

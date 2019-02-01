@@ -281,7 +281,7 @@ def plot_sparsity(dir, dynamic_thres=False):
 
         plt.savefig(savename + '.png', dpi=500)
         plt.close()
-        plt.savefig(savename + '.pdf', transparent=True)
+        plt.savefig(savename + '.pdf')
         plt.close()
 
     save_name = dir.split('/')[-1]
@@ -386,7 +386,13 @@ def plot_distribution(dir):
 
         plt.savefig(savename + '.png', dpi=500)
 <<<<<<< HEAD
+<<<<<<< HEAD
         plt.savefig(savename + '.pdf', transparent=True)
+=======
+        plt.close()
+        plt.savefig(savename + '.pdf')
+        plt.close()
+>>>>>>> 18606c5a735d891ca4c68e1f270e8cd762acb37f
 =======
         plt.close()
         plt.savefig(savename + '.pdf')

@@ -13,6 +13,7 @@ def train_orn2pn(argTest=False):
     Result:
         Show that GloScore increases as a function of training
     '''
+<<<<<<< HEAD
     config = configs.FullConfig()
     config.max_epoch = 30
     config.kc_norm_pre = 'batch_norm'
@@ -33,9 +34,14 @@ def train_standardnet(argTest=False):
     config.train_pn2kc = True
     config.kc_dropout = False
     config.pn_norm_pre = 'batch_norm'  # TODO: check if this is necessary
+=======
+    config = configs.FullConfig()
+    config.max_epoch = 30
+    config.kc_norm_pre = 'batch_norm'
+>>>>>>> 18606c5a735d891ca4c68e1f270e8cd762acb37f
     config.data_dir = './datasets/proto/standard'
     hp_ranges = OrderedDict()
-    hp_ranges['dummy_var'] = [True]
+    hp_ranges['sign_constraint_orn2pn'] = [True, False]
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
