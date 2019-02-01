@@ -108,19 +108,19 @@ def vary_claw_configs(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.skip_orn2pn = False
-    config.direct_glo = True
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.direct_glo = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['kc_inputs'] = list(range(1,15, 2)) + list(range(15,30, 3)) + \
                              list(range(30, 50, 5))
-    hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['kc_inputs'] = [3, 7, 11, 15, 20, 35, 50]
+        hp_ranges['kc_inputs'] = [3, 5, 7, 11, 13, 15, 20, 35, 50]
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
@@ -161,7 +161,6 @@ def train_claw_configs(argTest=False):
     config.max_epoch = 30
     config.replicate_orn_with_tiling = False
     config.skip_orn2pn = True
-    config.kc_norm_pre = 'batch_norm'
     config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
@@ -180,15 +179,18 @@ def random_claw_configs(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
+
     config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
     config.skip_orn2pn = True
-    config.save_every_epoch = True
+
+    config.train_kc_bias=False
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    config.train_kc_bias = False
-    # config.kc_loss = True
     config.initial_pn2kc = .1
-    config.kc_norm_pre = 'batch_norm'
+
+    config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -288,11 +290,11 @@ def pn_normalization_direct(argTest):
     :return:
     '''
     config = configs.FullConfig()
-    config.direct_glo = True
+    config.skip_orn2pn = True
     config.max_epoch = 30
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/concentration']
+    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/concentration', '.datasets/proto/mask']
     hp_ranges['pn_norm_post'] = ['None', 'biology']
     if argTest:
         config.max_epoch = testing_epochs

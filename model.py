@@ -332,6 +332,7 @@ class FullModel(Model):
                 ORN_DUP = 1
                 N_ORN = config.N_ORN
                 orn = x
+                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
 
         if config.orn_dropout:
             # This is interpreted as noise, so it's always on

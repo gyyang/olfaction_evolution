@@ -32,6 +32,7 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
 
     if pdf:
         plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
+        # plt.savefig(os.path.join(figname + '.svg'), transparent=True, format='svg')
     if show:
         plt.show()
     plt.close()
@@ -40,7 +41,8 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
-    # TODO: This function no longer supports directly plot progress of save_path. Should fix.
+
+
     log = tools.load_all_results(save_path, argLast=False)
     if select_dict is not None:
         log = dict_methods.filter(log, select_dict)
@@ -93,7 +95,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
         pass
 
 
-def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
+def plot_weights(root_path, var_name = 'w_orn', sort_axis = 1, dir_ix = 0):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
@@ -120,10 +122,15 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
         ind_max = np.argmax(w_plot, axis=0)
         ind_sort = np.argsort(ind_max)
         w_plot = w_plot[:, ind_sort]
-    else:
+    elif sort_axis == 1:
         ind_max = np.argmax(w_plot, axis=1)
         ind_sort = np.argsort(ind_max)
         w_plot = w_plot[ind_sort, :]
+    else:
+        pass
+
+    if var_name == 'w_glo':
+        w_plot = w_plot[:,:20]
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
@@ -133,7 +140,7 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
     im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
                    interpolation='none')
 
-    if var_name == 'weight':
+    if var_name == 'w_orn':
         plt.title('ORN-PN connectivity after training', fontsize=7)
         ax.set_xlabel('To PNs', labelpad=-5)
         ax.set_ylabel('From ORNs', labelpad=-5)
@@ -141,6 +148,10 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 0, dir_ix = 0):
         plt.title('OR-ORN expression array after training', fontsize=7)
         ax.set_xlabel('ORN', labelpad=-5)
         ax.set_ylabel('Unique OR', labelpad=-5)
+    elif var_name == 'w_glo':
+        plt.title('PN-KC connectivity after training', fontsize=7)
+        ax.set_xlabel('KC', labelpad=-5)
+        ax.set_ylabel('PN', labelpad=-5)
     elif var_name == 'w_combined':
         plt.title('OR-PN combined connectivity', fontsize=7)
         ax.set_xlabel('PN', labelpad=-5)
@@ -242,14 +253,15 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         loop_key: str, key for the value to loop around
     """
     log_plot_dict = {'N_KC': [30, 100, 1000, 10000],
-                     'N_PN': [20, 50, 100, 200],
+                     'N_PN': [20, 50, 100, 1000],
                      'kc_loss_alpha': [.1, 1, 10, 100],
                      'kc_loss_beta': [.1, 1, 10, 100],
                      'initial_pn2kc':[.01, .1, 1],
                      'N_ORN_DUPLICATION':[1,3,10,30,100,300],
-                     'n_trueclass':[20, 40, 80, 200, 500, 1000]}
+                     'n_trueclass':[20, 40, 80, 200, 500, 1000],
+                     'val_loss':[]}
 
-    plot_dict = {'kc_inputs': [3, 7, 15, 20, 30, 40, 50]}
+    plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}
 
     res = tools.load_all_results(path)
     if select_dict is not None:
@@ -261,22 +273,32 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         res[key] = val[ind_sort]
 
     fig = plt.figure(figsize=(2, 2))
-    ax = fig.add_axes([0.21, 0.2, 0.7, 0.7], **ax_args)
+    ax = fig.add_axes([0.25, 0.2, 0.65, 0.65], **ax_args)
     if loop_key:
         for x in np.unique(res[loop_key]):
             ind = res[loop_key] == x
             x_plot = res[x_key][ind]
+            y_plot = res[y_key][ind]
             if x_key in log_plot_dict.keys():
                 x_plot = np.log(x_plot)
-            ax.plot(x_plot, res[y_key][ind], 'o-', label=str(x), **plot_args)
+            if y_key in log_plot_dict.keys():
+                y_plot = np.log(y_plot)
+            ax.plot(x_plot, y_plot, 'o-', label=str(x), **plot_args)
     else:
         x_plot = res[x_key]
+        y_plot = res[y_key]
         if x_key in log_plot_dict.keys():
             x_plot = np.log(x_plot)
-        ax.plot(x_plot, res[y_key], 'o-', **plot_args)
+        if y_key in log_plot_dict.keys():
+            y_plot = np.log(y_plot)
+        ax.plot(x_plot, y_plot, 'o-', **plot_args)
 
     if x_key == 'kc_inputs':
-        ax.plot([7, 7], [0, 1], '--', color = 'gray')
+        ax.plot([7, 7], [min(ax.get_ylim()[0],0), max(ax.get_ylim()[-1],1)], '--', color = 'gray')
+    elif x_key == 'N_PN':
+        ax.plot([np.log(50), np.log(50)], [0, 1], '--', color='gray')
+    elif x_key == 'N_KC':
+        ax.plot([np.log(2500), np.log(2500)], [0, 1], '--', color='gray')
 
     if x_key in log_plot_dict.keys():
         xticks = np.array(log_plot_dict[x_key])
@@ -291,12 +313,9 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
 
-    if yticks is None:
+    if yticks is None and np.max(res[y_key]) <= 1:
         ax.set_yticks([0, 0.5, 1.0])
         plt.ylim([0, 1])
-    else:
-        ax.set_yticks(yticks)
-        plt.ylim(yticks[0]- .1 * yticks[-1], 1.1 * yticks[-1])
 
     if loop_key:
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
