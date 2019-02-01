@@ -136,7 +136,9 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 1, dir_ix = 0):
     rect_cb = [0.82, 0.15, 0.02, 0.65]
     fig = plt.figure(figsize=(2.6, 2.6))
     ax = fig.add_axes(rect)
-    vlim = np.round(np.max(abs(w_plot)), decimals=1)
+
+    max = np.max(abs(w_plot))
+    vlim = np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)
     im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
                    interpolation='none')
 
@@ -256,7 +258,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                      'N_PN': [20, 50, 100, 1000],
                      'kc_loss_alpha': [.1, 1, 10, 100],
                      'kc_loss_beta': [.1, 1, 10, 100],
-                     'initial_pn2kc':[.01, .1, 1],
+                     'initial_pn2kc':[.05, .1, 1],
                      'N_ORN_DUPLICATION':[1,3,10,30,100,300],
                      'n_trueclass':[20, 40, 80, 200, 500, 1000],
                      'val_loss':[]}

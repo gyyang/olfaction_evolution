@@ -211,19 +211,28 @@ def vary_kc_activity_sparseness(argTest):
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
 
-    config.replicate_orn_with_tiling = True
-    config.direct_glo = True
-    config.initializer_orn2pn = 'constant'
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
     config.kc_dropout = True
 
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+    config.train_kc_bias = False
+    config.initial_pn2kc = .1
+
+    config.save_every_epoch = True
+    # config.extra_layer = True
+    # config.extra_layer_neurons = 200
+
     hp_ranges = OrderedDict()
-    hp_ranges['kc_dropout_rate'] = [0, .2, .4]
-    x = [20, 40, 60, 80, 100, 120, 140, 160, 200, 500, 1000]
-    hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_20' for i in x]
+    hp_ranges['kc_dropout_rate'] = [0, .5, .5]
+    x = [100, 200, 500, 1000, 2000, 5000]
+    hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
     if argTest:
-        hp_ranges['kc_dropout_rate'] = [0, .5]
-        x = [20, 60, 120, 200, 500, 1000]
-        hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_20' for i in x]
+        hp_ranges['kc_dropout_rate'] = [.5]
+        x = [100, 1000]
+        hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
@@ -275,7 +284,7 @@ def pn_normalization(argTest):
     config.max_epoch = 30
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/concentration']
+    hp_ranges['data_dir'] = ['./datasets/proto/standard','./datasets/proto/200_20']
     hp_ranges['pn_norm_post'] = ['None', 'biology']
     if argTest:
         config.max_epoch = testing_epochs
@@ -294,8 +303,10 @@ def pn_normalization_direct(argTest):
     config.max_epoch = 30
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/concentration', '.datasets/proto/mask']
-    hp_ranges['pn_norm_post'] = ['None', 'biology']
+    hp_ranges['data_dir'] = ['./datasets/proto/concentration_mask',
+                             # './datasets/proto/standard',
+                             ]
+    hp_ranges['pn_norm_post'] = ['custom', 'None']
     if argTest:
         config.max_epoch = testing_epochs
     # TODO: hyperparameter search
