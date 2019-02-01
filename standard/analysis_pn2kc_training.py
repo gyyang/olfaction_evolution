@@ -280,6 +280,7 @@ def plot_sparsity(dir, dynamic_thres=False):
         ax.yaxis.set_ticks_position('left')
 
         plt.savefig(savename + '.png', dpi=500)
+        plt.savefig(savename + '.pdf', transparent=True)
 
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
@@ -382,6 +383,7 @@ def plot_distribution(dir):
             ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
 
         plt.savefig(savename + '.png', dpi=500)
+        plt.savefig(savename + '.pdf', transparent=True)
 
     for i, d in enumerate(dirs):
         wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')

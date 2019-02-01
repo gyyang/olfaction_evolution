@@ -27,6 +27,24 @@ def train_orn2pn(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+
+def train_standardnet(argTest=False):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 30
+    config.N_ORN_DUPLICATION = 10
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.kc_dropout = False
+    config.pn_norm_pre = 'batch_norm'  # TODO: check if this is necessary
+    config.data_dir = './datasets/proto/standard'
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy_var'] = [True]
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def vary_orn_duplication_configs(argTest=False):
     '''
     Vary the number of ORN duplicates
