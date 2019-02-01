@@ -51,7 +51,6 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-# #peter specific
 TRAIN = True
 ANALYZE = False
 # is_test = True
@@ -75,7 +74,10 @@ if 'orn2pn' in experiments:
         local_train(se.train_orn2pn(is_test), path)
     if ANALYZE:
         sa.plot_progress(path)
-        sa.plot_weights(path, sort_axis=1)
+        sa.plot_weights(path, sort_axis=1, dir_ix=0)
+        sa.plot_weights(path, sort_axis=1, dir_ix=1)
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
 
 if 'vary_orn_duplication' in experiments:
     # Vary ORN n duplication under different nKC
@@ -95,9 +97,15 @@ if 'vary_pn' in experiments:
         local_train(se.vary_pn_configs(is_test), path)
     if ANALYZE:
         sa.plot_results(path, x_key='N_PN', y_key='glo_score',
-                                       loop_key='ORN_NOISE_STD'),
+                        select_dict={'ORN_NOISE_STD':0}),
+        sa.plot_results(path, x_key='N_PN', y_key='glo_score',
+                        loop_key='ORN_NOISE_STD', plot_args= {'alpha':1}
+                        ),
         sa.plot_results(path, x_key='N_PN', y_key='val_acc',
-                                       loop_key='ORN_NOISE_STD')
+                        select_dict={'ORN_NOISE_STD': 0})
+        sa.plot_results(path, x_key='N_PN', y_key='val_acc',
+                        loop_key='ORN_NOISE_STD', plot_args= {'alpha':1}
+                        )
 
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
@@ -105,6 +113,10 @@ if 'vary_kc' in experiments:
     if TRAIN:
         local_train(se.vary_kc_configs(is_test), path)
     if ANALYZE:
+        sa.plot_results(path, x_key='N_KC', y_key='glo_score',
+                        select_dict={'ORN_NOISE_STD': 0})
+        sa.plot_results(path, x_key='N_KC', y_key='val_acc',
+                        select_dict={'ORN_NOISE_STD': 0})
         sa.plot_results(path, x_key='N_KC', y_key='glo_score',
                                        loop_key='ORN_NOISE_STD'),
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
@@ -152,9 +164,10 @@ if 'train_kc_claws' in experiments:
     if ANALYZE:
         sa.plot_progress(
             path, alpha=.75, linestyles=[':', '-.', '-'],
-            legends=['Trainable, no loss', 'Trainable, with loss', 'Fixed']),
+            legends=['Trained, no loss', 'Trained, with loss', 'Fixed']),
         analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
+        analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
 
 
 if 'random_kc_claws' in experiments:

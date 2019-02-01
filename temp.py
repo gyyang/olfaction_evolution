@@ -1,5 +1,3 @@
-"""A collection of experiments."""
-
 import os
 import task
 import configs
@@ -8,7 +6,10 @@ import numpy as np
 import tools
 import train
 import standard.analysis as sa
+import pickle
+import model as network_models
 import standard.analysis_activity as analysis_activity
+import standard.analysis_pn2kc_training as analysis_training
 
 import matplotlib.pyplot as plt
 
@@ -61,10 +62,10 @@ def make_datafiles():
         print('Done: ' + str(i))
 # make_datafiles()
 
-
-def temp_oracle():
+#TODO: push this into experiments
+def why_kc_layer():
     config = configs.FullConfig()
-    config.max_epoch = 10
+    config.max_epoch = 8
     config.model = 'full'
     # config.model = 'normmlp'
 
@@ -84,27 +85,64 @@ def temp_oracle():
     hp_ranges['data_dir'] = datasets
     return config, hp_ranges
 
-path = './files_temp/relabel_layers'
+# path = './files_temp/relabel_layers'
 # t(temp_oracle(), path, s=0, e=100)
-sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='model')
-# sa.plot_results(path, x_key='data_dir', y_key='val_loss', loop_key='model', sort=False)
-# sa.plot_results(path, x_key='data_dir', y_key='train_loss', loop_key='model', sort=False)
-analysis_activity.sparseness_activity(path, 'kc_out')
+# sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='model')
 
-# sa.plot_results(path, x_key='pn_norm_post', y_key='glo_score', loop_key='data_dir')
-#
-# try:
-#     rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
-#     print('rmax: {}'.format(rmax))
-#     rho = tools.load_pickle(path, 'model/layer1/rho:0')
-#     print('rho: {}'.format(rho))
-#     m = tools.load_pickle(path, 'model/layer1/m:0')
-#     print('m: {}'.format(m))
-# except:
-#     pass
-#
-# try:
-#     gamma = tools.load_pickle(path, 'model/layer1/LayerNorm/gamma:0')
-#     print('gamma params: {}'.format(gamma))
-# except:
-#     pass
+def temp():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 15
+
+    config.replicate_orn_with_tiling = True
+    config.direct_glo = True
+    config.initializer_orn2pn = 'constant'
+    config.kc_dropout = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['N_KC'] = [1000, 2500, 5000, 10000, 20000]
+    x = [40, 80, 200, 500, 1000]
+    hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_20' for i in x]
+    return config, hp_ranges
+
+def temp1():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/200_20'
+    config.max_epoch = 20
+
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+
+    # config.train_kc_bias = False
+    # config.train_pn2kc = True
+    # config.sparse_pn2kc = False
+    # config.save_every_epoch = True
+    # config.kc_norm_pre = 'batch_norm'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['extra_layer'] = [False, True]
+    return config, hp_ranges
+
+
+def basic():
+    config = configs.FullConfig()
+    config.max_epoch = 16
+    config.data_dir = './datasets/proto/standard'
+
+    config.kc_norm_pre = 'batch_norm'
+    config.sign_constraint_pn2kc = False
+    config.sparse_pn2kc = False
+    config.kc_bias = 0
+    config.train_pn2kc = True
+    config.train_kc_bias = True
+    hp_ranges = OrderedDict()
+    hp_ranges['sign_constraint_orn2pn'] = [True, False]
+    return config, hp_ranges
+
+path = './files/orn2pn'
+t(basic(), path, s=1, e=100)
+# analysis_training.plot_sparsity(path, dynamic_thres=False)
+# analysis_training.plot_distribution(path)
+# sa.plot_results(path, x_key='extra_layer', y_key='val_acc')
+
