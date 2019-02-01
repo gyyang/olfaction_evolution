@@ -57,6 +57,17 @@ else:
 # is_test = False
 # experiments = ['vary_pn','vary_kc', 'train_kc_claws','random_kc_claws']
 
+if 'standard' in experiments:
+    # Reproducing most basic findings
+    path = './files/standard_net'
+    if TRAIN:
+        local_train(se.train_standardnet(is_test), path)
+    if ANALYZE:
+        sa.plot_progress(path)
+        sa.plot_weights(path, sort_axis=1)
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+
 if 'orn2pn' in experiments:
     # Reproducing glomeruli-like activity
     path = './files/orn2pn'
