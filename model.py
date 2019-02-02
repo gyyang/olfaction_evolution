@@ -557,16 +557,24 @@ class FullModel(Model):
         sess.run(b_out.assign(b_oracle))
 
     def perturb_weights(self, scale):
+        """Perturb all weights with multiplicative noise.
+
+        Args:
+            scale: float. Perturb weights with
+                random variables ~ U[1-scale, 1+scale]
+        """
         sess = tf.get_default_session()
 
         def perturb(w):
-            w *= np.random.uniform(1-scale, 1+scale, size=w.shape)
+            w = w * np.random.uniform(1-scale, 1+scale, size=w.shape)
             return w
 
-        v_values = [perturb(sess.run(v)) for v in tf.trainable_variables()]
+        # record original weight values when perturb for the first time
+        if not hasattr(self, 'origin_weights'):
+            self.origin_weights = [sess.run(v) for v in tf.trainable_variables()]
 
-        for v_value, v in zip(v_values, tf.trainable_variables()):
-            sess.run(v.assign(v_value))
+        for v_value, v in zip(self.origin_weights, tf.trainable_variables()):
+            sess.run(v.assign(perturb(v_value)))
 
 
 
