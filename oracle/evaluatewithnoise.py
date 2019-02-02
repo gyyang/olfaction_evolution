@@ -24,7 +24,7 @@ mpl.rcParams['font.size'] = 7
 data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
 train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
 
-def _evaluate(name, value, model, model_dir):
+def _evaluate(name, value, model, model_dir, n_rep=1):
     if model == 'oracle':
         path = os.path.join(rootpath, 'files', 'standard_shallow', '0')
     else:
@@ -73,25 +73,29 @@ def _evaluate(name, value, model, model_dir):
             oracle.set_oracle_weights()
         else:
             val_model.load()
-            
-        if name == 'weight_perturb':
-            val_model.perturb_weights(value)
-        
-        # val_model.perturb_weights(0.05)
+
+        val_loss = list()
+        val_acc = list()
+        for i in range(n_rep):
+            if name == 'weight_perturb':
+                val_model.perturb_weights(value)
+
+            # Validation
+            val_loss_tmp, val_acc_tmp = sess.run(
+                [val_model.loss, val_model.acc],
+                {val_x_ph: val_x, val_y_ph: val_y})
+
+            val_loss.append(val_loss_tmp)
+            val_acc.append(val_acc_tmp)
     
-        # Validation
-        val_loss, val_acc = sess.run(
-            [val_model.loss, val_model.acc],
-            {val_x_ph: val_x, val_y_ph: val_y})
-    
-    return val_loss, val_acc
+    return np.mean(val_loss), np.mean(val_acc)
 
 
-def evaluate(name, values, model, model_dir):
+def evaluate(name, values, model, model_dir, n_rep=1):
     losses = list()
     accs = list()
     for value in values:
-        val_loss, val_acc = _evaluate(name, value, model, model_dir)
+        val_loss, val_acc = _evaluate(name, value, model, model_dir, n_rep=n_rep)
         losses.append(val_loss)
         accs.append(val_acc)
     return losses, accs
@@ -141,6 +145,7 @@ def evaluate_plot(name):
 def evaluate_acrossmodels():
     name = 'weight_perturb'
     values = [0, 0.01, 0.05, 0.1, 0.3]
+    n_rep = 10
 
     path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
     model_dirs = tools.get_allmodeldirs(path)
@@ -154,7 +159,7 @@ def evaluate_acrossmodels():
     for model_dir in model_dirs:
         config = tools.load_config(model_dir)
         model = getattr(config, model_var)
-        losses, accs = evaluate(name, values, model, model_dir)
+        losses, accs = evaluate(name, values, model, model_dir, n_rep=n_rep)
         loss_dict[model] = losses
         acc_dict[model] = accs
         models.append(model)
