@@ -127,21 +127,27 @@ def temp1():
 
 def basic():
     config = configs.FullConfig()
-    config.max_epoch = 16
     config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 10
 
-    config.kc_norm_pre = 'batch_norm'
-    config.sign_constraint_pn2kc = False
-    config.sparse_pn2kc = False
-    config.kc_bias = 0
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+    config.skip_orn2pn = True
+
+    config.train_kc_bias=False
     config.train_pn2kc = True
-    config.train_kc_bias = True
+    config.sparse_pn2kc = False
+    config.initial_pn2kc = .1
+    config.save_every_epoch = True
+
+    # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['sign_constraint_orn2pn'] = [True, False]
+    hp_ranges['initial_pn2kc'] = [.05, .1, .25, .5, 1]
     return config, hp_ranges
 
-path = './files/orn2pn'
-t(basic(), path, s=1, e=100)
+path = './files_temp/vary_pn2kc_initial_value'
+t(basic(), path, s=3, e=100)
 # analysis_training.plot_sparsity(path, dynamic_thres=False)
 # analysis_training.plot_distribution(path)
 # sa.plot_results(path, x_key='extra_layer', y_key='val_acc')

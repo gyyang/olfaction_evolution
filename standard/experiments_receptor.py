@@ -16,14 +16,14 @@ def basic(argTest=False):
     config.or2orn_normalization = True
     config.orn2pn_normalization = True
     config.save_every_epoch = True
-    # config.pn_norm_pre = 'batch_norm'
+    # config.kc_norm_pre = 'batch_norm'
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['ORN_NOISE_STD'] = [0]
+    hp_ranges['ORN_NOISE_STD'] = [0, .25]
 
     if argTest:
         config.max_epoch = testing_epochs
@@ -31,12 +31,6 @@ def basic(argTest=False):
 
 
 def primordial(argTest=False):
-    config = configs.input_ProtoConfig()
-    config.n_class_valence = 3
-    config.n_proto_valence = 15
-    config.label_type = 'multi_head_sparse'
-    # task.save_proto(config, 'primordial')
-
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/primordial'
     config.max_epoch = 30
@@ -56,30 +50,6 @@ def primordial(argTest=False):
     hp_ranges['ORN_NOISE_STD'] = [0, .25]
 
     if argTest:
-        config.max_epoch = testing_epochs
-    return config, hp_ranges
-
-
-def vary_noise(argTest=False):
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-
-    config.receptor_layer = True
-    config.or2orn_normalization = True
-    config.orn2pn_normalization = True
-
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.NOISE_MODEL = 'additive'
-    config.ORN_NOISE_STD = 0
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['ORN_NOISE_STD'] = [0, .1, .2, .3, .4, .5]
-
-    if argTest:
-        hp_ranges['ORN_NOISE_STD'] = [0, .25, .5]
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
