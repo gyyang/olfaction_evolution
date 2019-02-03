@@ -83,7 +83,7 @@ def _distribution(data, save_path, name, xlabel, ylabel, xrange):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    sa._easy_save(save_path, '_' + name, pdf=False)
+    sa._easy_save(save_path, '_' + name, pdf=True)
 
 def distribution_activity(save_path, arg):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
@@ -99,7 +99,7 @@ def distribution_activity(save_path, arg):
             zticks = [0, 10]
         elif arg == 'kc_out':
             data = kc_out.flatten()
-            xlabel = 'KC Activity'
+            xlabel = 'Fraction of Active KCs'
             zticks = [0, 2]
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
@@ -116,7 +116,7 @@ def sparseness_activity(save_path, arg):
             zticks = [0, 1]
         elif arg == 'kc_out':
             data = kc_out
-            xlabel = 'KC Activity'
+            xlabel = 'Fraction of Active KCs'
             zticks = [0, 1]
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
@@ -125,7 +125,7 @@ def sparseness_activity(save_path, arg):
         data = np.count_nonzero(data > activity_threshold, axis=1) / data.shape[1]
         _distribution(data, save_path, name= 'spars_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
 
-def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key):
+def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key= None, select_dict = None):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
 
     mean_sparseness = []
@@ -145,7 +145,10 @@ def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key):
         config = tools.load_config(d)
         setattr(config, arg + '_sparse_mean', mean_sparseness[i])
         tools.save_config(config, d)
-    sa.plot_results(save_path, x_key= x_key, y_key= arg + '_sparse_mean', loop_key=loop_key)
+    sa.plot_results(save_path, x_key= x_key, y_key= arg + '_sparse_mean',
+                    ax_args= {'yticks': [0, .2, .4, .6, .8]},
+                    loop_key=loop_key,
+                    select_dict=select_dict)
 
 
 
