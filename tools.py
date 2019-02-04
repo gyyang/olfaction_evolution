@@ -27,9 +27,23 @@ def load_config(save_path):
     return config
 
 
+def _islikemodeldir(d):
+    """Check if directory looks like a model directory."""
+    try:
+        files = os.listdir(d)
+    except NotADirectoryError:
+        return False
+    for file in files:
+        if 'model.ckpt' in file:
+            return True
+    return False
+
+
 def get_allmodeldirs(dir):
     """Return sorted model directories immediately below path."""
     unsorted_dirs = os.listdir(dir)
+    unsorted_dirs = [d for d in unsorted_dirs
+                     if _islikemodeldir(os.path.join(dir, d))]
     ixs = np.argsort([int(n) for n in unsorted_dirs])  # sort by epochs
     dirs = [os.path.join(dir, unsorted_dirs[n]) for n in ixs]
     return dirs
