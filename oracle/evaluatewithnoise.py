@@ -17,6 +17,7 @@ import task
 from model import FullModel
 import tools
 from standard.analysis import _easy_save
+from tools import nicename
 
 mpl.rcParams['font.size'] = 7
 
@@ -258,20 +259,33 @@ def plot_acrossmodels():
 
     colors = plt.cm.cool(np.linspace(0, 1, len(values)))
     
-    for ylabel in ['Acc', 'Loss']:
-        res_dict = acc_dict if ylabel == 'Acc' else loss_dict
+    for ylabel in ['val_acc', 'val_loss']:
+        res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
         fig = plt.figure(figsize=(4.0, 2.5))
         ax = fig.add_axes([0.3, 0.3, 0.3, 0.6])
 
         for i in range(len(values)):
             res_plot = [res_dict[model][i] for model in models]
+            if ylabel == 'val_loss':
+                res_plot = np.log(res_plot)  # TODO: this log?
             ax.plot(models, res_plot, 'o-', label=values[i], color=colors[i])
-        ax.set_xlabel(model_var)
-        ax.set_ylabel(ylabel)
-        if ylabel == 'Acc':
+        ax.set_xlabel(nicename(model_var))
+        ax.set_ylabel(nicename(ylabel))
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        if ylabel == 'val_acc':
             plt.ylim([0, 1])
+            ax.set_yticks([0, 0.5, 1.0])
+            yrange = [0, 1]
+        else:
+            ax.set_yticks([-2, -1, 0, 1])
+            yrange = [-2, 1]
+        plt.ylim(yrange)
+        ax.plot([7, 7], yrange, '--', color='gray')
         l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0))
-        l.set_title(name)
+        l.set_title(nicename(name))
         figname = ylabel+model_var+name
         _easy_save('vary_kc_claws_new', figname)
     

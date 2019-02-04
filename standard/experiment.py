@@ -149,6 +149,7 @@ def vary_claw_configs_new(argTest=False):
         Accuracy should be high at around claw values of 7-15
         # Noise dependence
     '''
+    # TODO: Need to merge this with vary_claw_configs
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 20

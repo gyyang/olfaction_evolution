@@ -174,7 +174,8 @@ nicename_dict = {
         'initial_pn2kc': 'Initial PN2KC Weights',
         'initializer_pn2kc': 'Initializer',
         'mean_claw': 'Average Number of KC Claws',
-        'zero_claw': 'Fraction of KC with No Input'
+        'zero_claw': 'Fraction of KC with No Input',
+        'weight_perturb': 'Weight Perturb.'
         }
 
 
