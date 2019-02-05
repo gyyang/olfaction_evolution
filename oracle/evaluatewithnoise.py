@@ -29,7 +29,7 @@ train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
 def _evaluate(name, value, model, model_dir, n_rep=1):
     assert name is not 'weight_perturb'
     if model == 'oracle':
-        path = os.path.join(rootpath, 'files', 'standard_shallow', '0')
+        path = os.path.join(rootpath, 'files', 'directglo_shallow', '0')
     else:
         path = model_dir
 
@@ -86,7 +86,7 @@ def _evaluate(name, value, model, model_dir, n_rep=1):
 
 def _evaluate_weight_perturb(values, model, model_dir):
     if model == 'oracle':
-        path = os.path.join(rootpath, 'files', 'standard_shallow', '0')
+        path = os.path.join(rootpath, 'files', 'directglo_shallow', '0')
     else:
         path = model_dir
 
@@ -164,7 +164,8 @@ def evaluate_weight_perturb(values, model, model_dir, n_rep=1):
     return losses, accs
 
 
-def evaluate_plot(name):
+def evaluate_oracle(name):
+    """Evaluate oracle."""
     if name == 'orn_dropout_rate':
         values = np.linspace(0, 0.3, 10)
     elif name == 'orn_noise_std':
@@ -172,19 +173,47 @@ def evaluate_plot(name):
     elif name == 'alpha':
         values = np.linspace(0.2, 8, 10)
     elif name == 'weight_perturb':
-        values = [0, 0.01, 0.05, 0.1, 0.5]
+        values = [0, 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
     else:
         raise ValueError()
 
-    models = ['oracle', 'standard_shallow', 'standard_net']
+    path = os.path.join(rootpath, 'files', 'oracle')
+
+    models = ['oracle', 'directglo_shallow', 'directglo_standard']
     loss_dict = {}
     acc_dict = {}
     for model in models:
         model_dir = os.path.join(rootpath, 'files', model, '0')
-        losses, accs = evaluate(name, values, model, model_dir)
+        if name == 'weight_perturb':
+            losses, accs = evaluate_weight_perturb(
+                values, model, model_dir, n_rep=10)
+        else:
+            losses, accs = evaluate(name, values, model, model_dir)
         loss_dict[model] = losses
         acc_dict[model] = accs
-    
+
+    results = {'loss_dict': loss_dict,
+               'acc_dict': acc_dict,
+               'models': models,
+               'values': values,
+               'name': name}
+
+    file = os.path.join(path, 'vary_' + name + '.pkl')
+    with open(file, 'wb') as f:
+        pickle.dump(results, f)
+
+
+def plot_oracle(name):
+    path = os.path.join(rootpath, 'files', 'oracle')
+    file = os.path.join(path, 'vary_' + name + '.pkl')
+    with open(file, 'rb') as f:
+        results = pickle.load(f)
+
+    values = results['values']
+    loss_dict = results['loss_dict']
+    acc_dict = results['acc_dict']
+    models = results['models']
+
     fig = plt.figure(figsize=(2.5, 2.5))
     ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
     for model in models:
@@ -193,8 +222,9 @@ def evaluate_plot(name):
     plt.ylabel('Acc')
     plt.legend()
     plt.ylim([0, 1])
+    # _easy_save('vary_kc_claws_new', figname)
     # plt.savefig('evaluateacc_'+name+'.png', dpi=500)
-    
+
     fig = plt.figure(figsize=(2.5, 2.5))
     ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
     for model in models:
@@ -202,10 +232,12 @@ def evaluate_plot(name):
     plt.xlabel(name)
     plt.ylabel('Loss')
     plt.legend()
+    # _easy_save('vary_kc_claws_new', figname)
     # plt.savefig('evaluateloss_'+name+'.png', dpi=500)
 
 
 def evaluate_acrossmodels():
+    """Evaluate models from the same root directory."""
     name = 'weight_perturb'
     values = [0, 0.01, 0.05, 0.1, 0.3]
     n_rep = 10
@@ -295,9 +327,9 @@ if __name__ == '__main__':
     # evaluate_plot('orn_dropout_rate')
     # evaluate_plot('orn_noise_std')
     # evaluate_plot('alpha')
-    # evaluate_plot('weight_perturb')
+    evaluate_oracle('weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
     # evaluate_acrossmodels()
-    plot_acrossmodels()
+    # plot_acrossmodels()
 
 
