@@ -177,8 +177,8 @@ def evaluate_kcrole(path, name):
     else:
         raise ValueError()
 
-    models = ['oracle', 'sgd + no kc', 'sgd + kc']
-    model_dirs = ['none', '000002', '000000']
+    models = ['oracle', 'sgd + no kc', 'sgd + trained kc', 'sgd + fixed kc']
+    model_dirs = ['none', '000002', '000000', '000001']
     loss_dict = {}
     acc_dict = {}
     for model, model_dir in zip(models, model_dirs):
@@ -212,26 +212,32 @@ def plot_kcrole(path, name):
     acc_dict = results['acc_dict']
     models = results['models']
 
-    fig = plt.figure(figsize=(2.5, 2.5))
-    ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
-    for model in models:
-        ax.plot(values, acc_dict[model], '-', label=model)
-    plt.xlabel(name)
-    plt.ylabel('Acc')
-    plt.legend()
-    plt.ylim([0, 1])
-    # _easy_save('vary_kc_claws_new', figname)
-    # plt.savefig('evaluateacc_'+name+'.png', dpi=500)
-
-    fig = plt.figure(figsize=(2.5, 2.5))
-    ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
-    for model in models:
-        ax.plot(values, loss_dict[model], '-', label=model)
-    plt.xlabel(name)
-    plt.ylabel('Loss')
-    plt.legend()
-    # _easy_save('vary_kc_claws_new', figname)
-    # plt.savefig('evaluateloss_'+name+'.png', dpi=500)
+    for ylabel in ['val_acc', 'val_loss']:
+        res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
+        fig = plt.figure(figsize=(2.5, 2.5))
+        ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
+        for model in models:
+            res_plot = res_dict[model]
+            if ylabel == 'val_loss':
+                res_plot = np.log(res_plot)
+            ax.plot(values, res_plot, '-', label=model)
+        plt.xlabel(nicename(name))
+        plt.ylabel(nicename(ylabel))
+        plt.legend()
+        plt.ylim([0, 1])
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        if ylabel == 'val_acc':
+            plt.ylim([0, 1])
+            ax.set_yticks([0, 0.5, 1.0])
+            yrange = [0, 1]
+        else:
+            ax.set_yticks([-2, -1, 0, 1, 2, 3])
+            yrange = [-2, 1]
+        figname = ylabel + '_' + name
+        # _easy_save('kc_role', figname)
 
 
 def evaluate_acrossmodels():
@@ -326,7 +332,7 @@ if __name__ == '__main__':
     # evaluate_plot('orn_noise_std')
     # evaluate_plot('alpha')
     path = os.path.join(rootpath, 'files', 'kcrole')
-    # evaluate_kcrole(path, 'weight_perturb')
+    evaluate_kcrole(path, 'weight_perturb')
     plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
     # evaluate_acrossmodels()
