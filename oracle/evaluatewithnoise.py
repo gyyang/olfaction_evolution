@@ -185,7 +185,7 @@ def evaluate_kcrole(path, name):
         model_dir = os.path.join(path, model_dir)
         if name == 'weight_perturb':
             losses, accs = evaluate_weight_perturb(
-                values, model, model_dir, n_rep=10)
+                values, model, model_dir, n_rep=1)
         else:
             losses, accs = evaluate(name, values, model, model_dir)
         loss_dict[model] = losses

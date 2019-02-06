@@ -572,6 +572,9 @@ class FullModel(Model):
 
         # record original weight values when perturb for the first time
         if not hasattr(self, 'origin_weights'):
+            print('Perturbing weights:')
+            for v in tf.trainable_variables():
+                print(v)
             self.origin_weights = [sess.run(v) for v in tf.trainable_variables()]
 
         for v_value, v in zip(self.origin_weights, tf.trainable_variables()):
