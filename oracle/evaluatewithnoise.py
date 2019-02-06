@@ -164,8 +164,8 @@ def evaluate_weight_perturb(values, model, model_dir, n_rep=1):
     return losses, accs
 
 
-def evaluate_oracle(name):
-    """Evaluate oracle."""
+def evaluate_kcrole(path, name):
+    """Evaluate KC layer's role."""
     if name == 'orn_dropout_rate':
         values = np.linspace(0, 0.3, 10)
     elif name == 'orn_noise_std':
@@ -177,13 +177,12 @@ def evaluate_oracle(name):
     else:
         raise ValueError()
 
-    path = os.path.join(rootpath, 'files', 'oracle')
-
-    models = ['oracle', 'directglo_shallow', 'directglo_standard']
+    models = ['oracle', 'sgd + no kc', 'sgd + kc']
+    model_dirs = ['none', '000002', '000000']
     loss_dict = {}
     acc_dict = {}
-    for model in models:
-        model_dir = os.path.join(rootpath, 'files', model, '0')
+    for model, model_dir in zip(models, model_dirs):
+        model_dir = os.path.join(path, model_dir)
         if name == 'weight_perturb':
             losses, accs = evaluate_weight_perturb(
                 values, model, model_dir, n_rep=10)
@@ -203,8 +202,7 @@ def evaluate_oracle(name):
         pickle.dump(results, f)
 
 
-def plot_oracle(name):
-    path = os.path.join(rootpath, 'files', 'oracle')
+def plot_kcrole(path, name):
     file = os.path.join(path, 'vary_' + name + '.pkl')
     with open(file, 'rb') as f:
         results = pickle.load(f)
@@ -327,7 +325,9 @@ if __name__ == '__main__':
     # evaluate_plot('orn_dropout_rate')
     # evaluate_plot('orn_noise_std')
     # evaluate_plot('alpha')
-    evaluate_oracle('weight_perturb')
+    path = os.path.join(rootpath, 'files', 'kcrole')
+    # evaluate_kcrole(path, 'weight_perturb')
+    plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
     # evaluate_acrossmodels()
     # plot_acrossmodels()

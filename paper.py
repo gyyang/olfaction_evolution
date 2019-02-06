@@ -25,6 +25,7 @@ import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
 import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
+import oracle.evaluatewithnoise as evaluatewithnoise
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
@@ -54,9 +55,9 @@ else:
 # #peter specific
 TRAIN = True
 ANALYZE = True
-is_test = True
+is_test = False
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['vary_kc_activity']
+experiments = ['kcrole']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -316,3 +317,13 @@ if 'vary_kc_activity' in experiments:
         # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
         # analysis_activity.sparseness_activity(path, 'kc_out')
         # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+
+
+if 'kcrole' in experiments:
+    # Compare with or without KC layer
+    path = './files/kcrole'
+    if TRAIN:
+        local_sequential_train(se.train_kcrole(is_test), path)
+    if ANALYZE:
+        evaluatewithnoise.evaluate_kcrole(path, 'weight_perturb')
+        evaluatewithnoise.plot_kcrole(path, 'weight_perturb')
