@@ -39,20 +39,29 @@ def _islikemodeldir(d):
     return False
 
 
-def get_allmodeldirs(dir):
-    """Return sorted model directories immediately below path."""
-    unsorted_dirs = os.listdir(dir)
-    unsorted_dirs = [d for d in unsorted_dirs
-                     if _islikemodeldir(os.path.join(dir, d))]
-    ixs = np.argsort([int(n) for n in unsorted_dirs])  # sort by epochs
-    dirs = [os.path.join(dir, unsorted_dirs[n]) for n in ixs]
+def _get_alldirs(dir, model, sort):
+    """Return sorted model directories immediately below path.
+
+    Args:
+        model: bool, if True find directories containing model files
+        sort: bool, if True, sort directories by name
+    """
+    dirs = os.listdir(dir)
+    if model:
+        dirs = [d for d in dirs if _islikemodeldir(os.path.join(dir, d))]
+    if sort:
+        ixs = np.argsort([int(n) for n in dirs])  # sort by epochs
+        dirs = [os.path.join(dir, dirs[n]) for n in ixs]
     return dirs
 
+
+def get_allmodeldirs(dir):
+    return _get_alldirs(dir, model=True, sort=True)
 
 def load_pickle(dir, var):
     """Load pickle by epoch in sorted order."""
     out = []
-    dirs = get_allmodeldirs(dir)
+    dirs = _get_alldirs(dir, model=False, sort=True)
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
