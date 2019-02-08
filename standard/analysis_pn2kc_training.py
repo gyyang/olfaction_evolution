@@ -261,7 +261,7 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
     # TODO: figure out how to use dynamic threshold here
     _plot(means, stds, THRES)
 
-def plot_sparsity(dir, dynamic_thres=False):
+def plot_sparsity(dir, dynamic_thres=False, visualize=False):
     def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -285,7 +285,6 @@ def plot_sparsity(dir, dynamic_thres=False):
 
         plt.savefig(savename + '.png', dpi=500)
         plt.savefig(savename + '.pdf', transparent=True)
-        plt.close()
 
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
@@ -306,7 +305,7 @@ def plot_sparsity(dir, dynamic_thres=False):
                 force_thres = None
             else:
                 force_thres = dynamic_thres
-            thres = infer_threshold(w, visualize=False, force_thres=force_thres)
+            thres = infer_threshold(w, visualize=visualize, force_thres=force_thres)
             print('thres=', str(thres))
 
             sparsity = np.count_nonzero(w > thres, axis=0)
@@ -316,7 +315,7 @@ def plot_sparsity(dir, dynamic_thres=False):
 def plot_distribution(dir):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
-    os.makedirs(path,exist_ok=True)
+    os.makedirs(path, exist_ok=True)
     dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
     titles = ['Before Training', 'After Training']
 
@@ -389,7 +388,6 @@ def plot_distribution(dir):
 
         plt.savefig(savename + '.png', dpi=500)
         plt.savefig(savename + '.pdf', transparent=True)
-        plt.close()
 
     for i, d in enumerate(dirs):
         wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')

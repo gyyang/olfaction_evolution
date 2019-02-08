@@ -131,7 +131,6 @@ def sparseness_activity(save_path, arg):
         plt.figure()
         plt.imshow(data, aspect='auto')
 
-
         ylabel = 'Number of Odors'
         activity_threshold = 0
         data = np.mean(data > activity_threshold, axis=1)

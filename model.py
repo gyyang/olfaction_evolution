@@ -750,8 +750,7 @@ class FullModel(Model):
             with tf.variable_scope('kc2apl', reuse=tf.AUTO_REUSE):
                 w_kc2apl0 = tf.get_variable(
                     'kernel', shape=(N_KC, 1), dtype=tf.float32)
-                b_apl = tf.get_variable('bias', shape=(1,),
-                                        dtype=tf.float32)
+                b_apl = tf.get_variable('bias', shape=(1,), dtype=tf.float32)
                 w_kc2apl = tf.abs(w_kc2apl0)
 
                 apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
