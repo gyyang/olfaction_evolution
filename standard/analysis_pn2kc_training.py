@@ -44,7 +44,7 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None):
 
     x = np.asarray(x).flatten()
     if use_logx:
-        x = np.log(x)
+        x = np.log(x+1e-10)
     x = x[:, np.newaxis]
 
     if force_thres is not None:
