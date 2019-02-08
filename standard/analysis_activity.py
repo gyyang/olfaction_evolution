@@ -106,7 +106,14 @@ def distribution_activity(save_path, arg):
         ylabel = 'Number of Cells'
         _distribution(data, save_path, name= 'dist_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
 
+
 def sparseness_activity(save_path, arg):
+    """Plot the sparseness of activity.
+
+    Args:
+        path: model path
+        arg: str, the activity to plot
+    """
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
     for i, d in enumerate(dirs):
         glo_in, glo_out, kc_out, results = sa.load_activity(d)
@@ -120,10 +127,17 @@ def sparseness_activity(save_path, arg):
             zticks = [0, 1]
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
+
+        plt.figure()
+        plt.imshow(data, aspect='auto')
+
+
         ylabel = 'Number of Odors'
         activity_threshold = 0
-        data = np.count_nonzero(data > activity_threshold, axis=1) / data.shape[1]
-        _distribution(data, save_path, name= 'spars_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
+        data = np.mean(data > activity_threshold, axis=1)
+        _distribution(data, save_path, name= 'spars_' + arg + '_' + str(i),
+                      xlabel=xlabel, ylabel=ylabel, xrange=zticks)
+
 
 def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
