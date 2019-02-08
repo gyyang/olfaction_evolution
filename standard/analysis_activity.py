@@ -119,23 +119,30 @@ def sparseness_activity(save_path, arg):
         glo_in, glo_out, kc_out, results = sa.load_activity(d)
         if arg == 'glo_out':
             data = glo_out
-            xlabel = 'PN Activity'
+            name = 'PN'
             zticks = [0, 1]
         elif arg == 'kc_out':
             data = kc_out
-            xlabel = 'KC Activity'
+            name = 'KC'
             zticks = [0, 1]
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
 
         plt.figure()
         plt.imshow(data, aspect='auto')
+        plt.xlabel('Neurons')
+        plt.ylabel('Odors')
 
-        ylabel = 'Number of Odors'
         activity_threshold = 0
-        data = np.mean(data > activity_threshold, axis=1)
-        _distribution(data, save_path, name= 'spars_' + arg + '_' + str(i),
-                      xlabel=xlabel, ylabel=ylabel, xrange=zticks)
+        data1 = np.mean(data > activity_threshold, axis=1)
+        _distribution(data1, save_path, name= 'spars_' + arg + '_' + str(i),
+                      xlabel='Fraction of Active '+name+'s',
+                      ylabel='Number of Odors', xrange=zticks)
+
+        data2 = np.mean(data > activity_threshold, axis=0)
+        _distribution(data2, save_path, name='spars_' + arg + '2_' + str(i),
+                      xlabel='Fraction of Odors',
+                      ylabel='Number of '+name+'s', xrange=zticks)
 
 
 def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key):
