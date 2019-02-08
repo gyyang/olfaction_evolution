@@ -739,10 +739,29 @@ class FullModel(Model):
             # KC input before activation function
             kc_in = tf.matmul(pn, w_glo) + b_glo
             kc_in = _normalize(kc_in, config.kc_norm_pre, training)
-            if 'skip_pn2kc' in dir(self.config) and config.skip_pn2kc:
+            if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
                 kc_in = pn
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
+
+        if 'apl' in dir(config) and config.apl:
+            if config.skip_pn2kc:
+                raise ValueError('apl can not be used when no KC.')
+            with tf.variable_scope('kc2apl', reuse=tf.AUTO_REUSE):
+                w_kc2apl0 = tf.get_variable(
+                    'kernel', shape=(N_KC, 1), dtype=tf.float32)
+                b_apl = tf.get_variable('bias', shape=(1,),
+                                        dtype=tf.float32)
+                w_kc2apl = tf.abs(w_kc2apl0)
+
+                apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
+
+            with tf.variable_scope('apl2kc', reuse=tf.AUTO_REUSE):
+                w_apl2kc0 = tf.get_variable(
+                    'kernel', shape=(1, N_KC), dtype=tf.float32)
+                w_apl2kc = - tf.abs(w_apl2kc0)  # inhibitory connections
+
+            kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
 
         if config.kc_dropout:
             kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
