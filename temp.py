@@ -132,23 +132,22 @@ def basic():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 10
 
-    config.receptor_layer = True
-    config.or2orn_normalization = True
-    # config.orn2pn_normalization = True
     config.pn_norm_pre = 'batch_norm'
-
+    config.direct_glo = True
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['ORN_NOISE_STD'] = [0.25]
+    hp_ranges['dummy'] = [0]
     return config, hp_ranges
 
-path = './files_temp/temp'
+path = './files_temp/movie_kc'
 shutil.rmtree(path)
 t(basic(), path, s=0, e=100)
-# analysis_training.plot_sparsity(path, dynamic_thres=False)
+analysis_training.plot_sparsity(path, dynamic_thres=True)
 # analysis_training.plot_distribution(path)
 # analysis_training.plot_pn2kc_claw_stats(path, x_key = 'n_trueclass', dynamic_thres=False)
 # analysis_activity.sparseness_activity(path, 'kc_out')
