@@ -25,6 +25,7 @@ import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
 import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
+import oracle.evaluatewithnoise as evaluatewithnoise
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
@@ -55,9 +56,9 @@ else:
 # #peter specific
 TRAIN = False
 ANALYZE = True
-is_test = True
+is_test = False
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['vary_kc_activity_fixed']
+experiments = ['kcrole']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -251,21 +252,19 @@ if 'vary_kc_activity_fixed' in experiments:
     if TRAIN:
         local_train(se.vary_kc_activity_fixed(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
-        analysis_activity.sparseness_activity(path, 'kc_out')
-        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass',
-                                                        select_dict= {'kc_dropout_rate': 0.5})
-        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=True)
+        # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
+        # analysis_activity.sparseness_activity(path, 'kc_out')
+        # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
-if 'vary_kc_activity_trainable' in experiments:
-    # Vary KC activity under different number of relabels
-    path = './files/vary_kc_activity_trainable'
+
+if 'kcrole' in experiments:
+    # Compare with or without KC layer
+    path = './files/kcrole'
     if TRAIN:
-        local_train(se.vary_kc_activity_fixed(is_test), path)
+        local_sequential_train(se.train_kcrole(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
-        analysis_activity.sparseness_activity(path, 'kc_out')
-        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
-        # analysis_pn2kc_training.plot_distribution(path)
-        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
-        # analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=False)
+        evaluatewithnoise.evaluate_kcrole(path, 'weight_perturb')
+        evaluatewithnoise.plot_kcrole(path, 'weight_perturb')

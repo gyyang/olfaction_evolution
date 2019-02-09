@@ -20,24 +20,48 @@ def load_config(save_path):
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
 
-    config = configs.BaseConfig()
+    # config = configs.BaseConfig()
+    config = configs.FullConfig()
     for key, val in config_dict.items():
         setattr(config, key, val)
     return config
 
 
-def get_allmodeldirs(dir):
-    """Return sorted model directories immediately below path."""
-    unsorted_dirs = os.listdir(dir)
-    ixs = np.argsort([int(n) for n in unsorted_dirs])  # sort by epochs
-    dirs = [os.path.join(dir, unsorted_dirs[n]) for n in ixs]
+def _islikemodeldir(d):
+    """Check if directory looks like a model directory."""
+    try:
+        files = os.listdir(d)
+    except NotADirectoryError:
+        return False
+    for file in files:
+        if 'model.ckpt' in file:
+            return True
+    return False
+
+
+def _get_alldirs(dir, model, sort):
+    """Return sorted model directories immediately below path.
+
+    Args:
+        model: bool, if True find directories containing model files
+        sort: bool, if True, sort directories by name
+    """
+    dirs = os.listdir(dir)
+    if model:
+        dirs = [d for d in dirs if _islikemodeldir(os.path.join(dir, d))]
+    if sort:
+        ixs = np.argsort([int(n) for n in dirs])  # sort by epochs
+        dirs = [os.path.join(dir, dirs[n]) for n in ixs]
     return dirs
 
+
+def get_allmodeldirs(dir):
+    return _get_alldirs(dir, model=True, sort=True)
 
 def load_pickle(dir, var):
     """Load pickle by epoch in sorted order."""
     out = []
-    dirs = get_allmodeldirs(dir)
+    dirs = _get_alldirs(dir, model=False, sort=True)
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
@@ -162,6 +186,8 @@ nicename_dict = {
         'zero_claw': 'Fraction of KC with No Input',
         'kc_out_sparse_mean': 'Fraction of Active KCs',
         'n_trueclass': 'Odor Prototypes Per Class'
+        'weight_perturb': 'Weight Perturb.'
+
         }
 
 

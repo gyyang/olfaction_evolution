@@ -121,6 +121,29 @@ def vary_claw_configs(argTest=False):
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
+def vary_claw_configs_new(argTest=False):
+    '''
+    Vary number of inputs to KCs while skipping ORN2PN layer
+    Results:
+        Accuracy should be high at around claw values of 7-15
+        # Noise dependence
+    '''
+    # TODO: Need to merge this with vary_claw_configs
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 20
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.kc_dropout = False
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
+    if argTest:
+        config.max_epoch = testing_epochs
+        hp_ranges['kc_inputs'] = [3, 7, 15]
+    return config, hp_ranges
+
 def train_claw_configs(argTest=False):
     '''
     NOTE: this should be trained with varying_config_sequential
@@ -347,6 +370,35 @@ def train_multihead_sequential():
     config.max_epoch = 30
     config.train_head1 = True
     train.train(config, reload=True)
+
+
+def train_kcrole(argTest=False):
+    '''
+    NOTE: this should be trained with varying_config_sequential
+
+    Compare networks with or without KC layer
+    Results:
+        Accuracy from training PN2KC weights = fixed PN2KC weights
+        Accuracy from Training PN2KC weights with KC loss = without KC loss
+        Training PN2KC weights with loss should result in KC claw count of 6-7
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.N_ORN_DUPLICATION = 1
+    config.kc_dropout = False
+    config.pn_norm_pre = 'batch_norm'
+    config.save_every_epoch = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['train_pn2kc'] = [True, False, True]
+    hp_ranges['sparse_pn2kc'] = [False, True, False]
+    hp_ranges['skip_pn2kc'] = [False, False, True]
+
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
 
 
 def temp(argTest):

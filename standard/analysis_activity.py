@@ -106,24 +106,44 @@ def distribution_activity(save_path, arg):
         ylabel = 'Number of Cells'
         _distribution(data, save_path, name= 'dist_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
 
+
 def sparseness_activity(save_path, arg):
+    """Plot the sparseness of activity.
+
+    Args:
+        path: model path
+        arg: str, the activity to plot
+    """
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
     for i, d in enumerate(dirs):
         glo_in, glo_out, kc_out, results = sa.load_activity(d)
         if arg == 'glo_out':
             data = glo_out
-            xlabel = 'PN Activity'
+            name = 'PN'
             zticks = [0, 1]
         elif arg == 'kc_out':
             data = kc_out
-            xlabel = 'Fraction of Active KCs'
+            name = 'KC'
             zticks = [0, 1]
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
-        ylabel = 'Number of Odors'
+
+        plt.figure()
+        plt.imshow(data, aspect='auto')
+        plt.xlabel('Neurons')
+        plt.ylabel('Odors')
+
         activity_threshold = 0
-        data = np.count_nonzero(data > activity_threshold, axis=1) / data.shape[1]
-        _distribution(data, save_path, name= 'spars_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
+        data1 = np.mean(data > activity_threshold, axis=1)
+        _distribution(data1, save_path, name= 'spars_' + arg + '_' + str(i),
+                      xlabel='Fraction of Active '+name+'s',
+                      ylabel='Number of Odors', xrange=zticks)
+
+        data2 = np.mean(data > activity_threshold, axis=0)
+        _distribution(data2, save_path, name='spars_' + arg + '2_' + str(i),
+                      xlabel='Fraction of Odors',
+                      ylabel='Number of '+name+'s', xrange=zticks)
+
 
 def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key= None, select_dict = None):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]

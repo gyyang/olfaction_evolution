@@ -35,7 +35,7 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
         # plt.savefig(os.path.join(figname + '.svg'), transparent=True, format='svg')
     if show:
         plt.show()
-    plt.close()
+    # plt.close()
 
 def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, legends= None):
     """Plot progress through training.
