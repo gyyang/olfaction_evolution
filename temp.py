@@ -11,6 +11,8 @@ import model as network_models
 import standard.analysis_activity as analysis_activity
 import standard.analysis_pn2kc_training as analysis_training
 
+import shutil
+
 import matplotlib.pyplot as plt
 
 def t(experiment, save_path,s=0,e=1000):
@@ -130,25 +132,27 @@ def basic():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 10
 
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.skip_orn2pn = True
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+    # config.orn2pn_normalization = True
+    config.pn_norm_pre = 'batch_norm'
 
-    config.train_kc_bias=False
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-    config.initial_pn2kc = .1
-    config.save_every_epoch = True
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['initial_pn2kc'] = [.05, .1, .25, .5, 1]
+    hp_ranges['ORN_NOISE_STD'] = [0.25]
     return config, hp_ranges
 
-path = './files_temp/vary_pn2kc_initial_value'
-t(basic(), path, s=3, e=100)
+path = './files_temp/temp'
+shutil.rmtree(path)
+t(basic(), path, s=0, e=100)
 # analysis_training.plot_sparsity(path, dynamic_thres=False)
 # analysis_training.plot_distribution(path)
+# analysis_training.plot_pn2kc_claw_stats(path, x_key = 'n_trueclass', dynamic_thres=False)
+# analysis_activity.sparseness_activity(path, 'kc_out')
+# analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+
 # sa.plot_results(path, x_key='extra_layer', y_key='val_acc')
 

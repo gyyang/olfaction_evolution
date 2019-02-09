@@ -260,7 +260,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                      'kc_loss_beta': [.1, 1, 10, 100],
                      'initial_pn2kc':[.05, .1, 1],
                      'N_ORN_DUPLICATION':[1,3,10,30,100,300],
-                     'n_trueclass':[20, 40, 80, 200, 500, 1000],
+                     'n_trueclass':[100, 200, 500, 1000],
                      'val_loss':[]}
 
     plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}

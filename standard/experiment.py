@@ -7,35 +7,19 @@ import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 testing_epochs = 16
-def train_orn2pn(argTest=False):
-    '''
-    Most basic experiment. Train ORN2PN.
-    Result:
-        Show that GloScore increases as a function of training
-    '''
-    config = configs.FullConfig()
-    config.max_epoch = 30
-    config.kc_norm_pre = 'batch_norm'
-    config.data_dir = './datasets/proto/standard'
-    hp_ranges = OrderedDict()
-    hp_ranges['sign_constraint_orn2pn'] = [True, False]
-    if argTest:
-        config.max_epoch = testing_epochs
-    return config, hp_ranges
-
 
 def train_standardnet(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
     config.max_epoch = 30
-    config.N_ORN_DUPLICATION = 10
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.kc_dropout = False
+    # config.train_kc_bias = False
     config.pn_norm_pre = 'batch_norm'  # TODO: check if this is necessary
     config.data_dir = './datasets/proto/standard'
+    config.save_every_epoch = True
     hp_ranges = OrderedDict()
-    hp_ranges['sign_constraint_orn2pn'] = [True, False]
+    hp_ranges['sign_constraint_orn2pn'] = [True]
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
@@ -47,21 +31,19 @@ def vary_orn_duplication_configs(argTest=False):
     Results:
         GloScore should be robust to duplicates
         Accuracy should increase when there are more copies of ORNs to deal with noise
-        Accuracy should be higher for more KCs
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.ORN_NOISE_STD = 0.5
+    config.pn_norm_pre = 'batch_norm'
+    config.ORN_NOISE_STD = 0.25
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [100, 2500]
-    hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 5, 7, 10]
+    hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 5, 7, 10, 20]
 
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['N_KC'] = [2500]
         hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 10]
 
     return config, hp_ranges
@@ -77,7 +59,7 @@ def vary_pn_configs(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.kc_norm_pre = 'batch_norm'
+    config.pn_norm_pre = 'batch_norm'
 
     hp_ranges = OrderedDict()
     hp_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
@@ -101,9 +83,7 @@ def vary_kc_configs(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.kc_norm_pre = 'batch_norm'
-    # config.N_ORN_DUPLICATION = 1
-    # config.replicate_orn_with_tiling = False
+    config.pn_norm_pre = 'batch_norm'
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -126,10 +106,9 @@ def vary_claw_configs(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
-    config.direct_glo = False
+
+    config.direct_glo = True
+    config.pn_norm_pre = 'batch_norm' #not necessary, but for standardization
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -178,8 +157,7 @@ def train_claw_configs(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
-    config.replicate_orn_with_tiling = False
-    config.skip_orn2pn = True
+    config.pn_norm_pre = 'batch_norm'
     config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
@@ -194,32 +172,7 @@ def train_claw_configs(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
-def random_claw_configs(argTest=False):
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.skip_orn2pn = True
-
-    config.train_kc_bias=False
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-    config.initial_pn2kc = .1
-
-    config.save_every_epoch = True
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['dummy_var'] = [True]
-
-    if argTest:
-        config.max_epoch = testing_epochs
-    return config, hp_ranges
-
-def vary_kc_activity_sparseness(argTest):
+def vary_kc_activity_fixed(argTest):
     '''
 
     :param argTest:
@@ -230,65 +183,56 @@ def vary_kc_activity_sparseness(argTest):
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
 
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
-    config.kc_dropout = True
-
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-    config.train_kc_bias = False
-    config.initial_pn2kc = .1
-
+    config.direct_glo = True
+    config.pn_norm_pre = 'batch_norm'
     config.save_every_epoch = True
+
+    # config.train_pn2kc = True
+    # config.sparse_pn2kc = False
+    # config.initial_pn2kc = .1
     # config.extra_layer = True
     # config.extra_layer_neurons = 200
 
     hp_ranges = OrderedDict()
-    hp_ranges['kc_dropout_rate'] = [0, .5, .5]
+    hp_ranges['kc_dropout_rate'] = [0, .5]
     x = [100, 200, 500, 1000, 2000, 5000]
     hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
     if argTest:
         hp_ranges['kc_dropout_rate'] = [.5]
-        x = [100, 1000]
+        x = [100, 200, 500, 1000, 2000]
         hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def vary_kc_activity_trainable(argTest):
+    '''
 
-def train_orn2pn2kc_configs(argTest):
+    :param argTest:
+    :return:
     '''
-    Allow both ORN2PN and PN2KC connections to be trained simultaneously
-    Results:
-        Glo score increases
-        Claw count converges to ~7
-        Results should be independent of noise
-    '''
+
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
 
-    config.replicate_orn_with_tiling = True
-    config.skip_orn2pn = False
-
-    config.kc_loss = False
-    config.kc_loss_alpha = 1
-    config.kc_loss_beta = 10
+    config.direct_glo = True
+    config.pn_norm_pre = 'batch_norm'
+    config.save_every_epoch = True
 
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    config.train_kc_bias = False
-    config.initial_pn2kc = 0
-    config.save_every_epoch = True
-    config.initializer_pn2kc = 'normal'
+    # config.extra_layer = True
+    # config.extra_layer_neurons = 200
 
-    # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['ORN_NOISE_STD'] = [0, .5, 1]
-
+    hp_ranges['kc_dropout_rate'] = [0, .5]
+    x = [100, 200, 500, 1000, 2000, 5000]
+    hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
     if argTest:
+        hp_ranges['kc_dropout_rate'] = [.5]
+        x = [100, 200, 500, 1000]
+        hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
         config.max_epoch = testing_epochs
-        hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
 
 def pn_normalization(argTest):

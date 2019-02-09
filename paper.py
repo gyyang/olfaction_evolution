@@ -43,9 +43,10 @@ is_test = args.testing
 
 # experiments
 if args.experiment == 'core':
-    experiments = ['orn2pn', 'vary_orn_duplication', 'vary_pn',
+    experiments = ['standard', 'vary_orn_duplication', 'vary_pn',
                    'pn_normalization',
-                   'vary_kc', 'vary_kc_activity',
+                   'vary_kc',
+                   'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_kc_dropout', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
                    'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization']
@@ -53,7 +54,7 @@ else:
     experiments = args.experiment
 
 # #peter specific
-TRAIN = True
+TRAIN = False
 ANALYZE = True
 is_test = False
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
@@ -65,23 +66,26 @@ if 'standard' in experiments:
     if TRAIN:
         local_train(se.train_standardnet(is_test), path)
     if ANALYZE:
-        sa.plot_progress(path)
-        sa.plot_weights(path, sort_axis=1)
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        # accuracy, glo score, cosine similarity
+        sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
+        analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
 
-if 'orn2pn' in experiments:
-    # Reproducing glomeruli-like activity
-    path = './files/orn2pn'
-    if TRAIN:
-        local_train(se.train_orn2pn(is_test), path)
-    if ANALYZE:
+        #weights
+        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
+        sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
+
+        #sign constraint
         sa.plot_progress(path)
-        sa.plot_progress(path, select_dict={'sign_constraint_orn2pn':True})
-        sa.plot_weights(path, sort_axis = 1, dir_ix=0)
-        sa.plot_weights(path, sort_axis = 1, dir_ix=1)
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
+
+        #random analysis
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        analysis_pn2kc_random.plot_distribution(path)
+        analysis_pn2kc_random.claw_distribution(path, 'random')
+        analysis_pn2kc_random.pair_distribution(path, 'preserve')
+
 
 if 'vary_orn_duplication' in experiments:
     # Vary ORN n duplication under different nKC
@@ -135,23 +139,10 @@ if 'train_kc_claws' in experiments:
         sa.plot_progress(
             path, alpha=.75, linestyles=[':', '-.', '-'],
             legends=['Trained, no loss', 'Trained, with loss', 'Fixed']),
+        sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=1)
         analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
         analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
-
-
-if 'random_kc_claws' in experiments:
-    path = './files/random_kc_claws'
-    if TRAIN:
-        local_train(se.random_claw_configs(is_test), path)
-    if ANALYZE:
-        analysis_pn2kc_training.plot_distribution(path)
-        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        # sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
-        # analysis_pn2kc_random.plot_distribution(path)
-        # analysis_pn2kc_random.claw_distribution(path, 'random')
-        # analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
-        # analysis_pn2kc_random.pair_distribution(path, 'preserve')
 
 if 'vary_kc_dropout' in experiments:
     path = './files/vary_kc_dropout'
@@ -172,16 +163,6 @@ if 'vary_pn2kc_noise' in experiments:
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
         sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
-
-if 'vary_pn2kc_initial_value' in experiments:
-    path = './files/vary_pn2kc_initial_value'
-    if TRAIN:
-        local_train(experiments_controls_pn2kc.vary_pn2kc_initial_value_configs(is_test), path)
-    if ANALYZE:
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='initial_pn2kc', dynamic_thres=True)
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        sa.plot_results(path, x_key='initial_pn2kc', y_key='val_acc')
 
 if 'vary_kc_claws' in experiments:
     path = './files/vary_kc_claws'
@@ -211,46 +192,6 @@ if 'pn_normalization' in experiments:
         # analysis_activity.distribution_activity(path, 'glo_out')
         # analysis_activity.distribution_activity(path, 'kc_out')
         # analysis_activity.sparseness_activity(path, 'kc_out')
-
-if 'vary_pn2kc_loss' in experiments:
-    path = './files/vary_pn2kc_loss'
-    if TRAIN:
-        local_train(experiments_controls_pn2kc.vary_pn2kc_loss_configs(is_test), path)
-    if ANALYZE:
-        analysis_pn2kc_training.image_pn2kc_parameters(path)
-        analysis_pn2kc_training.plot_distribution(path)
-        sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
-        sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
-
-if 'vary_kc_claws_new' in experiments:
-    path = './files/vary_kc_claws_new'
-    if TRAIN:
-        local_train(se.vary_claw_configs_new(is_test), path)
-    if ANALYZE:
-        pass
-        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
-        #                                loop_key='ORN_NOISE_STD')
-
-if 'vary_norm' in experiments:
-    path = './files/vary_norm'
-    if TRAIN:
-        local_train(se.vary_norm(is_test), path)
-    if ANALYZE:
-        pass
-
-if 'train_orn2pn2kc' in experiments:
-    path = './files/train_orn2pn2kc'
-    if TRAIN:
-        local_train(se.train_orn2pn2kc_configs(is_test), path)
-    if ANALYZE:
-        sa.plot_progress(
-            path, alpha=.75, linestyles=[':', '-.', '-'],
-            legends=['No Noise', ' 0.5 Noise', '1.0 Noise']),
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score')
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
-        sa.plot_weights(path)
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path)
 
 if 'or2orn' in experiments:
     path = './files/or2orn'
@@ -305,11 +246,11 @@ if 'multi_head' in experiments:
     if ANALYZE:
         analysis_multihead.main()
 
-if 'vary_kc_activity' in experiments:
+if 'vary_kc_activity_fixed' in experiments:
     # Vary KC activity under different number of relabels
     path = './files/vary_kc_activity'
     if TRAIN:
-        local_train(se.vary_kc_activity_sparseness(is_test), path)
+        local_train(se.vary_kc_activity_fixed(is_test), path)
     if ANALYZE:
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
