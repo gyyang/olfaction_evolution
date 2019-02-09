@@ -616,7 +616,6 @@ class FullModel(Model):
                 orn = tf.tile(x, [1, ORN_DUP])
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
             else:
-                ORN_DUP = 1
                 N_ORN = config.N_ORN
                 orn = x
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
@@ -645,18 +644,12 @@ class FullModel(Model):
                 initializer = tf.glorot_normal_initializer
                 bias_initializer = tf.glorot_normal_initializer
 
-            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
+            w_orn = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32,
                                  initializer=initializer)
 
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer= bias_initializer)
-
-            if config.direct_glo:
-                mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
-                w_orn = w1 * mask
-            else:
-                w_orn = w1
 
             if config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
@@ -668,6 +661,9 @@ class FullModel(Model):
             glo_in_pre = tf.matmul(orn, w_orn) + b_orn
             if config.skip_orn2pn:
                 glo_in = orn
+            elif config.direct_glo:
+                mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
+                glo_in = tf.matmul(orn, mask.astype(np.float32))
             else:
                 glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
 
