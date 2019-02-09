@@ -654,7 +654,7 @@ class FullModel(Model):
                                     initializer= bias_initializer)
 
             if config.direct_glo:
-                mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1))
+                mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
                 w_orn = w1 * mask
             else:
                 w_orn = w1
