@@ -605,6 +605,7 @@ class FullModel(Model):
 
                 orn = tf.matmul(x, w_or) + b_or
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+                self.w_or = w_or
         else:
             if config.replicate_orn_with_tiling:
                 # Replicating ORNs through tiling
@@ -624,8 +625,6 @@ class FullModel(Model):
             # This is interpreted as noise, so it's always on
             orn = tf.layers.dropout(orn, config.orn_dropout_rate,
                                     training=True)
-        if config.receptor_layer:
-            self.w_or = w_or
 
         self.n_orn = N_ORN
         return orn

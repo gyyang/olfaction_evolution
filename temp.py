@@ -130,11 +130,8 @@ def temp1():
 def basic():
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 10
+    config.max_epoch = 6
 
-    config.receptor_layer = True
-    config.or2orn_normalization = True
-    # config.orn2pn_normalization = True
     config.pn_norm_pre = 'batch_norm'
 
     config.replicate_orn_with_tiling = True
@@ -142,7 +139,7 @@ def basic():
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['ORN_NOISE_STD'] = [0.25]
+    hp_ranges['dummy'] = [0]
     return config, hp_ranges
 
 path = './files_temp/temp'

@@ -185,9 +185,8 @@ nicename_dict = {
         'mean_claw': 'Average Number of KC Claws',
         'zero_claw': 'Fraction of KC with No Input',
         'kc_out_sparse_mean': 'Fraction of Active KCs',
-        'n_trueclass': 'Odor Prototypes Per Class'
+        'n_trueclass': 'Odor Prototypes Per Class',
         'weight_perturb': 'Weight Perturb.'
-
         }
 
 
