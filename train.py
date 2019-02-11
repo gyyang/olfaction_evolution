@@ -118,7 +118,7 @@ def train(config, reload=False):
         loss = 0
         acc = 0
         total_time, start_time = 0, time.time()
-        # weight_over_time = []
+        weights_over_time = []
         for ep in range(config.max_epoch):
             # Validation
             tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
@@ -206,6 +206,11 @@ def train(config, reload=False):
                 # Train
                 for b in range(n_batch-1):
                     _ = sess.run(model.train_op)
+
+                    if b % 10 == 0:
+                        w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
+                        weights_over_time.append((w_orn, w_glo))
+
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
 
@@ -213,12 +218,10 @@ def train(config, reload=False):
                 print('Training interrupted by users')
                 break
 
-            # for b in range(n_batch):
-            #     w_orn = sess.run(model.w_orn)
-            #     weight_over_time.append(w_orn)
-            #     with open('./weight_over_time.pickle', 'wb') as handle:
-            #         pickle.dump(weight_over_time, handle,
-            #                     protocol=pickle.HIGHEST_PROTOCOL)
+        with open(os.path.join(config.save_path, 'weights_over_time.pickle'), 'wb') as handle:
+            pickle.dump(weights_over_time, handle,
+                        protocol=pickle.HIGHEST_PROTOCOL)
+
         print('Training finished')
         model.save_pickle()
         model.save()

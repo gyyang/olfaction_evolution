@@ -341,11 +341,7 @@ class FullModel(Model):
 
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if config.sign_constraint_orn2pn:
-                if config.direct_glo:
-                    range = _sparse_range(ORN_DUP)
-                else:
-                    range = _sparse_range(N_ORN)
-                initializer = _initializer(range, config.initializer_orn2pn)
+                initializer = _initializer(_sparse_range(N_ORN), config.initializer_orn2pn)
                 bias_initializer = tf.constant_initializer(0)
             else:
                 initializer = tf.glorot_normal_initializer
@@ -359,8 +355,9 @@ class FullModel(Model):
                                     initializer= bias_initializer)
 
             if config.direct_glo:
-                mask = np.tile(np.eye(N_PN), (ORN_DUP,1))
-                w_orn = w1 * mask
+                w_orn = np.tile(np.eye(N_PN), (ORN_DUP,1)) / ORN_DUP
+                w_orn = tf.constant(value=w_orn, dtype=tf.float32)
+                b_orn = np.zeros(N_PN)
             else:
                 w_orn = w1
 
@@ -376,9 +373,6 @@ class FullModel(Model):
                 glo_in = orn
             else:
                 glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
-
-            # self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
-            # self.glo_in_mean = tf.reduce_mean(glo_in, axis=1)
 
             glo = tf.nn.relu(glo_in)
             glo = _normalize(glo, config.pn_norm_post, training)
@@ -452,13 +446,17 @@ class FullModel(Model):
             self.loss += self.kc_loss
 
         if config.label_type == 'combinatorial':
-            n_logits = config.N_COMBINATORIAL_CLASS
+            print('combinatorial')
+            n_logits = config.n_combinatorial_classes
         else:
             n_logits = config.N_CLASS
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
         if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
+            pred = tf.cast(logits > .5, tf.int32)
+            out = tf.reduce_all(tf.equal(pred, y), axis=1)
+            self.acc = tf.reduce_mean(tf.to_float(out))
         elif config.label_type == 'one_hot':
             self.loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
             pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
@@ -607,6 +605,7 @@ class FullModel(Model):
 
                 orn = tf.matmul(x, w_or) + b_or
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+                self.w_or = w_or
         else:
             if config.replicate_orn_with_tiling:
                 # Replicating ORNs through tiling
@@ -617,7 +616,6 @@ class FullModel(Model):
                 orn = tf.tile(x, [1, ORN_DUP])
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
             else:
-                ORN_DUP = 1
                 N_ORN = config.N_ORN
                 orn = x
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
@@ -626,8 +624,6 @@ class FullModel(Model):
             # This is interpreted as noise, so it's always on
             orn = tf.layers.dropout(orn, config.orn_dropout_rate,
                                     training=True)
-        if config.receptor_layer:
-            self.w_or = w_or
 
         self.n_orn = N_ORN
         return orn
@@ -648,18 +644,12 @@ class FullModel(Model):
                 initializer = tf.glorot_normal_initializer
                 bias_initializer = tf.glorot_normal_initializer
 
-            w1 = tf.get_variable('kernel', shape=(N_ORN, N_PN),
+            w_orn = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32,
                                  initializer=initializer)
 
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer= bias_initializer)
-
-            if config.direct_glo:
-                mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1))
-                w_orn = w1 * mask
-            else:
-                w_orn = w1
 
             if config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
@@ -671,6 +661,9 @@ class FullModel(Model):
             glo_in_pre = tf.matmul(orn, w_orn) + b_orn
             if config.skip_orn2pn:
                 glo_in = orn
+            elif config.direct_glo:
+                mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
+                glo_in = tf.matmul(orn, mask.astype(np.float32))
             else:
                 glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
 
@@ -939,6 +932,7 @@ class RNN(Model):
 
         if config.BATCH_NORM:
             rnn_output = _normalize(rnn_output, 'batch_norm', training)
+
         if config.dropout:
             rnn_output = tf.layers.dropout(rnn_output, config.dropout_rate, training=training)
 

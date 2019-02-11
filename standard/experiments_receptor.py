@@ -14,9 +14,8 @@ def basic(argTest=False):
 
     config.receptor_layer = True
     config.or2orn_normalization = True
-    config.orn2pn_normalization = True
     config.save_every_epoch = True
-    # config.kc_norm_pre = 'batch_norm'
+    config.pn_norm_pre = 'batch_norm'
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
@@ -37,7 +36,7 @@ def primordial(argTest=False):
 
     config.receptor_layer = True
     config.or2orn_normalization = True
-    config.orn2pn_normalization = True
+    config.pn_norm_pre = 'batch_norm'
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
