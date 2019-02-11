@@ -19,6 +19,8 @@ import task
 from model import SingleLayerModel, FullModel, NormalizedMLP
 
 mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
 
 figpath = os.path.join(rootpath, 'figures')
 # figpath = r'C:\Users\Peter\Dropbox\olfaction_evolution\manuscript\plots'
@@ -63,7 +65,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
 
         if legends is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
-            ax.legend(legends, fontsize=4)
+            ax.legend(legends, fontsize=4, frameon=False)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -75,7 +77,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
         ax.yaxis.set_ticks_position('left')
         ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
         if ykey in ['val_acc', 'glo_score', 'or_glo_score', 'combined_glo_score']:
-            ax.set_ylim([0, 1])
+            ax.set_ylim([0, 1.05])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
         ax.set_xlim([-1, len(log[xkey][0,:])])
 

@@ -53,12 +53,13 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
+
 # #peter specific
 TRAIN = False
 ANALYZE = True
 is_test = False
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['kcrole']
+experiments = ['vary_kc_activity_trainable']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -66,20 +67,20 @@ if 'standard' in experiments:
     if TRAIN:
         local_train(se.train_standardnet(is_test), path)
     if ANALYZE:
-        # accuracy, glo score, cosine similarity
+        # # accuracy, glo score, cosine similarity
         sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
         analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
-
-        #weights
+        #
+        # #weights
         sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
         sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
 
         #sign constraint
-        sa.plot_progress(path)
+        sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
 
-        #random analysis
+        # #random analysis
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
         analysis_pn2kc_random.plot_distribution(path)
@@ -248,13 +249,23 @@ if 'multi_head' in experiments:
 
 if 'vary_kc_activity_fixed' in experiments:
     # Vary KC activity under different number of relabels
-    path = './files/vary_kc_activity'
+    path = './files/vary_kc_activity_fixed'
     if TRAIN:
         local_train(se.vary_kc_activity_fixed(is_test), path)
     if ANALYZE:
+        # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
+        analysis_activity.sparseness_activity(path, 'kc_out')
+        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+
+if 'vary_kc_activity_trainable' in experiments:
+    # Vary KC activity under different number of relabels
+    path = './files/vary_kc_activity_trainable'
+    if TRAIN:
+        local_train(se.vary_kc_activity_trainable(is_test), path)
+    if ANALYZE:
         analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=True)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=False)
         # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
         # analysis_activity.sparseness_activity(path, 'kc_out')
         # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
