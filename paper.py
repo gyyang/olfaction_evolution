@@ -58,7 +58,7 @@ TRAIN = False
 ANALYZE = True
 is_test = False
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['kcrole']
+experiments = ['multi_head']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
