@@ -19,6 +19,8 @@ from sklearn.mixture import GaussianMixture
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
 figpath = os.path.join(rootpath, 'figures')
 THRES = 0.08
 

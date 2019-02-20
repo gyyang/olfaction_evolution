@@ -132,12 +132,16 @@ def basic():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 10
 
-    config.pn_norm_pre = 'batch_norm'
+    config.N_ORN_DUPLICATION = 10
+    config.replicate_orn_with_tiling = True
     config.direct_glo = True
+
+    # config.pn_norm_pre = 'batch_norm'
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
+    config.initial_pn2kc = .1
+
+    config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
