@@ -21,8 +21,9 @@ sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
 figpath = os.path.join(rootpath, 'figures')
-THRES = 0.08
+THRES = 0.03
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]

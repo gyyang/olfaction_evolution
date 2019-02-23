@@ -34,128 +34,61 @@ def st(experiment, save_path, s=0,e=1000):
             config.save_path = os.path.join(save_path, str(i).zfill(6))
             train.train(config)
 
-# def temp_norm():
-#     config = configs.FullConfig()
-#     config.data_dir = './datasets/proto/mask'
-#     config.max_epoch = 10
-#
-#     config.direct_glo = True
-#     config.initializer_orn2pn = 'constant'
-#
-#     config.N_ORN_DUPLICATION = 1
-#     config.ORN_NOISE_STD = 0
-#     # config.train_kc_bias = False
-#     # config.train_pn2kc = True
-#     # config.sparse_pn2kc = False
-#
-#     # Ranges of hyperparameters to loop over
-#     hp_ranges = OrderedDict()
-#     hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/concentration']
-#     hp_ranges['pn_norm_post'] = ['None', 'biology']
-#     return config, hp_ranges
-
-def make_datafiles():
-    config = configs.input_ProtoConfig()
-    for i in [20, 40, 60, 80, 100, 120, 140, 160, 200, 500, 1000]:
-        config.n_trueclass = i
-        config.N_CLASS = 20
-        config.relabel = True
-        task.save_proto(config, str(config.n_trueclass) + '_' + str(config.N_CLASS))
-        print('Done: ' + str(i))
-# make_datafiles()
-
-#TODO: push this into experiments
-def why_kc_layer():
+def temp_norm():
     config = configs.FullConfig()
     config.max_epoch = 8
-    config.model = 'full'
-    # config.model = 'normmlp'
 
-    config.NEURONS = []
-    config.kc_dropout = True
-    config.kc_dropout_rate = 0
-    config.direct_glo = True
-    config.initializer_orn2pn = 'constant'
-    config.N_ORN_DUPLICATION = 10
+    config.skip_orn2pn = True
+
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    x = [20, 40, 60, 80, 100, 120, 140, 160, 200, 500, 1000]
-    datasets = ['./datasets/proto/_s' + str(i) + '_20' for i in x]
-    hp_ranges['model'] = ['normmlp', 'full']
-    hp_ranges['data_dir'] = datasets
+    hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/mask']
+    hp_ranges['pn_norm_post'] = ['None', 'biology']
     return config, hp_ranges
 
-# path = './files_temp/relabel_layers'
-# t(temp_oracle(), path, s=0, e=100)
-# sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='model')
-
-def temp():
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 15
-
-    config.replicate_orn_with_tiling = True
-    config.direct_glo = True
-    config.initializer_orn2pn = 'constant'
-    config.kc_dropout = True
-
-    hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [1000, 2500, 5000, 10000, 20000]
-    x = [40, 80, 200, 500, 1000]
-    hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_20' for i in x]
-    return config, hp_ranges
-
-def temp1():
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/200_20'
-    config.max_epoch = 20
-
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
-
-    # config.train_kc_bias = False
-    # config.train_pn2kc = True
-    # config.sparse_pn2kc = False
-    # config.save_every_epoch = True
-    # config.kc_norm_pre = 'batch_norm'
-
-    hp_ranges = OrderedDict()
-    hp_ranges['extra_layer'] = [False, True]
-    return config, hp_ranges
-
-
-def basic():
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 10
-
-    config.N_ORN_DUPLICATION = 10
-    config.replicate_orn_with_tiling = True
-    config.direct_glo = True
-
-    # config.pn_norm_pre = 'batch_norm'
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-    config.initial_pn2kc = .1
-
-    config.save_every_epoch = True
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['dummy'] = [0]
-    return config, hp_ranges
-
-path = './files_temp/movie_kc'
+path = './files_temp/temp'
 shutil.rmtree(path)
-t(basic(), path, s=0, e=100)
-analysis_training.plot_sparsity(path, dynamic_thres=True)
+t(temp_norm(), path, s=0, e=100)
+sa.plot_results(path, x_key='pn_norm_post', y_key='val_acc', loop_key='data_dir')
+
+# def temp_generalization():
+#     config = configs.FullConfig()
+#     config.data_dir = './datasets/proto/standard'
+#     config.batch_size = 100
+#     config.max_epoch = 1500
+#     config.save_epoch_interval = 20
+#     config.save_every_epoch = True
+#     config.pn_norm_pre = 'batch_norm'
+#
+#     config.replicate_orn_with_tiling = False
+#     config.N_ORN_DUPLICATION = 1
+#     config.skip_orn2pn = True
+#
+#     config.sparse_pn2kc = True
+#     config.train_pn2kc = False
+#
+#     hp_ranges = OrderedDict()
+#     x = [100]
+#     hp_ranges['data_dir'] = ['./datasets/proto/small_training_set_' + str(i) for i in x]
+#     hp_ranges['skip_pn2kc'] = [True, False]
+#     return config, hp_ranges
+#
+# path = './files_temp/temp'
+# shutil.rmtree(path)
+# t(temp_generalization(), path, s=0, e=100)
+
+
+
+# analysis_training.plot_sparsity(path, dynamic_thres=True)
 # analysis_training.plot_distribution(path)
 # analysis_training.plot_pn2kc_claw_stats(path, x_key = 'n_trueclass', dynamic_thres=False)
 # analysis_activity.sparseness_activity(path, 'kc_out')
 # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
-# sa.plot_results(path, x_key='extra_layer', y_key='val_acc')
-
+# sa.plot_results(path, x_key='skip_pn2kc', y_key='val_acc', loop_key='N_CLASS')
+# sa.plot_progress(path, legends=['No KC','Fixed KC'])
+# sa.plot_weights(path, var_name='model/layer3/kernel:0', dir_ix=0)

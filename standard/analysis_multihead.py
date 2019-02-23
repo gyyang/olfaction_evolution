@@ -20,9 +20,10 @@ import tools
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 from standard.analysis import _easy_save
 
+mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
-mpl.rcParams['font.size'] = 7
+mpl.rcParams['font.family'] = 'arial'
 
 def main():
     foldername = 'multi_head'

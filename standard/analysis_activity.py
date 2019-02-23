@@ -5,8 +5,10 @@ from tools import nicename
 import standard.analysis as sa
 import os
 import matplotlib as mpl
+mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
 
 def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
     def _image(data, zticks, name, xlabel='', ylabel=''):

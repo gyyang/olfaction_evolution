@@ -26,6 +26,7 @@ import standard.analysis_pn2kc_random as analysis_pn2kc_random
 import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
 import oracle.evaluatewithnoise as evaluatewithnoise
+import matplotlib as mpl
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
@@ -34,6 +35,11 @@ parser.add_argument('-a', '--analyze', help='Analyzing', action='store_false')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
 args = parser.parse_args()
+
+mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
 
 print(args)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
@@ -49,17 +55,18 @@ if args.experiment == 'core':
                    'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_kc_dropout', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
-                   'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization']
+                   'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization',
+                   'kcrole']
 else:
     experiments = args.experiment
 
 
 # #peter specific
-TRAIN = False
-ANALYZE = True
+TRAIN = True
+ANALYZE = False
 is_test = False
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['vary_kc_activity_trainable']
+experiments = ['kcrole']
 
 if 'standard' in experiments:
     # Reproducing most basic findings

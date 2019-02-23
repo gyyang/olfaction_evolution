@@ -64,18 +64,27 @@ def make_combinatorial_dataset():
     config.label_type = 'combinatorial'
     task.save_proto(config, seed=seed, folder_name='combinatorial')
 
+def make_small_training_set_datasets():
+    config = configs.input_ProtoConfig()
+    config.N_CLASS = 100
+    for i in [100, 1000, 10000, 100000, 1000000]:
+        config.n_train = i
+        task.save_proto(config=config, seed=0, folder_name='small_training_set_' + str(i))
+        print('Done small training dataset: ' + str(i))
+
+
 def temp():
     config = configs.input_ProtoConfig()
     task.save_proto(config, seed=seed, folder_name='test')
     print('Done test dataset')
 
 if __name__ == '__main__':
-    make_standard_dataset()
+    # make_standard_dataset()
     # make_relabel_datasets_small()
     # make_relabel_datasets_large()
     # make_concentration_dataset()
     # make_concentration_with_masking_dataset()
     # make_primordial_dataset()
-    # make_mask_dataset()
+    make_mask_dataset()
     # make_combinatorial_dataset()
-
+    # make_small_training_set_datasets()
