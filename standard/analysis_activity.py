@@ -112,7 +112,7 @@ def distribution_activity(save_path, arg):
         _distribution(data, save_path, name= 'dist_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
 
 
-def sparseness_activity(save_path, arg):
+def sparseness_activity(save_path, arg, activity_threshold=0.):
     """Plot the sparseness of activity.
 
     Args:
@@ -138,7 +138,6 @@ def sparseness_activity(save_path, arg):
         plt.xlabel('Neurons')
         plt.ylabel('Odors')
 
-        activity_threshold = 0
         data1 = np.mean(data > activity_threshold, axis=1)
         _distribution(data1, save_path, name= 'spars_' + arg + '_' + str(i),
                       xlabel='Fraction of Active '+name+'s',

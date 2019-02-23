@@ -707,8 +707,13 @@ class FullModel(Model):
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)
-            b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer= bias_initializer)
+
+            if 'equal_kc_bias' in dir(config) and config.equal_kc_bias:
+                b_glo = tf.get_variable('bias', shape=(), dtype=tf.float32,
+                                        initializer=tf.zeros_initializer())
+            else:
+                b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+                                        initializer= bias_initializer)
 
             if config.sparse_pn2kc:
                 if config.skip_orn2pn:
@@ -740,20 +745,30 @@ class FullModel(Model):
         if 'apl' in dir(config) and config.apl:
             if config.skip_pn2kc:
                 raise ValueError('apl can not be used when no KC.')
-            with tf.variable_scope('kc2apl', reuse=tf.AUTO_REUSE):
-                w_kc2apl0 = tf.get_variable(
-                    'kernel', shape=(N_KC, 1), dtype=tf.float32)
-                b_apl = tf.get_variable('bias', shape=(1,), dtype=tf.float32)
-                w_kc2apl = tf.abs(w_kc2apl0)
+            # with tf.variable_scope('kc2apl', reuse=tf.AUTO_REUSE):
+            #     w_kc2apl0 = tf.get_variable(
+            #         'kernel', shape=(N_KC, 1), dtype=tf.float32,
+            #         initializer=tf.constant_initializer(1./N_KC))
+            #     b_apl = tf.get_variable('bias', shape=(1,), dtype=tf.float32)
+            #     w_kc2apl = tf.abs(w_kc2apl0)
+            #
+            #     apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
+            #
+            # with tf.variable_scope('apl2kc', reuse=tf.AUTO_REUSE):
+            #     w_apl2kc0 = tf.get_variable(
+            #         'kernel', shape=(1, N_KC), dtype=tf.float32,
+            #         initializer=tf.constant_initializer(0.1)
+            #     )
+            #     w_apl2kc = - tf.abs(w_apl2kc0)  # inhibitory connections
+            #
+            # kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
 
-                apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
-
-            with tf.variable_scope('apl2kc', reuse=tf.AUTO_REUSE):
-                w_apl2kc0 = tf.get_variable(
-                    'kernel', shape=(1, N_KC), dtype=tf.float32)
-                w_apl2kc = - tf.abs(w_apl2kc0)  # inhibitory connections
-
-            kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
+            with tf.variable_scope('apl', reuse=tf.AUTO_REUSE):
+                # w_apl = tf.get_variable('kernel', shape=(1,), dtype=tf.float32,
+                #                         initializer=tf.constant_initializer(1.))
+                w_apl = 2.0
+                apl_in = tf.abs(w_apl) * tf.reduce_mean(kc, axis=1, keepdims=True)
+                kc = tf.nn.relu(kc_in - apl_in)
 
         if config.kc_dropout:
             kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)

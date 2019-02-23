@@ -73,10 +73,18 @@ def main():
     # v2 = strength_wout2/(strength_wout1+strength_wout2)
 
     xlabel = 'PN Input degree'
-    ylabel = 'Conn. strength to valence'
+    ylabel = 'Conn. to valence'
+    xmin, xmax, ymin, ymax = 0, 15, 0, 3
 
     fig = plt.figure(figsize=(1.5, 1.5))
-    plt.scatter(v1, v2, alpha=0.3)
+    ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
+    ax.scatter(v1, v2, alpha=0.3, marker='.')
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
+    ax.set_xticks([0, 7, 15])
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    _easy_save(figpath, 'scatter')
 
     data = np.stack([v1, v2]).T
     norm_factor = data.mean(axis=0)
@@ -102,6 +110,9 @@ def main():
 
     group0 = np.arange(config.N_KC)[labels==0]
     group1 = np.arange(config.N_KC)[labels==1]
+    
+    print('Group 0 has {:d} neurons'.format(len(group0)))
+    print('Group 1 has {:d} neurons'.format(len(group1)))
 
     fig = plt.figure(figsize=(1.5, 1.5))
     plt.scatter(v1[group0], v2[group0], alpha=0.02)
@@ -110,7 +121,7 @@ def main():
     plt.ylabel(ylabel)
 
 
-    xmin, xmax, ymin, ymax = 0, 15, 0, 3
+    
     X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
     positions = np.stack([X.ravel(), Y.ravel()]).T
 
@@ -185,7 +196,7 @@ def main():
                 [val_model.loss, val_model.acc, val_model.acc2],
                 {val_x_ph: val_x, val_y_ph: val_y})
 
-            return val_acc[1], val_acc2[1]
+            return val_acc, val_acc2
 
     val_accs = list()
     val_acc2s = list()
