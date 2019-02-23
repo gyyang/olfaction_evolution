@@ -798,7 +798,7 @@ class FullModel(Model):
         """
         save_path = self.save_path
         if epoch is not None:
-            save_path = os.path.join(save_path, 'epoch', str(epoch))
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         fname = os.path.join(save_path, 'model.pkl')
@@ -885,6 +885,7 @@ class RNN(Model):
             self._build(x, y, training)
 
         if training:
+            # optimizer = tf.train.GradientDescentOptimizer(config.lr)
             optimizer = tf.train.AdamOptimizer(config.lr)
 
             var_list = tf.trainable_variables()
@@ -945,23 +946,10 @@ class RNN(Model):
             b_out = tf.get_variable('bias', shape=config.N_CLASS, dtype=tf.float32)
             logits = tf.matmul(rnn_output, w_out) + b_out
 
-        # debug
-        # w_rnn = tf.get_variable('kernel_', shape=(N_ORN, NEURONS), dtype=tf.float32)
-        # w_rnn = tf.abs(w_rnn)
-        # b_rnn = tf.get_variable('bias_', shape=NEURONS, dtype=tf.float32)
-        # w_out = tf.get_variable('kernel', shape=(NEURONS, config.N_CLASS), dtype=tf.float32)
-        # b_out = tf.get_variable('bias', shape=config.N_CLASS, dtype=tf.float32)
-        # rnn_output = tf.matmul(x, w_rnn) + b_rnn
-        # rnn_output = tf.nn.relu(rnn_output)
-        # rnn_output = tf.layers.dropout(rnn_output, config.dropout_rate, training=training)
-        # logits = tf.matmul(rnn_output, w_out) + b_out
-
-
         loss = tf.losses.sparse_softmax_cross_entropy(
             labels=y, logits=logits)
         if config.WEIGHT_LOSS:
             loss += config.WEIGHT_ALPHA * tf.reduce_mean(tf.tanh(w_rnn))
-            # loss += config.WEIGHT_ALPHA * tf.reduce_mean(tf.tanh(w_out))
 
         self.loss = loss
         pred = tf.argmax(logits, axis=-1, output_type=tf.int32)

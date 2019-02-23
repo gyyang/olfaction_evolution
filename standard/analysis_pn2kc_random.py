@@ -14,10 +14,11 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 fig_dir = os.path.join(rootpath, 'figures')
 
-THRES = .05
+THRES = .03
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.size'] = 7
+mpl.rcParams['font.family'] = 'arial'
 
 def _shuffle(w_binary, arg):
     '''Shuffles the connections in numpy
@@ -204,10 +205,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
     def _get_similarity(mat):
         similarity_matrix = cosine_similarity(mat)
         diag_mask = ~np.eye(similarity_matrix.shape[0], dtype=bool)
-
-        # method 1
         corrs = similarity_matrix[diag_mask]
-
         average_correlation = np.mean(corrs)
         return average_correlation, similarity_matrix
 

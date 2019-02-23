@@ -21,6 +21,7 @@ from model import SingleLayerModel, FullModel, NormalizedMLP
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
 
 figpath = os.path.join(rootpath, 'figures')
 # figpath = r'C:\Users\Peter\Dropbox\olfaction_evolution\manuscript\plots'
@@ -31,6 +32,7 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
     os.makedirs(path, exist_ok=True)
     figname = os.path.join(path, save_name + str)
     plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
+    print('Figure saved at: ' + figname)
 
     if pdf:
         plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
@@ -75,11 +77,11 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
+        # ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
         if ykey in ['val_acc', 'glo_score', 'or_glo_score', 'combined_glo_score']:
             ax.set_ylim([0, 1.05])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
-        ax.set_xlim([-1, len(log[xkey][0,:])])
+        ax.set_xlim([-1, log[xkey][0,-1]])
 
         figname = '_' + ykey
         if select_dict:
@@ -97,13 +99,13 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
         pass
 
 
-def plot_weights(root_path, var_name = 'w_orn', sort_axis = 1, dir_ix = 0):
+def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
     """
     #TODO: fix code
-    dirs = [os.path.join(root_path, n) for n in os.listdir(root_path)]
+    dirs = [os.path.join(path, n) for n in os.listdir(path)]
     save_path = dirs[dir_ix]
     config = tools.load_config(save_path)
     # Load network at the end of training
@@ -175,7 +177,9 @@ def plot_weights(root_path, var_name = 'w_orn', sort_axis = 1, dir_ix = 0):
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
     plt.axis('tight')
-    _easy_save(root_path, '_' + var_name + '_' + str(dir_ix))
+    var_name = var_name.replace('/','_')
+    var_name = var_name.replace(':','_')
+    _easy_save(path, '_' + var_name + '_' + str(dir_ix))
 
 
     # Plot distribution of various connections

@@ -28,7 +28,7 @@ def plot_weights(weight, xlabel, ylabel, title, vlim):
     plt.axis('tight')
     return fig, im
 
-def ani_frame(weight, xlabel, ylabel, title, vlim = .25):
+def ani_frame(weight, xlabel, ylabel, title, vlim = .25, interval=30, fps = 30):
 
     def update_img(n):
         tmp = weight[n, :, :]
@@ -36,8 +36,8 @@ def ani_frame(weight, xlabel, ylabel, title, vlim = .25):
         return im
 
     fig, im = plot_weights(weight[0, :, :], xlabel, ylabel, title, vlim)
-    ani = animation.FuncAnimation(fig, update_img, weight.shape[0], interval=30)
-    writer = animation.writers['ffmpeg'](fps=30)
+    ani = animation.FuncAnimation(fig, update_img, weight.shape[0], interval=interval)
+    writer = animation.writers['ffmpeg'](fps=fps)
     dpi = 200
     ani.save(title + '.mp4', writer=writer, dpi=dpi)
     return ani
@@ -81,12 +81,29 @@ mpl.rcParams['font.size'] = 14
 # w_orn = w_orn_reshape(w_orn)
 # ani_frame(w_orn, ylabel = 'From ORNs', xlabel = 'to PNs', title= 'ORN-PN connectivity')
 
-path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\movie_kc\000000\weights_over_time.pickle'
-with open(path, 'rb') as handle:
-    mat = pickle.load(handle)
-unzipped = list(zip(*mat))
-w_orn, w_glo = np.stack(unzipped[0],axis=0), np.stack(unzipped[1],axis=0)
-w_glo = w_glo_reshape(w_glo)
-ani_frame(w_glo, ylabel = 'From PNs', xlabel = 'to KCs', title= 'PN-KC connectivity', vlim=.5)
+# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\movie_kc\000000\weights_over_time.pickle'
+# with open(path, 'rb') as handle:
+#     mat = pickle.load(handle)
+# unzipped = list(zip(*mat))
+# w_orn, w_glo = np.stack(unzipped[0],axis=0), np.stack(unzipped[1],axis=0)
+# w_glo = w_glo_reshape(w_glo)
+# ani_frame(w_glo, ylabel = 'From PNs', xlabel = 'to KCs', title= 'PN-KC connectivity', vlim=.5)
 
+## MBON WEIGHTS
+# import os
+# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\movie_generalization'
+# var_name ='model/layer3/kernel:0'
+# dirs = [os.path.join(path, n) for n in os.listdir(path)]
+# for i, dir in enumerate(dirs):
+#     mat_over_time = []
+#     model_dir = os.path.join(dir, 'epoch')
+#     model_dirs = [os.path.join(model_dir, n) for n in os.listdir(model_dir)]
+#     for model_dir in model_dirs:
+#         model_path = os.path.join(model_dir, 'model.pkl')
+#         with open(model_path, 'rb') as f:
+#             var_dict = pickle.load(f)
+#             w_plot = var_dict[var_name]
+#             mat_over_time.append(w_plot)
+#     mat = np.array(mat_over_time)
+#     ani_frame(mat, ylabel = 'from input', xlabel = 'to class neurons', title=str(i), vlim=1, interval=1, fps=5)
 

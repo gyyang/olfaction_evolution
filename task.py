@@ -215,9 +215,12 @@ def _generate_proto_threshold(
         train_odors = rng.uniform(0, max_activation, (n_train, n_orn))
         val_odors = rng.uniform(0, max_activation, (n_val, n_orn))
 
+    if n_proto == n_train:
+        train_odors = prototypes
+
     if realistic_orn_mask:
         print('mask')
-        prototypes = _mask_orn_activation(prototypes)
+        # prototypes = _mask_orn_activation(prototypes)
         train_odors = _mask_orn_activation(train_odors)
         val_odors = _mask_orn_activation(val_odors)
 

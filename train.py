@@ -123,75 +123,76 @@ def train(config, reload=False):
             # Validation
             tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
             res = {name:r for name, r in zip(val_fetch_names, tmp)}
-            
-            print('[*' + '*'*50 + '*]')
-            print('Epoch {:d}'.format(ep))
-            print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, res['loss']))
-            print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, res['acc']))
 
-            log['epoch'].append(ep)
-            log['train_loss'].append(loss)
-            log['train_acc'].append(acc)
-            for key, value in res.items():
-                log['val_' + key].append(value)
+            if ep % config.save_epoch_interval == 0:
+                print('[*' + '*'*50 + '*]')
+                print('Epoch {:d}'.format(ep))
+                print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, res['loss']))
+                print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, res['acc']))
 
-            try:
-                print('Validation accuracy head 2 {:0.2f}'.format(res['acc2']))
-            except KeyError:
-                pass
+                log['epoch'].append(ep)
+                log['train_loss'].append(loss)
+                log['train_acc'].append(acc)
+                for key, value in res.items():
+                    log['val_' + key].append(value)
 
-            if config.model == 'full':
-                if config.receptor_layer:
-                    w_or = sess.run(model.w_or)
-                    or_glo_score, _ = tools.compute_glo_score(
-                        w_or, config.N_ORN, glo_score_mode)
-                    print('OR receptor glo score ' + str(or_glo_score))
-                    log['or_glo_score'].append(or_glo_score)
+                try:
+                    print('Validation accuracy head 2 {:0.2f}'.format(res['acc2']))
+                except KeyError:
+                    pass
 
-                    w_orn = sess.run(model.w_orn)
-                    glo_score, _ = tools.compute_glo_score(
-                        w_orn, config.N_ORN, 'matrix', w_or)
-                    print('Glo score ' + str(glo_score))
-                    log['glo_score'].append(glo_score)
+                if config.model == 'full':
+                    if config.receptor_layer:
+                        w_or = sess.run(model.w_or)
+                        or_glo_score, _ = tools.compute_glo_score(
+                            w_or, config.N_ORN, glo_score_mode)
+                        print('OR receptor glo score ' + str(or_glo_score))
+                        log['or_glo_score'].append(or_glo_score)
 
-                    w_combined = np.matmul(w_or, w_orn)
-                    combined_glo_score, _ = tools.compute_glo_score(
-                        w_combined, config.N_ORN, glo_score_mode)
-                    print('Combined glo score ' + str(combined_glo_score))
-                    log['combined_glo_score'].append(combined_glo_score)
+                        w_orn = sess.run(model.w_orn)
+                        glo_score, _ = tools.compute_glo_score(
+                            w_orn, config.N_ORN, 'matrix', w_or)
+                        print('Glo score ' + str(glo_score))
+                        log['glo_score'].append(glo_score)
 
-                else:
-                    w_orn = sess.run(model.w_orn)
-                    glo_score, _ = tools.compute_glo_score(
-                        w_orn, config.N_ORN, glo_score_mode)
-                    log['glo_score'].append(glo_score)
-                    print('Glo score ' + str(glo_score))
+                        w_combined = np.matmul(w_or, w_orn)
+                        combined_glo_score, _ = tools.compute_glo_score(
+                            w_combined, config.N_ORN, glo_score_mode)
+                        print('Combined glo score ' + str(combined_glo_score))
+                        log['combined_glo_score'].append(combined_glo_score)
 
-                    sim_score, _ = tools.compute_sim_score(
-                        w_orn, config.N_ORN, glo_score_mode)
-                    log['sim_score'].append(sim_score)
-                    print('Sim score ' + str(sim_score))
+                    else:
+                        w_orn = sess.run(model.w_orn)
+                        glo_score, _ = tools.compute_glo_score(
+                            w_orn, config.N_ORN, glo_score_mode)
+                        log['glo_score'].append(glo_score)
+                        print('Glo score ' + str(glo_score))
 
-                    # w_glo = sess.run(model.w_glo)
-                    # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
-                    # log['glo_score_w_glo'].append(glo_score_w_glo, config.N_ORN)
+                        sim_score, _ = tools.compute_sim_score(
+                            w_orn, config.N_ORN, glo_score_mode)
+                        log['sim_score'].append(sim_score)
+                        print('Sim score ' + str(sim_score))
 
-            # Compute condition number
-            # w_glo = sess.run(model.w_glo)
-            # w_orn2kc = np.dot(w_orn, w_glo)
-            # cond = np.linalg.cond(w_orn2kc)
-            # log['cond'].append(cond)
-            # print('Condition number '+ str(cond))
+                        # w_glo = sess.run(model.w_glo)
+                        # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
+                        # log['glo_score_w_glo'].append(glo_score_w_glo, config.N_ORN)
 
-            if ep > 0:
-                time_spent = time.time() - start_time
-                total_time += time_spent
-                print('Time taken {:0.1f}s'.format(total_time))
-                print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
-            start_time = time.time()
+                # Compute condition number
+                # w_glo = sess.run(model.w_glo)
+                # w_orn2kc = np.dot(w_orn, w_glo)
+                # cond = np.linalg.cond(w_orn2kc)
+                # log['cond'].append(cond)
+                # print('Condition number '+ str(cond))
 
-            with open(log_name, 'wb') as f:
-                pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
+                if ep > 0:
+                    time_spent = time.time() - start_time
+                    total_time += time_spent
+                    print('Time taken {:0.1f}s'.format(total_time))
+                    print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
+                start_time = time.time()
+
+                with open(log_name, 'wb') as f:
+                    pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
 
             if 'target_acc' in dir(config) and config.target_acc is not None:
                 if res['acc'] > config.target_acc:
@@ -201,7 +202,7 @@ def train(config, reload=False):
                     break
 
             try:
-                if config.save_every_epoch:
+                if config.save_every_epoch and ep % config.save_epoch_interval == 0:
                     model.save_pickle(ep)
                 # Train
                 for b in range(n_batch-1):

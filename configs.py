@@ -95,6 +95,7 @@ class FullConfig(BaseConfig):
         self.model = 'full'
         self.save_path = './files/test'
         self.save_every_epoch = False
+        self.save_epoch_interval = 1
 
         self.lr = .001  # learning rate
         self.max_epoch = 10
