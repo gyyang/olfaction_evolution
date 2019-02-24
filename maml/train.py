@@ -4,7 +4,7 @@ python main.py --metatrain_iterations=70000 --norm=None --num_samples_per_class=
 import numpy as np
 import tensorflow as tf
 
-from data_generator import DataGenerator
+from dataset import DataGenerator
 from maml import MAML
 from tensorflow.python.platform import flags
 
