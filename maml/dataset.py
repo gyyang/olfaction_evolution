@@ -1,7 +1,9 @@
 """ Code for loading data. """
 import numpy as np
 
-class DataGenerator(object):
+import task
+
+class ReferenceDataGenerator(object):
     """
     Data Generator capable of generating batches of sinusoid or Omniglot data.
     A "class" is considered a class of omniglot digits or a particular sinusoid function.
@@ -35,4 +37,33 @@ class DataGenerator(object):
         for func in range(self.meta_bs):
             inputs[func] = np.random.uniform(-5.0, 5.0, [self.batch_size, 1])
             outputs[func] = amp[func] * np.sin(inputs[func]-phase[func])
+        return inputs, outputs
+
+
+class DataGenerator(object):
+    def __init__(self, batch_size, meta_batch_size):
+        train_x, train_y, val_x, val_y = task.load_data(
+            'proto', '../datasets/proto/standard')
+
+        self.meta_bs = meta_batch_size
+        self.batch_size = batch_size
+
+        self.train_x = train_x
+        self.train_y = train_y
+
+    def generate(self):
+        """Generate one meta-batch.
+
+        Returns:
+            inputs: array, (meta_batch_size, n_samples_per_episode, dim_input)
+            outputs: array, (meta_batch_size, n_samples_per_episode, dim_output)
+        """
+
+        inputs = np.zeros([self.meta_bs, self.batch_size, self.train_x.shape[-1]])
+        outputs = np.zeros([self.meta_bs, self.batch_size])
+
+        for func in range(self.meta_bs):
+            # TODO: This is temporary, just to make the network run
+            inputs[func] = self.train_x[:self.batch_size, :]
+            outputs[func] = self.train_y[:self.batch_size, :]
         return inputs, outputs
