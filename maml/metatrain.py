@@ -1,12 +1,20 @@
 """
 python main.py --metatrain_iterations=70000 --norm=None --num_samples_per_class=10
 """
+import os
+import sys
+
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.platform import flags
 
+# rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
+
+import configs
+import tools
 from dataset import DataGenerator
 from maml import MAML
-from tensorflow.python.platform import flags
 
 FLAGS = flags.FLAGS
 
@@ -19,20 +27,22 @@ flags.DEFINE_float('update_lr', 1e-3, 'step size alpha for inner gradient update
 flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
 
 ## Model options
-flags.DEFINE_string('norm', 'batch_norm', 'batch_norm, layer_norm, or None')
+flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
 
 
-def main():
+def train(config):
     batch_size = FLAGS.num_samples_per_class  # for classification should multiply by # classes
     data_generator = DataGenerator(
         batch_size=batch_size*2,
         meta_batch_size=FLAGS.meta_batch_size)
 
-    dim_output = data_generator.dim_output
-    dim_input = data_generator.dim_input
+    # Merge model config with config from dataset
+    dataset_config = tools.load_config(config.data_dir)
+    dataset_config.update(config)
+    config = dataset_config
 
-    model = MAML(dim_input, dim_output)
+    model = MAML(config)
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
@@ -67,6 +77,10 @@ def main():
                     np.mean(postlosses))
                 print(print_str)
                 prelosses, postlosses = [], []
+
+def main():
+    config = configs.FullConfig()
+    train(config)
 
 if __name__ == "__main__":
     main()

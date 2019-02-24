@@ -28,18 +28,22 @@ def mse(pred, label):
     return tf.reduce_mean(tf.square(pred-label))
 
 
+def xent(pred, label):
+    return tf.losses.sparse_softmax_cross_entropy(labels=label, logits=pred)
+
+
 class MAML:
-    def __init__(self, dim_input=1, dim_output=1):
+    def __init__(self, config):
         """MAML model."""
-        self.model = Model(dim_input=dim_input, dim_output=dim_output)
-        self.loss_func = mse
+        self.model = Model(config)
+        self.loss_func = xent
 
         self._build()
 
     def _build(self):
         # a: training data for inner gradient, b: test data for meta gradient
         self.input = tf.placeholder(tf.float32) # (meta_batch_size, batch_size, dim_inputs)
-        self.label = tf.placeholder(tf.float32) # (meta_batch_size, batch_size, dim_outputs)
+        self.label = tf.placeholder(tf.int32) # (meta_batch_size, batch_size, dim_outputs)
 
         self.inputa, self.inputb = tf.split(self.input, 2, axis=1)
         self.labela, self.labelb = tf.split(self.label, 2, axis=1)
@@ -107,9 +111,9 @@ class MAML:
 
 
 class Model():
-    def __init__(self, dim_input=1, dim_output=1):
-        self.dim_input = dim_input
-        self.dim_output = dim_output
+    def __init__(self, config):
+        self.dim_input = config.N_ORN
+        self.dim_output = config.N_CLASS
         self.dim_hidden = [40, 40]
 
     def build_weights(self):

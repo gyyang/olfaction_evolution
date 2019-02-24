@@ -43,7 +43,7 @@ class ReferenceDataGenerator(object):
 class DataGenerator(object):
     def __init__(self, batch_size, meta_batch_size):
         train_x, train_y, val_x, val_y = task.load_data(
-            'proto', '../datasets/proto/standard')
+            'proto', './datasets/proto/standard')
 
         self.meta_bs = meta_batch_size
         self.batch_size = batch_size
@@ -65,5 +65,5 @@ class DataGenerator(object):
         for func in range(self.meta_bs):
             # TODO: This is temporary, just to make the network run
             inputs[func] = self.train_x[:self.batch_size, :]
-            outputs[func] = self.train_y[:self.batch_size, :]
+            outputs[func] = self.train_y[:self.batch_size]
         return inputs, outputs
