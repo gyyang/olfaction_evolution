@@ -67,19 +67,19 @@ def train(config):
             input_tensors = [model.metatrain_op]
 
             if (itr % SUMMARY_INTERVAL == 0 or itr % PRINT_INTERVAL == 0):
-                input_tensors.extend([model.total_loss1, model.total_loss2])
+                input_tensors.extend([model.total_loss1, model.total_loss2,
+                                      model.total_acc1, model.total_acc2])
 
             result = sess.run(input_tensors)
 
-            if itr % SUMMARY_INTERVAL == 0:
-                prelosses.append(result[-2])
-                postlosses.append(result[-1])
+            # if itr % SUMMARY_INTERVAL == 0:
+            #     prelosses.append(result[-2])
+            #     postlosses.append(result[-1])
 
             if (itr != 0) and itr % PRINT_INTERVAL == 0:
-                print_str = 'Iteration ' + str(itr)
-                print_str += ': ' + str(np.mean(prelosses)) + ', ' + str(
-                    np.mean(postlosses))
-                print(print_str)
+                print('Iteration ' + str(itr))
+                print('Pre loss {:0.4f}  acc {:0.2f}'.format(result[-4], result[-2]))
+                print('Post loss {:0.4f}  acc {:0.2f}'.format(result[-3], result[-1]))
                 prelosses, postlosses = [], []
 
 def main():

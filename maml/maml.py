@@ -81,7 +81,14 @@ class MAML:
                 task_outputb = self.model.build(inputb, fast_weights, reuse=True)
                 task_lossb = self.loss_func(task_outputb, labelb)
 
-                return [task_outputa, task_outputb, task_lossa, task_lossb]
+                # Compute accuracy
+                task_accuracya = tf.reduce_mean(tf.to_float(tf.equal(
+                    tf.argmax(task_outputa, 1), tf.argmax(labela, 1))))
+                task_accuracyb = tf.reduce_mean(tf.to_float(tf.equal(
+                    tf.argmax(task_outputb, 1), tf.argmax(labelb, 1))))
+
+                return [task_outputa, task_outputb, task_lossa, task_lossb,
+                        task_accuracya, task_accuracyb]
 
             if FLAGS.norm is not 'None':
                 # to initialize the batch norm vars, might want to combine this, and not run idx 0 twice.
@@ -90,16 +97,18 @@ class MAML:
             # do metalearn for each meta-example in the meta-batch
             # self.inputa has shape (meta_batch_size, batch_size, dim_input)
             # do metalearn on (i, batch_size, dim_input) for i in range(meta_batch_size)
-            outputas, outputbs, lossesa, lossesb = tf.map_fn(
+            outputas, outputbs, lossesa, lossesb, acca, accb = tf.map_fn(
                 task_metalearn,
                 elems=(self.inputa, self.inputb, self.labela, self.labelb),
-                dtype=[tf.float32, tf.float32, tf.float32, tf.float32],
+                dtype=[tf.float32]*6,
                 parallel_iterations=FLAGS.meta_batch_size
             )
 
         ## Performance & Optimization
         self.total_loss1 = tf.reduce_mean(lossesa)
         self.total_loss2 = tf.reduce_mean(lossesb)
+        self.total_acc1 = tf.reduce_mean(acca)
+        self.total_acc2 = tf.reduce_mean(accb)
         # after the map_fn
         self.outputas, self.outputbs = outputas, outputbs
 
