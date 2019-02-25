@@ -1,16 +1,29 @@
 """ Code for loading data. """
+import os
+import shutil
+
 import numpy as np
 
+import tools
+from configs import input_ProtoConfig
 import task
 
 
 class DataGenerator(object):
-    def __init__(self, batch_size, meta_batch_size):
+    def __init__(
+            self,
+            batch_size,
+            meta_batch_size,
+            num_samples_per_class=1,
+            num_class=1,
+    ):
         train_x, train_y, val_x, val_y = task.load_data(
             'proto', './datasets/proto/standard')
 
         self.meta_bs = meta_batch_size
         self.batch_size = batch_size
+        self.num_samples_per_class = num_samples_per_class
+        self.num_class = num_class
 
         self.train_x = train_x
         self.train_y = train_y
@@ -28,8 +41,8 @@ class DataGenerator(object):
             outputs: array, (meta_batch_size, n_samples_per_class, dim_output)
         """
         # TODO: don't manually set here
-        n_sample_per_class = 5
-        n_class_per_batch = 5
+        n_sample_per_class = self.num_samples_per_class
+        n_class_per_batch = self.num_class
         n_valence = 3
         assert n_sample_per_class * n_class_per_batch * 2 == self.batch_size
 
@@ -56,19 +69,15 @@ class DataGenerator(object):
         return inputs, outputs
 
 
-import os
-import shutil
-
-import tools
-from configs import input_ProtoConfig
-
-
 def _generate_meta_proto():
-    num_samples_per_class = 5
-    num_class = 5
+    num_samples_per_class = 20
+    num_class = 2
     data_generator = DataGenerator(
         batch_size=num_samples_per_class * num_class * 2,  # 5 is # classes
-        meta_batch_size=1000*32)
+        meta_batch_size=1000*32,
+        num_samples_per_class=num_samples_per_class,
+        num_class=num_class
+    )
     inputs, outputs = data_generator.generate()
     return inputs, outputs
 
