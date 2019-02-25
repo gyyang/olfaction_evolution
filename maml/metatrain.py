@@ -13,7 +13,7 @@ from tensorflow.python.platform import flags
 
 import configs
 import tools
-from dataset import DataGenerator
+from dataset import load_data
 from maml import MAML
 
 FLAGS = flags.FLAGS
@@ -31,26 +31,45 @@ flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
 
 
+def make_input(x, y, batch_size):
+    data = tf.data.Dataset.from_tensor_slices((x, y))
+    data = data.shuffle(int(1E6))
+    # Making sure the shape is fully defined
+    try:
+        data = data.batch(tf.cast(batch_size, tf.int64), drop_remainder=True)
+    except TypeError:
+        data = data.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
+    # data = data.batch(tf.cast(batch_size, tf.int64))
+    data = data.repeat()
+    train_iter = data.make_initializable_iterator()
+    next_element = train_iter.get_next()
+    return train_iter, next_element
+
+
 def train(config):
-    data_generator = DataGenerator(
-        batch_size=FLAGS.num_samples_per_class*5*2,  # 5 is # classes
-        meta_batch_size=FLAGS.meta_batch_size)
+    tf.reset_default_graph()
 
     # Merge model config with config from dataset
     dataset_config = tools.load_config(config.data_dir)
     dataset_config.update(config)
     config = dataset_config
 
-    input = tf.placeholder(tf.float32)  # (meta_batch_size, batch_size, dim_inputs)
-    label = tf.placeholder(tf.float32)  # (meta_batch_size, batch_size, dim_outputs)
+    train_x, train_y = load_data(None, './datasets/proto/meta_proto')
 
-    model = MAML(input, label, config)
+    # Build train model
+    train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
+    train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)
+    train_iter, next_element = make_input(
+        train_x_ph, train_y_ph, FLAGS.meta_batch_size)
+
+    model = MAML(next_element[0], next_element[1], config)
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
-        tf.global_variables_initializer().run()
-        tf.train.start_queue_runners()
+        sess.run(tf.global_variables_initializer())
+        sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
+                                                    train_y_ph: train_y})
 
         SUMMARY_INTERVAL = 100
         PRINT_INTERVAL = 1000
@@ -59,15 +78,12 @@ def train(config):
         prelosses, postlosses = [], []
 
         for itr in range(FLAGS.metatrain_iterations):
-            batch_x, batch_y = data_generator.generate()
-            feed_dict = {input: batch_x, label: batch_y}
-
             input_tensors = [model.metatrain_op]
 
             if (itr % SUMMARY_INTERVAL == 0 or itr % PRINT_INTERVAL == 0):
                 input_tensors.extend([model.total_loss1, model.total_loss2])
 
-            result = sess.run(input_tensors, feed_dict)
+            result = sess.run(input_tensors)
 
             if itr % SUMMARY_INTERVAL == 0:
                 prelosses.append(result[-2])

@@ -54,3 +54,56 @@ class DataGenerator(object):
                     j += n_sample_per_class
 
         return inputs, outputs
+
+
+import os
+import shutil
+
+import tools
+from configs import input_ProtoConfig
+
+
+def _generate_meta_proto():
+    num_samples_per_class = 5
+    num_class = 5
+    data_generator = DataGenerator(
+        batch_size=num_samples_per_class * num_class * 2,  # 5 is # classes
+        meta_batch_size=1000*32)
+    inputs, outputs = data_generator.generate()
+    return inputs, outputs
+
+
+def save_proto(config=None, seed=0, folder_name=None):
+    """Save dataset in numpy format."""
+
+    if config is None:
+        config = input_ProtoConfig()
+
+    # make and save data
+    train_x, train_y = _generate_meta_proto()
+
+    folder_path = os.path.join(config.path, folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    else:
+        shutil.rmtree(folder_path)
+        os.makedirs(folder_path)
+
+    vars = [train_x.astype(np.float32), train_y.astype(np.int32)]
+    varnames = ['train_x', 'train_y']
+    for result, name in zip(vars, varnames):
+        np.save(os.path.join(folder_path, name), result)
+
+    #save parameters
+    tools.save_config(config, folder_path)
+    return folder_path
+
+
+def load_data(dataset, data_dir):
+    """Load dataset."""
+    names = ['train_x', 'train_y']
+    return [np.load(os.path.join(data_dir, name + '.npy')) for name in names]
+
+
+if __name__ == '__main__':
+    save_proto(folder_name='meta_proto')
