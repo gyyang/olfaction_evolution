@@ -29,7 +29,7 @@ def mse(pred, label):
 
 
 def xent(pred, label):
-    return tf.losses.sparse_softmax_cross_entropy(labels=label, logits=pred)
+    return tf.losses.softmax_cross_entropy(onehot_labels=label, logits=pred)
 
 
 class MAML:
@@ -43,7 +43,7 @@ class MAML:
     def _build(self):
         # a: training data for inner gradient, b: test data for meta gradient
         self.input = tf.placeholder(tf.float32) # (meta_batch_size, batch_size, dim_inputs)
-        self.label = tf.placeholder(tf.int32) # (meta_batch_size, batch_size, dim_outputs)
+        self.label = tf.placeholder(tf.float32) # (meta_batch_size, batch_size, dim_outputs)
 
         self.inputa, self.inputb = tf.split(self.input, 2, axis=1)
         self.labela, self.labelb = tf.split(self.label, 2, axis=1)
@@ -115,6 +115,7 @@ class Model():
         self.config = config
 
     def build_weights(self):
+        n_valence = 3  # TODO: fix this
         config = self.config
         weights = {}
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
@@ -127,10 +128,10 @@ class Model():
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
             w_output = tf.get_variable(
-                'kernel', shape=(config.N_KC, config.N_CLASS),
+                'kernel', shape=(config.N_KC, n_valence),
                 dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
             b_output = tf.get_variable(
-                'bias', shape=(config.N_CLASS,), dtype=tf.float32,
+                'bias', shape=(n_valence,), dtype=tf.float32,
                 initializer=tf.zeros_initializer())
 
         weights['w_kc'] = w_kc

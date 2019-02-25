@@ -79,6 +79,7 @@ def train(config):
 
 def main():
     config = configs.FullConfig()
+    config.N_KC = 100
     train(config)
 
 if __name__ == "__main__":

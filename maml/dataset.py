@@ -66,17 +66,18 @@ class DataGenerator(object):
         # TODO: don't manually set here
         n_sample_per_class = 5
         n_class_per_batch = 5
+        n_valence = 3
         assert n_sample_per_class * n_class_per_batch * 2 == self.batch_size
 
         inputs = np.zeros([self.meta_bs, self.batch_size, self.train_x.shape[-1]])
-        outputs = np.zeros([self.meta_bs, self.batch_size])
+        outputs = np.zeros([self.meta_bs, self.batch_size, n_valence])
 
         for i in range(self.meta_bs):
             # randomly select several classes to train on
             classes = np.random.choice(
                 self.unique_y, size=n_class_per_batch, replace=False)
             # relabel them
-            new_labels = np.random.randint(0, 3, len(classes))
+            new_labels = np.random.randint(0, n_valence, len(classes))
 
             # for each class, sample some odors
             j = 0
@@ -85,7 +86,7 @@ class DataGenerator(object):
                     ind = np.random.choice(
                         self.ind_dict[c], n_sample_per_class, replace=False)
                     inputs[i, j:j+n_sample_per_class, :] = self.train_x[ind, :]
-                    outputs[i, j:j+n_sample_per_class] = l
+                    outputs[i, j:j+n_sample_per_class, l] = 1.0  # one-hot
                     j += n_sample_per_class
 
         return inputs, outputs
