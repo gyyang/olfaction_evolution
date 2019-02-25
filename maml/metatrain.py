@@ -32,9 +32,8 @@ flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in
 
 
 def train(config):
-    batch_size = FLAGS.num_samples_per_class  # for classification should multiply by # classes
     data_generator = DataGenerator(
-        batch_size=batch_size*2,
+        batch_size=FLAGS.num_samples_per_class*5*2,  # 5 is # classes
         meta_batch_size=FLAGS.meta_batch_size)
 
     # Merge model config with config from dataset
