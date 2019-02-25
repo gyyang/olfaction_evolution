@@ -112,33 +112,38 @@ class MAML:
 
 class Model():
     def __init__(self, config):
-        self.dim_input = config.N_ORN
-        self.dim_output = config.N_CLASS
-        self.dim_hidden = [40, 40]
+        self.config = config
 
     def build_weights(self):
-        n_layer = len(self.dim_hidden)
+        config = self.config
         weights = {}
-        weights['w1'] = tf.Variable(tf.truncated_normal([self.dim_input, self.dim_hidden[0]], stddev=0.01))
-        weights['b1'] = tf.Variable(tf.zeros([self.dim_hidden[0]]))
-        for i in range(1,n_layer):
-            weights['w'+str(i+1)] = tf.Variable(
-                tf.truncated_normal([self.dim_hidden[i-1], self.dim_hidden[i]], stddev=0.01))
-            weights['b'+str(i+1)] = tf.Variable(tf.zeros([self.dim_hidden[i]]))
-        weights['w'+str(n_layer+1)] = tf.Variable(
-            tf.truncated_normal([self.dim_hidden[-1], self.dim_output], stddev=0.01))
-        weights['b'+str(n_layer+1)] = tf.Variable(tf.zeros([self.dim_output]))
+        with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+            w2 = tf.get_variable(
+                'kernel', shape=(config.N_ORN, config.N_KC),
+                dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
+            w_kc = tf.abs(w2)
+            b_kc = tf.get_variable('bias', shape=(config.N_KC,), dtype=tf.float32,
+                                   initializer=tf.zeros_initializer())
+
+        with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
+            w_output = tf.get_variable(
+                'kernel', shape=(config.N_KC, config.N_CLASS),
+                dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
+            b_output = tf.get_variable(
+                'bias', shape=(config.N_CLASS,), dtype=tf.float32,
+                initializer=tf.zeros_initializer())
+
+        weights['w_kc'] = w_kc
+        weights['b_kc'] = b_kc
+        weights['w_output'] = w_output
+        weights['b_output'] = b_output
         return weights
 
     def build(self, inp, weights, reuse=False):
-        n_layer = len(self.dim_hidden)
-        hidden = tf.matmul(inp, weights['w1']) + weights['b1']
-        hidden = normalize(hidden, activation=tf.nn.relu, reuse=reuse, scope='0')
-        for i in range(1, n_layer):
-            hidden = tf.matmul(hidden, weights['w'+str(i+1)]) + weights['b'+str(i+1)]
-            hidden = normalize(hidden, activation=tf.nn.relu, reuse=reuse, scope=str(i+1))
-        hidden = tf.matmul(hidden, weights['w'+str(n_layer+1)]) + weights['b'+str(n_layer+1)]
-        return hidden
+        hidden = tf.nn.relu(tf.matmul(inp, weights['w_kc']) + weights['b_kc'])
+        output = tf.nn.relu(tf.matmul(hidden, weights['w_output']) +
+                            weights['b_output'])
+        return output
 
 
 
