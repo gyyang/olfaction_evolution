@@ -41,7 +41,10 @@ def train(config):
     dataset_config.update(config)
     config = dataset_config
 
-    model = MAML(config)
+    input = tf.placeholder(tf.float32)  # (meta_batch_size, batch_size, dim_inputs)
+    label = tf.placeholder(tf.float32)  # (meta_batch_size, batch_size, dim_outputs)
+
+    model = MAML(input, label, config)
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
@@ -57,7 +60,7 @@ def train(config):
 
         for itr in range(FLAGS.metatrain_iterations):
             batch_x, batch_y = data_generator.generate()
-            feed_dict = {model.input: batch_x, model.label: batch_y}
+            feed_dict = {input: batch_x, label: batch_y}
 
             input_tensors = [model.metatrain_op]
 

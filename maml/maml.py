@@ -33,20 +33,18 @@ def xent(pred, label):
 
 
 class MAML:
-    def __init__(self, config):
+    def __init__(self, x, y, config):
         """MAML model."""
         self.model = Model(config)
         self.loss_func = xent
 
-        self._build()
+        self._build(x, y)
 
-    def _build(self):
+    def _build(self, x, y):
         # a: training data for inner gradient, b: test data for meta gradient
-        self.input = tf.placeholder(tf.float32) # (meta_batch_size, batch_size, dim_inputs)
-        self.label = tf.placeholder(tf.float32) # (meta_batch_size, batch_size, dim_outputs)
 
-        self.inputa, self.inputb = tf.split(self.input, 2, axis=1)
-        self.labela, self.labelb = tf.split(self.label, 2, axis=1)
+        self.inputa, self.inputb = tf.split(x, 2, axis=1)
+        self.labela, self.labelb = tf.split(y, 2, axis=1)
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE) as training_scope:
             # Define the weights
