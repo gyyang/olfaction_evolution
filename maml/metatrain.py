@@ -11,6 +11,7 @@ from tensorflow.python.platform import flags
 # rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
 
+from train import make_input
 import configs
 import tools
 from dataset import load_data
@@ -29,21 +30,6 @@ flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during 
 ## Model options
 flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
-
-
-def make_input(x, y, batch_size):
-    data = tf.data.Dataset.from_tensor_slices((x, y))
-    data = data.shuffle(int(1E6))
-    # Making sure the shape is fully defined
-    try:
-        data = data.batch(tf.cast(batch_size, tf.int64), drop_remainder=True)
-    except TypeError:
-        data = data.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
-    # data = data.batch(tf.cast(batch_size, tf.int64))
-    data = data.repeat()
-    train_iter = data.make_initializable_iterator()
-    next_element = train_iter.get_next()
-    return train_iter, next_element
 
 
 def train(config):
@@ -98,7 +84,7 @@ def train(config):
 
 def main():
     config = configs.FullConfig()
-    config.N_KC = 100
+    config.N_KC = 2500
     train(config)
 
 if __name__ == "__main__":
