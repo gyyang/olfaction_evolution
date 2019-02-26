@@ -81,10 +81,14 @@ def train(config):
                 print('Pre loss {:0.4f}  acc {:0.2f}'.format(result[-4], result[-2]))
                 print('Post loss {:0.4f}  acc {:0.2f}'.format(result[-3], result[-1]))
                 prelosses, postlosses = [], []
+                model.save_pickle()
+
+        model.save_pickle()
 
 def main():
     config = configs.FullConfig()
     config.N_KC = 2500
+    config.save_path = './files/tmp_metatrain/0'
     train(config)
 
 if __name__ == "__main__":

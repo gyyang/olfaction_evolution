@@ -3,10 +3,15 @@
 Adpated from Chelsea Finn's code
 """
 from __future__ import print_function
-import tensorflow as tf
 
+import os
+import pickle
+
+import tensorflow as tf
 from tensorflow.contrib.layers.python import layers as tf_layers
 from tensorflow.python.platform import flags
+
+from model import Model
 
 FLAGS = flags.FLAGS
 
@@ -35,8 +40,9 @@ def xent(pred, label):
 class MAML:
     def __init__(self, x, y, config):
         """MAML model."""
-        self.model = Model(config)
+        self.model = PNKCModel(config)
         self.loss_func = xent
+        self.save_pickle = self.model.save_pickle
 
         self._build(x, y)
 
@@ -117,9 +123,10 @@ class MAML:
         self.metatrain_op = optimizer.apply_gradients(gvs)
 
 
-class Model():
+class PNKCModel(Model):
     def __init__(self, config):
         self.config = config
+        super(PNKCModel, self).__init__(self.config.save_path)
 
     def build_weights(self):
         n_valence = 3  # TODO: fix this
@@ -145,6 +152,7 @@ class Model():
         weights['b_kc'] = b_kc
         weights['w_output'] = w_output
         weights['b_output'] = b_output
+        self.weights = weights
         return weights
 
     def build(self, inp, weights, reuse=False):
@@ -152,6 +160,25 @@ class Model():
         output = tf.nn.relu(tf.matmul(hidden, weights['w_output']) +
                             weights['b_output'])
         return output
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, 'model.pkl')
+
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        var_dict['w_glo'] = sess.run(self.weights['w_kc'])
+        with open(fname, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Model weights saved in path: %s" % save_path)
 
 
 
