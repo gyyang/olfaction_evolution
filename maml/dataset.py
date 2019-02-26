@@ -98,7 +98,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         shutil.rmtree(folder_path)
         os.makedirs(folder_path)
 
-    vars = [train_x.astype(np.float32), train_y.astype(np.int32)]
+    vars = [train_x.astype(np.float32), train_y.astype(np.float32)]
     varnames = ['train_x', 'train_y']
     for result, name in zip(vars, varnames):
         np.save(os.path.join(folder_path, name), result)
