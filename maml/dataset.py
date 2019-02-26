@@ -16,6 +16,7 @@ class DataGenerator(object):
             meta_batch_size,
             num_samples_per_class=1,
             num_class=1,
+            dim_output=2,
     ):
         train_x, train_y, val_x, val_y = task.load_data(
             'proto', './datasets/proto/standard')
@@ -24,6 +25,7 @@ class DataGenerator(object):
         self.batch_size = batch_size
         self.num_samples_per_class = num_samples_per_class
         self.num_class = num_class
+        self.dim_output = dim_output
 
         self.train_x = train_x
         self.train_y = train_y
@@ -40,21 +42,20 @@ class DataGenerator(object):
             inputs: array, (meta_batch_size, n_samples_per_class, dim_input)
             outputs: array, (meta_batch_size, n_samples_per_class, dim_output)
         """
-        # TODO: don't manually set here
         n_sample_per_class = self.num_samples_per_class
         n_class_per_batch = self.num_class
-        n_valence = 3
         assert n_sample_per_class * n_class_per_batch * 2 == self.batch_size
 
         inputs = np.zeros([self.meta_bs, self.batch_size, self.train_x.shape[-1]])
-        outputs = np.zeros([self.meta_bs, self.batch_size, n_valence])
+        outputs = np.zeros([self.meta_bs, self.batch_size, self.dim_output])
 
         for i in range(self.meta_bs):
             # randomly select several classes to train on
             classes = np.random.choice(
                 self.unique_y, size=n_class_per_batch, replace=False)
             # relabel them
-            new_labels = np.random.randint(0, n_valence, len(classes))
+            # new_labels = np.random.randint(0, n_valence, len(classes))
+            new_labels = [0, 1]
 
             # for each class, sample some odors
             j = 0
@@ -76,7 +77,8 @@ def _generate_meta_proto():
         batch_size=num_samples_per_class * num_class * 2,  # 5 is # classes
         meta_batch_size=1000*32,
         num_samples_per_class=num_samples_per_class,
-        num_class=num_class
+        num_class=num_class,
+        dim_output=2,
     )
     inputs, outputs = data_generator.generate()
     return inputs, outputs

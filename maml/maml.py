@@ -42,6 +42,7 @@ class MAML:
         """MAML model."""
         self.model = PNKCModel(config)
         self.loss_func = xent
+        # self.loss_func = mse
         self.save_pickle = self.model.save_pickle
 
         self._build(x, y)
@@ -70,6 +71,9 @@ class MAML:
 
                 task_outputa = self.model.build(inputa, weights, reuse=reuse)  # only reuse on the first iter
                 task_lossa = self.loss_func(task_outputa, labela)
+                # Compute accuracy
+                task_accuracya = tf.reduce_mean(tf.to_float(tf.equal(
+                    tf.argmax(task_outputa, 1), tf.argmax(labela, 1))))
 
                 grads = tf.gradients(task_lossa, list(weights.values()))
                 if FLAGS.stop_grad:
@@ -86,15 +90,19 @@ class MAML:
                 # using an independent set of input/label
                 task_outputb = self.model.build(inputb, fast_weights, reuse=True)
                 task_lossb = self.loss_func(task_outputb, labelb)
-
-                # Compute accuracy
-                task_accuracya = tf.reduce_mean(tf.to_float(tf.equal(
-                    tf.argmax(task_outputa, 1), tf.argmax(labela, 1))))
                 task_accuracyb = tf.reduce_mean(tf.to_float(tf.equal(
                     tf.argmax(task_outputb, 1), tf.argmax(labelb, 1))))
 
-                return [task_outputa, task_outputb, task_lossa, task_lossb,
-                        task_accuracya, task_accuracyb]
+                # Compute loss/acc using new weights and inputa
+                task_outputc = self.model.build(inputa, fast_weights,
+                                                reuse=True)
+                task_lossc = self.loss_func(task_outputc, labela)
+                task_accuracyc = tf.reduce_mean(tf.to_float(tf.equal(
+                    tf.argmax(task_outputc, 1), tf.argmax(labela, 1))))
+
+                return [task_outputa, task_outputb, task_outputc,
+                        task_lossa, task_lossb, task_lossc,
+                        task_accuracya, task_accuracyb, task_accuracyc]
 
             if FLAGS.norm is not 'None':
                 # to initialize the batch norm vars, might want to combine this, and not run idx 0 twice.
@@ -103,20 +111,26 @@ class MAML:
             # do metalearn for each meta-example in the meta-batch
             # self.inputa has shape (meta_batch_size, batch_size, dim_input)
             # do metalearn on (i, batch_size, dim_input) for i in range(meta_batch_size)
-            outputas, outputbs, lossesa, lossesb, acca, accb = tf.map_fn(
+            results = tf.map_fn(
                 task_metalearn,
                 elems=(self.inputa, self.inputb, self.labela, self.labelb),
-                dtype=[tf.float32]*6,
+                dtype=[tf.float32]*9,
                 parallel_iterations=FLAGS.meta_batch_size
             )
+
+            outputas, outputbs, outputcs = results[:3]
+            lossesa, lossesb, lossesc = results[3:6]
+            acca, accb, accc = results[6:]
 
         ## Performance & Optimization
         self.total_loss1 = tf.reduce_mean(lossesa)
         self.total_loss2 = tf.reduce_mean(lossesb)
+        self.total_loss3 = tf.reduce_mean(lossesc)
         self.total_acc1 = tf.reduce_mean(acca)
         self.total_acc2 = tf.reduce_mean(accb)
+        self.total_acc3 = tf.reduce_mean(accc)
         # after the map_fn
-        self.outputas, self.outputbs = outputas, outputbs
+        self.outputas, self.outputbs, self.outputcs = outputas, outputbs, outputcs
 
         optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
         self.gvs = gvs = optimizer.compute_gradients(self.total_loss2)
@@ -129,14 +143,17 @@ class PNKCModel(Model):
         super(PNKCModel, self).__init__(self.config.save_path)
 
     def build_weights(self):
-        n_valence = 3  # TODO: fix this
+        n_valence = self.config.n_class_valence
         config = self.config
         weights = {}
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             w2 = tf.get_variable(
                 'kernel', shape=(config.N_ORN, config.N_KC),
                 dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
-            w_kc = tf.abs(w2)
+            if config.sign_constraint_pn2kc:
+                w_kc = tf.abs(w2)
+            else:
+                w_kc = w2
             b_kc = tf.get_variable('bias', shape=(config.N_KC,), dtype=tf.float32,
                                    initializer=tf.zeros_initializer())
 
@@ -174,8 +191,12 @@ class PNKCModel(Model):
         fname = os.path.join(save_path, 'model.pkl')
 
         sess = tf.get_default_session()
-        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
-        var_dict['w_glo'] = sess.run(self.weights['w_kc'])
+        var_dict = dict()
+        # var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        for v in ['w_kc', 'b_kc', 'w_output', 'b_output']:
+            var_dict[v] = sess.run(self.weights[v])
+        # var_dict['w_glo'] = sess.run(self.weights['w_kc'])
+        # var_dict['w_glo'] = sess.run(self.weights['w_kc'])
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)

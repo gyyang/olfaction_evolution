@@ -41,7 +41,6 @@ def train(config):
     config = dataset_config
 
     train_x, train_y = load_data(None, './datasets/proto/meta_proto')
-
     # Build train model
     train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
     train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)
@@ -57,7 +56,6 @@ def train(config):
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
 
-        SUMMARY_INTERVAL = 100
         PRINT_INTERVAL = 1000
 
         print('Done initializing, starting training.')
@@ -66,28 +64,40 @@ def train(config):
         for itr in range(FLAGS.metatrain_iterations):
             input_tensors = [model.metatrain_op]
 
-            if (itr % SUMMARY_INTERVAL == 0 or itr % PRINT_INTERVAL == 0):
-                input_tensors.extend([model.total_loss1, model.total_loss2,
-                                      model.total_acc1, model.total_acc2])
+            if itr % PRINT_INTERVAL == 0:
+                input_tensors.extend(
+                    [model.total_loss1, model.total_loss2, model.total_loss3,
+                     model.total_acc1, model.total_acc2, model.total_acc3])
 
-            result = sess.run(input_tensors)
+            try:
+                res = sess.run(input_tensors)
+            except KeyboardInterrupt:
+                print('Training interrupted by users')
+                break
 
             # if itr % SUMMARY_INTERVAL == 0:
             #     prelosses.append(result[-2])
             #     postlosses.append(result[-1])
 
-            if (itr != 0) and itr % PRINT_INTERVAL == 0:
+            if itr % PRINT_INTERVAL == 0:
                 print('Iteration ' + str(itr))
-                print('Pre loss {:0.4f}  acc {:0.2f}'.format(result[-4], result[-2]))
-                print('Post loss {:0.4f}  acc {:0.2f}'.format(result[-3], result[-1]))
+                print('Pre loss {:0.4f}  acc {:0.2f}'.format(res[1], res[4]))
+                print('Post train loss {:0.4f}  acc {:0.2f}'.format(res[2], res[5]))
+                print('Post val loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
                 prelosses, postlosses = [], []
-                model.save_pickle()
+                model.save_pickle(itr)
 
         model.save_pickle()
 
 def main():
+    import shutil
+    try:
+        shutil.rmtree('./files/tmp_metatrain/')
+    except FileNotFoundError:
+        pass
     config = configs.FullConfig()
     config.N_KC = 2500
+    config.n_class_valence = 2
     config.save_path = './files/tmp_metatrain/0'
     train(config)
 
