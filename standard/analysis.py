@@ -316,9 +316,9 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
     if x_key == 'kc_inputs':
         ax.plot([7, 7], [min(ax.get_ylim()[0],0), max(ax.get_ylim()[-1],1)], '--', color = 'gray')
     elif x_key == 'N_PN':
-        ax.plot([np.log(50), np.log(50)], [0, 1], '--', color='gray')
+        ax.plot([np.log(50), np.log(50)], [min(ax.get_ylim()[0],0), 1], '--', color='gray')
     elif x_key == 'N_KC':
-        ax.plot([np.log(2500), np.log(2500)], [0, 1], '--', color='gray')
+        ax.plot([np.log(2500), np.log(2500)], [min(ax.get_ylim()[0],0), 1], '--', color='gray')
 
     if x_key in log_plot_dict.keys():
         xticks = np.array(log_plot_dict[x_key])

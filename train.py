@@ -205,6 +205,7 @@ def train(config, reload=False):
             try:
                 if config.save_every_epoch and ep % config.save_epoch_interval == 0:
                     model.save_pickle(ep)
+                    model.save(ep)
                 # Train
                 for b in range(n_batch-1):
                     _ = sess.run(model.train_op)

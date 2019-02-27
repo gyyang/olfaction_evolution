@@ -36,12 +36,12 @@ def st(experiment, save_path, s=0,e=1000):
 
 def temp_norm():
     config = configs.FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 10
 
     config.direct_glo = True
     config.save_every_epoch = True
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
+    # config.sparse_pn2kc = False
+    # config.train_pn2kc = True
 
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1

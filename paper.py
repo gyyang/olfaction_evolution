@@ -23,6 +23,7 @@ from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
+import standard.analysis_correlation as analysis_correlation
 import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
 import oracle.evaluatewithnoise as evaluatewithnoise
@@ -62,11 +63,11 @@ else:
 
 
 # #peter specific
-TRAIN = True
-ANALYZE = False
-is_test = False
+TRAIN = False
+ANALYZE = True
+is_test = True
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['multi_head']
+experiments = ['standard']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -93,6 +94,12 @@ if 'standard' in experiments:
         analysis_pn2kc_random.plot_distribution(path)
         analysis_pn2kc_random.claw_distribution(path, 'random')
         analysis_pn2kc_random.pair_distribution(path, 'preserve')
+
+        #correlation
+        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
+                        ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
+        analysis_correlation.correlation_across_epochs(path, ['Sign Constrained','No Constraint'])
 
 
 if 'vary_orn_duplication' in experiments:
@@ -124,6 +131,13 @@ if 'vary_pn' in experiments:
                         loop_key='ORN_NOISE_STD', plot_args= {'alpha':1}
                         )
 
+        #correlation
+        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        sa.plot_results(path, x_key='N_PN', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
+                        yticks=[0, .25, .5],
+                        ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
+
+
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
     path = './files/vary_kc'
@@ -138,6 +152,12 @@ if 'vary_kc' in experiments:
                                        loop_key='ORN_NOISE_STD'),
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
+
+        #correlation
+        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
+                        yticks=[0, .1, .2],
+                        ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
 
 if 'train_kc_claws' in experiments:
     path = './files/train_kc_claws'

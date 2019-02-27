@@ -28,7 +28,7 @@ class Model(object):
     def save(self, epoch=None):
         save_path = self.save_path
         if epoch is not None:
-            save_path = os.path.join(save_path, str(epoch))
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
         save_path = os.path.join(save_path, 'model.ckpt')
         sess = tf.get_default_session()
         save_path = self.saver.save(sess, save_path)
@@ -288,7 +288,7 @@ class FullModel(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
         # self.saver = tf.train.Saver(tf.trainable_variables())
 
     def _build_obsolete(self, x, y, training):
@@ -906,7 +906,7 @@ class RNN(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config
@@ -1037,7 +1037,7 @@ class NormalizedMLP(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config
@@ -1108,7 +1108,7 @@ class AutoEncoder(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config
@@ -1221,7 +1221,7 @@ class AutoEncoderSimple(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config
