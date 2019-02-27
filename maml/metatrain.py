@@ -3,6 +3,7 @@ python main.py --metatrain_iterations=70000 --norm=None --num_samples_per_class=
 """
 import os
 import sys
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -62,6 +63,7 @@ def train(config):
         print('Done initializing, starting training.')
         prelosses, postlosses = [], []
 
+        total_time, start_time = 0, time.time()
         for itr in range(FLAGS.metatrain_iterations):
             input_tensors = [model.metatrain_op]
 
@@ -83,6 +85,13 @@ def train(config):
 
             if itr % PRINT_INTERVAL == 0:
                 print('Iteration ' + str(itr))
+                if itr > 0:
+                    time_spent = time.time() - start_time
+                    total_time += time_spent
+                    print('Time taken {:0.1f}s'.format(total_time))
+                    print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
+                start_time = time.time()
+
                 print('Pre-update train loss {:0.4f}  acc {:0.2f}'.format(res[1], res[4]))
                 print('Post-update train loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
                 print('Post-update val loss step 1 {:0.4f}  acc {:0.2f}'.format(res[2][0], res[5][0]))
