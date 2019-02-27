@@ -82,9 +82,9 @@ def train(config):
             if itr % PRINT_INTERVAL == 0:
                 print('Iteration ' + str(itr))
                 print('Pre loss {:0.4f}  acc {:0.2f}'.format(res[1], res[4]))
-                print('Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][0], res[5][0]))
-                print('Last Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][-1], res[5][-1]))
                 print('Post train loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
+                print('First Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][0], res[5][0]))
+                print('Last Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][-1], res[5][-1]))
                 prelosses, postlosses = [], []
                 model.save_pickle(itr)
 
@@ -97,8 +97,9 @@ def main():
     except FileNotFoundError:
         pass
     config = configs.FullConfig()
-    config.N_KC = 2500
+    config.N_KC = 50
     config.n_class_valence = 2
+    config.sign_constraint_pn2kc = False
     config.save_path = './files/tmp_metatrain/0'
     train(config)
 

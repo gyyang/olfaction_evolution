@@ -118,8 +118,7 @@ class MAML:
                 task_outputc = self.model.build(inputa, fast_weights,
                                                 reuse=True)
                 task_lossc = self.loss_func(task_outputc, labela)
-                task_accuracyc = tf.reduce_mean(tf.to_float(tf.equal(
-                    tf.argmax(task_outputc, 1), tf.argmax(labela, 1))))
+                task_accuracyc = acc_func(task_outputc, labela)
 
                 for task_outputb in task_outputbs:
                     task_accuraciesb.append(acc_func(task_outputb, labelb))
