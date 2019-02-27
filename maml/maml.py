@@ -37,9 +37,15 @@ def xent(pred, label):
     return tf.losses.softmax_cross_entropy(onehot_labels=label, logits=pred)
 
 
+def acc_func(pred, label):
+    return tf.reduce_mean(tf.to_float(tf.equal(
+        tf.argmax(pred, 1), tf.argmax(label, 1))))
+
+
 class MAML:
-    def __init__(self, x, y, config):
+    def __init__(self, x, y, config, test_num_updates=5):
         """MAML model."""
+        self.test_num_updates = test_num_updates
         self.model = PNKCModel(config)
         self.loss_func = xent
         # self.loss_func = mse
@@ -57,6 +63,9 @@ class MAML:
             # Define the weights
             self.weights = weights = self.model.build_weights()
 
+            # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
+            num_updates = max(self.test_num_updates, FLAGS.num_updates)
+
             def task_metalearn(inp, reuse=True):
                 """ Perform gradient descent for one task in the meta-batch.
 
@@ -68,12 +77,11 @@ class MAML:
                     task_output: a sequence unpacked to outputa, outputb, lossa, lossb
                 """
                 inputa, inputb, labela, labelb = inp
+                task_outputbs, task_lossesb, task_accuraciesb = [], [], []
 
                 task_outputa = self.model.build(inputa, weights, reuse=reuse)  # only reuse on the first iter
                 task_lossa = self.loss_func(task_outputa, labela)
-                # Compute accuracy
-                task_accuracya = tf.reduce_mean(tf.to_float(tf.equal(
-                    tf.argmax(task_outputa, 1), tf.argmax(labela, 1))))
+                task_accuracya = acc_func(task_outputa, labela)
 
                 grads = tf.gradients(task_lossa, list(weights.values()))
                 if FLAGS.stop_grad:
@@ -88,10 +96,23 @@ class MAML:
 
                 # Compute the loss of the network post inner update
                 # using an independent set of input/label
-                task_outputb = self.model.build(inputb, fast_weights, reuse=True)
-                task_lossb = self.loss_func(task_outputb, labelb)
-                task_accuracyb = tf.reduce_mean(tf.to_float(tf.equal(
-                    tf.argmax(task_outputb, 1), tf.argmax(labelb, 1))))
+                output = self.model.build(inputb, fast_weights, reuse=True)
+                task_outputbs.append(output)
+                task_lossesb.append(self.loss_func(output, labelb))
+
+                for j in range(num_updates - 1):
+                    loss = self.loss_func(
+                        self.model.build(inputa, fast_weights, reuse=True), labela)
+                    grads = tf.gradients(loss, list(fast_weights.values()))
+                    if FLAGS.stop_grad:
+                        grads = [tf.stop_gradient(grad) for grad in grads]
+                    gradients = dict(zip(fast_weights.keys(), grads))
+                    fast_weights = dict(zip(fast_weights.keys(), [
+                        fast_weights[key] - FLAGS.update_lr * gradients[key] for
+                        key in fast_weights.keys()]))
+                    output = self.model.build(inputb, fast_weights, reuse=True)
+                    task_outputbs.append(output)
+                    task_lossesb.append(self.loss_func(output, labelb))
 
                 # Compute loss/acc using new weights and inputa
                 task_outputc = self.model.build(inputa, fast_weights,
@@ -100,9 +121,12 @@ class MAML:
                 task_accuracyc = tf.reduce_mean(tf.to_float(tf.equal(
                     tf.argmax(task_outputc, 1), tf.argmax(labela, 1))))
 
-                return [task_outputa, task_outputb, task_outputc,
-                        task_lossa, task_lossb, task_lossc,
-                        task_accuracya, task_accuracyb, task_accuracyc]
+                for task_outputb in task_outputbs:
+                    task_accuraciesb.append(acc_func(task_outputb, labelb))
+
+                return [task_outputa, task_outputbs, task_outputc,
+                        task_lossa, task_lossesb, task_lossc,
+                        task_accuracya, task_accuraciesb, task_accuracyc]
 
             if FLAGS.norm is not 'None':
                 # to initialize the batch norm vars, might want to combine this, and not run idx 0 twice.
@@ -111,10 +135,13 @@ class MAML:
             # do metalearn for each meta-example in the meta-batch
             # self.inputa has shape (meta_batch_size, batch_size, dim_input)
             # do metalearn on (i, batch_size, dim_input) for i in range(meta_batch_size)
+            out_dtype = [tf.float32, [tf.float32] * num_updates, tf.float32,
+                         tf.float32, [tf.float32] * num_updates, tf.float32,
+                         tf.float32, [tf.float32] * num_updates, tf.float32]
             results = tf.map_fn(
                 task_metalearn,
                 elems=(self.inputa, self.inputb, self.labela, self.labelb),
-                dtype=[tf.float32]*9,
+                dtype=out_dtype,
                 parallel_iterations=FLAGS.meta_batch_size
             )
 
@@ -124,16 +151,17 @@ class MAML:
 
         ## Performance & Optimization
         self.total_loss1 = tf.reduce_mean(lossesa)
-        self.total_loss2 = tf.reduce_mean(lossesb)
+        self.total_loss2 = [tf.reduce_mean(l) for l in lossesb]
         self.total_loss3 = tf.reduce_mean(lossesc)
         self.total_acc1 = tf.reduce_mean(acca)
-        self.total_acc2 = tf.reduce_mean(accb)
+        self.total_acc2 = [tf.reduce_mean(a) for a in accb]
         self.total_acc3 = tf.reduce_mean(accc)
         # after the map_fn
         self.outputas, self.outputbs, self.outputcs = outputas, outputbs, outputcs
 
         optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
-        self.gvs = gvs = optimizer.compute_gradients(self.total_loss2)
+        self.gvs = gvs = optimizer.compute_gradients(
+            self.total_loss2[FLAGS.num_updates-1])
         self.metatrain_op = optimizer.apply_gradients(gvs)
 
 
