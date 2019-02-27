@@ -56,7 +56,7 @@ def train(config):
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
 
-        PRINT_INTERVAL = 1000
+        PRINT_INTERVAL = 100
 
         print('Done initializing, starting training.')
         prelosses, postlosses = [], []
@@ -82,8 +82,9 @@ def train(config):
             if itr % PRINT_INTERVAL == 0:
                 print('Iteration ' + str(itr))
                 print('Pre loss {:0.4f}  acc {:0.2f}'.format(res[1], res[4]))
-                print('Post train loss {:0.4f}  acc {:0.2f}'.format(res[2], res[5]))
-                print('Post val loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
+                print('Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][0], res[5][0]))
+                print('Last Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][-1], res[5][-1]))
+                print('Post train loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
                 prelosses, postlosses = [], []
                 model.save_pickle(itr)
 
