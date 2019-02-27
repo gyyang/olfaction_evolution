@@ -20,7 +20,7 @@ from maml import MAML
 FLAGS = flags.FLAGS
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 15000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
+flags.DEFINE_integer('metatrain_iterations', 70000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
 flags.DEFINE_integer('meta_batch_size', 25, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
 flags.DEFINE_integer('num_samples_per_class', 5, 'number of examples used for inner gradient update (K for K-shot learning).')
@@ -48,6 +48,7 @@ def train(config):
         train_x_ph, train_y_ph, FLAGS.meta_batch_size)
 
     model = MAML(next_element[0], next_element[1], config)
+    model.summ_op = tf.summary.merge_all()
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
@@ -57,7 +58,7 @@ def train(config):
                                                     train_y_ph: train_y})
 
         PRINT_INTERVAL = 100
-
+        train_writer = tf.summary.FileWriter(config.save_path, sess.graph)
         print('Done initializing, starting training.')
         prelosses, postlosses = [], []
 
@@ -67,7 +68,8 @@ def train(config):
             if itr % PRINT_INTERVAL == 0:
                 input_tensors.extend(
                     [model.total_loss1, model.total_loss2, model.total_loss3,
-                     model.total_acc1, model.total_acc2, model.total_acc3])
+                     model.total_acc1, model.total_acc2, model.total_acc3,
+                     model.summ_op])
 
             try:
                 res = sess.run(input_tensors)
@@ -81,12 +83,13 @@ def train(config):
 
             if itr % PRINT_INTERVAL == 0:
                 print('Iteration ' + str(itr))
-                print('Pre loss {:0.4f}  acc {:0.2f}'.format(res[1], res[4]))
-                print('Post train loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
-                print('First Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][0], res[5][0]))
-                print('Last Post val loss {:0.4f}  acc {:0.2f}'.format(res[2][-1], res[5][-1]))
+                print('Pre-update train loss {:0.4f}  acc {:0.2f}'.format(res[1], res[4]))
+                print('Post-update train loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
+                print('Post-update val loss step 1 {:0.4f}  acc {:0.2f}'.format(res[2][0], res[5][0]))
+                print('Post-update val loss step 5 {:0.4f}  acc {:0.2f}'.format(res[2][-1], res[5][-1]))
                 prelosses, postlosses = [], []
                 model.save_pickle(itr)
+                train_writer.add_summary(res[-1], itr)
 
         model.save_pickle()
 

@@ -163,6 +163,18 @@ class MAML:
             self.total_loss2[FLAGS.num_updates-1])
         self.metatrain_op = optimizer.apply_gradients(gvs)
 
+        ## Summaries
+        tf.summary.scalar('Pre-update loss', self.total_loss1)
+        tf.summary.scalar('Pre-update accuracy', self.total_acc1)
+        tf.summary.scalar('Post-update train loss', self.total_loss3)
+        tf.summary.scalar('Post-update train accuracy', self.total_acc3)
+
+        for j in range(num_updates):
+            tf.summary.scalar(
+                'Post-update val loss, step ' + str(j+1), self.total_loss2[j])
+            tf.summary.scalar(
+                'Post-update val accuracy, step ' + str(j+1), self.total_acc2[j])
+
 
 class PNKCModel(Model):
     def __init__(self, config):
