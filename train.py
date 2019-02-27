@@ -100,7 +100,8 @@ def train(config, reload=False):
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
-        sess.run(tf.global_variables_initializer())
+        # sess.run(tf.global_variables_initializer())
+        sess.run(tf.group(tf.global_variables_initializer(), tf.local_variables_initializer()))
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
         if reload:

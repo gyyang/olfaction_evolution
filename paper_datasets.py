@@ -62,7 +62,10 @@ def make_combinatorial_dataset():
     config.n_combinatorial_classes = 20
     config.combinatorial_density = .2
     config.label_type = 'combinatorial'
-    task.save_proto(config, seed=seed, folder_name='combinatorial')
+    task.save_proto(config, seed=seed,
+                    folder_name='combinatorial_' +
+                                str(config.N_CLASS) +
+                                '_' + str(config.combinatorial_density))
 
 def make_small_training_set_datasets():
     config = configs.input_ProtoConfig()
@@ -75,6 +78,10 @@ def make_small_training_set_datasets():
 
 def temp():
     config = configs.input_ProtoConfig()
+    config.N_CLASS = 20
+    config.n_trueclass = 80
+    config.relabel = True
+    config.realistic_orn_mask = True
     task.save_proto(config, seed=seed, folder_name='test')
     print('Done test dataset')
 
@@ -85,6 +92,7 @@ if __name__ == '__main__':
     # make_concentration_dataset()
     # make_concentration_with_masking_dataset()
     # make_primordial_dataset()
-    make_mask_dataset()
-    # make_combinatorial_dataset()
+    # make_mask_dataset()
+    make_combinatorial_dataset()
     # make_small_training_set_datasets()
+    # temp()

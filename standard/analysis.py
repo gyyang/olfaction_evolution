@@ -228,10 +228,22 @@ def load_activity(save_path):
         model.load()
 
         # Validation
-        glo_out, glo_in, kc_out = sess.run(
-            [model.glo, model.glo_in, model.kc],
+        glo_out, glo_in, kc_out, logits = sess.run(
+            [model.glo, model.glo_in, model.kc, model.logits],
             {val_x_ph: val_x, val_y_ph: val_y})
         results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
+
+    # to_show = 100
+    # plt.subplot(1, 2, 1)
+    # if val_y.ndim == 1:
+    #     mat = np.zeros_like(logits[:to_show])
+    #     mat[np.arange(to_show), val_y[:to_show]] = 1
+    #     plt.imshow(mat)
+    # else:
+    #     plt.imshow(val_y[:to_show,:])
+    # plt.subplot(1,2,2)
+    # plt.imshow(logits[:to_show,:])
+    # plt.show()
     return glo_in, glo_out, kc_out, results
 
 def plot_activity(save_path):
