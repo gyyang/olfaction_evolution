@@ -23,6 +23,7 @@ from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
+import standard.analysis_correlation as analysis_correlation
 import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
 import oracle.evaluatewithnoise as evaluatewithnoise
@@ -56,17 +57,17 @@ if args.experiment == 'core':
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_kc_dropout', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
                    'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization',
-                   'kcrole']
+                   'kcrole', 'kc_generalization']
 else:
     experiments = args.experiment
 
 
 # #peter specific
-TRAIN = True
-ANALYZE = False
-is_test = False
+TRAIN = False
+ANALYZE = True
+is_test = True
 # experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['multi_head']
+experiments = ['vary_pn']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -74,7 +75,7 @@ if 'standard' in experiments:
     if TRAIN:
         local_train(se.train_standardnet(is_test), path)
     if ANALYZE:
-        # # accuracy, glo score, cosine similarity
+        # accuracy, glo score, cosine similarity
         sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
         analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
         #
@@ -82,7 +83,7 @@ if 'standard' in experiments:
         sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
         sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
 
-        #sign constraint
+        # #sign constraint
         sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
@@ -93,6 +94,17 @@ if 'standard' in experiments:
         analysis_pn2kc_random.plot_distribution(path)
         analysis_pn2kc_random.claw_distribution(path, 'random')
         analysis_pn2kc_random.pair_distribution(path, 'preserve')
+        #
+        # # correlation
+        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
+                        ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
+        analysis_correlation.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
+
+        analysis_correlation.get_dimensionality(path, 'glo')
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_dimensionality')
+        analysis_correlation.dimensionality_across_epochs(path, ['Non-negative','No constraint'])
+
 
 
 if 'vary_orn_duplication' in experiments:
@@ -112,7 +124,7 @@ if 'vary_pn' in experiments:
     if TRAIN:
         local_train(se.vary_pn_configs(is_test), path)
     if ANALYZE:
-        sa.plot_weights(path, sort_axis = 1, dir_ix=30)
+        sa.plot_weights(path, sort_axis = 1, dir_ix=30, average=True)
         sa.plot_results(path, x_key='N_PN', y_key='glo_score',
                         select_dict={'ORN_NOISE_STD':0}),
         sa.plot_results(path, x_key='N_PN', y_key='glo_score',
@@ -124,12 +136,22 @@ if 'vary_pn' in experiments:
                         loop_key='ORN_NOISE_STD', plot_args= {'alpha':1}
                         )
 
+        # correlation and dimensionality
+        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        sa.plot_results(path, x_key='N_PN', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
+                        yticks=[0, .25, .5],
+                        ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
+        analysis_correlation.get_dimensionality(path, 'glo')
+        sa.plot_results(path, x_key='N_PN', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
+
+
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
     path = './files/vary_kc'
     if TRAIN:
         local_train(se.vary_kc_configs(is_test), path)
     if ANALYZE:
+        sa.plot_weights(path, sort_axis=1, dir_ix=0, average=True)
         sa.plot_results(path, x_key='N_KC', y_key='glo_score',
                         select_dict={'ORN_NOISE_STD': 0})
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
@@ -138,6 +160,14 @@ if 'vary_kc' in experiments:
                                        loop_key='ORN_NOISE_STD'),
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
+
+        # correlation and dimensionality
+        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
+                        yticks=[0, .1, .2],
+                        ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
+        analysis_correlation.get_dimensionality(path, 'glo')
+        sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
 if 'train_kc_claws' in experiments:
     path = './files/train_kc_claws'
@@ -286,3 +316,10 @@ if 'kcrole' in experiments:
     if ANALYZE:
         evaluatewithnoise.evaluate_kcrole(path, 'weight_perturb')
         evaluatewithnoise.plot_kcrole(path, 'weight_perturb')
+
+if 'kc_generalization' in experiments:
+    path = './files/kc_generalization'
+    if TRAIN:
+        local_sequential_train(se.kc_generalization(is_test), path)
+    if ANALYZE:
+        sa.plot_progress(path, legends=['No KC', 'Fixed KC'])

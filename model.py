@@ -28,7 +28,7 @@ class Model(object):
     def save(self, epoch=None):
         save_path = self.save_path
         if epoch is not None:
-            save_path = os.path.join(save_path, str(epoch))
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
         save_path = os.path.join(save_path, 'model.ckpt')
         sess = tf.get_default_session()
         save_path = self.saver.save(sess, save_path)
@@ -173,9 +173,12 @@ def _normalize(inputs, norm_type, training=True):
             den = tf.pow(inputs, exp) + rho + tf.pow(m * sums, exp)
             outputs =  tf.divide(num, den)
         elif norm_type == 'activity':
-            r_max = tf.get_variable('r_max', shape=(1, 50), dtype=tf.float32, initializer=tf.constant_initializer(40))
+            r_max = tf.get_variable('r_max', shape=(1, 50), dtype=tf.float32, initializer=tf.constant_initializer(5))
             sums = tf.reduce_sum(inputs, axis=1, keepdims=True) + 1e-6
             outputs = r_max * tf.divide(inputs, sums)
+        elif norm_type == 'fixed_activity':
+            sums = tf.reduce_sum(inputs, axis=1, keepdims=True) + 1e-6
+            outputs = tf.divide(inputs, sums)
         else:
             print('Unknown pn_norm type {:s}. Outputs = Inputs'.format(norm_type))
             outputs = inputs
@@ -285,7 +288,7 @@ class FullModel(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
         # self.saver = tf.train.Saver(tf.trainable_variables())
 
     def _build_obsolete(self, x, y, training):
@@ -522,13 +525,17 @@ class FullModel(Model):
         kc = self._build_pn2kc(pn, training)
 
         if config.label_type == 'combinatorial':
-            n_logits = config.N_COMBINATORIAL_CLASS
+            n_logits = config.n_combinatorial_classes
         else:
             n_logits = config.N_CLASS
         logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
 
         if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
+            logits = tf.cast(logits, tf.float32)
+            y = tf.cast(y, tf.float32)
+            self.acc = tf.contrib.metrics.streaming_pearson_correlation(
+                predictions = tf.math.sigmoid(logits), labels= y)[1]
         elif config.label_type == 'one_hot':
             self.loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
             pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
@@ -664,6 +671,7 @@ class FullModel(Model):
             elif config.direct_glo:
                 mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
                 glo_in = tf.matmul(orn, mask.astype(np.float32))
+                glo_in = _normalize(glo_in, config.pn_norm_pre, training)
             else:
                 glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
 
@@ -898,7 +906,7 @@ class RNN(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config
@@ -1029,7 +1037,7 @@ class NormalizedMLP(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config
@@ -1100,7 +1108,7 @@ class AutoEncoder(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config
@@ -1213,7 +1221,7 @@ class AutoEncoderSimple(Model):
             for v in var_list:
                 print(v)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=None)
 
     def _build(self, x, y, training):
         config = self.config

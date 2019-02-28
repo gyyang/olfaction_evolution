@@ -100,7 +100,8 @@ def train(config, reload=False):
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
-        sess.run(tf.global_variables_initializer())
+        # sess.run(tf.global_variables_initializer())
+        sess.run(tf.group(tf.global_variables_initializer(), tf.local_variables_initializer()))
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
         if reload:
@@ -204,6 +205,7 @@ def train(config, reload=False):
             try:
                 if config.save_every_epoch and ep % config.save_epoch_interval == 0:
                     model.save_pickle(ep)
+                    model.save(ep)
                 # Train
                 for b in range(n_batch-1):
                     _ = sess.run(model.train_op)

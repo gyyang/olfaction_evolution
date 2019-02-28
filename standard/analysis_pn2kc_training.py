@@ -23,7 +23,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 figpath = os.path.join(rootpath, 'figures')
-THRES = 0.03
+THRES = 0.1
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
@@ -105,6 +105,8 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False):
         # dynamically infer threshold after training
         if dynamic_thres and i > 0:
             thres = infer_threshold(wglo)
+        elif i == 0:
+            thres = 0.01
         else:
             thres = THRES
         sparsity = np.count_nonzero(wglo > thres, axis=0)
@@ -304,8 +306,10 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False):
             w[np.isnan(w)] = 0
 
             # dynamically infer threshold after training
-            if j == 0 or dynamic_thres is False:
+            if dynamic_thres is False:
                 force_thres = THRES
+            elif j == 0:
+                force_thres = 0.01
             elif dynamic_thres == True:
                 force_thres = None
             else:
