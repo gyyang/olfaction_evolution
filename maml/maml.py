@@ -175,6 +175,7 @@ class MAML:
             tf.summary.scalar(
                 'Post-update val accuracy, step ' + str(j+1), self.total_acc2[j])
 
+from model import _sparse_range, _initializer
 
 class PNKCModel(Model):
     def __init__(self, config):
@@ -186,15 +187,29 @@ class PNKCModel(Model):
         config = self.config
         weights = {}
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+            if config.sign_constraint_pn2kc:
+                if config.initial_pn2kc == 0:
+                    if config.sparse_pn2kc:
+                        range = _sparse_range(config.kc_inputs)
+                    else:
+                        range = _sparse_range(config.N_PN)
+                else:
+                    range = config.initial_pn2kc
+                initializer = _initializer(range, config.initializer_pn2kc)
+                bias_initializer = tf.constant_initializer(config.kc_bias)
+            else:
+                initializer = tf.glorot_normal_initializer
+                bias_initializer = tf.glorot_normal_initializer
+
             w2 = tf.get_variable(
-                'kernel', shape=(config.N_ORN, config.N_KC),
-                dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
+                'kernel', shape=(config.N_PN, config.N_KC),
+                dtype=tf.float32, initializer=initializer)
             if config.sign_constraint_pn2kc:
                 w_kc = tf.abs(w2)
             else:
                 w_kc = w2
             b_kc = tf.get_variable('bias', shape=(config.N_KC,), dtype=tf.float32,
-                                   initializer=tf.zeros_initializer())
+                                   initializer=bias_initializer)
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
             w_output = tf.get_variable(

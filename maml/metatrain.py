@@ -21,7 +21,7 @@ from maml import MAML
 FLAGS = flags.FLAGS
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 70000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
+flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
 flags.DEFINE_integer('meta_batch_size', 25, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
 flags.DEFINE_integer('num_samples_per_class', 5, 'number of examples used for inner gradient update (K for K-shot learning).')
@@ -58,7 +58,7 @@ def train(config):
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
 
-        PRINT_INTERVAL = 100
+        PRINT_INTERVAL = 1000
         train_writer = tf.summary.FileWriter(config.save_path, sess.graph)
         print('Done initializing, starting training.')
         prelosses, postlosses = [], []
@@ -105,14 +105,17 @@ def train(config):
 def main():
     import shutil
     try:
-        shutil.rmtree('./files/tmp_metatrain/')
+        shutil.rmtree('./files/metatrain/3')
     except FileNotFoundError:
         pass
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
     config = configs.FullConfig()
-    config.N_KC = 50
+    config.N_KC = 2500
     config.n_class_valence = 2
-    config.sign_constraint_pn2kc = False
-    config.save_path = './files/tmp_metatrain/0'
+    config.sign_constraint_pn2kc = True
+    config.save_path = './files/metatrain/3'
     train(config)
 
 if __name__ == "__main__":
