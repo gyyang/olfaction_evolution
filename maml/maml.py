@@ -53,6 +53,72 @@ class MAML:
 
         self._build(x, y)
 
+    def task_metalearn(self, inp, reuse=True):
+        """ Perform gradient descent for one task in the meta-batch.
+
+        Args:
+            inp: a sequence unpacked to inputa, inputb, labela, labelb
+            inputa: tensor (batch_size, dim_input)
+
+        Returns:
+            task_output: a sequence unpacked to outputa, outputb, lossa, lossb
+        """
+        weights = self.weights
+        num_updates = max(self.test_num_updates, FLAGS.num_updates)
+        inputa, inputb, labela, labelb = inp
+        task_outputbs, task_lossesb, task_accuraciesb = [], [], []
+
+        task_outputa = self.model.build(inputa, weights,
+                                        reuse=reuse)  # only reuse on the first iter
+        task_lossa = self.loss_func(task_outputa, labela)
+        task_accuracya = acc_func(task_outputa, labela)
+
+        grads = tf.gradients(task_lossa, list(weights.values()))
+        if FLAGS.stop_grad:
+            grads = [tf.stop_gradient(grad) for grad in grads]
+
+        # manually construct the weights post inner gradient descent
+        # Notice that this doesn't have to be through gradient descent
+        gradients = dict(zip(weights.keys(), grads))
+        fast_weights = dict()
+        for key in weights.keys():
+            fast_weights[key] = weights[key] - FLAGS.update_lr * gradients[key]
+
+        # Compute the loss of the network post inner update
+        # using an independent set of input/label
+        output = self.model.build(inputb, fast_weights, reuse=True)
+        task_outputbs.append(output)
+        task_lossesb.append(self.loss_func(output, labelb))
+
+        for j in range(num_updates - 1):
+            loss = self.loss_func(
+                self.model.build(inputa, fast_weights, reuse=True), labela)
+            grads = tf.gradients(loss, list(fast_weights.values()))
+            if FLAGS.stop_grad:
+                grads = [tf.stop_gradient(grad) for grad in grads]
+
+            gradients = dict(zip(fast_weights.keys(), grads))
+            for key in weights.keys():
+                fast_weights[key] = fast_weights[key] - FLAGS.update_lr * \
+                                    gradients[key]
+
+            output = self.model.build(inputb, fast_weights, reuse=True)
+            task_outputbs.append(output)
+            task_lossesb.append(self.loss_func(output, labelb))
+
+        # Compute loss/acc using new weights and inputa
+        task_outputc = self.model.build(inputa, fast_weights,
+                                        reuse=True)
+        task_lossc = self.loss_func(task_outputc, labela)
+        task_accuracyc = acc_func(task_outputc, labela)
+
+        for task_outputb in task_outputbs:
+            task_accuraciesb.append(acc_func(task_outputb, labelb))
+
+        return [task_outputa, task_outputbs, task_outputc,
+                task_lossa, task_lossesb, task_lossc,
+                task_accuracya, task_accuraciesb, task_accuracyc]
+
     def _build(self, x, y):
         # a: training data for inner gradient, b: test data for meta gradient
 
@@ -61,75 +127,14 @@ class MAML:
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE) as training_scope:
             # Define the weights
-            self.weights = weights = self.model.build_weights()
+            self.weights = self.model.build_weights()
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             num_updates = max(self.test_num_updates, FLAGS.num_updates)
 
-            def task_metalearn(inp, reuse=True):
-                """ Perform gradient descent for one task in the meta-batch.
-
-                Args:
-                    inp: a sequence unpacked to inputa, inputb, labela, labelb
-                    inputa: tensor (batch_size, dim_input)
-
-                Returns:
-                    task_output: a sequence unpacked to outputa, outputb, lossa, lossb
-                """
-                inputa, inputb, labela, labelb = inp
-                task_outputbs, task_lossesb, task_accuraciesb = [], [], []
-
-                task_outputa = self.model.build(inputa, weights, reuse=reuse)  # only reuse on the first iter
-                task_lossa = self.loss_func(task_outputa, labela)
-                task_accuracya = acc_func(task_outputa, labela)
-
-                grads = tf.gradients(task_lossa, list(weights.values()))
-                if FLAGS.stop_grad:
-                    grads = [tf.stop_gradient(grad) for grad in grads]
-
-                # manually construct the weights post inner gradient descent
-                # Notice that this doesn't have to be through gradient descent
-                gradients = dict(zip(weights.keys(), grads))
-                fast_weights = dict()
-                for key in weights.keys():
-                    fast_weights[key] = weights[key]-FLAGS.update_lr*gradients[key]
-
-                # Compute the loss of the network post inner update
-                # using an independent set of input/label
-                output = self.model.build(inputb, fast_weights, reuse=True)
-                task_outputbs.append(output)
-                task_lossesb.append(self.loss_func(output, labelb))
-
-                for j in range(num_updates - 1):
-                    loss = self.loss_func(
-                        self.model.build(inputa, fast_weights, reuse=True), labela)
-                    grads = tf.gradients(loss, list(fast_weights.values()))
-                    if FLAGS.stop_grad:
-                        grads = [tf.stop_gradient(grad) for grad in grads]
-                    gradients = dict(zip(fast_weights.keys(), grads))
-                    fast_weights = dict(zip(fast_weights.keys(), [
-                        fast_weights[key] - FLAGS.update_lr * gradients[key] for
-                        key in fast_weights.keys()]))
-                    output = self.model.build(inputb, fast_weights, reuse=True)
-                    task_outputbs.append(output)
-                    task_lossesb.append(self.loss_func(output, labelb))
-
-                # Compute loss/acc using new weights and inputa
-                task_outputc = self.model.build(inputa, fast_weights,
-                                                reuse=True)
-                task_lossc = self.loss_func(task_outputc, labela)
-                task_accuracyc = acc_func(task_outputc, labela)
-
-                for task_outputb in task_outputbs:
-                    task_accuraciesb.append(acc_func(task_outputb, labelb))
-
-                return [task_outputa, task_outputbs, task_outputc,
-                        task_lossa, task_lossesb, task_lossc,
-                        task_accuracya, task_accuraciesb, task_accuracyc]
-
             if FLAGS.norm is not 'None':
                 # to initialize the batch norm vars, might want to combine this, and not run idx 0 twice.
-                unused = task_metalearn((self.inputa[0], self.inputb[0], self.labela[0], self.labelb[0]), False)
+                unused = self.task_metalearn((self.inputa[0], self.inputb[0], self.labela[0], self.labelb[0]), False)
 
             # do metalearn for each meta-example in the meta-batch
             # self.inputa has shape (meta_batch_size, batch_size, dim_input)
@@ -138,7 +143,7 @@ class MAML:
                          tf.float32, [tf.float32] * num_updates, tf.float32,
                          tf.float32, [tf.float32] * num_updates, tf.float32]
             results = tf.map_fn(
-                task_metalearn,
+                self.task_metalearn,
                 elems=(self.inputa, self.inputb, self.labela, self.labelb),
                 dtype=out_dtype,
                 parallel_iterations=FLAGS.meta_batch_size
@@ -198,8 +203,8 @@ class PNKCModel(Model):
                 initializer = _initializer(range, config.initializer_pn2kc)
                 bias_initializer = tf.constant_initializer(config.kc_bias)
             else:
-                initializer = tf.glorot_normal_initializer
-                bias_initializer = tf.glorot_normal_initializer
+                initializer = tf.glorot_normal_initializer()
+                bias_initializer = tf.zeros_initializer()
 
             w2 = tf.get_variable(
                 'kernel', shape=(config.N_PN, config.N_KC),

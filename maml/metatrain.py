@@ -105,7 +105,7 @@ def train(config):
 def main():
     import shutil
     try:
-        shutil.rmtree('./files/metatrain/3')
+        shutil.rmtree('./files/metatrain/4')
     except FileNotFoundError:
         pass
 
@@ -114,8 +114,8 @@ def main():
     config = configs.FullConfig()
     config.N_KC = 2500
     config.n_class_valence = 2
-    config.sign_constraint_pn2kc = True
-    config.save_path = './files/metatrain/3'
+    config.sign_constraint_pn2kc = False
+    config.save_path = './files/metatrain/4'
     train(config)
 
 if __name__ == "__main__":
