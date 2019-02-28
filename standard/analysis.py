@@ -282,7 +282,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                      'initial_pn2kc':[.05, .1, 1],
                      'N_ORN_DUPLICATION':[1,3,10,30,100,300],
                      'n_trueclass':[100, 200, 500, 1000],
-                     'val_loss':[]}
+                     'val_loss':[],
+                     'glo_dimensionality':[5, 50, 200, 1000]}
 
     plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}
 
@@ -316,13 +317,6 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
             y_plot = np.log(y_plot)
         ax.plot(x_plot, y_plot, 'o-', **plot_args)
 
-    if x_key == 'kc_inputs':
-        ax.plot([7, 7], [min(ax.get_ylim()[0],0), max(ax.get_ylim()[-1],1)], '--', color = 'gray')
-    elif x_key == 'N_PN':
-        ax.plot([np.log(50), np.log(50)], [min(ax.get_ylim()[0],0), 1], '--', color='gray')
-    elif x_key == 'N_KC':
-        ax.plot([np.log(2500), np.log(2500)], [min(ax.get_ylim()[0],0), 1], '--', color='gray')
-
     if x_key in log_plot_dict.keys():
         xticks = np.array(log_plot_dict[x_key])
         ax.set_xticks(np.log(xticks))
@@ -333,12 +327,25 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         xticks = res[x_key]
         ax.set_xticks(xticks)
     ax.set_xticklabels(xticks)
+
+    if y_key in log_plot_dict.keys():
+        yticks = np.array(log_plot_dict[y_key])
+        ax.set_yticks(np.log(yticks))
+        ax.set_yticklabels(yticks)
+
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
 
     if yticks is None and np.max(res[y_key]) <= 1:
         ax.set_yticks([0, 0.5, 1.0])
         plt.ylim([0, 1])
+
+    if x_key == 'kc_inputs':
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+    elif x_key == 'N_PN':
+        ax.plot([np.log(50), np.log(50)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
+    elif x_key == 'N_KC':
+        ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
     if loop_key:
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))

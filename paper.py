@@ -94,12 +94,17 @@ if 'standard' in experiments:
         analysis_pn2kc_random.plot_distribution(path)
         analysis_pn2kc_random.claw_distribution(path, 'random')
         analysis_pn2kc_random.pair_distribution(path, 'preserve')
-
-        # correlation
+        #
+        # # correlation
         analysis_correlation.get_correlation_coefficients(path, 'glo')
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
                         ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
         analysis_correlation.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
+
+        analysis_correlation.get_dimensionality(path, 'glo')
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_dimensionality')
+        analysis_correlation.dimensionality_across_epochs(path, ['Non-negative','No constraint'])
+
 
 
 if 'vary_orn_duplication' in experiments:
@@ -131,11 +136,13 @@ if 'vary_pn' in experiments:
                         loop_key='ORN_NOISE_STD', plot_args= {'alpha':1}
                         )
 
-        # correlation
+        # correlation and dimensionality
         analysis_correlation.get_correlation_coefficients(path, 'glo')
         sa.plot_results(path, x_key='N_PN', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
                         yticks=[0, .25, .5],
                         ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
+        analysis_correlation.get_dimensionality(path, 'glo')
+        sa.plot_results(path, x_key='N_PN', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
 
 if 'vary_kc' in experiments:
@@ -154,11 +161,13 @@ if 'vary_kc' in experiments:
         sa.plot_results(path, x_key='N_KC', y_key='val_acc',
                                        loop_key='ORN_NOISE_STD')
 
-        # correlation
+        # correlation and dimensionality
         analysis_correlation.get_correlation_coefficients(path, 'glo')
         sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
                         yticks=[0, .1, .2],
                         ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
+        analysis_correlation.get_dimensionality(path, 'glo')
+        sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
 if 'train_kc_claws' in experiments:
     path = './files/train_kc_claws'
