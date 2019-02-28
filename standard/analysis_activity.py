@@ -72,7 +72,7 @@ def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
 def _distribution(data, save_path, name, xlabel, ylabel, xrange):
     fig = plt.figure(figsize=(2.5, 2))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    plt.hist(data, bins= 50, range=[xrange[0], xrange[1]], density=False, align='left')
+    plt.hist(data, bins= 100, range=[xrange[0], xrange[1]], density=False, align='left')
 
     xticks = np.linspace(xrange[0], xrange[1], 5)
     ax.set_xlabel(xlabel)
@@ -142,6 +142,9 @@ def sparseness_activity(save_path, arg, activity_threshold=0.):
         _distribution(data1, save_path, name= 'spars_' + arg + '_' + str(i),
                       xlabel='Fraction of Active '+name+'s',
                       ylabel='Number of Odors', xrange=zticks)
+        # plt.close()
+        # plt.imshow(data[:100,:])
+        # plt.show()
 
         data2 = np.mean(data > activity_threshold, axis=0)
         _distribution(data2, save_path, name='spars_' + arg + '2_' + str(i),

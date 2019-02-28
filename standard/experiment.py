@@ -398,6 +398,24 @@ def train_kcrole(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def kc_generalization(argTest=False):
+    config = configs.FullConfig()
+    config.batch_size = 4
+    config.max_epoch = 500
+    config.save_epoch_interval = 25
+    config.save_every_epoch = True
+    config.skip_orn2pn = True
+
+    hp_ranges = OrderedDict()
+    x = [100]
+    hp_ranges['data_dir'] = ['./datasets/proto/small_training_set_' + str(i) for i in x] * 2
+    hp_ranges['skip_pn2kc'] = [True, False]
+    hp_ranges['replicate_orn_with_tiling'] = [True, False]
+    hp_ranges['N_ORN_DUPLICATION'] = [50, 1]
+
+    if argTest:
+        pass
+    return config, hp_ranges
 
 def temp(argTest):
     config = configs.FullConfig()

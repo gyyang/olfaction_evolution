@@ -99,7 +99,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
         pass
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0):
+def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=False):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
@@ -121,6 +121,9 @@ def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0):
     #         weight = np.swapaxes(weight, 0, 1)
     #         weight = np.reshape(weight, (-1, config.N_PN))
 
+    if average:
+        w_orn_by_pn = tools._reshape_worn(w_plot, 50)
+        w_plot = w_orn_by_pn.mean(axis=0)
     # Sort for visualization
     if sort_axis == 0:
         ind_max = np.argmax(w_plot, axis=0)
@@ -228,10 +231,22 @@ def load_activity(save_path):
         model.load()
 
         # Validation
-        glo_out, glo_in, kc_out = sess.run(
-            [model.glo, model.glo_in, model.kc],
+        glo_out, glo_in, kc_out, logits = sess.run(
+            [model.glo, model.glo_in, model.kc, model.logits],
             {val_x_ph: val_x, val_y_ph: val_y})
         results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
+
+    # to_show = 100
+    # plt.subplot(1, 2, 1)
+    # if val_y.ndim == 1:
+    #     mat = np.zeros_like(logits[:to_show])
+    #     mat[np.arange(to_show), val_y[:to_show]] = 1
+    #     plt.imshow(mat)
+    # else:
+    #     plt.imshow(val_y[:to_show,:])
+    # plt.subplot(1,2,2)
+    # plt.imshow(logits[:to_show,:])
+    # plt.show()
     return glo_in, glo_out, kc_out, results
 
 def plot_activity(save_path):
@@ -267,7 +282,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                      'initial_pn2kc':[.05, .1, 1],
                      'N_ORN_DUPLICATION':[1,3,10,30,100,300],
                      'n_trueclass':[100, 200, 500, 1000],
-                     'val_loss':[]}
+                     'val_loss':[],
+                     'glo_dimensionality':[5, 50, 200, 1000]}
 
     plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}
 
@@ -301,13 +317,6 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
             y_plot = np.log(y_plot)
         ax.plot(x_plot, y_plot, 'o-', **plot_args)
 
-    if x_key == 'kc_inputs':
-        ax.plot([7, 7], [min(ax.get_ylim()[0],0), max(ax.get_ylim()[-1],1)], '--', color = 'gray')
-    elif x_key == 'N_PN':
-        ax.plot([np.log(50), np.log(50)], [0, 1], '--', color='gray')
-    elif x_key == 'N_KC':
-        ax.plot([np.log(2500), np.log(2500)], [0, 1], '--', color='gray')
-
     if x_key in log_plot_dict.keys():
         xticks = np.array(log_plot_dict[x_key])
         ax.set_xticks(np.log(xticks))
@@ -318,12 +327,25 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         xticks = res[x_key]
         ax.set_xticks(xticks)
     ax.set_xticklabels(xticks)
+
+    if y_key in log_plot_dict.keys():
+        yticks = np.array(log_plot_dict[y_key])
+        ax.set_yticks(np.log(yticks))
+        ax.set_yticklabels(yticks)
+
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
 
     if yticks is None and np.max(res[y_key]) <= 1:
         ax.set_yticks([0, 0.5, 1.0])
         plt.ylim([0, 1])
+
+    if x_key == 'kc_inputs':
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+    elif x_key == 'N_PN':
+        ax.plot([np.log(50), np.log(50)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
+    elif x_key == 'N_KC':
+        ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
     if loop_key:
         l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))

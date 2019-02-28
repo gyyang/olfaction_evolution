@@ -8,25 +8,44 @@ import tools
 from configs import input_ProtoConfig, InputAutoEncode
 
 
-def _get_labels(prototypes, odors, percent_generalization):
+def _get_labels(prototypes, odors, percent_generalization, weights=None):
     dist = euclidean_distances(prototypes, odors)
     if percent_generalization < 100:
         highest_match = np.min(dist, axis=0)
         threshold = np.percentile(highest_match.flatten(), percent_generalization)
         default_class = (1e-6+threshold) * np.ones((1, dist.shape[1]))
         dist = np.vstack((default_class, dist))
+
+    if weights is not None:
+        assert dist.shape[0] == weights.shape[0], 'not the same dimension'
+        weights = np.repeat(weights.reshape(-1,1), dist.shape[1], axis=1)
+        dist = weights * dist
     return np.argmin(dist, axis=0)
 
 
-def _mask_orn_activation(prototypes):
-    mask = np.zeros_like(prototypes)
+def _mask_orn_activation(prototypes, mask_degree = 5):
+    mask = np.zeros_like(prototypes, dtype=int)
     n_samples = mask.shape[0]
     n_orn = mask.shape[1]
-    mask = np.zeros_like(prototypes, dtype=int)
-    n_orn_active = np.random.random_integers(1, n_orn, size=n_samples)
+    if mask_degree == 0:
+        list_of_numbers = np.arange(1, n_orn)
+    else:
+        list_of_numbers = list(range(mask_degree)) + list(range(n_orn-mask_degree, n_orn))
+
+    n_orn_active = np.random.choice(list_of_numbers, size=n_samples, replace=True)
+
+    # n_orn_active = np.random.random_integers(1, n_orn, size=n_samples)
     for i in range(n_samples):
         mask[i, :n_orn_active[i]] = 1
         np.random.shuffle(mask[i, :])
+    out = np.multiply(prototypes, mask)
+    return out
+
+def _mask_orn_activation_column(prototypes, list_of_activation_probabilities):
+    mask = np.zeros_like(prototypes)
+    n_samples = mask.shape[0]
+    for i, prob in enumerate(list_of_activation_probabilities):
+        mask[:,i] = np.random.uniform(0, 1, n_samples) < prob
     out = np.multiply(prototypes, mask)
     return out
 
@@ -209,7 +228,6 @@ def _generate_proto_threshold(
         rng.shuffle(ind_shuffle)
         val_odors = val_odors[ind_shuffle, :]
         val_labels_valence = val_labels_valence[ind_shuffle]
-
     else:
         prototypes = rng.uniform(0, max_activation, (n_proto, n_orn))
         train_odors = rng.uniform(0, max_activation, (n_train, n_orn))
@@ -220,9 +238,15 @@ def _generate_proto_threshold(
 
     if realistic_orn_mask:
         print('mask')
-        # prototypes = _mask_orn_activation(prototypes)
-        train_odors = _mask_orn_activation(train_odors)
-        val_odors = _mask_orn_activation(val_odors)
+        prototypes = _mask_orn_activation(prototypes, mask_degree=10)
+        train_odors = _mask_orn_activation(train_odors, mask_degree=10)
+        val_odors = _mask_orn_activation(val_odors, mask_degree=10)
+        #
+        # list_of_prob_activation = np.random.uniform(0, 1, n_orn)
+        # list_of_prob_activation = np.random.choice([.1, .9], n_orn)
+        # prototypes = _mask_orn_activation_column(prototypes, list_of_prob_activation)
+        # train_odors = _mask_orn_activation_column(train_odors, list_of_prob_activation)
+        # val_odors = _mask_orn_activation_column(val_odors, list_of_prob_activation)
 
     if realistic_orn_mean:
         print('mean')
@@ -267,16 +291,25 @@ def _generate_proto_threshold(
     train_labels = _get_labels(prototypes, train_odors_forlabels, percent_generalization)
     val_labels = _get_labels(prototypes, val_odors_forlabels, percent_generalization)
 
-    debug = False
-    if debug:
-        plt.hist(np.sum(train_odors, axis=1))
-        plt.show()
-        sums = np.sum(train_odors, axis=1, keepdims=True)
-        lol = np.divide(train_odors, sums)
-        plt.hist(np.sum(lol, axis=1))
-        plt.show()
-        plt.hist(train_labels, bins=100)
-        plt.show()
+    # #make label distribution more uniform
+    # cutoff = 8 * (1 / n_proto)
+    # weights = np.ones(n_proto)
+    # i = 0
+    # while True:
+    #     print(i)
+    #     i+=1
+    #     # plt.hist(train_labels, bins=n_proto, density=True)
+    #     # plt.show()
+    #     hist = np.histogram(train_labels, bins=n_proto, density=True)[0]
+    #     has_greater = np.max(hist) > cutoff
+    #     if has_greater:
+    #         ix = np.argmax(hist)
+    #         weights[ix] *= 1.1
+    #         train_labels = _get_labels(prototypes, train_odors_forlabels, percent_generalization, weights)
+    #     else:
+    #         break
+    # print(weights)
+    # val_labels = _get_labels(prototypes, val_odors_forlabels, percent_generalization, weights)
 
     if shuffle_label:
         # Shuffle the labels
@@ -284,7 +317,7 @@ def _generate_proto_threshold(
         rng.shuffle(val_labels)
 
     if relabel:
-        print('relabel')
+        print('relabeling' + str(n_proto) + 'classes into ' + str(n_class))
         train_labels, val_labels = _relabel(
             train_labels, val_labels, n_proto, n_class, rng)
 
@@ -297,6 +330,9 @@ def _generate_proto_threshold(
             combinatorial_density, rng)
         train_labels = _convert_to_combinatorial_label(train_labels, key)
         val_labels = _convert_to_combinatorial_label(val_labels, key)
+
+        plt.imshow(key)
+        plt.show()
     elif label_type == 'one_hot':
         train_labels = _convert_one_hot_label(train_labels, n_class)
         val_labels = _convert_one_hot_label(val_labels, n_class)
@@ -316,6 +352,13 @@ def _generate_proto_threshold(
         val_labels = np.stack([val_labels, val_labels_valence]).T
     else:
         raise ValueError('Unknown label type: ', str(label_type))
+
+    debug = False
+    if debug:
+        plt.hist(np.sum(train_odors, axis=1), density=True)
+        plt.show()
+        plt.hist(train_labels, bins= n_proto, density=True)
+        plt.show()
 
     return train_odors, train_labels, val_odors, val_labels, prototypes
 
