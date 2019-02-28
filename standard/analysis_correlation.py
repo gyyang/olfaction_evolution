@@ -6,6 +6,12 @@ import matplotlib.pyplot as plt
 import task
 import tensorflow as tf
 from model import FullModel
+import matplotlib as mpl
+
+mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
 
 def get_correlation_coefficients(save_path, variable):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
@@ -54,11 +60,11 @@ def correlation_across_epochs(save_path, legend):
         ys.append(list_of_corr_coef)
 
     y = ys[0]
-    figsize = (2, 2)
+    figsize = (1.5, 1.2)
     rect = [0.3, 0.3, 0.65, 0.5]
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(rect)
-    yticks = np.linspace(0, 1, 5)
+    yticks = [0, 0.5, 1.0]
     ylim = [-.05, 1]
     xlim = len(y)
     ax.plot(np.transpose(ys))
@@ -73,7 +79,7 @@ def correlation_across_epochs(save_path, legend):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.legend(legend, frameon = False)
+    plt.legend(legend, fontsize=4, frameon = False)
 
     from standard.analysis import _easy_save
     _easy_save(save_path, '_correlation_progress', dpi=500)

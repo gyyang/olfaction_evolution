@@ -99,7 +99,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
         pass
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0):
+def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=False):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
@@ -121,6 +121,9 @@ def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0):
     #         weight = np.swapaxes(weight, 0, 1)
     #         weight = np.reshape(weight, (-1, config.N_PN))
 
+    if average:
+        w_orn_by_pn = tools._reshape_worn(w_plot, 50)
+        w_plot = w_orn_by_pn.mean(axis=0)
     # Sort for visualization
     if sort_axis == 0:
         ind_max = np.argmax(w_plot, axis=0)
