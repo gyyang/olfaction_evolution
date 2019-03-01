@@ -35,6 +35,9 @@ class DataGenerator(object):
         self.ind_dict = {y: np.where(train_y==y)[0] for y in unique_y}
         self.unique_y = unique_y
 
+        if np.mod(num_class, dim_output) != 0:
+            raise ValueError('Now only supporting num_class multiples of dim_output')
+
     def generate(self):
         """Generate one meta-batch.
 
@@ -55,7 +58,9 @@ class DataGenerator(object):
                 self.unique_y, size=n_class_per_batch, replace=False)
             # relabel them
             # new_labels = np.random.randint(0, n_valence, len(classes))
-            new_labels = list(range(self.dim_output))
+            # TODO: what to do when n_class_per_batch different from dim_output?
+            new_labels = (list(range(self.dim_output)) *
+                          (self.num_class//self.dim_output))
 
             # for each class, sample some odors
             j = 0
