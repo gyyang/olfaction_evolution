@@ -105,17 +105,19 @@ def train(config):
 def main():
     import shutil
     try:
-        shutil.rmtree('./files/metatrain/4')
+        shutil.rmtree('./files/metatrain/6')
     except FileNotFoundError:
         pass
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     config = configs.FullConfig()
-    config.N_KC = 2500
+    config.N_KC = 50
     config.n_class_valence = 2
     config.sign_constraint_pn2kc = False
-    config.save_path = './files/metatrain/4'
+    config.sparse_pn2kc = False
+    # config.kc_bias = 0
+    config.save_path = './files/metatrain/6'
     train(config)
 
 if __name__ == "__main__":
