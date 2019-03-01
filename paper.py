@@ -23,7 +23,7 @@ from standard.hyper_parameter_train import local_train, local_sequential_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
-import standard.analysis_correlation as analysis_correlation
+import standard.analysis_orn2pn as analysis_orn2pn
 import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
 import oracle.evaluatewithnoise as evaluatewithnoise
@@ -66,8 +66,7 @@ else:
 TRAIN = False
 ANALYZE = True
 is_test = True
-# experiments = ['vary_pn2kc_initial_value', 'vary_kc_dropout', 'vary_pn2kc_noise']
-experiments = ['vary_pn']
+experiments = ['pn_normalization']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -96,14 +95,14 @@ if 'standard' in experiments:
         analysis_pn2kc_random.pair_distribution(path, 'preserve')
         #
         # # correlation
-        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        analysis_orn2pn.get_correlation_coefficients(path, 'glo')
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
                         ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
-        analysis_correlation.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
+        analysis_orn2pn.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
 
-        analysis_correlation.get_dimensionality(path, 'glo')
+        analysis_orn2pn.get_dimensionality(path, 'glo')
         sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_dimensionality')
-        analysis_correlation.dimensionality_across_epochs(path, ['Non-negative','No constraint'])
+        analysis_orn2pn.dimensionality_across_epochs(path, ['Non-negative', 'No constraint'])
 
 
 
@@ -137,11 +136,11 @@ if 'vary_pn' in experiments:
                         )
 
         # correlation and dimensionality
-        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        analysis_orn2pn.get_correlation_coefficients(path, 'glo')
         sa.plot_results(path, x_key='N_PN', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
                         yticks=[0, .25, .5],
                         ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
-        analysis_correlation.get_dimensionality(path, 'glo')
+        analysis_orn2pn.get_dimensionality(path, 'glo')
         sa.plot_results(path, x_key='N_PN', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
 
@@ -162,11 +161,11 @@ if 'vary_kc' in experiments:
                                        loop_key='ORN_NOISE_STD')
 
         # correlation and dimensionality
-        analysis_correlation.get_correlation_coefficients(path, 'glo')
+        analysis_orn2pn.get_correlation_coefficients(path, 'glo')
         sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
                         yticks=[0, .1, .2],
                         ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
-        analysis_correlation.get_dimensionality(path, 'glo')
+        analysis_orn2pn.get_dimensionality(path, 'glo')
         sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
 if 'train_kc_claws' in experiments:
@@ -219,17 +218,30 @@ if 'vary_kc_claws' in experiments:
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
     if TRAIN:
-        local_train(se.pn_normalization_direct(is_test), path)
+        local_train(se.pn_normalization(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='pn_norm_post', y_key='val_loss', loop_key='data_dir', yticks=[-1.5, 0],
-                        ax_args={'yticks':[-1.5,0], 'ylim':[-1.5,0]})
-        sa.plot_results(path, x_key='pn_norm_post', y_key='val_acc', loop_key='data_dir')
-        sa.plot_results(path, x_key='pn_norm_post', y_key='glo_score', loop_key='data_dir')
-        # analysis_activity.image_activity(path, 'glo_out')
-        # analysis_activity.image_activity(path, 'kc_out')
-        # analysis_activity.distribution_activity(path, 'glo_out')
-        # analysis_activity.distribution_activity(path, 'kc_out')
-        # analysis_activity.sparseness_activity(path, 'kc_out')
+        # sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+        #                 select_dict={
+        #                     'pn_norm_pre': ['None', 'fixed_activity'],
+        #                     'data_dir': ['./datasets/proto/standard',
+        #                                  './datasets/proto/concentration',
+        #                                  './datasets/proto/concentration_mask_row_0'
+        #                                  ]
+        #                 }, sort=False)
+        #
+        # sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+        #                 select_dict={
+        #                     'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
+        #                     'data_dir': ['./datasets/proto/concentration_mask_row_0',
+        #                                  './datasets/proto/concentration_mask_row_0.6',
+        #                                  ]
+        #                 })
+
+        analysis_activity.image_activity(path, 'glo_out')
+        analysis_activity.image_activity(path, 'kc_out')
+        analysis_activity.distribution_activity(path, 'glo_out')
+        analysis_activity.distribution_activity(path, 'kc_out')
+        analysis_activity.sparseness_activity(path, 'kc_out')
 
 if 'or2orn' in experiments:
     path = './files/or2orn'

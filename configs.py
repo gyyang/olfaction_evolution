@@ -53,10 +53,17 @@ class input_ProtoConfig(BaseConfig):
         # the number of prototypes that leads to each non-neutral response
         self.n_proto_valence = 5
 
-        # If True, a random mask is imposed upon ORN activity for each odor
-        self.realistic_orn_mask = False
-        # If True, total orn activity follows an uniform distribution
-        self.realistic_orn_mean = False
+        # If tuple[0] = True, each odor will have an ORN response probability sampled from a distribution
+        # tuple[1] = the degree of masking, varies from (0, 1]. Defines the bimodality of the prob dist.
+        self.mask_orn_activation_row = (False, 8)
+
+        # If tuple[0] = True, every orn will have an odor response probability sampled from a distribution
+        # tuple[1] = the degree of masking, varies from (0, 1]. Defines the bimodality of the prob dist.
+        self.mask_orn_activation_column = (False, 0)
+
+        # If tuple[0] = True, total orn activity becomes more spread out as defined by a distribution
+        # tuple[1] = Spread, varies from (0, 1]. Defines the bimodality of the prob dist.
+        self.spread_orn_activity = (False, .5)
 
 
 class InputAutoEncode(BaseConfig):

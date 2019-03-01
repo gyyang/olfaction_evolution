@@ -32,33 +32,59 @@ def st(experiment, save_path, s=0,e=1000):
             config.save_path = os.path.join(save_path, str(i).zfill(6))
             train.train(config)
 
-# def temp_norm():
-#     config = configs.FullConfig()
-#     config.max_epoch = 10
-#
-#     config.direct_glo = True
-#     config.save_every_epoch = True
-#     # config.sparse_pn2kc = False
-#     # config.train_pn2kc = True
-#
-#     config.replicate_orn_with_tiling = False
-#     config.N_ORN_DUPLICATION = 1
-#     config.ORN_NOISE_STD = 0
-#     # config.kc_loss = True
-#     config.pn_norm_pre = 'batch_norm'
-#
-#     # Ranges of hyperparameters to loop over
-#     hp_ranges = OrderedDict()
-#     # hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/combinatorial']
-#     hp_ranges['data_dir'] = ['./datasets/proto/combinatorial']
-#     # hp_ranges['pn_norm_pre'] = ['None', 'biology']
-#     return config, hp_ranges
-#
-# path = './files_temp/temp'
-# shutil.rmtree(path)
-# t(temp_norm(), path, s=0, e=100)
+def temp_norm():
+    config = configs.FullConfig()
+    config.max_epoch = 6
 
+    config.direct_glo = True
+    # config.kc_dropout = False
+    # config.sparse_pn2kc = False
+    # config.train_pn2kc = True
 
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    i = [0, .6]
+    datasets = ['./datasets/proto/concentration_mask_row_' + str(s) for s in i]
+    # datasets = ['./datasets/proto/standard','./datasets/proto/concentration_mask_row_0']
+    hp_ranges['data_dir'] = ['./datasets/proto/standard'] + ['./datasets/proto/concentration'] + datasets
+    # hp_ranges['data_dir'] = [''datasets/proto/concentration_mean_mask']
+    hp_ranges['pn_norm_pre'] = ['biology']
+    return config, hp_ranges
+#
+path = './files_temp/temp'
+try:
+    shutil.rmtree(path)
+except:
+    pass
+t(temp_norm(), path, s=0, e=100)
+
+# sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+#                 select_dict={
+#                     'pn_norm_pre': ['None', 'fixed_activity'],
+#                     'data_dir': ['./datasets/proto/standard',
+#                                  './datasets/proto/concentration',
+#                                  './datasets/proto/concentration_mask_row_0'
+#                                  ]
+#                 }, sort=False)
+#
+# sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+#                 select_dict={
+#                     'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
+#                     'data_dir': ['./datasets/proto/concentration_mask_row_0',
+#                                  './datasets/proto/concentration_mask_row_0.6',
+#                                  ]
+#                 })
+
+rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
+rho = tools.load_pickle(path, 'model/layer1/rho:0')
+m = tools.load_pickle(path, 'model/layer1/m:0')
+print(rmax)
+print(rho)
+print(m)
 
 # analysis_training.plot_sparsity(path, dynamic_thres=True)
 # analysis_training.plot_distribution(path)
@@ -67,5 +93,5 @@ def st(experiment, save_path, s=0,e=1000):
 # analysis_activity.sparseness_activity(path, 'kc_out')
 # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
-# sa.plot_results(path, x_key='skip_pn2kc', y_key='val_acc', loop_key='N_CLASS')
+
 # sa.plot_weights(path, var_name='model/layer3/kernel:0', dir_ix=0)

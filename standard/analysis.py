@@ -266,7 +266,7 @@ def plot_activity(save_path):
 
 
 def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = None,
-                 ax_args={}, plot_args={}):
+                 ax_args={}, plot_args={}, sort = True):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -275,6 +275,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         y_key: str, key for the y-axis variable
         loop_key: str, key for the value to loop around
     """
+    #TODO PW: this function is getting very messy, needs to be cleaned up
     log_plot_dict = {'N_KC': [30, 100, 1000, 10000],
                      'N_PN': [20, 50, 100, 1000],
                      'kc_loss_alpha': [.1, 1, 10, 100],
@@ -292,9 +293,10 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         res = dict_methods.filter(res, select_dict)
 
     # Sort by x_key
-    ind_sort = np.argsort(res[x_key])
-    for key, val in res.items():
-        res[key] = val[ind_sort]
+    if sort:
+        ind_sort = np.argsort(res[x_key])
+        for key, val in res.items():
+            res[key] = val[ind_sort]
 
     fig = plt.figure(figsize=(2, 2))
     ax = fig.add_axes([0.25, 0.2, 0.65, 0.65], **ax_args)
@@ -307,7 +309,9 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                 x_plot = np.log(x_plot)
             if y_key in log_plot_dict.keys():
                 y_plot = np.log(y_plot)
-            ax.plot(x_plot, y_plot, 'o-', label=str(x), **plot_args)
+            label = str(x).rsplit('/',1)[-1]
+            x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
+            ax.plot(x_plot, y_plot, 'o-', label=label, **plot_args)
     else:
         x_plot = res[x_key]
         y_plot = res[y_key]
@@ -320,13 +324,11 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
     if x_key in log_plot_dict.keys():
         xticks = np.array(log_plot_dict[x_key])
         ax.set_xticks(np.log(xticks))
+        ax.set_xticklabels(xticks)
     elif x_key in plot_dict.keys():
         xticks = np.array(plot_dict[x_key])
         ax.set_xticks(xticks)
-    else:
-        xticks = res[x_key]
-        ax.set_xticks(xticks)
-    ax.set_xticklabels(xticks)
+        ax.set_xticklabels(xticks)
 
     if y_key in log_plot_dict.keys():
         yticks = np.array(log_plot_dict[y_key])
@@ -348,7 +350,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
     if loop_key:
-        l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5))
+        l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 5, frameon=False)
         l.set_title(nicename(loop_key))
 
     figname = '_' + y_key + '_vs_' + x_key
@@ -356,7 +358,9 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         figname += '_vary' + loop_key
     if select_dict:
         for k, v in select_dict.items():
-            figname += k + '_' + str(v) + '_'
+            v = [x.rsplit('/',1)[-1] for x in v]
+            v = str('__'.join(v))
+            figname += k + '_' + v + '__'
 
 
     ax.spines["right"].set_visible(False)

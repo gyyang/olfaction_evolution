@@ -41,19 +41,21 @@ def make_concentration_dataset():
     task.save_proto(config, seed=seed, folder_name='concentration')
     print('Done Concentration Dataset')
 
-def make_mask_dataset():
+def make_mask_row_dataset():
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
-    config.realistic_orn_mask = True
-    task.save_proto(config, seed=seed, folder_name='mask')
+    for i in [.2, .4, .6, .8, 1]:
+        config.spread_orn_activity = (True, i)
+        task.save_proto(config, seed=seed, folder_name='mask_row_' + str(i))
     print('Done Mask Dataset')
 
-def make_concentration_with_masking_dataset():
+def make_concentration_with_mask_row_dataset():
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
     config.vary_concentration = True
-    config.realistic_orn_mask = True
-    task.save_proto(config, seed=seed, folder_name='concentration_mask')
+    for i in [0, .3, .6, .9]:
+        config.spread_orn_activity = (True, i)
+        task.save_proto(config, seed=seed, folder_name='concentration_mask_row_' + str(i))
     print('Done Concentration_Mask Dataset')
 
 def make_combinatorial_dataset():
@@ -89,10 +91,10 @@ if __name__ == '__main__':
     # make_standard_dataset()
     # make_relabel_datasets_small()
     # make_relabel_datasets_large()
-    # make_concentration_dataset()
-    # make_concentration_with_masking_dataset()
+    make_concentration_dataset()
+    # make_concentration_with_mask_row_dataset()
     # make_primordial_dataset()
-    # make_mask_dataset()
-    make_combinatorial_dataset()
+    # make_mask_row_dataset()
+    # make_combinatorial_dataset()
     # make_small_training_set_datasets()
     # temp()
