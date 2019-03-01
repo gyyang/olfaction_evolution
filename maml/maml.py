@@ -237,7 +237,10 @@ class PNKCModel(Model):
 
     def build(self, inp, weights, reuse=False):
         hidden = tf.nn.relu(tf.matmul(inp, weights['w_kc']) + weights['b_kc'])
+        if self.config.kc_dropout:
+            hidden = tf.layers.dropout(hidden, self.config.kc_dropout_rate, training=True)
         output = tf.matmul(hidden, weights['w_output']) + weights['b_output']
+
         return output
 
     def save_pickle(self, epoch=None):
