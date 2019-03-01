@@ -55,7 +55,7 @@ class DataGenerator(object):
                 self.unique_y, size=n_class_per_batch, replace=False)
             # relabel them
             # new_labels = np.random.randint(0, n_valence, len(classes))
-            new_labels = [0, 1]
+            new_labels = list(range(self.dim_output))
 
             # for each class, sample some odors
             j = 0
