@@ -82,7 +82,10 @@ class MAML:
         gradients = dict(zip(weights.keys(), grads))
         fast_weights = dict()
         for key in weights.keys():
-            fast_weights[key] = weights[key] - FLAGS.update_lr * gradients[key]
+            if key in ['w_output', 'b_output']:
+                fast_weights[key] = weights[key] - FLAGS.update_lr * gradients[key]
+            else:
+                fast_weights[key] = weights[key]
 
         # Compute the loss of the network post inner update
         # using an independent set of input/label
@@ -99,8 +102,9 @@ class MAML:
 
             gradients = dict(zip(fast_weights.keys(), grads))
             for key in weights.keys():
-                fast_weights[key] = fast_weights[key] - FLAGS.update_lr * \
-                                    gradients[key]
+                if key in ['w_output', 'b_output']:
+                    fast_weights[key] = fast_weights[key] - FLAGS.update_lr * \
+                                        gradients[key]
 
             output = self.model.build(inputb, fast_weights, reuse=True)
             task_outputbs.append(output)
@@ -233,8 +237,7 @@ class PNKCModel(Model):
 
     def build(self, inp, weights, reuse=False):
         hidden = tf.nn.relu(tf.matmul(inp, weights['w_kc']) + weights['b_kc'])
-        output = tf.nn.relu(tf.matmul(hidden, weights['w_output']) +
-                            weights['b_output'])
+        output = tf.matmul(hidden, weights['w_output']) + weights['b_output']
         return output
 
     def save_pickle(self, epoch=None):
