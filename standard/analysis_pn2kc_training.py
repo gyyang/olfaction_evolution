@@ -300,7 +300,10 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False):
     titles = ['Before Training', 'After Training']
     yrange = [1, 0.5]
     for i, d in enumerate(dirs):
-        wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+        try:
+            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+        except KeyError:
+            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
         wglo = [wglo[0]] + [wglo[-1]]
         for j, w in enumerate(wglo):
             w[np.isnan(w)] = 0
@@ -423,7 +426,10 @@ def plot_distribution(dir):
         plt.savefig(savename + '.pdf', transparent=True)
 
     for i, d in enumerate(dirs):
-        wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+        try:
+            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+        except KeyError:
+            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
         for j in [0, -1]:
             w = wglo[j]
             w[np.isnan(w)] = 0
