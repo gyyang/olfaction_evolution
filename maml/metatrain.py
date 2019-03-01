@@ -22,10 +22,10 @@ FLAGS = flags.FLAGS
 
 ## Training options
 flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
-flags.DEFINE_integer('meta_batch_size', 25, 'number of tasks sampled per meta-update')
+flags.DEFINE_integer('meta_batch_size', 64, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
 flags.DEFINE_integer('num_samples_per_class', 5, 'number of examples used for inner gradient update (K for K-shot learning).')
-flags.DEFINE_float('update_lr', 1e-3, 'step size alpha for inner gradient update.') # 0.1 for omniglot
+flags.DEFINE_float('update_lr', 0.1, 'step size alpha for inner gradient update.') # 0.1 for omniglot
 flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
 
 ## Model options
@@ -139,9 +139,10 @@ def main():
     config = configs.FullConfig()
     config.N_KC = 2500
     config.n_class_valence = 3
+    config.kc_dropout = True
     config.sign_constraint_pn2kc = True
     config.sparse_pn2kc = False
-    config.save_path = './files/metatrain/valence3/0'
+    config.save_path = './files/metatrain/valence3_dropout/0'
     try:
         shutil.rmtree(config.save_path)
     except FileNotFoundError:
