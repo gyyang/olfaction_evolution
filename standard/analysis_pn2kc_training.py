@@ -300,6 +300,7 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False):
     titles = ['Before Training', 'After Training']
     yrange = [1, 0.5]
     for i, d in enumerate(dirs):
+        print('Analyzing results from: ' + str(d))
         try:
             wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
         except KeyError:
@@ -350,6 +351,7 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
     plt.close()
 
 def plot_distribution(dir):
+    # TODO(gry): I don't like how this function plots everything from subdirectories of dir
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path, exist_ok=True)
@@ -426,6 +428,7 @@ def plot_distribution(dir):
         plt.savefig(savename + '.pdf', transparent=True)
 
     for i, d in enumerate(dirs):
+        print('Analyzing results from: ' + str(d))
         try:
             wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
         except KeyError:
