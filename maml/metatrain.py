@@ -34,6 +34,15 @@ flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in
 
 LOAD_DATA = False
 
+def print_results(res):
+    print('Pre-update train loss {:0.4f}  acc {:0.2f}'.format(res[0], res[3]))
+    print('Post-update train loss {:0.4f}  acc {:0.2f}'.format(res[2], res[5]))
+    print('Post-update val loss step 1 {:0.4f}  acc {:0.2f}'.format(res[1][0],
+                                                                    res[4][0]))
+    print('Post-update val loss step 5 {:0.4f}  acc {:0.2f}'.format(res[1][-1],
+                                                                    res[4][
+                                                                        -1]))
+
 def train(config):
     tf.reset_default_graph()
 
@@ -84,7 +93,6 @@ def train(config):
         PRINT_INTERVAL = 1000
         train_writer = tf.summary.FileWriter(config.save_path, sess.graph)
         print('Done initializing, starting training.')
-        prelosses, postlosses = [], []
 
         total_time, start_time = 0, time.time()
         for itr in range(FLAGS.metatrain_iterations):
@@ -100,7 +108,7 @@ def train(config):
                 if LOAD_DATA:
                     res = sess.run(input_tensors)
                 else:
-                    train_x, train_y = data_generator.generate()
+                    train_x, train_y = data_generator.generate('train')
                     res = sess.run(input_tensors,
                                    {train_x_ph: train_x, train_y_ph: train_y})
             except KeyboardInterrupt:
@@ -121,13 +129,21 @@ def train(config):
                     print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
                 start_time = time.time()
 
-                print('Pre-update train loss {:0.4f}  acc {:0.2f}'.format(res[1], res[4]))
-                print('Post-update train loss {:0.4f}  acc {:0.2f}'.format(res[3], res[6]))
-                print('Post-update val loss step 1 {:0.4f}  acc {:0.2f}'.format(res[2][0], res[5][0]))
-                print('Post-update val loss step 5 {:0.4f}  acc {:0.2f}'.format(res[2][-1], res[5][-1]))
-                prelosses, postlosses = [], []
+                print('Meta-train')
+                print_results(res[1:])
                 model.save_pickle(itr)
                 train_writer.add_summary(res[-1], itr)
+
+                if not LOAD_DATA:
+                    val_x, val_y = data_generator.generate('val')
+                    input_tensors = [
+                        model.total_loss1, model.total_loss2, model.total_loss3,
+                        model.total_acc1, model.total_acc2, model.total_acc3]
+                    res = sess.run(input_tensors,
+                                   {train_x_ph: val_x, train_y_ph: val_y})
+
+                    print('Meta-val')
+                    print_results(res)
 
         model.save_pickle()
 
@@ -139,10 +155,10 @@ def main():
     config = configs.FullConfig()
     config.N_KC = 2500
     config.n_class_valence = 3
-    config.kc_dropout = True
+    config.kc_dropout = False
     config.sign_constraint_pn2kc = True
     config.sparse_pn2kc = False
-    config.save_path = './files/metatrain/valence3_dropout/0'
+    config.save_path = './files/metatrain/valence3/1'
     try:
         shutil.rmtree(config.save_path)
     except FileNotFoundError:

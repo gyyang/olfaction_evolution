@@ -33,18 +33,30 @@ class DataGenerator(object):
         # dictionary mapping class to odor indices
         unique_y = np.unique(train_y)
         self.ind_dict = {y: np.where(train_y==y)[0] for y in unique_y}
-        self.unique_y = unique_y
+
+        self.metatrain_classes = unique_y[:int(0.8 * len(unique_y))]
+        self.metaval_classes = unique_y[int(0.8 * len(unique_y)):]
 
         if np.mod(num_class, dim_output) != 0:
             raise ValueError('Now only supporting num_class multiples of dim_output')
 
-    def generate(self):
+    def generate(self, dataset_type='train'):
         """Generate one meta-batch.
+
+        Args:
+            dataset_type: str, 'train' or 'val'
 
         Returns:
             inputs: array, (meta_batch_size, n_samples_per_class, dim_input)
             outputs: array, (meta_batch_size, n_samples_per_class, dim_output)
         """
+        if dataset_type == 'train':
+            all_classes = self.metatrain_classes
+        elif dataset_type == 'val':
+            all_classes = self.metaval_classes
+        else:
+            raise ValueError('Unknown dataset type: ' + str(dataset_type))
+
         n_sample_per_class = self.num_samples_per_class
         n_class_per_batch = self.num_class
         assert n_sample_per_class * n_class_per_batch * 2 == self.batch_size
@@ -55,7 +67,7 @@ class DataGenerator(object):
         for i in range(self.meta_bs):
             # randomly select several classes to train on
             classes = np.random.choice(
-                self.unique_y, size=n_class_per_batch, replace=False)
+                all_classes, size=n_class_per_batch, replace=False)
             # relabel them
             # new_labels = np.random.randint(0, n_valence, len(classes))
             # TODO: what to do when n_class_per_batch different from dim_output?
