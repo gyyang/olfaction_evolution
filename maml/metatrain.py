@@ -1,5 +1,6 @@
 """
-python main.py --metatrain_iterations=70000 --norm=None --num_samples_per_class=10
+Run from the olfaction_evolution directory
+python maml/metatrain.py
 """
 import os
 import sys
@@ -32,6 +33,7 @@ flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in
 LOAD_DATA = False
 
 def print_results(res):
+    # TODO: need cleaning
     print('Pre-update train loss {:0.4f}  acc {:0.2f}'.format(res[0], res[3]))
     print('Post-update train loss {:0.4f}  acc {:0.2f}'.format(res[2], res[5]))
     print('Post-update val loss step 1 {:0.4f}  acc {:0.2f}'.format(res[1][0],
@@ -111,10 +113,6 @@ def train(config):
             except KeyboardInterrupt:
                 print('Training interrupted by users')
                 break
-
-            # if itr % SUMMARY_INTERVAL == 0:
-            #     prelosses.append(result[-2])
-            #     postlosses.append(result[-1])
 
             if itr % PRINT_INTERVAL == 0:
                 print('Iteration ' + str(itr))
