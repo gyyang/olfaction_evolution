@@ -4,19 +4,16 @@ python main.py --metatrain_iterations=70000 --norm=None --num_samples_per_class=
 import os
 import sys
 import time
-
+print(sys.path)
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.platform import flags
 
-# rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
-
 from train import make_input
 import configs
 import tools
-from dataset import load_data
-from maml import MAML
+from maml.dataset import load_data
+from maml.maml import MAML
 
 FLAGS = flags.FLAGS
 
@@ -24,7 +21,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
 flags.DEFINE_integer('meta_batch_size', 64, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
-flags.DEFINE_integer('num_samples_per_class', 5, 'number of examples used for inner gradient update (K for K-shot learning).')
+flags.DEFINE_integer('num_samples_per_class', 20, 'number of examples used for inner gradient update (K for K-shot learning).')
 flags.DEFINE_float('update_lr', 0.1, 'step size alpha for inner gradient update.') # 0.1 for omniglot
 flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
 
@@ -61,8 +58,8 @@ def train(config):
 
         model = MAML(next_element[0], next_element[1], config)
     else:
-        from dataset import DataGenerator
-        num_samples_per_class = 20
+        from maml.dataset import DataGenerator
+        num_samples_per_class = FLAGS.num_samples_per_class
         num_class = config.n_class_valence * 2  # TODO: this doesn't have to be
         dim_output = config.n_class_valence
         data_generator = DataGenerator(
@@ -154,11 +151,12 @@ def main():
 
     config = configs.FullConfig()
     config.N_KC = 2500
-    config.n_class_valence = 3
-    config.kc_dropout = False
+    config.n_class_valence = 2
+    config.kc_dropout = True
     config.sign_constraint_pn2kc = True
     config.sparse_pn2kc = False
-    config.save_path = './files/metatrain/valence3/1'
+    config.save_path = './files/metatrain/valence2/0'
+    config.data_dir = './datasets/proto/standard'
     try:
         shutil.rmtree(config.save_path)
     except FileNotFoundError:
