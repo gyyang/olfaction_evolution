@@ -9,7 +9,7 @@ import matplotlib as mpl
 import tensorflow as tf
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)  # This is hacky, should be fixed
+sys.path.append(rootpath)
 
 import tools
 

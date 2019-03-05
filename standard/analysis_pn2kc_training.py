@@ -17,7 +17,7 @@ from sklearn.mixture import GaussianMixture
 
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
+sys.path.append(rootpath)
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42

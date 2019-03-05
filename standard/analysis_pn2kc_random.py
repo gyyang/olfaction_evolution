@@ -11,7 +11,7 @@ from standard.analysis import _easy_save
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)  # TODO: This is hacky, should be fixed
+sys.path.append(rootpath)
 fig_dir = os.path.join(rootpath, 'figures')
 
 THRES = .03

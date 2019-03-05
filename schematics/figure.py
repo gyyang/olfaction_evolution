@@ -1,6 +1,7 @@
 import os
 import sys
-
+for p in sys.path:
+    print(p)
 from scipy.spatial import Voronoi
 from sklearn.metrics.pairwise import euclidean_distances
 import numpy as np
@@ -8,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)  # This is hacky, should be fixed
+sys.path.append(rootpath)
 
 from schematics.plotVoronoi import voronoi_plot_2d
 from standard.analysis import _easy_save

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)  # This is hacky, should be fixed
+sys.path.append(rootpath)c
 
 import tools
 from tools import nicename

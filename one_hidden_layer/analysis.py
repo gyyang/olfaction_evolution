@@ -14,7 +14,7 @@ from os.path import expanduser
 
 home = expanduser("~")
 root_path = os.path.dirname(os.getenv("HOME"))
-sys.path.append(root_path)  # This is hacky, should be fixed
+sys.path.append(root_path)
 
 mpl.rcParams['font.size'] = 7
 
