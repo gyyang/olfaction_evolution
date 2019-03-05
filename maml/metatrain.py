@@ -4,7 +4,7 @@ python main.py --metatrain_iterations=70000 --norm=None --num_samples_per_class=
 import os
 import sys
 import time
-print(sys.path)
+
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.platform import flags
@@ -13,7 +13,7 @@ from train import make_input
 import configs
 import tools
 from maml.dataset import load_data
-from maml.maml import MAML
+from maml.mamlmodel import MAML
 
 FLAGS = flags.FLAGS
 
