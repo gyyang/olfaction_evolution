@@ -7,7 +7,7 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy.stats import norm
 from sklearn.metrics import pairwise_distances
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -146,11 +146,29 @@ def analyze_pairwise_distance():
     # _easy_save('analytical', 'relative_distortion')
 
 
+def _get_proj(n_kc_claw):
+    X, Y, Y2 = analyze_perturb(n_kc_claw=n_kc_claw, coding_level=10, n_pts=500)
+    n_proj = 500
+    vec = np.random.randn(N_KC, n_proj)
+    b = 0
+    # b = np.random.randn(n_proj)
+    proj = np.dot(Y, vec) + b
+    proj2 = np.dot(Y2, vec) + b
+    proj, proj2 = proj.flatten(), proj2.flatten()
+    return proj, proj2
+
+
+def get_proj(n_kc_claw, n_rep=1):
+    proj, proj2 = np.array([]), np.array([])
+    for i in range(n_rep):
+        p, p2 = _get_proj(n_kc_claw)
+        proj = np.concatenate((p, proj))
+        proj2 = np.concatenate((p2, proj2))
+    return proj, proj2
+
+
 def _get_p_sign_preserve(n_kc_claw):
-    X, Y, Y2 = analyze_perturb(n_kc_claw=n_kc_claw, coding_level=10, n_pts=100)
-    vec = np.random.randn(N_KC, 100)    
-    proj = np.dot(Y, vec).flatten()
-    proj2 = np.dot(Y2, vec).flatten()
+    proj, proj2 = _get_proj(n_kc_claw)
     p_sign_preserve = np.mean((proj > 0) == (proj2 > 0))
     return p_sign_preserve
 
@@ -160,15 +178,83 @@ def get_p_sign_preserve(n_kc_claw, n_rep=1):
     return np.mean(ps)
             
 
-n_kc_claws = np.arange(1, 50)
-p_sign_preserves = list()
-for n_kc_claw in n_kc_claws:
-    p_sign_preserve = get_p_sign_preserve(n_kc_claw, n_rep=1)
-    p_sign_preserves.append(p_sign_preserve)
+def analyze_p_sign_preserve():
+    n_kc_claws = np.arange(1, 50)
+    p_sign_preserves = list()
+    for n_kc_claw in n_kc_claws:
+        p_sign_preserve = get_p_sign_preserve(n_kc_claw, n_rep=1)
+        p_sign_preserves.append(p_sign_preserve)
+        
+    plt.figure()
+    plt.plot(n_kc_claws, p_sign_preserves, 'o-')
+    plt.xticks([1, 3, 7, 10, 20, 30])
+    plt.ylabel('P[sign preserve]')
+    # _easy_save('analytical', 'p_sign_perserve')
     
-plt.figure()
-plt.plot(n_kc_claws, p_sign_preserves, 'o-')
-plt.xticks([1, 3, 7, 10, 20, 30])
-plt.ylabel('P[sign preserve]')
-# _easy_save('analytical', 'p_sign_perserve')
     
+
+
+
+def plot_proj_hist():
+    n_kc_claw = 7
+    X, Y, Y2 = analyze_perturb(n_kc_claw=n_kc_claw, coding_level=10, n_pts=200)
+    n_proj = 200
+    vec = np.random.randn(N_KC, n_proj)
+    proj = np.dot(Y, vec)
+    proj2 = np.dot(Y2, vec)
+    proj, proj2 = proj.flatten(), proj2.flatten()
+    
+    for data in [proj, proj2]:
+    
+        mu, std = norm.fit(data)
+        
+        # Plot the histogram.
+        plt.figure(figsize=(3, 3))
+        plt.hist(data, bins=100, density=True, alpha=0.6, color='g')
+        # Plot the PDF.
+        xmin, xmax = plt.xlim()
+        x = np.linspace(xmin, xmax, 100)
+        p = norm.pdf(x, mu, std)
+        plt.plot(x, p, 'k', linewidth=1)
+        title = "Fit results: mu = %.2f,  std = %.2f" % (mu, std)
+        plt.title(title)
+        
+        plt.show()
+    
+    
+    plt.figure()
+    lim = np.array([[-1, 1], [-1, 1]])*0.2
+    lim = None
+    _ = plt.hist2d(proj, proj2, bins=70, range=lim)
+
+
+n_kc_claws = [1, 3, 5, 7, 10, 20, 30, 40]
+projs = list()
+proj2s = list()
+for i, n_kc_claw in enumerate(n_kc_claws):    
+    proj, proj2 = get_proj(n_kc_claw, n_rep=10)
+    projs.append(proj)
+    proj2s.append(proj2)
+
+
+bins = np.linspace(-5, 5, 100)
+bin_centers = (bins[1:]+bins[:-1])/2
+    
+plt.figure(figsize=(10, 10))
+colors = plt.cm.jet(np.linspace(0,1,len(n_kc_claws)))
+for i, n_kc_claw in enumerate(n_kc_claws):
+    
+    proj, proj2 = projs[i], proj2s[i]
+    mu, std = np.mean(proj), np.std(proj)
+    
+    proj_norm = (proj - mu)/std
+    proj2_norm = (proj2 - mu)/std
+    
+    hist, bin_edges = np.histogram(proj_norm, density=True, bins=bins)
+    hist2, bin_edges = np.histogram(proj2_norm, density=True, bins=bins)
+    
+    # Plot the histogram.
+    plt.plot(bin_centers, hist - hist2, label=str(n_kc_claw), color=colors[i])
+plt.xlim(-3, 3)
+plt.legend()
+plt.show()
