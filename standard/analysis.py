@@ -11,7 +11,7 @@ import tensorflow as tf
 import dict_methods
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)c
+sys.path.append(rootpath)
 
 import tools
 from tools import nicename
