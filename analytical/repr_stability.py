@@ -46,23 +46,24 @@ def perturb(M, beta, mode='multiplicative'):
         P = np.random.uniform(1-beta, 1+beta, size=M.shape)
         return M * P
     elif mode == 'additive':
-        P = np.random.randn(*M.shape) * beta
-        return M + P
+        # P = np.random.randn(*M.shape) * beta
+        P = np.random.uniform(-beta, beta, size=M.shape) * np.max(M)
+        return M + P * (M > 1e-6)  # only applied on connected weights
     else:
         raise ValueError('Unknown perturb mode')
 
 
 def analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
                     coding_level=None, same_threshold=True, n_pts=10):
-    X = np.random.rand(n_pts, 50)
+    X = np.random.rand(n_pts, n_pn)
     
     X = normalize(X)
 
     M = _get_M(n_pn, n_kc, n_kc_claw)
     Y = np.dot(X, M)
 
-    M2 = perturb(M, beta=0.5, mode='multiplicative')
-    # M2 = perturb(M, beta=0.2, mode='additive')
+    # M2 = perturb(M, beta=0.5, mode='multiplicative')
+    M2 = perturb(M, beta=0.1, mode='additive')
     # M2 = _get_M(n_pn, n_kc, n_kc_claw)
     Y2 = np.dot(X, M2)
     
@@ -175,9 +176,8 @@ def get_proj(n_kc_claw, n_rep=1, **kwargs):
         proj2 = np.concatenate((p2, proj2))
     return proj, proj2
 
- 
 
-def analyze_p_sign_preserve():
+def vary_kc_claw():
     n_kc_claws = np.arange(1, 50)
     
     projs = list()
@@ -187,22 +187,32 @@ def analyze_p_sign_preserve():
         projs.append(proj)
         proj2s.append(proj2)
     
-    value_name = 'p_sign_preserve'
+    names = ['projected_signal', 'projected_noise',
+             'signal_noise_ratio', 'p_sign_preserve']
     
-    values = list()
-    for i in range(len(n_kc_claws)):
-        proj, proj2 = projs[i], proj2s[i]
-        if value_name == 'p_sign_preserve':
-            value = np.mean((proj > 0) == (proj2 > 0))
-        else:
-            raise ValueError('Unknown value name')
-        values.append(value)
-        
-    plt.figure(figsize=(3, 3))
-    plt.plot(n_kc_claws, values, 'o-')
-    plt.xticks([1, 3, 7, 10, 20, 30])
-    plt.ylabel(value_name)
-    # _easy_save('analytical', 'p_sign_perserve')
+    for value_name in names:
+        values = list()
+        for i in range(len(n_kc_claws)):
+            proj, proj2 = projs[i], proj2s[i]
+            if value_name == 'p_sign_preserve':
+                value = np.mean((proj > 0) == (proj2 > 0))
+            elif value_name == 'projected_signal':
+                value = np.std(proj)
+            elif value_name == 'projected_noise':
+                value = np.std(proj-proj2)
+            elif value_name == 'signal_noise_ratio':
+                value = np.std(proj)/np.std(proj-proj2)
+            else:
+                raise ValueError('Unknown value name')
+            values.append(value)
+            
+        fig = plt.figure(figsize=(2, 2))
+        ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
+        ax.plot(n_kc_claws, values, 'o-')
+        ax.set_xticks([1, 3, 7, 10, 20, 30])
+        ax.set_xlabel('Number of KC claws')
+        ax.set_ylabel(value_name)
+        # _easy_save('analytical', value_name)
     
     
 def plot_proj_hist():
