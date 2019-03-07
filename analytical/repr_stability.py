@@ -16,8 +16,6 @@ sys.path.append(rootpath)
 import model
 from standard.analysis import _easy_save
 
-
-
 N_PN = 50
 N_KC = 2500
 N_KC_CLAW = 7
@@ -31,9 +29,15 @@ def normalize(x):
     return (x.T/np.sqrt(np.sum(x**2, axis=1))).T
 
 
-def _get_M(n_pn, n_kc, n_kc_claw):
+def _get_M(n_pn, n_kc, n_kc_claw, sign_constraint=True):
     M = model.get_sparse_mask(n_pn, n_kc, n_kc_claw) / n_kc_claw
+    
+    M = perturb(M, 0.5, 'multiplicative')  # pre-perturb
+    
     # M = model.get_sparse_mask(n_pn, n_kc, n_kc_claw)
+    if not sign_constraint:
+        S = (np.random.rand(*M.shape) > 0.5)*2 - 1
+        M *= S
     return M
 
 
@@ -49,7 +53,7 @@ def perturb(M, beta, mode='multiplicative'):
 
 
 def analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
-                    coding_level=None, n_pts=10):
+                    coding_level=None, same_threshold=True, n_pts=10):
     X = np.random.rand(n_pts, 50)
     
     X = normalize(X)
@@ -65,7 +69,9 @@ def analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
     if coding_level is not None:
         threshold = np.percentile(Y.flatten(), 100-coding_level)
         Y = Y - threshold
-        Y2 = Y2 - threshold
+        if not same_threshold:
+            threshold = np.percentile(Y2.flatten(), 100-coding_level)
+        Y2 = Y2 - threshold            
         
         Y = relu(Y)
         Y2 = relu(Y2)
@@ -86,7 +92,10 @@ def get_diff_by_n_kc_claw():
     n_kc_claws = np.arange(1, 20)
     diffs = [get_perturb_diff(n_kc_claw=n) for n in n_kc_claws]
     
+    plt.figure()
     plt.plot(n_kc_claws, diffs, 'o-')
+    plt.xlabel('KC claws')
+    plt.ylabel('Absolute perturbation')
 
     return n_kc_claws, diffs
 
@@ -146,9 +155,9 @@ def analyze_pairwise_distance():
     # _easy_save('analytical', 'relative_distortion')
 
 
-def _get_proj(n_kc_claw):
-    X, Y, Y2 = analyze_perturb(n_kc_claw=n_kc_claw, coding_level=10, n_pts=500)
-    n_proj = 500
+def _get_proj(n_kc_claw, n_pts=500, n_proj=500, coding_level=100, **kwargs):
+    X, Y, Y2 = analyze_perturb(
+            n_kc_claw=n_kc_claw, coding_level=coding_level, n_pts=n_pts, **kwargs)
     vec = np.random.randn(N_KC, n_proj)
     b = 0
     # b = np.random.randn(n_proj)
@@ -158,45 +167,46 @@ def _get_proj(n_kc_claw):
     return proj, proj2
 
 
-def get_proj(n_kc_claw, n_rep=1):
+def get_proj(n_kc_claw, n_rep=1, **kwargs):
     proj, proj2 = np.array([]), np.array([])
     for i in range(n_rep):
-        p, p2 = _get_proj(n_kc_claw)
+        p, p2 = _get_proj(n_kc_claw, **kwargs)
         proj = np.concatenate((p, proj))
         proj2 = np.concatenate((p2, proj2))
     return proj, proj2
 
-
-def _get_p_sign_preserve(n_kc_claw):
-    proj, proj2 = _get_proj(n_kc_claw)
-    p_sign_preserve = np.mean((proj > 0) == (proj2 > 0))
-    return p_sign_preserve
-
-
-def get_p_sign_preserve(n_kc_claw, n_rep=1):
-    ps = [_get_p_sign_preserve(n_kc_claw) for i in range(n_rep)]
-    return np.mean(ps)
-            
+ 
 
 def analyze_p_sign_preserve():
     n_kc_claws = np.arange(1, 50)
-    p_sign_preserves = list()
-    for n_kc_claw in n_kc_claws:
-        p_sign_preserve = get_p_sign_preserve(n_kc_claw, n_rep=1)
-        p_sign_preserves.append(p_sign_preserve)
+    
+    projs = list()
+    proj2s = list()
+    for i, n_kc_claw in enumerate(n_kc_claws):    
+        proj, proj2 = get_proj(n_kc_claw, n_rep=2, coding_level=10)
+        projs.append(proj)
+        proj2s.append(proj2)
+    
+    value_name = 'p_sign_preserve'
+    
+    values = list()
+    for i in range(len(n_kc_claws)):
+        proj, proj2 = projs[i], proj2s[i]
+        if value_name == 'p_sign_preserve':
+            value = np.mean((proj > 0) == (proj2 > 0))
+        else:
+            raise ValueError('Unknown value name')
+        values.append(value)
         
-    plt.figure()
-    plt.plot(n_kc_claws, p_sign_preserves, 'o-')
+    plt.figure(figsize=(3, 3))
+    plt.plot(n_kc_claws, values, 'o-')
     plt.xticks([1, 3, 7, 10, 20, 30])
-    plt.ylabel('P[sign preserve]')
+    plt.ylabel(value_name)
     # _easy_save('analytical', 'p_sign_perserve')
     
     
-
-
-
 def plot_proj_hist():
-    n_kc_claw = 7
+    n_kc_claw = 40
     X, Y, Y2 = analyze_perturb(n_kc_claw=n_kc_claw, coding_level=10, n_pts=200)
     n_proj = 200
     vec = np.random.randn(N_KC, n_proj)
@@ -228,33 +238,51 @@ def plot_proj_hist():
     _ = plt.hist2d(proj, proj2, bins=70, range=lim)
 
 
-n_kc_claws = [1, 3, 5, 7, 10, 20, 30, 40]
-projs = list()
-proj2s = list()
-for i, n_kc_claw in enumerate(n_kc_claws):    
-    proj, proj2 = get_proj(n_kc_claw, n_rep=10)
-    projs.append(proj)
-    proj2s.append(proj2)
+def plot_proj_hist_varyclaws():
+    n_kc_claws = [1, 3, 5, 7, 10, 20, 30, 40]
+    projs = list()
+    proj2s = list()
+    for i, n_kc_claw in enumerate(n_kc_claws):    
+        proj, proj2 = get_proj(n_kc_claw, n_rep=2, coding_level=10)
+        projs.append(proj)
+        proj2s.append(proj2)
+    
+    
+    bins = np.linspace(-5, 5, 500)
+    bin_centers = (bins[1:]+bins[:-1])/2
+        
+    plt.figure(figsize=(3, 3))
+    colors = plt.cm.jet(np.linspace(0,1,len(n_kc_claws)))
+    for i, n_kc_claw in enumerate(n_kc_claws):
+        
+        proj, proj2 = projs[i], proj2s[i]
+        
+        # mu, std = np.mean(proj), np.std(proj)    
+        # proj_norm = (proj - mu)/std
+        # proj2_norm = (proj2 - mu)/std
+        # hist, bin_edges = np.histogram(proj_norm, density=True, bins=bins)
+        # hist2, bin_edges = np.histogram(proj2_norm, density=True, bins=bins)
+        
+        hist, bin_edges = np.histogram(proj, density=True, bins=bins)
+        # Plot the histogram.
+        plt.plot(bin_centers, hist, label=str(n_kc_claw), color=colors[i])
+    plt.xlim(-3, 3)
+    plt.legend()
+    plt.show()
+
+    
+    plt.figure(figsize=(3, 3))
+    colors = plt.cm.jet(np.linspace(0,1,len(n_kc_claws)))
+    for i, n_kc_claw in enumerate(n_kc_claws):
+        
+        proj, proj2 = projs[i], proj2s[i]
+        proj_diff = proj - proj2
+        hist, bin_edges = np.histogram(proj_diff, density=True, bins=bins)
+        plt.plot(bin_centers, hist, label=str(n_kc_claw), color=colors[i])
+    plt.xlim(-3, 3)
+    plt.title('Distribution of randomly projected perturbation')
+    plt.legend()
+    _easy_save('analytical', 'hist_pert_proj')
 
 
-bins = np.linspace(-5, 5, 100)
-bin_centers = (bins[1:]+bins[:-1])/2
-    
-plt.figure(figsize=(10, 10))
-colors = plt.cm.jet(np.linspace(0,1,len(n_kc_claws)))
-for i, n_kc_claw in enumerate(n_kc_claws):
-    
-    proj, proj2 = projs[i], proj2s[i]
-    mu, std = np.mean(proj), np.std(proj)
-    
-    proj_norm = (proj - mu)/std
-    proj2_norm = (proj2 - mu)/std
-    
-    hist, bin_edges = np.histogram(proj_norm, density=True, bins=bins)
-    hist2, bin_edges = np.histogram(proj2_norm, density=True, bins=bins)
-    
-    # Plot the histogram.
-    plt.plot(bin_centers, hist - hist2, label=str(n_kc_claw), color=colors[i])
-plt.xlim(-3, 3)
-plt.legend()
-plt.show()
+# proj, proj2 = _get_proj(n_kc_claw=7, n_pts=500, n_proj=1, coding_level=10)
