@@ -5,7 +5,7 @@ import task
 import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 10
+testing_epochs = 6
 
 def train_standardnet(argTest=False):
     """Standard training setting"""
@@ -242,11 +242,18 @@ def pn_normalization(argTest):
     :return:
     '''
     config = configs.FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 15
+
+    config.direct_glo = True
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['data_dir'] = ['./datasets/proto/standard','./datasets/proto/200_20']
-    hp_ranges['pn_norm_post'] = ['None', 'biology']
+    i = [0, .6]
+    datasets = ['./datasets/proto/concentration_mask_row_' + str(s) for s in i]
+    hp_ranges['data_dir'] = ['./datasets/proto/standard'] + ['./datasets/proto/concentration'] + datasets
+    hp_ranges['pn_norm_pre'] = ['None','biology','fixed_activity']
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges

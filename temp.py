@@ -32,40 +32,50 @@ def st(experiment, save_path, s=0,e=1000):
             config.save_path = os.path.join(save_path, str(i).zfill(6))
             train.train(config)
 
-# def temp_norm():
-#     config = configs.FullConfig()
-#     config.max_epoch = 10
+def temp():
+    config = configs.FullConfig()
+    config.max_epoch = 6
+    config.data_dir = './datasets/proto/200_20'
+    config.direct_glo = True
+    # config.sparse_pn2kc = False
+    # config.kc_dropout = False
+    # config.train_pn2kc = True
+
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    i = [0, .6]
+    # config.datasets = ['./datasets/proto/standard','./datasets/proto/80_20']
+    hp_ranges['apl'] = [False, True]
+    return config, hp_ranges
 #
-#     config.direct_glo = True
-#     config.save_every_epoch = True
-#     # config.sparse_pn2kc = False
-#     # config.train_pn2kc = True
-#
-#     config.replicate_orn_with_tiling = False
-#     config.N_ORN_DUPLICATION = 1
-#     config.ORN_NOISE_STD = 0
-#     # config.kc_loss = True
-#     config.pn_norm_pre = 'batch_norm'
-#
-#     # Ranges of hyperparameters to loop over
-#     hp_ranges = OrderedDict()
-#     # hp_ranges['data_dir'] = ['./datasets/proto/standard', './datasets/proto/combinatorial']
-#     hp_ranges['data_dir'] = ['./datasets/proto/combinatorial']
-#     # hp_ranges['pn_norm_pre'] = ['None', 'biology']
-#     return config, hp_ranges
-#
-# path = './files_temp/temp'
-# shutil.rmtree(path)
-# t(temp_norm(), path, s=0, e=100)
+path = './files_temp/temp'
+try:
+    shutil.rmtree(path)
+except:
+    pass
+t(temp(), path, s=0, e=100)
 
 
+# inbound = tools.load_pickle(path, 'model/kc2apl/kernel:0')[0].flatten()
+# outbound = tools.load_pickle(path, 'model/apl2kc/kernel:0')[0].flatten()
+# bias = tools.load_pickle(path, 'model/kc2apl/bias:0')[0]
+#
+# print(bias)
+# plt.hist(np.abs(inbound), bins=100)
+# plt.show()
+# plt.hist(np.abs(outbound), bins=100)
+# plt.show()
 
 # analysis_training.plot_sparsity(path, dynamic_thres=True)
 # analysis_training.plot_distribution(path)
 # analysis_training.plot_pn2kc_claw_stats(path, x_key = 'n_trueclass', dynamic_thres=False)
 # analysis_activity.sparseness_activity(path, 'glo_out')
-# analysis_activity.sparseness_activity(path, 'kc_out')
+analysis_activity.sparseness_activity(path, 'kc_out')
 # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
-# sa.plot_results(path, x_key='skip_pn2kc', y_key='val_acc', loop_key='N_CLASS')
+
 # sa.plot_weights(path, var_name='model/layer3/kernel:0', dir_ix=0)

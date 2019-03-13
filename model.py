@@ -165,20 +165,21 @@ def _normalize(inputs, norm_type, training=True):
             outputs = normalization.custom_norm(inputs, center=False, scale=True)
         elif norm_type == 'biology':
             exp = 1
-            r_max = tf.get_variable('r_max', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(5))
-            rho = tf.get_variable('rho', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(1))
-            m = tf.get_variable('m', shape=(1,), dtype=tf.float32, initializer=tf.constant_initializer(0.01))
-            sums = tf.reduce_sum(inputs, axis=1, keepdims=True)
+            r_max = tf.get_variable('r_max', shape=(1, 50), dtype=tf.float32, initializer=tf.constant_initializer(25))
+            rho = tf.get_variable('rho', shape=(1,50), dtype=tf.float32, initializer=tf.constant_initializer(1))
+            m = tf.get_variable('m', shape=(1,50), dtype=tf.float32, initializer=tf.constant_initializer(0.01))
+            sums = tf.reduce_sum(inputs, axis=1, keepdims=True) + 1e-6
             num = r_max * tf.pow(inputs, exp)
             den = tf.pow(inputs, exp) + rho + tf.pow(m * sums, exp)
             outputs =  tf.divide(num, den)
         elif norm_type == 'activity':
-            r_max = tf.get_variable('r_max', shape=(1, 50), dtype=tf.float32, initializer=tf.constant_initializer(5))
+            r_max = tf.get_variable('r_max', shape=(1, 50), dtype=tf.float32, initializer=tf.constant_initializer(100))
             sums = tf.reduce_sum(inputs, axis=1, keepdims=True) + 1e-6
             outputs = r_max * tf.divide(inputs, sums)
         elif norm_type == 'fixed_activity':
+            r_max = 25
             sums = tf.reduce_sum(inputs, axis=1, keepdims=True) + 1e-6
-            outputs = tf.divide(inputs, sums)
+            outputs = r_max * tf.divide(inputs, sums)
         else:
             print('Unknown pn_norm type {:s}. Outputs = Inputs'.format(norm_type))
             outputs = inputs
