@@ -220,28 +220,34 @@ if 'pn_normalization' in experiments:
     if TRAIN:
         local_train(se.pn_normalization(is_test), path)
     if ANALYZE:
-        # sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
-        #                 select_dict={
-        #                     'pn_norm_pre': ['None', 'fixed_activity'],
-        #                     'data_dir': ['./datasets/proto/standard',
-        #                                  './datasets/proto/concentration',
-        #                                  './datasets/proto/concentration_mask_row_0'
-        #                                  ]
-        #                 }, sort=False)
-        #
-        # sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
-        #                 select_dict={
-        #                     'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
-        #                     'data_dir': ['./datasets/proto/concentration_mask_row_0',
-        #                                  './datasets/proto/concentration_mask_row_0.6',
-        #                                  ]
-        #                 })
+        sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+                        select_dict={
+                            'pn_norm_pre': ['None', 'fixed_activity'],
+                            'data_dir': ['./datasets/proto/standard',
+                                         './datasets/proto/concentration',
+                                         './datasets/proto/concentration_mask_row_0'
+                                         ]
+                        }, sort=False)
 
-        analysis_activity.image_activity(path, 'glo_out')
-        analysis_activity.image_activity(path, 'kc_out')
-        analysis_activity.distribution_activity(path, 'glo_out')
-        analysis_activity.distribution_activity(path, 'kc_out')
-        analysis_activity.sparseness_activity(path, 'kc_out')
+        sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+                        select_dict={
+                            'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
+                            'data_dir': ['./datasets/proto/concentration_mask_row_0',
+                                         './datasets/proto/concentration_mask_row_0.6',
+                                         ]})
+        # import tools
+        # rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
+        # rho = tools.load_pickle(path, 'model/layer1/rho:0')
+        # m = tools.load_pickle(path, 'model/layer1/m:0')
+        # print(rmax)
+        # print(rho)
+        # print(m)
+        #
+        # analysis_activity.image_activity(path, 'glo_out')
+        # analysis_activity.image_activity(path, 'kc_out')
+        # analysis_activity.distribution_activity(path, 'glo_out')
+        # analysis_activity.distribution_activity(path, 'kc_out')
+        # analysis_activity.sparseness_activity(path, 'kc_out')
 
 if 'or2orn' in experiments:
     path = './files/or2orn'

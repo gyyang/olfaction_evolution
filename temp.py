@@ -32,13 +32,13 @@ def st(experiment, save_path, s=0,e=1000):
             config.save_path = os.path.join(save_path, str(i).zfill(6))
             train.train(config)
 
-def temp_norm():
+def temp():
     config = configs.FullConfig()
     config.max_epoch = 6
-
+    config.data_dir = './datasets/proto/200_20'
     config.direct_glo = True
-    # config.kc_dropout = False
     # config.sparse_pn2kc = False
+    # config.kc_dropout = False
     # config.train_pn2kc = True
 
     config.replicate_orn_with_tiling = False
@@ -48,11 +48,8 @@ def temp_norm():
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     i = [0, .6]
-    datasets = ['./datasets/proto/concentration_mask_row_' + str(s) for s in i]
-    # datasets = ['./datasets/proto/standard','./datasets/proto/concentration_mask_row_0']
-    hp_ranges['data_dir'] = ['./datasets/proto/standard'] + ['./datasets/proto/concentration'] + datasets
-    # hp_ranges['data_dir'] = [''datasets/proto/concentration_mean_mask']
-    hp_ranges['pn_norm_pre'] = ['biology']
+    # config.datasets = ['./datasets/proto/standard','./datasets/proto/80_20']
+    hp_ranges['apl'] = [False, True]
     return config, hp_ranges
 #
 path = './files_temp/temp'
@@ -60,37 +57,24 @@ try:
     shutil.rmtree(path)
 except:
     pass
-t(temp_norm(), path, s=0, e=100)
+t(temp(), path, s=0, e=100)
 
-# sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
-#                 select_dict={
-#                     'pn_norm_pre': ['None', 'fixed_activity'],
-#                     'data_dir': ['./datasets/proto/standard',
-#                                  './datasets/proto/concentration',
-#                                  './datasets/proto/concentration_mask_row_0'
-#                                  ]
-#                 }, sort=False)
+
+# inbound = tools.load_pickle(path, 'model/kc2apl/kernel:0')[0].flatten()
+# outbound = tools.load_pickle(path, 'model/apl2kc/kernel:0')[0].flatten()
+# bias = tools.load_pickle(path, 'model/kc2apl/bias:0')[0]
 #
-# sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
-#                 select_dict={
-#                     'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
-#                     'data_dir': ['./datasets/proto/concentration_mask_row_0',
-#                                  './datasets/proto/concentration_mask_row_0.6',
-#                                  ]
-#                 })
-
-rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
-rho = tools.load_pickle(path, 'model/layer1/rho:0')
-m = tools.load_pickle(path, 'model/layer1/m:0')
-print(rmax)
-print(rho)
-print(m)
+# print(bias)
+# plt.hist(np.abs(inbound), bins=100)
+# plt.show()
+# plt.hist(np.abs(outbound), bins=100)
+# plt.show()
 
 # analysis_training.plot_sparsity(path, dynamic_thres=True)
 # analysis_training.plot_distribution(path)
 # analysis_training.plot_pn2kc_claw_stats(path, x_key = 'n_trueclass', dynamic_thres=False)
 # analysis_activity.sparseness_activity(path, 'glo_out')
-# analysis_activity.sparseness_activity(path, 'kc_out')
+analysis_activity.sparseness_activity(path, 'kc_out')
 # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
 
