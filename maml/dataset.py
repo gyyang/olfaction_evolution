@@ -19,7 +19,7 @@ class DataGenerator(object):
             dim_output=2,
     ):
         train_x, train_y, val_x, val_y = task.load_data(
-            'proto', './datasets/proto/standard')
+            'proto', '../datasets/proto/standard')
 
         self.meta_bs = meta_batch_size
         self.batch_size = batch_size
