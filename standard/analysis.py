@@ -107,7 +107,6 @@ def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=Fal
     #TODO: fix code
     dirs = [os.path.join(path, n) for n in os.listdir(path)]
     save_path = dirs[dir_ix]
-    config = tools.load_config(save_path)
     # Load network at the end of training
     model_dir = os.path.join(save_path, 'model.pkl')
     with open(model_dir, 'rb') as f:
@@ -137,7 +136,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=Fal
         pass
 
     if var_name == 'w_glo':
-        w_plot = w_plot[:,:20]
+        w_plot = w_plot[:,:100]
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]

@@ -88,10 +88,10 @@ def temp():
     print('Done test dataset')
 
 if __name__ == '__main__':
-    # make_standard_dataset()
+    make_standard_dataset()
     # make_relabel_datasets_small()
     # make_relabel_datasets_large()
-    make_concentration_dataset()
+    # make_concentration_dataset()
     # make_concentration_with_mask_row_dataset()
     # make_primordial_dataset()
     # make_mask_row_dataset()

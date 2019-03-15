@@ -1,6 +1,6 @@
 """ Code for the MAML algorithm and network definitions.
 
-Adpated from Chelsea Finn's code
+Adapted from Chelsea Finn's code
 """
 from __future__ import print_function
 
@@ -68,8 +68,7 @@ class MAML:
         inputa, inputb, labela, labelb = inp
         task_outputbs, task_lossesb, task_accuraciesb = [], [], []
 
-        task_outputa = self.model.build(inputa, weights,
-                                        reuse=reuse)  # only reuse on the first iter
+        task_outputa = self.model.build(inputa, weights, reuse=reuse)  # only reuse on the first iter
         task_lossa = self.loss_func(task_outputa, labela)
         task_accuracya = acc_func(task_outputa, labela)
 
@@ -81,11 +80,13 @@ class MAML:
         # Notice that this doesn't have to be through gradient descent
         gradients = dict(zip(weights.keys(), grads))
         fast_weights = dict()
+        fast_weight_lr = {
+            # 'w_orn': FLAGS.update_lr,'b_orn': FLAGS.update_lr,
+            'w_glo': 0,'b_glo': 0,
+            'w_output':FLAGS.update_lr,'b_output': FLAGS.update_lr
+                          }
         for key in weights.keys():
-            if key in ['w_output', 'b_output']:
-                fast_weights[key] = weights[key] - FLAGS.update_lr * gradients[key]
-            else:
-                fast_weights[key] = weights[key]
+            fast_weights[key] = weights[key] - fast_weight_lr[key] * gradients[key]
 
         # Compute the loss of the network post inner update
         # using an independent set of input/label
@@ -102,9 +103,7 @@ class MAML:
 
             gradients = dict(zip(fast_weights.keys(), grads))
             for key in weights.keys():
-                if key in ['w_output', 'b_output']:
-                    fast_weights[key] = fast_weights[key] - FLAGS.update_lr * \
-                                        gradients[key]
+                fast_weights[key] = fast_weights[key] - fast_weight_lr[key] * gradients[key]
 
             output = self.model.build(inputb, fast_weights, reuse=True)
             task_outputbs.append(output)
@@ -195,6 +194,25 @@ class PNKCModel(Model):
         n_valence = self.config.n_class_valence
         config = self.config
         weights = {}
+
+        with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
+            if config.sign_constraint_orn2pn:
+                range = _sparse_range(config.N_ORN)
+                initializer = _initializer(range, config.initializer_orn2pn)
+                bias_initializer = tf.glorot_normal_initializer
+            else:
+                initializer = tf.glorot_normal_initializer
+                bias_initializer = tf.glorot_normal_initializer
+
+            w_orn = tf.get_variable('kernel', shape=(config.N_ORN, config.N_PN),
+                                    dtype=tf.float32,
+                                    initializer=initializer)
+
+            b_orn = tf.get_variable('bias', shape=(config.N_PN,), dtype=tf.float32,
+                                    initializer=bias_initializer)
+            if config.sign_constraint_orn2pn:
+                w_orn = tf.abs(w_orn)
+
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             if config.sign_constraint_pn2kc:
                 if config.initial_pn2kc == 0:
@@ -204,6 +222,7 @@ class PNKCModel(Model):
                         range = _sparse_range(config.N_PN)
                 else:
                     range = config.initial_pn2kc
+                # range = .1
                 initializer = _initializer(range, config.initializer_pn2kc)
                 bias_initializer = tf.constant_initializer(config.kc_bias)
             else:
@@ -214,10 +233,10 @@ class PNKCModel(Model):
                 'kernel', shape=(config.N_PN, config.N_KC),
                 dtype=tf.float32, initializer=initializer)
             if config.sign_constraint_pn2kc:
-                w_kc = tf.abs(w2)
+                w_glo = tf.abs(w2)
             else:
-                w_kc = w2
-            b_kc = tf.get_variable('bias', shape=(config.N_KC,), dtype=tf.float32,
+                w_glo = w2
+            b_glo = tf.get_variable('bias', shape=(config.N_KC,), dtype=tf.float32,
                                    initializer=bias_initializer)
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
@@ -228,18 +247,22 @@ class PNKCModel(Model):
                 'bias', shape=(n_valence,), dtype=tf.float32,
                 initializer=tf.zeros_initializer())
 
-        weights['w_kc'] = w_kc
-        weights['b_kc'] = b_kc
+        # weights['w_orn'] = w_orn
+        # weights['b_orn'] = b_orn
+        weights['w_glo'] = w_glo
+        weights['b_glo'] = b_glo
         weights['w_output'] = w_output
         weights['b_output'] = b_output
         self.weights = weights
         return weights
 
     def build(self, inp, weights, reuse=False):
-        hidden = tf.nn.relu(tf.matmul(inp, weights['w_kc']) + weights['b_kc'])
+        # pn = tf.nn.relu(tf.matmul(inp, weights['w_orn']) + weights['b_orn'])
+        # kc = tf.nn.relu(tf.matmul(pn, weights['w_glo']) + weights['b_glo'])
+        kc = tf.nn.relu(tf.matmul(inp, weights['w_glo']) + weights['b_glo'])
         if self.config.kc_dropout:
-            hidden = tf.layers.dropout(hidden, self.config.kc_dropout_rate, training=True)
-        output = tf.matmul(hidden, weights['w_output']) + weights['b_output']
+            kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training=True)
+        output = tf.matmul(kc, weights['w_output']) + weights['b_output']
 
         return output
 
@@ -258,10 +281,10 @@ class PNKCModel(Model):
         sess = tf.get_default_session()
         var_dict = dict()
         # var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
-        for v in ['w_kc', 'b_kc', 'w_output', 'b_output']:
-            var_dict[v] = sess.run(self.weights[v])
-        # var_dict['w_glo'] = sess.run(self.weights['w_kc'])
-        # var_dict['w_glo'] = sess.run(self.weights['w_kc'])
+        for k in self.weights.keys():
+            var_dict[k] = sess.run(self.weights[k])
+        # var_dict['w_glo'] = sess.run(self.weights['w_glo'])
+        # var_dict['w_glo'] = sess.run(self.weights['w_glo'])
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)

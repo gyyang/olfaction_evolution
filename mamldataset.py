@@ -6,6 +6,7 @@ import numpy as np
 
 import tools
 from configs import input_ProtoConfig
+import configs
 import task
 
 
@@ -19,7 +20,7 @@ class DataGenerator(object):
             dim_output=2,
     ):
         train_x, train_y, val_x, val_y = task.load_data(
-            'proto', '../datasets/proto/standard')
+            'proto', './datasets/proto/standard')
 
         self.meta_bs = meta_batch_size
         self.batch_size = batch_size
@@ -34,8 +35,8 @@ class DataGenerator(object):
         unique_y = np.unique(train_y)
         self.ind_dict = {y: np.where(train_y==y)[0] for y in unique_y}
 
-        self.metatrain_classes = unique_y[:int(0.8 * len(unique_y))]
-        self.metaval_classes = unique_y[int(0.8 * len(unique_y)):]
+        self.metatrain_classes = unique_y[:int(0.5 * len(unique_y))]
+        self.metaval_classes = unique_y[int(0.5 * len(unique_y)):]
 
         if np.mod(num_class, dim_output) != 0:
             raise ValueError('Now only supporting num_class multiples of dim_output')
@@ -84,18 +85,30 @@ class DataGenerator(object):
                     outputs[i, j:j+n_sample_per_class, l] = 1.0  # one-hot
                     j += n_sample_per_class
 
+        # n_orn = 50
+        # for i in range(self.meta_bs):
+        #     prototypes = np.random.uniform(0, 1, (n_class_per_batch, n_orn))
+        #     odors = np.random.uniform(0, 1, (self.batch_size, n_orn))
+        #     labels = task._get_labels(prototypes, odors, percent_generalization=100)
+        #     inputs[i,:,:] = odors
+        #     outputs[i, np.arange(labels.size), labels] = 1
+
         return inputs, outputs
 
 
 def _generate_meta_proto():
-    num_samples_per_class = 20
-    num_class = 2
+    input_config = configs.MetaConfig()
+    num_samples_per_class = input_config.n_samples_per_metaclass
+    num_class = input_config.n_metaclass
+    meta_batch_size = input_config.meta_batch_size
+    dim_output = input_config.n_meta_output
+
     data_generator = DataGenerator(
         batch_size=num_samples_per_class * num_class * 2,  # 5 is # classes
-        meta_batch_size=1000*32,
+        meta_batch_size= meta_batch_size,
         num_samples_per_class=num_samples_per_class,
         num_class=num_class,
-        dim_output=2,
+        dim_output=dim_output,
     )
     inputs, outputs = data_generator.generate()
     return inputs, outputs
@@ -105,7 +118,7 @@ def save_proto(config=None, seed=0, folder_name=None):
     """Save dataset in numpy format."""
 
     if config is None:
-        config = input_ProtoConfig()
+        config = configs.input_ProtoConfig()
 
     # make and save data
     train_x, train_y = _generate_meta_proto()

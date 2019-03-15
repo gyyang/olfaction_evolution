@@ -535,4 +535,9 @@ if __name__ == '__main__':
     # train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
     # _make_hallem_dataset()
     # _generate_from_hallem()
-    save_proto()
+    # save_proto()
+
+    import configs
+    config = configs.input_ProtoConfig()
+    config.label_type = 'multi_head_sparse'
+    save_proto(config, folder_name='multi_head')

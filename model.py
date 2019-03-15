@@ -517,20 +517,8 @@ class FullModel(Model):
         self.pre_out = kc
         self.x = x
 
-    def _build(self, x, y, training):
+    def loss_and_accuracy(self, logits, logits2, y):
         config = self.config
-
-        self.loss = 0
-        orn = self._build_orn(x, training)
-        pn = self._build_orn2pn(orn, training)
-        kc = self._build_pn2kc(pn, training)
-
-        if config.label_type == 'combinatorial':
-            n_logits = config.n_combinatorial_classes
-        else:
-            n_logits = config.N_CLASS
-        logits = tf.layers.dense(kc, n_logits, name='layer3', reuse=tf.AUTO_REUSE)
-
         if config.label_type == 'combinatorial':
             self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
             logits = tf.cast(logits, tf.float32)
@@ -548,12 +536,7 @@ class FullModel(Model):
             pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
             self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
         elif config.label_type == 'multi_head_sparse':
-            # second head
-            logits2 = tf.layers.dense(kc, config.n_class_valence,
-                                      name='layer3_2', reuse=tf.AUTO_REUSE)
-
             y1, y2 = tf.unstack(y, axis=1)
-
             loss1 = tf.losses.sparse_softmax_cross_entropy(
                 labels=y1, logits=logits)
             loss2 = tf.losses.sparse_softmax_cross_entropy(
@@ -568,36 +551,44 @@ class FullModel(Model):
                 self.loss += loss1
             if config.train_head2:
                 self.loss += loss2
-
             self.acc = acc1
             self.acc2 = acc2
-
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
+        return self.loss, self.acc
 
-        # print('USING L2 LOSS on ORN-PN weights!!')
-        # self.loss += tf.reduce_sum(tf.square(w_orn)) * 0.01
+    def _build(self, x, y, training):
+        self.loss = 0
+        self.weights = dict()
+        self.build_weights()
+        logits, logits2 = self.build_activity(x, training)
+        loss, acc = self.loss_and_accuracy(logits, logits2, y)
 
-        self.kc = kc
-        self.logits = logits
+    def build_weights(self):
+        self._build_or2orn_weights()
+        self._build_orn2pn_weights()
+        self._build_pn2kc_weights()
+        self._build_kc2logit_weights()
 
-        self.pre_out = kc
-        self.x = x
+    def build_activity(self, x, training):
+        orn = self._build_orn_activity(x, training)
+        pn = self._build_pn_activity(orn, training)
+        kc = self._build_kc_activity(pn, training)
+        logits, logits2 = self._build_logit_activity(kc, training)
+        return logits, logits2
 
-    def _build_orn(self, x, training):
+    def _build_or2orn_weights(self):
         config = self.config
-        N_PN = config.N_PN
+        N_OR = config.N_ORN
+        ORN_DUP = config.N_ORN_DUPLICATION
         if config.receptor_layer:
-            # Define another layer, layer0, that connects receptors to ORNs
-            with tf.variable_scope('layer0', reuse= tf.AUTO_REUSE):
-                N_OR = config.N_ORN
-                ORN_DUP = config.N_ORN_DUPLICATION
-                N_ORN = config.N_ORN * ORN_DUP
-                range = 1/N_OR
+            N_ORN = config.N_ORN * ORN_DUP
+            with tf.variable_scope('layer0', reuse=tf.AUTO_REUSE):
+                range = 1 / N_OR
                 initializer = _initializer(range, config.initializer_or2orn)
                 w_or = tf.get_variable('kernel', shape=(N_OR, N_ORN), dtype=tf.float32,
-                                     initializer=initializer)
+                                       initializer=initializer)
                 if config.sign_constraint_or2orn:
                     w_or = tf.abs(w_or)
 
@@ -606,37 +597,21 @@ class FullModel(Model):
                     w_or = tf.divide(w_or, sums)
 
                 if config.or_bias:
-                    b_or = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
-                                            initializer=tf.constant_initializer(-0.01))
+                    b_or = tf.get_variable('bias', shape=(N_OR,), dtype=tf.float32,
+                                           initializer=tf.constant_initializer(-0.01))
                 else:
                     b_or = 0
-
-                orn = tf.matmul(x, w_or) + b_or
-                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+                self.weights['w_or'] = w_or
+                self.weights['b_or'] = b_or
                 self.w_or = w_or
         else:
             if config.replicate_orn_with_tiling:
-                # Replicating ORNs through tiling
-                ORN_DUP = config.N_ORN_DUPLICATION
-                N_ORN = config.N_ORN * ORN_DUP
-
-                assert x.shape[-1] == config.N_ORN
-                orn = tf.tile(x, [1, ORN_DUP])
-                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+                N_ORN = N_OR * ORN_DUP
             else:
-                N_ORN = config.N_ORN
-                orn = x
-                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
-
-        if config.orn_dropout:
-            # This is interpreted as noise, so it's always on
-            orn = tf.layers.dropout(orn, config.orn_dropout_rate,
-                                    training=True)
-
+                N_ORN = N_OR
         self.n_orn = N_ORN
-        return orn
 
-    def _build_orn2pn(self, orn, training):
+    def _build_orn2pn_weights(self):
         config = self.config
         N_PN = config.N_PN
         N_ORN = self.n_orn
@@ -658,38 +633,13 @@ class FullModel(Model):
 
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer= bias_initializer)
-
             if config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
-
-            if config.orn2pn_normalization:
-                sums = tf.reduce_sum(w_orn, axis=0, keepdims=True)
-                w_orn = tf.divide(w_orn, sums)
-
-            glo_in_pre = tf.matmul(orn, w_orn) + b_orn
-            if config.skip_orn2pn:
-                glo_in = orn
-            elif config.direct_glo:
-                mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
-                glo_in = tf.matmul(orn, mask.astype(np.float32))
-                glo_in = _normalize(glo_in, config.pn_norm_pre, training)
-            else:
-                glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
-
-            # self.glo_in_pre_mean = tf.reduce_mean(glo_in_pre, axis=1)
-            # self.glo_in_mean = tf.reduce_mean(glo_in, axis=1)
-
-            glo = tf.nn.relu(glo_in)
-            glo = _normalize(glo, config.pn_norm_post, training)
-
+        self.weights['w_orn'] = w_orn
+        self.weights['b_orn'] = b_orn
         self.w_orn = w_orn
-        self.glo_in = glo_in
-        self.glo_in_pre = glo_in_pre
-        self.glo = glo
 
-        return glo
-
-    def _build_pn2kc(self, pn, training):
+    def _build_pn2kc_weights(self):
         config = self.config
         N_KC = config.N_KC
         N_PN = config.N_PN
@@ -743,62 +693,166 @@ class FullModel(Model):
             if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
-            # KC input before activation function
-            kc_in = tf.matmul(pn, w_glo) + b_glo
-            kc_in = _normalize(kc_in, config.kc_norm_pre, training)
-            if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
-                kc_in = pn
-            kc = tf.nn.relu(kc_in)
-            kc = _normalize(kc, config.kc_norm_post, training)
-
         if 'apl' in dir(config) and config.apl:
             if config.skip_pn2kc:
                 raise ValueError('apl can not be used when no KC.')
-            # with tf.variable_scope('kc2apl', reuse=tf.AUTO_REUSE):
-            #     w_kc2apl0 = tf.get_variable(
-            #         'kernel', shape=(N_KC, 1), dtype=tf.float32,
-            #         initializer=tf.constant_initializer(1./N_KC))
-            #     b_apl = tf.get_variable('bias', shape=(1,), dtype=tf.float32)
-            #     w_kc2apl = tf.abs(w_kc2apl0)
-            #
-            #     apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
-            #
-            # with tf.variable_scope('apl2kc', reuse=tf.AUTO_REUSE):
-            #     w_apl2kc0 = tf.get_variable(
-            #         'kernel', shape=(1, N_KC), dtype=tf.float32,
-            #         initializer=tf.constant_initializer(0.1)
-            #     )
-            #     w_apl2kc = - tf.abs(w_apl2kc0)  # inhibitory connections
-            #
-            # kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
+            with tf.variable_scope('kc2apl', reuse=tf.AUTO_REUSE):
+                w_kc2apl0 = tf.get_variable(
+                    'kernel', shape=(N_KC, 1), dtype=tf.float32,
+                    initializer=tf.constant_initializer(1./N_KC))
+                b_apl = tf.get_variable('bias', shape=(1,), dtype=tf.float32)
+                w_kc2apl = tf.abs(w_kc2apl0)
 
-            with tf.variable_scope('apl', reuse=tf.AUTO_REUSE):
-                # w_apl = tf.get_variable('kernel', shape=(1,), dtype=tf.float32,
-                #                         initializer=tf.constant_initializer(1.))
-                w_apl = 2.0
-                apl_in = tf.abs(w_apl) * tf.reduce_mean(kc, axis=1, keepdims=True)
-                kc = tf.nn.relu(kc_in - apl_in)
+            with tf.variable_scope('apl2kc', reuse=tf.AUTO_REUSE):
+                w_apl2kc0 = tf.get_variable(
+                    'kernel', shape=(1, N_KC), dtype=tf.float32,
+                    initializer=tf.constant_initializer(0.1)
+                )
+                w_apl2kc = - tf.abs(w_apl2kc0)  # inhibitory connections
 
-        if config.kc_dropout:
-            kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+            # with tf.variable_scope('apl', reuse=tf.AUTO_REUSE):
+            #     # w_apl = tf.get_variable('kernel', shape=(1,), dtype=tf.float32,
+            #     #                         initializer=tf.constant_initializer(1.))
+            #     w_apl = 2.0
+            #     apl_in = tf.abs(w_apl) * tf.reduce_mean(kc, axis=1, keepdims=True)
+            #     kc = tf.nn.relu(kc_in - apl_in)
+
+            self.weights['w_apl_in'] = w_kc2apl
+            self.weights['w_apl_out'] = w_apl2kc
+            self.weights['b_apl'] = b_apl
+
+        if config.kc_loss:
+            self.kc_loss = tf.reduce_mean(tf.tanh(config.kc_loss_beta * w_glo)) * config.kc_loss_alpha
+            self.loss += self.kc_loss
 
         if config.extra_layer:
             with tf.variable_scope('layer_extra', reuse=tf.AUTO_REUSE):
                 n_neurons = config.extra_layer_neurons
                 w3 = tf.get_variable('kernel', shape=(N_KC, n_neurons), dtype=tf.float32)
-                # w3 = tf.abs(w3)
                 b3 = tf.get_variable('bias', shape=(n_neurons,), dtype=tf.float32)
-                kc = tf.nn.relu(tf.matmul(kc, w3) + b3)
+                self.weights['w_extra_layer'] = w3
+                self.weights['b_extra_layer'] = b3
 
-        if config.kc_loss:
-            # self.kc_loss = tf.reduce_mean(tf.pow(tf.abs(w_glo), 0.5)) * config.kc_loss_alpha
-            self.kc_loss = tf.reduce_mean(tf.tanh(config.kc_loss_beta * w_glo)) * config.kc_loss_alpha
-            self.loss += self.kc_loss
-
+        self.weights['w_glo'] = w_glo
+        self.weights['b_glo'] = b_glo
         self.w_glo = w_glo
-        self.kc_in = kc_in
 
+    def _build_kc2logit_weights(self):
+        config = self.config
+        if config.label_type == 'combinatorial':
+            n_logits = config.n_combinatorial_classes
+        else:
+            n_logits = config.N_CLASS
+
+        with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
+            w_output = tf.get_variable(
+                'kernel', shape=(config.N_KC, n_logits),
+                dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
+            b_output = tf.get_variable(
+                'bias', shape=(n_logits,), dtype=tf.float32,
+                initializer=tf.zeros_initializer())
+            self.weights['w_output'] = w_output
+            self.weights['b_output'] = b_output
+
+        if config.label_type == 'multi_head_sparse':
+            with tf.variable_scope('layer3_2', reuse=tf.AUTO_REUSE):
+                w_output = tf.get_variable(
+                    'kernel', shape=(config.N_KC, config.n_class_valence),
+                    dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
+                b_output = tf.get_variable(
+                    'bias', shape=(config.n_class_valence,), dtype=tf.float32,
+                    initializer=tf.zeros_initializer())
+                self.weights['w_output_head2'] = w_output
+                self.weights['b_output_head2'] = b_output
+
+    def _build_orn_activity(self, x, training):
+        config = self.config
+        ORN_DUP = config.N_ORN_DUPLICATION
+        if config.receptor_layer:
+            w_or = self.weights['w_or']
+            b_or = self.weights['b_or']
+            orn = tf.matmul(x, w_or) + b_or
+            orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+        else:
+            if config.replicate_orn_with_tiling:
+                # Replicating ORNs through tiling
+                assert x.shape[-1] == config.N_ORN
+                orn = tf.tile(x, [1, ORN_DUP])
+                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+            else:
+                orn = x
+                orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+        if config.orn_dropout:
+            # This is interpreted as noise, so it's always on
+            orn = tf.layers.dropout(orn, config.orn_dropout_rate, training=True)
+        self.x = x
+        return orn
+
+    def _build_pn_activity(self, orn, training):
+        config = self.config
+        w_orn = self.weights['w_orn']
+        b_orn = self.weights['b_orn']
+        N_PN = config.N_PN
+        glo_in_pre = tf.matmul(orn, w_orn) + b_orn
+        if config.skip_orn2pn:
+            glo_in = orn
+        elif config.direct_glo:
+            mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
+            glo_in = tf.matmul(orn, mask.astype(np.float32))
+            glo_in = _normalize(glo_in, config.pn_norm_pre, training)
+        else:
+            glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
+        glo = tf.nn.relu(glo_in)
+        glo = _normalize(glo, config.pn_norm_post, training)
+        self.glo_in = glo_in
+        self.glo_in_pre = glo_in_pre
+        self.glo = glo
+        return glo
+
+    def _build_kc_activity(self, pn, training):
+        # KC input before activation function
+        config = self.config
+        w_glo = self.weights['w_glo']
+        b_glo = self.weights['b_glo']
+
+        kc_in = tf.matmul(pn, w_glo) + b_glo
+        kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+        if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
+            kc_in = pn
+        kc = tf.nn.relu(kc_in)
+        kc = _normalize(kc, config.kc_norm_post, training)
+
+        if 'apl' in dir(config) and config.apl:
+            w_kc2apl = self.weights['w_apl_in']
+            b_apl = self.weights['b_apl']
+            w_apl2kc = self.weights['w_apl_out']
+            apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
+            kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
+
+        if config.kc_dropout:
+            kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+
+        if config.extra_layer:
+            w3 = self.weights['w_extra_layer']
+            b3 = self.weights['b_extra_layer']
+            kc = tf.nn.relu(tf.matmul(kc, w3) + b3)
+        self.kc_in = kc_in
+        self.kc = kc
         return kc
+
+    def _build_logit_activity(self, kc, training):
+        config = self.config
+        logits = tf.matmul(kc, self.weights['w_output']) + self.weights['b_output']
+
+        if config.label_type == 'multi_head_sparse':
+            logits2= tf.matmul(kc, self.weights['w_output_head2']) + self.weights['b_output_head2']
+        else:
+            logits2 = None
+
+        self.logits = logits
+        self.logits2 = logits2
+        return logits, logits2
+
 
     def save_pickle(self, epoch=None):
         """Save model using pickle.

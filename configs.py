@@ -91,8 +91,6 @@ class SingleLayerConfig(BaseConfig):
         self.batch_size = 256
         self.save_path = './files/peter_tmp'
 
-
-# class FullConfig(input_ProtoConfig):
 class FullConfig(BaseConfig):
     def __init__(self):
         super(FullConfig, self).__init__()
@@ -153,8 +151,6 @@ class FullConfig(BaseConfig):
         self.pn_norm_post = None
         # If True, skip the ORN --> PN connections
         self.skip_orn2pn = False
-        # If True, normalize by orn2pn weight matrix by L1 norm (sum of weights onto every PN add up to 1)
-        self.orn2pn_normalization = False
 
 
         # PN --> KC connections
@@ -211,3 +207,16 @@ class FullConfig(BaseConfig):
         self.train_head1 = True
         self.train_head2 = True
 
+class MetaConfig(FullConfig):
+    def __init__(self):
+        super(FullConfig, self).__init__()
+        # how many points for input generation
+        self.n_dataset = 1000 * 32
+
+        # number of classes to sample from. num class must be a multiple of dim_output as of now
+        self.n_metaclass = 2
+        self.n_meta_output = 2
+        # inner batch size proportional to this number
+        self.n_samples_per_metaclass = 20
+        # outer batch size
+        self.meta_batch_size = 64

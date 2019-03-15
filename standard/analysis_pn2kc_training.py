@@ -23,7 +23,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 figpath = os.path.join(rootpath, 'figures')
-THRES = 0.1
+THRES = 0.08
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
@@ -269,30 +269,31 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
     _plot(means, stds, THRES)
 
 
+def plot_distribution(dir):
+    # TODO(gry): I don't like how this function plots everything from subdirectories of dir
+    save_name = dir.split('/')[-1]
+    path = os.path.join(figpath, save_name)
+    os.makedirs(path, exist_ok=True)
+    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    titles = ['Before Training', 'After Training']
+
+
+    for i, d in enumerate(dirs):
+        print('Analyzing results from: ' + str(d))
+        try:
+            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+        except KeyError:
+            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
+        for j in [0, -1]:
+            w = wglo[j]
+            w[np.isnan(w)] = 0
+            distribution = w.flatten()
+            save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
+            print(save_name)
+            _plot_distribution(distribution, save_name,
+                               title=titles[j], xrange=1.0, yrange=5000)
+
 def plot_sparsity(dir, dynamic_thres=False, visualize=False):
-    def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
-        fig = plt.figure(figsize=(2.5, 2))
-        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-        plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
-        plt.plot([7, 7], [0, yrange], '--', color='gray')
-        ax.set_xlabel('PN inputs per KC')
-        ax.set_ylabel('Fraction of KCs')
-        name = title
-        ax.set_title(name)
-
-        xticks = [1, 7, 15, 25, 50]
-        ax.set_xticks(xticks)
-        ax.set_yticks(np.linspace(0, yrange, 3))
-        plt.ylim([0, yrange])
-        plt.xlim([0, xrange])
-
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-
-        plt.savefig(savename + '.png', dpi=500)
-        plt.savefig(savename + '.pdf', transparent=True)
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
@@ -325,7 +326,8 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False):
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
             _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])
 
-def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
+
+def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     fig = plt.figure(figsize=(2.5, 2))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
     plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
@@ -345,101 +347,8 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange= .5):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
-    plt.close()
-
-def plot_distribution(dir):
-    # TODO(gry): I don't like how this function plots everything from subdirectories of dir
-    save_name = dir.split('/')[-1]
-    path = os.path.join(figpath, save_name)
-    os.makedirs(path, exist_ok=True)
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    titles = ['Before Training', 'After Training']
-    def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
-        fig = plt.figure(figsize=(3, 2))
-        if not broken_axis:
-            ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-            plt.hist(data, bins=50, range=[0, xrange], density=False)
-            ax.set_xlabel('PN to KC Weight')
-            ax.set_ylabel('Number of Connections')
-            name = title
-            ax.set_title(name)
-
-            xticks = [0, .2, .4, .6, .8, 1]
-            ax.set_xticks(xticks)
-            ax.set_xticklabels([str(x) for x in xticks])
-            yticks = [0, 1000, 2000, 3000, 4000, 5000]
-            yticklabels = ['0', '1K', '2K', '3K', '4K', '>100K']
-            ax.set_yticks(yticks)
-            ax.set_yticklabels(yticklabels)
-            plt.ylim([0, yrange])
-            plt.xlim([0, xrange])
-
-            ax.spines["right"].set_visible(False)
-            ax.spines["top"].set_visible(False)
-            ax.xaxis.set_ticks_position('bottom')
-            ax.yaxis.set_ticks_position('left')
-
-        else:
-            ax = fig.add_axes([0.2, 0.2, 0.7, 0.5])
-            ax2 = fig.add_axes([0.2, 0.75, 0.7, 0.1])
-            n, bins, _ = ax2.hist(data, bins=50, range=[0, xrange], density=False)
-            ax.hist(data, bins=50, range=[0, xrange], density=False)
-
-            # hide the spines between ax and ax2
-            ax2.spines['bottom'].set_visible(False)
-            ax2.spines["top"].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax2.spines["right"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-            ax2.set_xticks([])
-            ax2.xaxis.set_ticks_position('none')
-            ax2.tick_params(labeltop='off')  # don't put tick labels at the top
-            ax.xaxis.tick_bottom()
-
-            d = .01  # how big to make the diagonal lines in axes coordinates
-            # arguments to pass to plot, just so we don't keep repeating them
-            kwargs = dict(transform=ax2.transAxes, color='k', clip_on=False)
-            ax2.plot((-d, +d), (-d, +d), **kwargs)  # top-left diagonal
-            kwargs.update(transform=ax.transAxes)  # switch to the bottom axes
-            ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
-
-            name = title
-            ax2.set_title(name)
-
-            ax.set_xlabel('PN to KC Weight')
-            ax.set_ylabel('Number of Connections')
-            xticks = np.arange(0, xrange + 0.01, .5)
-            ax.set_xticks(xticks)
-            ax.set_xticklabels([str(x) for x in xticks])
-            yticks = [0, 1000, 2000, 3000, 4000, 5000]
-            yticklabels = ['0', '1K', '2K', '3K', '4K', '5K']
-            ax.set_yticks(yticks)
-            ax.set_yticklabels(yticklabels)
-            ax.set_ylim(0, yrange)  # most of the data
-
-            ax2.set_yticks([np.max(n)])
-            ax2.set_yticklabels(['{:d}K'.format(int(np.max(n)/1000))])
-            ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
-
-        plt.savefig(savename + '.png', dpi=500)
-        plt.savefig(savename + '.pdf', transparent=True)
-
-    for i, d in enumerate(dirs):
-        print('Analyzing results from: ' + str(d))
-        try:
-            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
-        except KeyError:
-            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
-        for j in [0, -1]:
-            w = wglo[j]
-            w[np.isnan(w)] = 0
-            distribution = w.flatten()
-            save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
-            _plot_distribution(distribution, save_name,
-                               title=titles[j], xrange=1.0, yrange=5000)
 
 def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
     fig = plt.figure(figsize=(3, 2))
@@ -507,11 +416,9 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
         ax2.set_yticks([np.max(n)])
         ax2.set_yticklabels(['{:d}K'.format(int(np.max(n)/1000))])
         ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
-
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
-    plt.close()
-    
+
 # if __name__ == '__main__':
 #     dir = "../files/train_KC_claws"
 #     plot_sparsity(dir)

@@ -23,8 +23,8 @@ def load_config(save_path):
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
 
-    # config = configs.BaseConfig()
-    config = configs.FullConfig()
+    config = configs.BaseConfig()
+    # config = configs.FullConfig()
     for key, val in config_dict.items():
         setattr(config, key, val)
     return config
@@ -73,7 +73,7 @@ def load_pickle(dir, var):
                 cur_val = var_dict[var]
                 out.append(cur_val)
             except:
-                print(var + 'is not in directory:' + d)
+                print(var + ' is not in directory:' + d)
     return out
 
 
