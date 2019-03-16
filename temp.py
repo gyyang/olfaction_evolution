@@ -35,7 +35,7 @@ def st(experiment, save_path, s=0,e=1000):
 
 def temp():
     config = configs.FullConfig()
-    config.max_epoch = 6
+    config.max_epoch = 9
     config.data_dir = './datasets/proto/standard'
     # config.direct_glo = True
     # config.sparse_pn2kc = False
@@ -45,6 +45,8 @@ def temp():
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.ORN_NOISE_STD = 0
+    config.kc_dropout = True
+    config.kc_dropout_rate = .2
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -57,8 +59,13 @@ def train_multihead():
     '''
 
     '''
+    # config = configs.input_ProtoConfig()
+    # config.label_type = 'multi_head_sparse'
+    # config.has_special_odors = True
+    # task.save_proto(config, folder_name='multi_head')
+
     config = configs.FullConfig()
-    config.max_epoch = 8
+    config.max_epoch = 3
     config.batch_size = 256
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
@@ -82,9 +89,9 @@ try:
     shutil.rmtree(path)
 except:
     pass
-t(train_multihead(), path, s=0, e=100)
+t(temp(), path, s=0, e=100)
 
-analysis_multihead.main()
+# analysis_multihead.main()
 
 # path = './files/metatrain/valence_peter'
 # analysis_training.plot_distribution(path)

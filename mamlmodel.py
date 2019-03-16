@@ -11,7 +11,7 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python import layers as tf_layers
 from tensorflow.python.platform import flags
 
-from model import Model
+from model import Model, FullModel
 
 FLAGS = flags.FLAGS
 
@@ -46,9 +46,12 @@ class MAML:
     def __init__(self, x, y, config, test_num_updates=5):
         """MAML model."""
         self.test_num_updates = test_num_updates
-        self.model = PNKCModel(config)
-        self.loss_func = xent
-        # self.loss_func = mse
+        self.model = FullModel(x=None, y=None, config=config, meta_learn=True)
+        self.loss_func = lambda logits, y: self.model.loss_func(logits, None, y)
+        self.acc_func = lambda logits, y: self.model.accuracy_func(logits, None, y)
+        # self.model = PNKCModel(config)
+        # self.loss_func = xent
+        # self.acc_func = acc_func
         self.save_pickle = self.model.save_pickle
 
         self._build(x, y)
@@ -68,9 +71,9 @@ class MAML:
         inputa, inputb, labela, labelb = inp
         task_outputbs, task_lossesb, task_accuraciesb = [], [], []
 
-        task_outputa = self.model.build(inputa, weights, reuse=reuse)  # only reuse on the first iter
+        task_outputa = self.model.build_activity(inputa, weights, training=True, reuse=reuse)[0]  # only reuse on the first iter
         task_lossa = self.loss_func(task_outputa, labela)
-        task_accuracya = acc_func(task_outputa, labela)
+        task_accuracya = self.acc_func(task_outputa, labela)
 
         grads = tf.gradients(task_lossa, list(weights.values()))
         if FLAGS.stop_grad:
@@ -82,41 +85,47 @@ class MAML:
         fast_weights = dict()
         fast_weight_lr = {
             # 'w_orn': FLAGS.update_lr,'b_orn': FLAGS.update_lr,
-            'w_glo': 0,'b_glo': 0,
+            # 'w_glo': FLAGS.update_lr,'b_glo': FLAGS.update_lr,
             'w_output':FLAGS.update_lr,'b_output': FLAGS.update_lr
                           }
         for key in weights.keys():
-            fast_weights[key] = weights[key] - fast_weight_lr[key] * gradients[key]
+            if key in fast_weight_lr.keys():
+                fast_weights[key] = weights[key] - fast_weight_lr[key] * gradients[key]
+            else:
+                fast_weights[key] = weights[key]
 
         # Compute the loss of the network post inner update
         # using an independent set of input/label
-        output = self.model.build(inputb, fast_weights, reuse=True)
+        output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
         task_outputbs.append(output)
         task_lossesb.append(self.loss_func(output, labelb))
 
         for j in range(num_updates - 1):
             loss = self.loss_func(
-                self.model.build(inputa, fast_weights, reuse=True), labela)
+                self.model.build_activity(inputa, fast_weights, training=True, reuse=True)[0], labela)
             grads = tf.gradients(loss, list(fast_weights.values()))
             if FLAGS.stop_grad:
                 grads = [tf.stop_gradient(grad) for grad in grads]
 
             gradients = dict(zip(fast_weights.keys(), grads))
             for key in weights.keys():
-                fast_weights[key] = fast_weights[key] - fast_weight_lr[key] * gradients[key]
+                if key in fast_weight_lr.keys():
+                    fast_weights[key] = fast_weights[key] - fast_weight_lr[key] * gradients[key]
+                else:
+                    fast_weights[key] = fast_weights[key]
 
-            output = self.model.build(inputb, fast_weights, reuse=True)
+            output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
             task_outputbs.append(output)
             task_lossesb.append(self.loss_func(output, labelb))
 
         # Compute loss/acc using new weights and inputa
-        task_outputc = self.model.build(inputa, fast_weights,
-                                        reuse=True)
+        task_outputc = self.model.build_activity(inputa, fast_weights,
+                                                 training=True, reuse=True)[0]
         task_lossc = self.loss_func(task_outputc, labela)
-        task_accuracyc = acc_func(task_outputc, labela)
+        task_accuracyc = self.acc_func(task_outputc, labela)
 
         for task_outputb in task_outputbs:
-            task_accuraciesb.append(acc_func(task_outputb, labelb))
+            task_accuraciesb.append(self.acc_func(task_outputb, labelb))
 
         return [task_outputa, task_outputbs, task_outputc,
                 task_lossa, task_lossesb, task_lossc,
@@ -256,14 +265,13 @@ class PNKCModel(Model):
         self.weights = weights
         return weights
 
-    def build(self, inp, weights, reuse=False):
+    def build_activity(self, inp, weights, training=True, reuse=False):
         # pn = tf.nn.relu(tf.matmul(inp, weights['w_orn']) + weights['b_orn'])
         # kc = tf.nn.relu(tf.matmul(pn, weights['w_glo']) + weights['b_glo'])
         kc = tf.nn.relu(tf.matmul(inp, weights['w_glo']) + weights['b_glo'])
         if self.config.kc_dropout:
-            kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training=True)
+            kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training= training)
         output = tf.matmul(kc, weights['w_output']) + weights['b_output']
-
         return output
 
     def save_pickle(self, epoch=None):

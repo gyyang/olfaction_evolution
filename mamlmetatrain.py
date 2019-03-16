@@ -143,10 +143,19 @@ def main():
 
     config = configs.FullConfig()
     config.N_KC = 2500
-    config.n_class_valence = 25
+
+    # config.N_CLASS = 2
+    # config.replicate_orn_with_tiling = False
+    # config.N_ORN_DUPLICATION = 1
+    # config.label_type = 'one_hot'
+    # config.skip_orn2pn = True
+    # config.direct_glo = False
+
+    config.n_class_valence = 2
     config.kc_dropout = False
     config.sign_constraint_pn2kc = True
     config.sparse_pn2kc = False
+
     config.save_path = './files/metatrain/valence_peter/0'
     config.data_dir = './datasets/proto/standard'
     try:
