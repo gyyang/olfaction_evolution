@@ -41,12 +41,11 @@ def temp():
     # config.sparse_pn2kc = False
     # config.kc_dropout = False
     # config.train_pn2kc = True
-    config.pn_norm_pre = 'batch_norm'
+    # config.pn_norm_pre = 'batch_norm'
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.ORN_NOISE_STD = 0
     config.kc_dropout = True
-    config.kc_dropout_rate = .2
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()

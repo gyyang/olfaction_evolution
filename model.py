@@ -256,43 +256,43 @@ class FullModel(Model):
 
         super(FullModel, self).__init__(self.config.save_path)
 
-        if not meta_learn:
-            with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
-                # self._build(x, y, training)
-                self._build_obsolete(x, y, training)
 
-            if training:
-                optimizer = tf.train.AdamOptimizer(self.config.lr)
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+            # self._build_obsolete(x, y, training)
 
-                excludes = list()
-                if 'train_orn2pn' in dir(self.config) and not self.config.train_orn2pn:
-                    # TODO: this will also exclude batch norm vars, is that right?
-                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                                  scope='model/layer1')
-                if not self.config.train_pn2kc:
-                    # excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                    #                               scope='model/layer2')
-                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                                  scope= 'model/layer2/kernel:0')
-                if not self.config.train_kc_bias:
-                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                                  scope= 'model/layer2/bias:0')
-                var_list = [v for v in tf.trainable_variables() if v not in excludes]
+        if training:
+            optimizer = tf.train.AdamOptimizer(self.config.lr)
 
-                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-                with tf.control_dependencies(update_ops):
-                    # self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+            excludes = list()
+            if 'train_orn2pn' in dir(self.config) and not self.config.train_orn2pn:
+                # TODO: this will also exclude batch norm vars, is that right?
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope='model/layer1')
+            if not self.config.train_pn2kc:
+                # excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                #                               scope='model/layer2')
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope= 'model/layer2/kernel:0')
+            if not self.config.train_kc_bias:
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope= 'model/layer2/bias:0')
+            var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
-                    gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
-                    self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
-                    self.var_names = [v.name for g, v in gvs if g is not None]
-                    self.train_op = optimizer.apply_gradients(gvs)
-                print('Training variables')
-                for v in var_list:
-                    print(v)
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                # self.train_op = optimizer.minimize(self.loss, var_list=var_list)
 
-            self.saver = tf.train.Saver(max_to_keep=None)
-            # self.saver = tf.train.Saver(tf.trainable_variables())
+                gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
+                self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
+                self.var_names = [v.name for g, v in gvs if g is not None]
+                self.train_op = optimizer.apply_gradients(gvs)
+            print('Training variables')
+            for v in var_list:
+                print(v)
+
+        self.saver = tf.train.Saver(max_to_keep=None)
+        # self.saver = tf.train.Saver(tf.trainable_variables())
 
     def _build_obsolete(self, x, y, training):
         config = self.config
