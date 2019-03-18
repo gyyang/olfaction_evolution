@@ -47,16 +47,15 @@ class MAML:
         """MAML model."""
         self.test_num_updates = test_num_updates
 
-        # self.model = FullModel(x=None, y=None, config=config, meta_learn=True)
-        # self.loss_func = lambda logits, y: self.model.loss_func(logits, None, y)
-        # self.acc_func = lambda logits, y: self.model.accuracy_func(logits, None, y)
+        self.model = FullModel(x=None, y=None, config=config, meta_learn=True)
+        self.loss_func = lambda logits, y: self.model.loss_func(logits, None, y)
+        self.acc_func = lambda logits, y: self.model.accuracy_func(logits, None, y)
 
-        self.model = PNKCModel(config)
-        self.loss_func = xent
-        self.acc_func = acc_func
+        # self.model = PNKCModel(config)
+        # self.loss_func = xent
+        # self.acc_func = acc_func
 
         self.save_pickle = self.model.save_pickle
-
         self._build(x, y)
 
     def task_metalearn(self, inp, reuse=True):
@@ -81,6 +80,7 @@ class MAML:
             :return:
             '''
             trainable_weights = {k: v for k, v in weights.items() if k not in excludes}
+            print(trainable_weights)
             grads = tf.gradients(loss, list(trainable_weights.values()))
             if FLAGS.stop_grad:
                 grads = [tf.stop_gradient(grad) for grad in grads]
@@ -216,7 +216,7 @@ class PNKCModel(Model):
         super(PNKCModel, self).__init__(self.config.save_path)
 
     def build_weights(self):
-        n_valence = self.config.n_class_valence
+        n_class = self.config.N_CLASS
         config = self.config
         weights = {}
 
@@ -265,10 +265,10 @@ class PNKCModel(Model):
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
             w_output = tf.get_variable(
-                'kernel', shape=(config.N_KC, n_valence),
+                'kernel', shape=(config.N_KC, n_class),
                 dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
             b_output = tf.get_variable(
-                'bias', shape=(n_valence,), dtype=tf.float32,
+                'bias', shape=(n_class,), dtype=tf.float32,
                 initializer=tf.zeros_initializer())
 
         weights['w_orn'] = w_orn
@@ -281,8 +281,8 @@ class PNKCModel(Model):
         return weights
 
     def build_activity(self, inp, weights, training=True, reuse=False):
-        pn = tf.nn.relu(tf.matmul(inp, weights['w_orn']) + weights['b_orn'])
-        kc = tf.nn.relu(tf.matmul(pn, weights['w_glo']) + weights['b_glo'])
+        # pn = tf.nn.relu(tf.matmul(inp, weights['w_orn']) + weights['b_orn'])
+        # kc = tf.nn.relu(tf.matmul(pn, weights['w_glo']) + weights['b_glo'])
         kc = tf.nn.relu(tf.matmul(inp, weights['w_glo']) + weights['b_glo'])
         if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training= training)
