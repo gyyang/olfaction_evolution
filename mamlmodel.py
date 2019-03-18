@@ -1,6 +1,6 @@
 """ Code for the MAML algorithm and network definitions.
 
-Adpated from Chelsea Finn's code
+Adapted from Chelsea Finn's code
 """
 from __future__ import print_function
 
@@ -11,7 +11,7 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python import layers as tf_layers
 from tensorflow.python.platform import flags
 
-from model import Model
+from model import Model, FullModel
 
 FLAGS = flags.FLAGS
 
@@ -28,7 +28,7 @@ def normalize(inp, activation, reuse, scope):
 
 ## Loss functions
 def mse(pred, label):
-    pred = tf.reshape(pred, [-1])
+    pred = tf.reshape(pred, [-1]) ## Hi peter I miss you <3 come back home
     label = tf.reshape(label, [-1])
     return tf.reduce_mean(tf.square(pred-label))
 
@@ -46,9 +46,15 @@ class MAML:
     def __init__(self, x, y, config, test_num_updates=5):
         """MAML model."""
         self.test_num_updates = test_num_updates
+
+        # self.model = FullModel(x=None, y=None, config=config, meta_learn=True)
+        # self.loss_func = lambda logits, y: self.model.loss_func(logits, None, y)
+        # self.acc_func = lambda logits, y: self.model.accuracy_func(logits, None, y)
+
         self.model = PNKCModel(config)
         self.loss_func = xent
-        # self.loss_func = mse
+        self.acc_func = acc_func
+
         self.save_pickle = self.model.save_pickle
 
         self._build(x, y)
@@ -63,61 +69,78 @@ class MAML:
         Returns:
             task_output: a sequence unpacked to outputa, outputb, lossa, lossb
         """
+        def _update_weights(loss, excludes, lr_dict, weights):
+            '''
+            Take gradients WRT trainable weights, and updates weights based on these gradients.
+            Weights that are not trainable are not updated.
+
+            :param loss: loss to take gradients to
+            :param excludes: list of weights to exclude
+            :param lr_dict: learning rates associated with weights to update
+            :param weights:
+            :return:
+            '''
+            trainable_weights = {k: v for k, v in weights.items() if k not in excludes}
+            grads = tf.gradients(loss, list(trainable_weights.values()))
+            if FLAGS.stop_grad:
+                grads = [tf.stop_gradient(grad) for grad in grads]
+            gradients = dict(zip(trainable_weights.keys(), grads))
+            # manually construct the weights post inner gradient descent
+            # Notice that this doesn't have to be through gradient descent
+            new_weights = dict()
+            for key in weights.keys():
+                if key in lr_dict.keys():
+                    new_weights[key] = weights[key] - lr_dict[key] * gradients[key]
+                else:
+                    new_weights[key] = weights[key]
+            return new_weights
+
         weights = self.weights
         num_updates = max(self.test_num_updates, FLAGS.num_updates)
         inputa, inputb, labela, labelb = inp
         task_outputbs, task_lossesb, task_accuraciesb = [], [], []
 
-        task_outputa = self.model.build(inputa, weights,
-                                        reuse=reuse)  # only reuse on the first iter
+        task_outputa = self.model.build_activity(inputa, weights, training=True, reuse=reuse)[0]  # only reuse on the first iter
         task_lossa = self.loss_func(task_outputa, labela)
-        task_accuracya = acc_func(task_outputa, labela)
+        task_accuracya = self.acc_func(task_outputa, labela)
 
-        grads = tf.gradients(task_lossa, list(weights.values()))
-        if FLAGS.stop_grad:
-            grads = [tf.stop_gradient(grad) for grad in grads]
+        excludes = list()
+        if not self.model.config.train_pn2kc:
+            excludes += ['w_glo']
+        if not self.model.config.train_kc_bias:
+            excludes += ['b_glo']
+        if not self.model.config.train_orn2pn:
+            excludes += ['w_orn', 'b_orn']
 
-        # manually construct the weights post inner gradient descent
-        # Notice that this doesn't have to be through gradient descent
-        gradients = dict(zip(weights.keys(), grads))
-        fast_weights = dict()
-        for key in weights.keys():
-            if key in ['w_output', 'b_output']:
-                fast_weights[key] = weights[key] - FLAGS.update_lr * gradients[key]
-            else:
-                fast_weights[key] = weights[key]
+        lr_dict = {
+            # 'w_orn': FLAGS.update_lr,'b_orn': FLAGS.update_lr,
+            # 'w_glo': FLAGS.update_lr,'b_glo': FLAGS.update_lr,
+            'w_output':FLAGS.update_lr,'b_output': FLAGS.update_lr
+                          }
+        fast_weights = _update_weights(task_lossa, excludes, lr_dict, weights)
 
         # Compute the loss of the network post inner update
         # using an independent set of input/label
-        output = self.model.build(inputb, fast_weights, reuse=True)
+        output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
         task_outputbs.append(output)
         task_lossesb.append(self.loss_func(output, labelb))
 
         for j in range(num_updates - 1):
             loss = self.loss_func(
-                self.model.build(inputa, fast_weights, reuse=True), labela)
-            grads = tf.gradients(loss, list(fast_weights.values()))
-            if FLAGS.stop_grad:
-                grads = [tf.stop_gradient(grad) for grad in grads]
-
-            gradients = dict(zip(fast_weights.keys(), grads))
-            for key in weights.keys():
-                if key in ['w_output', 'b_output']:
-                    fast_weights[key] = fast_weights[key] - FLAGS.update_lr * \
-                                        gradients[key]
-
-            output = self.model.build(inputb, fast_weights, reuse=True)
+                self.model.build_activity(inputa, fast_weights, training=True, reuse=True)[0], labela)
+            fast_weights = _update_weights(loss, excludes, lr_dict, fast_weights)
+            output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
             task_outputbs.append(output)
             task_lossesb.append(self.loss_func(output, labelb))
 
         # Compute loss/acc using new weights and inputa
-        task_outputc = self.model.build(inputa, fast_weights,
-                                        reuse=True)
+        task_outputc = self.model.build_activity(inputa, fast_weights,
+                                                 training=True, reuse=True)[0]
         task_lossc = self.loss_func(task_outputc, labela)
-        task_accuracyc = acc_func(task_outputc, labela)
+        task_accuracyc = self.acc_func(task_outputc, labela)
 
         for task_outputb in task_outputbs:
-            task_accuraciesb.append(acc_func(task_outputb, labelb))
+            task_accuraciesb.append(self.acc_func(task_outputb, labelb))
 
         return [task_outputa, task_outputbs, task_outputc,
                 task_lossa, task_lossesb, task_lossc,
@@ -169,7 +192,8 @@ class MAML:
 
         optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
         self.gvs = gvs = optimizer.compute_gradients(
-            self.total_loss2[FLAGS.num_updates-1])
+            self.total_loss2[FLAGS.num_updates-1]
+        )
         self.metatrain_op = optimizer.apply_gradients(gvs)
 
         ## Summaries
@@ -195,6 +219,25 @@ class PNKCModel(Model):
         n_valence = self.config.n_class_valence
         config = self.config
         weights = {}
+
+        with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
+            if config.sign_constraint_orn2pn:
+                range = _sparse_range(config.N_ORN)
+                initializer = _initializer(range, config.initializer_orn2pn)
+                bias_initializer = tf.glorot_normal_initializer
+            else:
+                initializer = tf.glorot_normal_initializer
+                bias_initializer = tf.glorot_normal_initializer
+
+            w_orn = tf.get_variable('kernel', shape=(config.N_ORN, config.N_PN),
+                                    dtype=tf.float32,
+                                    initializer=initializer)
+
+            b_orn = tf.get_variable('bias', shape=(config.N_PN,), dtype=tf.float32,
+                                    initializer=bias_initializer)
+            if config.sign_constraint_orn2pn:
+                w_orn = tf.abs(w_orn)
+
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
             if config.sign_constraint_pn2kc:
                 if config.initial_pn2kc == 0:
@@ -214,10 +257,10 @@ class PNKCModel(Model):
                 'kernel', shape=(config.N_PN, config.N_KC),
                 dtype=tf.float32, initializer=initializer)
             if config.sign_constraint_pn2kc:
-                w_kc = tf.abs(w2)
+                w_glo = tf.abs(w2)
             else:
-                w_kc = w2
-            b_kc = tf.get_variable('bias', shape=(config.N_KC,), dtype=tf.float32,
+                w_glo = w2
+            b_glo = tf.get_variable('bias', shape=(config.N_KC,), dtype=tf.float32,
                                    initializer=bias_initializer)
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
@@ -228,20 +271,24 @@ class PNKCModel(Model):
                 'bias', shape=(n_valence,), dtype=tf.float32,
                 initializer=tf.zeros_initializer())
 
-        weights['w_kc'] = w_kc
-        weights['b_kc'] = b_kc
+        weights['w_orn'] = w_orn
+        weights['b_orn'] = b_orn
+        weights['w_glo'] = w_glo
+        weights['b_glo'] = b_glo
         weights['w_output'] = w_output
         weights['b_output'] = b_output
         self.weights = weights
         return weights
 
-    def build(self, inp, weights, reuse=False):
-        hidden = tf.nn.relu(tf.matmul(inp, weights['w_kc']) + weights['b_kc'])
+    def build_activity(self, inp, weights, training=True, reuse=False):
+        pn = tf.nn.relu(tf.matmul(inp, weights['w_orn']) + weights['b_orn'])
+        kc = tf.nn.relu(tf.matmul(pn, weights['w_glo']) + weights['b_glo'])
+        kc = tf.nn.relu(tf.matmul(inp, weights['w_glo']) + weights['b_glo'])
         if self.config.kc_dropout:
-            hidden = tf.layers.dropout(hidden, self.config.kc_dropout_rate, training=True)
-        output = tf.matmul(hidden, weights['w_output']) + weights['b_output']
-
-        return output
+            kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training= training)
+        logits = tf.matmul(kc, weights['w_output']) + weights['b_output']
+        logits2 = None
+        return logits, logits
 
     def save_pickle(self, epoch=None):
         """Save model using pickle.
@@ -258,10 +305,10 @@ class PNKCModel(Model):
         sess = tf.get_default_session()
         var_dict = dict()
         # var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
-        for v in ['w_kc', 'b_kc', 'w_output', 'b_output']:
-            var_dict[v] = sess.run(self.weights[v])
-        # var_dict['w_glo'] = sess.run(self.weights['w_kc'])
-        # var_dict['w_glo'] = sess.run(self.weights['w_kc'])
+        for k in self.weights.keys():
+            var_dict[k] = sess.run(self.weights[k])
+        # var_dict['w_glo'] = sess.run(self.weights['w_glo'])
+        # var_dict['w_glo'] = sess.run(self.weights['w_glo'])
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)

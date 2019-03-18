@@ -221,7 +221,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
         if i == 0:
             thres = THRES
         else:
-            thres = analysis_pn2kc_training.infer_threshold(wglos[i])
+            thres = analysis_pn2kc_training.infer_threshold(wglos[-1])
         shuffled = _shuffle(wglo_binaries[-1]>thres, arg=shuffle_arg)
         shuffled_similarity, _ = _get_similarity(shuffled)
         shuffled_similarities.append(shuffled_similarity)

@@ -7,21 +7,24 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 import configs
 
-def save_config(config, save_path):
+def save_config(config, save_path, also_save_as_text = True):
     """Save config."""
-    # config_dict = {k: getattr(config, k) for k in dir(config) if k[0] != '_'}
     config_dict = config.__dict__
     with open(os.path.join(save_path, 'config.json'), 'w') as f:
         json.dump(config_dict, f)
 
+    if also_save_as_text:
+        with open(os.path.join(save_path, 'config.txt'), "w") as f:
+            for k, v in config_dict.items():
+                f.write(str(k) + ' >>> ' + str(v) + '\n\n')
 
 def load_config(save_path):
     """Load config."""
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
 
-    # config = configs.BaseConfig()
-    config = configs.FullConfig()
+    config = configs.BaseConfig()
+    # config = configs.FullConfig()
     for key, val in config_dict.items():
         setattr(config, key, val)
     return config
@@ -70,7 +73,7 @@ def load_pickle(dir, var):
                 cur_val = var_dict[var]
                 out.append(cur_val)
             except:
-                print(var + 'is not in directory:' + d)
+                print(var + ' is not in directory:' + d)
     return out
 
 

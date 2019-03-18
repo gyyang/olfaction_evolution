@@ -57,16 +57,17 @@ if args.experiment == 'core':
                    'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_kc_dropout', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
                    'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization',
-                   'kcrole', 'kc_generalization']
+                   'kcrole', 'kc_generalization',
+                   'multi_head']
 else:
     experiments = args.experiment
 
 
 # #peter specific
-TRAIN = False
+TRAIN = True
 ANALYZE = True
 is_test = True
-experiments = ['pn_normalization']
+experiments = ['multi_head']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -74,35 +75,35 @@ if 'standard' in experiments:
     if TRAIN:
         local_train(se.train_standardnet(is_test), path)
     if ANALYZE:
-        # accuracy, glo score, cosine similarity
+        # # accuracy, glo score, cosine similarity
         sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
-        analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
+        # analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
+        # #
+        # # #weights
+        # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
+        # sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
         #
-        # #weights
-        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
-        sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
+        # # #sign constraint
+        # sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
 
-        # #sign constraint
-        sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
-
-        # #random analysis
+        # # #random analysis
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        analysis_pn2kc_random.plot_distribution(path)
-        analysis_pn2kc_random.claw_distribution(path, 'random')
-        analysis_pn2kc_random.pair_distribution(path, 'preserve')
+        # analysis_pn2kc_random.plot_distribution(path)
+        # analysis_pn2kc_random.claw_distribution(path, 'random')
+        # analysis_pn2kc_random.pair_distribution(path, 'preserve')
         #
-        # # correlation
-        analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
-                        ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
-        analysis_orn2pn.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
-
-        analysis_orn2pn.get_dimensionality(path, 'glo')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_dimensionality')
-        analysis_orn2pn.dimensionality_across_epochs(path, ['Non-negative', 'No constraint'])
+        # # # correlation
+        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
+        #                 ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
+        # analysis_orn2pn.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
+        #
+        # analysis_orn2pn.get_dimensionality(path, 'glo')
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_dimensionality')
+        # analysis_orn2pn.dimensionality_across_epochs(path, ['Non-negative', 'No constraint'])
 
 
 
