@@ -22,15 +22,15 @@ flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining ite
 flags.DEFINE_integer('meta_batch_size', 32, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
 flags.DEFINE_integer('num_samples_per_class', 16, 'number of examples used for inner gradient update (K for K-shot learning).')
-flags.DEFINE_float('update_lr', .1, 'step size alpha for inner gradient update.') # 0.1 for omniglot
-flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
+flags.DEFINE_float('update_lr', .01, 'step size alpha for inner gradient update.') # 0.1 for omniglot
+flags.DEFINE_integer('num_updates', 2, 'number of inner gradient updates during training.')
 
 ## Model options
 flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
 
 LOAD_DATA = False
-PRINT_INTERVAL = 200
+PRINT_INTERVAL = 500
 def print_results(res):
     # TODO: need cleaning
     n_steps = len(res[1])
@@ -57,8 +57,8 @@ def train(config):
         model = MAML(next_element[0], next_element[1], config)
     else:
         num_samples_per_class = FLAGS.num_samples_per_class
-        num_class = config.n_class_valence  # TODO: this doesn't have to be
-        dim_output = config.n_class_valence
+        num_class = config.N_CLASS  # TODO: this doesn't have to be
+        dim_output = config.N_CLASS
         data_generator = DataGenerator(
             batch_size=num_samples_per_class * num_class * 2,
             meta_batch_size=FLAGS.meta_batch_size,
@@ -148,18 +148,18 @@ def main():
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.label_type = 'one_hot'
-    config.skip_orn2pn = True
+    config.skip_orn2pn = False
     config.direct_glo = False
-    config.train_orn2pn = False
+    config.train_orn2pn = True
 
-    config.n_class_valence = 2
     config.kc_dropout = True
     config.sign_constraint_pn2kc = True
 
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
+    # config.sparse_pn2kc = False
+    # config.train_pn2kc = True
     config.train_kc_bias = False
 
+    # config.n_class_valence = 2
     config.save_path = './files/metatrain/valence_peter/0'
     config.data_dir = './datasets/proto/test'
     try:

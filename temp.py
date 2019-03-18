@@ -92,13 +92,13 @@ def train_multihead():
 
 # analysis_multihead.main()
 
-path = './files/metatrain/valence_peter'
-analysis_training.plot_distribution(path, xrange=.5)
-analysis_training.plot_sparsity(path, dynamic_thres=False)
+# path = './files/metatrain/valence_peter'
+# analysis_training.plot_distribution(path, xrange=.5)
+# analysis_training.plot_sparsity(path, dynamic_thres=False)
 
-# epoch_path = './files/metatrain/valence_peter/0/epoch'
-# sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
-# sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1)
+epoch_path = './files/metatrain/valence_peter/0/epoch'
+sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
+sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1)
 
 # d = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files\metatrain\valence_peter\0\epoch\5800\model.pkl'
 # with open(d, 'rb') as f:
