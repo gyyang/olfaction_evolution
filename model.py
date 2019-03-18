@@ -251,47 +251,44 @@ class FullModel(Model):
         if config is None:
             config = FullConfig
         self.config = config
-        self.loss = 0
         self.weights = dict()
 
         super(FullModel, self).__init__(self.config.save_path)
 
-
-        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+        if meta_learn == False:
             self._build(x, y, training)
             # self._build_obsolete(x, y, training)
+            if training:
+                optimizer = tf.train.AdamOptimizer(self.config.lr)
 
-        if training:
-            optimizer = tf.train.AdamOptimizer(self.config.lr)
+                excludes = list()
+                if 'train_orn2pn' in dir(self.config) and not self.config.train_orn2pn:
+                    # TODO: this will also exclude batch norm vars, is that right?
+                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                                  scope='model/layer1')
+                if not self.config.train_pn2kc:
+                    # excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                    #                               scope='model/layer2')
+                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                                  scope= 'model/layer2/kernel:0')
+                if not self.config.train_kc_bias:
+                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                                  scope= 'model/layer2/bias:0')
+                var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
-            excludes = list()
-            if 'train_orn2pn' in dir(self.config) and not self.config.train_orn2pn:
-                # TODO: this will also exclude batch norm vars, is that right?
-                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                              scope='model/layer1')
-            if not self.config.train_pn2kc:
-                # excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                #                               scope='model/layer2')
-                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                              scope= 'model/layer2/kernel:0')
-            if not self.config.train_kc_bias:
-                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                              scope= 'model/layer2/bias:0')
-            var_list = [v for v in tf.trainable_variables() if v not in excludes]
+                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                with tf.control_dependencies(update_ops):
+                    # self.train_op = optimizer.minimize(self.loss, var_list=var_list)
 
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-            with tf.control_dependencies(update_ops):
-                # self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+                    gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
+                    self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
+                    self.var_names = [v.name for g, v in gvs if g is not None]
+                    self.train_op = optimizer.apply_gradients(gvs)
+                print('Training variables')
+                for v in var_list:
+                    print(v)
 
-                gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
-                self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
-                self.var_names = [v.name for g, v in gvs if g is not None]
-                self.train_op = optimizer.apply_gradients(gvs)
-            print('Training variables')
-            for v in var_list:
-                print(v)
-
-        self.saver = tf.train.Saver(max_to_keep=None)
+            self.saver = tf.train.Saver(max_to_keep=None)
         # self.saver = tf.train.Saver(tf.trainable_variables())
 
     def _build_obsolete(self, x, y, training):
@@ -517,12 +514,13 @@ class FullModel(Model):
 
     def loss_func(self, logits, logits2, y):
         config = self.config
+        class_loss = 0
         if config.label_type == 'combinatorial':
-            self.loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
+            class_loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         elif config.label_type == 'one_hot':
-            self.loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
+            class_loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
         elif config.label_type == 'sparse':
-            self.loss += tf.losses.sparse_softmax_cross_entropy(labels=y,
+            class_loss += tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
         elif config.label_type == 'multi_head_sparse':
             y1, y2 = tf.unstack(y, axis=1)
@@ -531,13 +529,13 @@ class FullModel(Model):
             loss2 = tf.losses.sparse_softmax_cross_entropy(
                 labels=y2, logits=logits2)
             if config.train_head1:
-                self.loss += loss1
+                class_loss += loss1
             if config.train_head2:
-                self.loss += loss2
+                class_loss += loss2
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
-        return self.loss
+        return class_loss
 
     def accuracy_func(self, logits, logits2, y):
         config = self.config
@@ -567,10 +565,11 @@ class FullModel(Model):
 
 
     def _build(self, x, y, training):
-        self.build_weights()
-        logits, logits2 = self.build_activity(x, self.weights, training)
-        loss = self.loss_func(logits=logits, logits2= logits2, y=y)
-        acc = self.accuracy_func(logits= logits, logits2=logits2, y=y)
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self.build_weights()
+            logits, logits2 = self.build_activity(x, self.weights, training)
+            loss = self.loss_func(logits=logits, logits2= logits2, y=y)
+            acc = self.accuracy_func(logits= logits, logits2=logits2, y=y)
 
     def build_weights(self):
         self._build_or2orn_weights()

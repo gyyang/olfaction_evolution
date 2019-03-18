@@ -28,7 +28,7 @@ def normalize(inp, activation, reuse, scope):
 
 ## Loss functions
 def mse(pred, label):
-    pred = tf.reshape(pred, [-1])
+    pred = tf.reshape(pred, [-1]) ## Hi peter I miss you <3 come back home
     label = tf.reshape(label, [-1])
     return tf.reduce_mean(tf.square(pred-label))
 
@@ -46,12 +46,15 @@ class MAML:
     def __init__(self, x, y, config, test_num_updates=5):
         """MAML model."""
         self.test_num_updates = test_num_updates
-        self.model = FullModel(x=None, y=None, config=config, meta_learn=True)
-        self.loss_func = lambda logits, y: self.model.loss_func(logits, None, y)
-        self.acc_func = lambda logits, y: self.model.accuracy_func(logits, None, y)
-        # self.model = PNKCModel(config)
-        # self.loss_func = xent
-        # self.acc_func = acc_func
+
+        # self.model = FullModel(x=None, y=None, config=config, meta_learn=True)
+        # self.loss_func = lambda logits, y: self.model.loss_func(logits, None, y)
+        # self.acc_func = lambda logits, y: self.model.accuracy_func(logits, None, y)
+
+        self.model = PNKCModel(config)
+        self.loss_func = xent
+        self.acc_func = acc_func
+
         self.save_pickle = self.model.save_pickle
 
         self._build(x, y)
@@ -66,6 +69,32 @@ class MAML:
         Returns:
             task_output: a sequence unpacked to outputa, outputb, lossa, lossb
         """
+        def _update_weights(loss, excludes, lr_dict, weights):
+            '''
+            Take gradients WRT trainable weights, and updates weights based on these gradients.
+            Weights that are not trainable are not updated.
+
+            :param loss: loss to take gradients to
+            :param excludes: list of weights to exclude
+            :param lr_dict: learning rates associated with weights to update
+            :param weights:
+            :return:
+            '''
+            trainable_weights = {k: v for k, v in weights.items() if k not in excludes}
+            grads = tf.gradients(loss, list(trainable_weights.values()))
+            if FLAGS.stop_grad:
+                grads = [tf.stop_gradient(grad) for grad in grads]
+            gradients = dict(zip(trainable_weights.keys(), grads))
+            # manually construct the weights post inner gradient descent
+            # Notice that this doesn't have to be through gradient descent
+            new_weights = dict()
+            for key in weights.keys():
+                if key in lr_dict.keys():
+                    new_weights[key] = weights[key] - lr_dict[key] * gradients[key]
+                else:
+                    new_weights[key] = weights[key]
+            return new_weights
+
         weights = self.weights
         num_updates = max(self.test_num_updates, FLAGS.num_updates)
         inputa, inputb, labela, labelb = inp
@@ -75,24 +104,20 @@ class MAML:
         task_lossa = self.loss_func(task_outputa, labela)
         task_accuracya = self.acc_func(task_outputa, labela)
 
-        grads = tf.gradients(task_lossa, list(weights.values()))
-        if FLAGS.stop_grad:
-            grads = [tf.stop_gradient(grad) for grad in grads]
+        excludes = list()
+        if not self.model.config.train_pn2kc:
+            excludes += ['w_glo']
+        if not self.model.config.train_kc_bias:
+            excludes += ['b_glo']
+        if not self.model.config.train_orn2pn:
+            excludes += ['w_orn', 'b_orn']
 
-        # manually construct the weights post inner gradient descent
-        # Notice that this doesn't have to be through gradient descent
-        gradients = dict(zip(weights.keys(), grads))
-        fast_weights = dict()
-        fast_weight_lr = {
+        lr_dict = {
             # 'w_orn': FLAGS.update_lr,'b_orn': FLAGS.update_lr,
             # 'w_glo': FLAGS.update_lr,'b_glo': FLAGS.update_lr,
             'w_output':FLAGS.update_lr,'b_output': FLAGS.update_lr
                           }
-        for key in weights.keys():
-            if key in fast_weight_lr.keys():
-                fast_weights[key] = weights[key] - fast_weight_lr[key] * gradients[key]
-            else:
-                fast_weights[key] = weights[key]
+        fast_weights = _update_weights(task_lossa, excludes, lr_dict, weights)
 
         # Compute the loss of the network post inner update
         # using an independent set of input/label
@@ -103,17 +128,7 @@ class MAML:
         for j in range(num_updates - 1):
             loss = self.loss_func(
                 self.model.build_activity(inputa, fast_weights, training=True, reuse=True)[0], labela)
-            grads = tf.gradients(loss, list(fast_weights.values()))
-            if FLAGS.stop_grad:
-                grads = [tf.stop_gradient(grad) for grad in grads]
-
-            gradients = dict(zip(fast_weights.keys(), grads))
-            for key in weights.keys():
-                if key in fast_weight_lr.keys():
-                    fast_weights[key] = fast_weights[key] - fast_weight_lr[key] * gradients[key]
-                else:
-                    fast_weights[key] = fast_weights[key]
-
+            fast_weights = _update_weights(loss, excludes, lr_dict, fast_weights)
             output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
             task_outputbs.append(output)
             task_lossesb.append(self.loss_func(output, labelb))
@@ -177,7 +192,8 @@ class MAML:
 
         optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
         self.gvs = gvs = optimizer.compute_gradients(
-            self.total_loss2[FLAGS.num_updates-1])
+            self.total_loss2[FLAGS.num_updates-1]
+        )
         self.metatrain_op = optimizer.apply_gradients(gvs)
 
         ## Summaries
@@ -231,7 +247,6 @@ class PNKCModel(Model):
                         range = _sparse_range(config.N_PN)
                 else:
                     range = config.initial_pn2kc
-                # range = .1
                 initializer = _initializer(range, config.initializer_pn2kc)
                 bias_initializer = tf.constant_initializer(config.kc_bias)
             else:
@@ -256,8 +271,8 @@ class PNKCModel(Model):
                 'bias', shape=(n_valence,), dtype=tf.float32,
                 initializer=tf.zeros_initializer())
 
-        # weights['w_orn'] = w_orn
-        # weights['b_orn'] = b_orn
+        weights['w_orn'] = w_orn
+        weights['b_orn'] = b_orn
         weights['w_glo'] = w_glo
         weights['b_glo'] = b_glo
         weights['w_output'] = w_output
@@ -266,13 +281,14 @@ class PNKCModel(Model):
         return weights
 
     def build_activity(self, inp, weights, training=True, reuse=False):
-        # pn = tf.nn.relu(tf.matmul(inp, weights['w_orn']) + weights['b_orn'])
-        # kc = tf.nn.relu(tf.matmul(pn, weights['w_glo']) + weights['b_glo'])
+        pn = tf.nn.relu(tf.matmul(inp, weights['w_orn']) + weights['b_orn'])
+        kc = tf.nn.relu(tf.matmul(pn, weights['w_glo']) + weights['b_glo'])
         kc = tf.nn.relu(tf.matmul(inp, weights['w_glo']) + weights['b_glo'])
         if self.config.kc_dropout:
             kc = tf.layers.dropout(kc, self.config.kc_dropout_rate, training= training)
-        output = tf.matmul(kc, weights['w_output']) + weights['b_output']
-        return output
+        logits = tf.matmul(kc, weights['w_output']) + weights['b_output']
+        logits2 = None
+        return logits, logits
 
     def save_pickle(self, epoch=None):
         """Save model using pickle.

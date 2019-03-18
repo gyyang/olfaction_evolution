@@ -80,15 +80,15 @@ def make_small_training_set_datasets():
 
 def temp():
     config = configs.input_ProtoConfig()
-    config.N_CLASS = 20
-    config.n_trueclass = 80
-    config.relabel = True
-    config.realistic_orn_mask = True
+    config.N_CLASS = 200
+    # config.n_trueclass = 80
+    # config.relabel = True
+    # config.realistic_orn_mask = True
     task.save_proto(config, seed=seed, folder_name='test')
     print('Done test dataset')
 
 if __name__ == '__main__':
-    make_standard_dataset()
+    # make_standard_dataset()
     # make_relabel_datasets_small()
     # make_relabel_datasets_large()
     # make_concentration_dataset()
@@ -97,4 +97,4 @@ if __name__ == '__main__':
     # make_mask_row_dataset()
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
-    # temp()
+    temp()

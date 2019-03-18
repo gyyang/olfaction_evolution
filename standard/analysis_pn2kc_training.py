@@ -269,7 +269,7 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
     _plot(means, stds, THRES)
 
 
-def plot_distribution(dir):
+def plot_distribution(dir, xrange = 1.0):
     # TODO(gry): I don't like how this function plots everything from subdirectories of dir
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
@@ -291,7 +291,7 @@ def plot_distribution(dir):
             save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
             print(save_name)
             _plot_distribution(distribution, save_name,
-                               title=titles[j], xrange=1.0, yrange=5000)
+                               title=titles[j], xrange= xrange, yrange=5000)
 
 def plot_sparsity(dir, dynamic_thres=False, visualize=False):
     save_name = dir.split('/')[-1]
