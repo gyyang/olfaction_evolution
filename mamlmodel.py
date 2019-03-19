@@ -112,8 +112,8 @@ class MAML:
             excludes += ['w_orn', 'b_orn']
 
         lr_dict = {
-            # 'w_orn': FLAGS.update_lr,'b_orn': FLAGS.update_lr,
-            # 'w_glo': FLAGS.update_lr,'b_glo': FLAGS.update_lr,
+            # 'w_orn': self.update_lr,'b_orn': self.update_lr,
+            # 'w_glo': self.update_lr,'b_glo': self.update_lr,
             'w_output':self.update_lr,'b_output': self.update_lr
                           }
         fast_weights = _update_weights(task_lossa, excludes, lr_dict, weights)
@@ -190,11 +190,6 @@ class MAML:
         # after the map_fn
         self.outputas, self.outputbs, self.outputcs = outputas, outputbs, outputcs
 
-        optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
-        # self.gvs = gvs = optimizer.compute_gradients(
-        #     self.total_loss2[FLAGS.num_updates-1]
-        # )
-
         excludes = list()
         if not self.model.config.train_orn2pn:
             excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
@@ -205,13 +200,24 @@ class MAML:
         if not self.model.config.train_kc_bias:
             excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                           scope='model/layer2/bias:0')
+        excludes += [self.update_lr]
         var_list = [v for v in tf.trainable_variables() if v not in excludes]
         print('Training variables')
         for v in var_list:
             print(v)
-
+        optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
         self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[FLAGS.num_updates-1], var_list)
         self.metatrain_op = optimizer.apply_gradients(gvs)
+
+        training_learning_rate = True
+        update_lr_learning_rate = .01
+        if training_learning_rate:
+            print(self.update_lr)
+            optimizer_lr = tf.train.AdamOptimizer(update_lr_learning_rate)
+            self.gvs_lr = gvs = optimizer_lr.compute_gradients(self.total_loss2[FLAGS.num_updates - 1], self.update_lr)
+            self.metatrain_op_lr = optimizer_lr.apply_gradients(gvs)
+
+
 
         ## Summaries
         tf.summary.scalar('Pre-update loss', self.total_loss1)
