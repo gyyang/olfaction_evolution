@@ -80,7 +80,6 @@ class MAML:
             :return:
             '''
             trainable_weights = {k: v for k, v in weights.items() if k not in excludes}
-            print(trainable_weights)
             grads = tf.gradients(loss, list(trainable_weights.values()))
             if FLAGS.stop_grad:
                 grads = [tf.stop_gradient(grad) for grad in grads]
@@ -115,7 +114,7 @@ class MAML:
         lr_dict = {
             # 'w_orn': FLAGS.update_lr,'b_orn': FLAGS.update_lr,
             # 'w_glo': FLAGS.update_lr,'b_glo': FLAGS.update_lr,
-            'w_output':FLAGS.update_lr,'b_output': FLAGS.update_lr
+            'w_output':self.update_lr,'b_output': self.update_lr
                           }
         fast_weights = _update_weights(task_lossa, excludes, lr_dict, weights)
 
@@ -155,6 +154,7 @@ class MAML:
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE) as training_scope:
             # Define the weights
             self.weights = self.model.build_weights()
+            self.update_lr = tf.get_variable('lr', shape=(), dtype=tf.float32, initializer=tf.constant_initializer(.3))
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             num_updates = max(self.test_num_updates, FLAGS.num_updates)
@@ -191,9 +191,26 @@ class MAML:
         self.outputas, self.outputbs, self.outputcs = outputas, outputbs, outputcs
 
         optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
-        self.gvs = gvs = optimizer.compute_gradients(
-            self.total_loss2[FLAGS.num_updates-1]
-        )
+        # self.gvs = gvs = optimizer.compute_gradients(
+        #     self.total_loss2[FLAGS.num_updates-1]
+        # )
+
+        excludes = list()
+        if not self.model.config.train_orn2pn:
+            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                          scope='model/layer1')
+        if not self.model.config.train_pn2kc:
+            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                          scope='model/layer2/kernel:0')
+        if not self.model.config.train_kc_bias:
+            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                          scope='model/layer2/bias:0')
+        var_list = [v for v in tf.trainable_variables() if v not in excludes]
+        print('Training variables')
+        for v in var_list:
+            print(v)
+
+        self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[FLAGS.num_updates-1], var_list)
         self.metatrain_op = optimizer.apply_gradients(gvs)
 
         ## Summaries
