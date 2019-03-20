@@ -92,18 +92,55 @@ def train_multihead():
 
 # analysis_multihead.main()
 
-# path = './files/metatrain/valence_peter'
-# analysis_training.plot_distribution(path, xrange=.5)
-# analysis_training.plot_sparsity(path, dynamic_thres=False)
+path = './files/metatrain/valence_peter'
+analysis_training.plot_distribution(path, xrange=.5)
+analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.03)
 
 epoch_path = './files/metatrain/valence_peter/0/epoch'
 sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
-sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1)
+sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
 
-# d = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files\metatrain\valence_peter\0\epoch\5800\model.pkl'
+def plot_weight_change_vs_learning_rate(path, mat):
+    from standard.analysis import _easy_save
+    def _helper_plot(ax, data, color, label):
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel(label, color=color)
+        ax.plot(np.arange(len(data)), data, color=color)
+        # ax.tick_params(axis='y', labelcolor=color)
+
+    epoch_path = os.path.join(path, '0', 'epoch')
+    lr_ix = 0
+    list_of_wglo = tools.load_pickle(epoch_path, mat)
+    list_of_lr = tools.load_pickle(epoch_path, 'model/lr:0')
+
+    weight_diff = []
+    for i in range(len(list_of_wglo)-1):
+        change = list_of_wglo[i+1] - list_of_wglo[i]
+        change = np.sum(np.abs(change))
+        weight_diff.append(change)
+
+    relevant_lr = []
+    for i in range(0, len(list_of_lr)-1):
+        relevant_lr.append(list_of_lr[i][lr_ix])
+
+    fig = plt.figure(figsize=(3.5, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.6, 0.7])
+    _helper_plot(ax, relevant_lr, 'blue', 'Update Magnitude')
+    ax_ = ax.twinx()
+    _helper_plot(ax_, weight_diff, 'orange', 'Weight Change Magnitude')
+    _easy_save(path, '_{}_change_vs_learning_rate'.format(mat), pdf=True)
+
+# plot_weight_change_vs_learning_rate(path, 'w_glo')
+# plot_weight_change_vs_learning_rate(path, 'w_orn')
+plot_weight_change_vs_learning_rate(path, 'w_output')
+
 # with open(d, 'rb') as f:
 #     dict = pickle.load(f)
 #     mat = dict['w_glo']
+#     lr = dict['model/lr:0']
+#
+#
+#
 #     dist = np.sum(mat, axis=1)
 #     print(dist)
 #     plt.imshow(np.sort(mat, axis=0)[:,300:600][::-1],cmap='RdBu_r', vmin=-1, vmax=1)

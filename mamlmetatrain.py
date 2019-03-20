@@ -14,6 +14,7 @@ import tools
 from mamldataset import load_data
 from mamlmodel import MAML
 from mamldataset import DataGenerator
+import numpy as np
 
 FLAGS = flags.FLAGS
 
@@ -22,7 +23,7 @@ flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining ite
 flags.DEFINE_integer('meta_batch_size', 16, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
 flags.DEFINE_integer('num_samples_per_class', 8, 'number of examples used for inner gradient update (K for K-shot learning).')
-flags.DEFINE_float('update_lr', .2, 'step size alpha for inner gradient update.') # 0.1 for omniglot
+flags.DEFINE_float('update_lr', .3, 'step size alpha for inner gradient update.') # 0.1 for omniglot
 flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
 
 ## Model options
@@ -30,7 +31,7 @@ flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
 
 LOAD_DATA = False
-PRINT_INTERVAL = 200
+PRINT_INTERVAL = 500
 def print_results(res):
     # TODO: need cleaning
     n_steps = len(res[1])
@@ -89,7 +90,12 @@ def train(config):
 
         total_time, start_time = 0, time.time()
         for itr in range(FLAGS.metatrain_iterations):
-            input_tensors = [model.metatrain_op, model.metatrain_op_lr]
+            if model.metatrain_op_lr is not None:
+                input_tensors = [model.metatrain_op, model.metatrain_op_lr]
+                ix = 2
+            else:
+                input_tensors = [model.metatrain_op]
+                ix = 1
 
             if itr % PRINT_INTERVAL == 0:
                 input_tensors.extend(
@@ -120,8 +126,9 @@ def train(config):
 
                 print('Meta-train')
                 lr = sess.run(model.update_lr)
-                print('Learned update_lr is : {:.2f}'.format(lr))
-                print_results(res[2:])
+                print('Learned update_lr is : ' +
+                      np.array2string(lr, precision=2, separator=',', suppress_small=True))
+                print_results(res[ix:])
                 model.save_pickle(itr)
                 train_writer.add_summary(res[-1], itr)
 
@@ -158,11 +165,11 @@ def main():
     config.kc_dropout = True
     config.sign_constraint_pn2kc = True
 
-    # config.sparse_pn2kc = False
-    # config.train_pn2kc = True
+    config.kc_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
     config.train_kc_bias = False
 
-    # config.n_class_valence = 2
     config.save_path = './files/metatrain/valence_peter/0'
     config.data_dir = './datasets/proto/test'
     try:

@@ -95,7 +95,7 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None):
     return thres
 
 
-def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False):
+def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, thres = THRES):
     wglos = tools.load_pickle(dir, 'w_glo')
     xrange = wglos[0].shape[0]
     zero_claws = []
@@ -107,8 +107,6 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False):
             thres = infer_threshold(wglo)
         elif i == 0:
             thres = 0.01
-        else:
-            thres = THRES
         sparsity = np.count_nonzero(wglo > thres, axis=0)
 
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
@@ -293,7 +291,7 @@ def plot_distribution(dir, xrange = 1.0):
             _plot_distribution(distribution, save_name,
                                title=titles[j], xrange= xrange, yrange=5000)
 
-def plot_sparsity(dir, dynamic_thres=False, visualize=False):
+def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
@@ -312,14 +310,14 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False):
 
             # dynamically infer threshold after training
             if dynamic_thres is False:
-                force_thres = THRES
+                thres = thres
             elif j == 0:
-                force_thres = 0.01
+                thres = 0.01
             elif dynamic_thres == True:
-                force_thres = None
+                thres = None
             else:
-                force_thres = dynamic_thres
-            thres = infer_threshold(w, visualize=visualize, force_thres=force_thres)
+                thres = dynamic_thres
+            thres = infer_threshold(w, visualize=visualize, force_thres=thres)
             print('thres=', str(thres))
 
             sparsity = np.count_nonzero(w > thres, axis=0)

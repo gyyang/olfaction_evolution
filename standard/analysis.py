@@ -27,7 +27,7 @@ figpath = os.path.join(rootpath, 'figures')
 # figpath = r'C:\Users\Peter\Dropbox\olfaction_evolution\manuscript\plots'
 
 def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
-    save_name = save_path.split('/')[-1]
+    save_name = os.path.split(save_path)[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path, exist_ok=True)
     figname = os.path.join(path, save_name + str)
