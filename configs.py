@@ -209,14 +209,28 @@ class FullConfig(BaseConfig):
 
 class MetaConfig(FullConfig):
     def __init__(self):
-        super(FullConfig, self).__init__()
+        super(MetaConfig, self).__init__()
         # how many points for input generation
-        self.n_dataset = 1000 * 32
-
-        # number of classes to sample from. num class must be a multiple of dim_output as of now
-        self.n_metaclass = 2
-        self.n_meta_output = 2
-        # inner batch size proportional to this number
-        self.n_samples_per_metaclass = 20
-        # outer batch size
-        self.meta_batch_size = 64
+        self.meta_n_dataset = 1000 * 32
+        # number of classes
+        self.N_CLASS = 4
+        # output dimension. N_CLASS must be a multiple of output dimension
+        self.meta_output_dimension = 4
+        # number of metatraining iterations
+        self.metatrain_iterations = 100000
+        # number of tasks sampled per meta-update (outer batch size)
+        self.meta_batch_size = 16
+        # the base learning rate of the generator
+        self.meta_lr = .001
+        # number of inner gradient updates during training
+        self.meta_num_updates = 1
+        # step size alpha for inner gradient update
+        self.meta_update_lr = .3
+        # number of examples used for inner gradient update (K for K-shot learning)
+        self.meta_num_samples_per_class = 8
+        # batch_norm, layer_norm, or None
+        self.meta_norm = 'None'
+        # if True, do not use second derivatives in meta-optimization (for speed)
+        self.meta_stop_grad = False
+        # label type for the meta dataset
+        self.label_type = 'one_hot'

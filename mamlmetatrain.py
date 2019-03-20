@@ -16,19 +16,18 @@ from mamlmodel import MAML
 from mamldataset import DataGenerator
 import numpy as np
 
-FLAGS = flags.FLAGS
-
-## Training options
-flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
-flags.DEFINE_integer('meta_batch_size', 16, 'number of tasks sampled per meta-update')
-flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
-flags.DEFINE_integer('num_samples_per_class', 8, 'number of examples used for inner gradient update (K for K-shot learning).')
-flags.DEFINE_float('update_lr', .3, 'step size alpha for inner gradient update.') # 0.1 for omniglot
-flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
-
-## Model options
-flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
-flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
+# ## Training options
+# config = flags.config
+# flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
+# flags.DEFINE_integer('meta_batch_size', 16, 'number of tasks sampled per meta-update')
+# flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
+# flags.DEFINE_integer('num_samples_per_class', 8, 'number of examples used for inner gradient update (K for K-shot learning).')
+# flags.DEFINE_float('update_lr', .3, 'step size alpha for inner gradient update.') # 0.1 for omniglot
+# flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
+# 
+# ## Model options
+# flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
+# flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
 
 LOAD_DATA = False
 PRINT_INTERVAL = 500
@@ -54,23 +53,24 @@ def train(config):
         train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
         train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)
         train_iter, next_element = make_input(
-            train_x_ph, train_y_ph, FLAGS.meta_batch_size)
+            train_x_ph, train_y_ph, config.meta_batch_size)
         model = MAML(next_element[0], next_element[1], config)
     else:
-        num_samples_per_class = FLAGS.num_samples_per_class
+        num_samples_per_class = config.meta_num_samples_per_class
         num_class = config.N_CLASS  # TODO: this doesn't have to be
-        dim_output = config.N_CLASS
+        dim_output = config.meta_output_dimension
         data_generator = DataGenerator(
+            dataset= config.data_dir,
             batch_size=num_samples_per_class * num_class * 2,
-            meta_batch_size=FLAGS.meta_batch_size,
+            meta_batch_size=config.meta_batch_size,
             num_samples_per_class=num_samples_per_class,
             num_class=num_class,
             dim_output=dim_output,
         )
-        train_x_ph = tf.placeholder(tf.float32, (FLAGS.meta_batch_size,
+        train_x_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
                                                  data_generator.batch_size,
                                                  config.N_PN))
-        train_y_ph = tf.placeholder(tf.float32, (FLAGS.meta_batch_size,
+        train_y_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
                                                  data_generator.batch_size,
                                                  dim_output))
         model = MAML(train_x_ph, train_y_ph, config)
@@ -89,7 +89,7 @@ def train(config):
         print('Done initializing, starting training.')
 
         total_time, start_time = 0, time.time()
-        for itr in range(FLAGS.metatrain_iterations):
+        for itr in range(config.metatrain_iterations):
             if model.metatrain_op_lr is not None:
                 input_tensors = [model.metatrain_op, model.metatrain_op_lr]
                 ix = 2
@@ -142,7 +142,6 @@ def train(config):
 
                     print('Meta-val')
                     print_results(res)
-
         model.save_pickle()
 
 def main():
@@ -150,28 +149,24 @@ def main():
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-    config = configs.FullConfig()
-    config.N_KC = 2500
-
-    config.N_CLASS = 20
+    config = configs.MetaConfig()
+    config.N_CLASS = 5
+    config.meta_output_dimension = 5
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
-    config.label_type = 'one_hot'
     config.skip_orn2pn = False
     config.direct_glo = False
     config.train_orn2pn = True
-    config.pn_norm_pre = 'batch_norm'
+    # config.pn_norm_pre = 'batch_norm'
 
-    config.kc_dropout = True
-    config.sign_constraint_pn2kc = True
-
-    config.kc_norm_pre = 'batch_norm'
+    config.kc_norm_post = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.train_kc_bias = False
+    config.train_kc_bias = True
 
-    config.save_path = './files/metatrain/valence_peter/0'
-    config.data_dir = './datasets/proto/test'
+    config.save_path = './files/metatrain/0'
+    config.data_dir = './datasets/proto/standard'
+    
     try:
         shutil.rmtree(config.save_path)
     except FileNotFoundError:

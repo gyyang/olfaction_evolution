@@ -13,18 +13,18 @@ from tensorflow.python.platform import flags
 
 from model import Model, FullModel
 
-FLAGS = flags.FLAGS
+# FLAGS = flags.FLAGS
 
-def normalize(inp, activation, reuse, scope):
-    if FLAGS.norm == 'batch_norm':
-        return tf_layers.batch_norm(inp, activation_fn=activation, reuse=reuse, scope=scope)
-    elif FLAGS.norm == 'layer_norm':
-        return tf_layers.layer_norm(inp, activation_fn=activation, reuse=reuse, scope=scope)
-    elif FLAGS.norm == 'None':
-        if activation is not None:
-            return activation(inp)
-        else:
-            return inp
+# def normalize(inp, activation, reuse, scope):
+#     if FLAGS.meta_norm == 'batch_norm':
+#         return tf_layers.batch_norm(inp, activation_fn=activation, reuse=reuse, scope=scope)
+#     elif FLAGS.meta_norm.norm == 'layer_norm':
+#         return tf_layers.layer_norm(inp, activation_fn=activation, reuse=reuse, scope=scope)
+#     elif FLAGS.meta_norm.norm == 'None':
+#         if activation is not None:
+#             return activation(inp)
+#         else:
+#             return inp
 
 ## Loss functions
 def mse(pred, label):
@@ -79,7 +79,7 @@ class MAML:
             :return:
             '''
             grads = tf.gradients(loss, list(weights.values()))
-            if FLAGS.stop_grad:
+            if self.model.config.meta_stop_grad:
                 grads = [tf.stop_gradient(grad) for grad in grads]
             gradients = dict(zip(weights.keys(), grads))
             # manually construct the weights post inner gradient descent
@@ -93,7 +93,7 @@ class MAML:
             return new_weights
 
         weights = self.weights
-        num_updates = max(self.test_num_updates, FLAGS.num_updates)
+        num_updates = max(self.test_num_updates, self.model.config.meta_num_updates)
         inputa, inputb, labela, labelb = inp
         task_outputbs, task_lossesb, task_accuraciesb = [], [], []
 
@@ -151,9 +151,9 @@ class MAML:
                                              initializer=tf.constant_initializer([.1, -.01]))
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
-            num_updates = max(self.test_num_updates, FLAGS.num_updates)
+            num_updates = max(self.test_num_updates, self.model.config.meta_num_updates)
 
-            if FLAGS.norm is not 'None':
+            if self.model.config.meta_norm is not 'None':
                 # to initialize the batch norm vars, might want to combine this, and not run idx 0 twice.
                 unused = self.task_metalearn((self.inputa[0], self.inputb[0], self.labela[0], self.labelb[0]), False)
 
@@ -167,7 +167,7 @@ class MAML:
                 self.task_metalearn,
                 elems=(self.inputa, self.inputb, self.labela, self.labelb),
                 dtype=out_dtype,
-                parallel_iterations=FLAGS.meta_batch_size
+                parallel_iterations=self.model.config.meta_batch_size
             )
 
             outputas, outputbs, outputcs = results[:3]
@@ -199,8 +199,8 @@ class MAML:
         print('Training variables')
         for v in var_list:
             print(v)
-        optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
-        self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[FLAGS.num_updates-1], var_list)
+        optimizer = tf.train.AdamOptimizer(self.model.config.meta_lr)
+        self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[self.model.config.meta_num_updates-1], var_list)
         self.metatrain_op = optimizer.apply_gradients(gvs)
 
         training_learning_rate = True
@@ -208,7 +208,7 @@ class MAML:
         if training_learning_rate:
             print(self.update_lr)
             optimizer_lr = tf.train.AdamOptimizer(update_lr_learning_rate)
-            self.gvs_lr = gvs = optimizer_lr.compute_gradients(self.total_loss2[FLAGS.num_updates - 1], self.update_lr)
+            self.gvs_lr = gvs = optimizer_lr.compute_gradients(self.total_loss2[self.model.config.meta_num_updates - 1], self.update_lr)
             self.metatrain_op_lr = optimizer_lr.apply_gradients(gvs)
         else:
             self.metatrain_op_lr = None
