@@ -92,11 +92,11 @@ def train_multihead():
 
 # analysis_multihead.main()
 
-path = './files/metatrain/valence_peter'
+path = './files/metatrain'
 analysis_training.plot_distribution(path, xrange=.5)
-analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.03)
+analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.03)
 
-epoch_path = './files/metatrain/valence_peter/0/epoch'
+epoch_path = './files/metatrain/0/epoch'
 sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
 sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
 
@@ -128,11 +128,13 @@ def plot_weight_change_vs_learning_rate(path, mat):
     _helper_plot(ax, relevant_lr, 'blue', 'Update Magnitude')
     ax_ = ax.twinx()
     _helper_plot(ax_, weight_diff, 'orange', 'Weight Change Magnitude')
+    mat = mat.replace('/', '_')
+    mat = mat.replace(':0', '')
     _easy_save(path, '_{}_change_vs_learning_rate'.format(mat), pdf=True)
 
-# plot_weight_change_vs_learning_rate(path, 'w_glo')
-# plot_weight_change_vs_learning_rate(path, 'w_orn')
-plot_weight_change_vs_learning_rate(path, 'w_output')
+plot_weight_change_vs_learning_rate(path, 'w_glo')
+plot_weight_change_vs_learning_rate(path, 'w_orn')
+plot_weight_change_vs_learning_rate(path, 'model/layer3/kernel:0')
 
 # with open(d, 'rb') as f:
 #     dict = pickle.load(f)

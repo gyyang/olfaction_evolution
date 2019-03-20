@@ -13,14 +13,15 @@ import task
 class DataGenerator(object):
     def __init__(
             self,
+            dataset,
             batch_size,
             meta_batch_size,
             num_samples_per_class=1,
-            num_class=1,
+            num_class=2,
             dim_output=2,
     ):
         train_x, train_y, val_x, val_y = task.load_data(
-            'proto', './datasets/proto/standard')
+            'proto', dataset)
 
         self.meta_bs = meta_batch_size
         self.batch_size = batch_size
@@ -97,13 +98,14 @@ class DataGenerator(object):
 
 
 def _generate_meta_proto():
-    input_config = configs.MetaConfig()
-    num_samples_per_class = input_config.n_samples_per_metaclass
-    num_class = input_config.n_metaclass
-    meta_batch_size = input_config.meta_batch_size
-    dim_output = input_config.n_meta_output
-
+    config = configs.MetaConfig()
+    num_samples_per_class = config.meta_num_samples_per_class
+    num_class = config.N_CLASS
+    meta_batch_size = config.meta_batch_size
+    dim_output = config.meta_output_dimension
+    dataset = config.data_dir
     data_generator = DataGenerator(
+        dataset= dataset,
         batch_size=num_samples_per_class * num_class * 2,  # 5 is # classes
         meta_batch_size= meta_batch_size,
         num_samples_per_class=num_samples_per_class,
