@@ -68,23 +68,20 @@ class MAML:
         Returns:
             task_output: a sequence unpacked to outputa, outputb, lossa, lossb
         """
-        def _update_weights(loss, excludes, lr_dict, weights):
+        def _update_weights(loss, lr_dict, weights):
             '''
             Take gradients WRT trainable weights, and updates weights based on these gradients.
             Weights that are not trainable are not updated.
 
             :param loss: loss to take gradients to
-            :param excludes: list of weights to exclude
             :param lr_dict: learning rates associated with weights to update
             :param weights:
             :return:
             '''
-            trainable_weights = {k: v for k, v in weights.items() if k not in excludes}
-            print(trainable_weights)
-            grads = tf.gradients(loss, list(trainable_weights.values()))
+            grads = tf.gradients(loss, list(weights.values()))
             if FLAGS.stop_grad:
                 grads = [tf.stop_gradient(grad) for grad in grads]
-            gradients = dict(zip(trainable_weights.keys(), grads))
+            gradients = dict(zip(weights.keys(), grads))
             # manually construct the weights post inner gradient descent
             # Notice that this doesn't have to be through gradient descent
             new_weights = dict()
@@ -104,20 +101,15 @@ class MAML:
         task_lossa = self.loss_func(task_outputa, labela)
         task_accuracya = self.acc_func(task_outputa, labela)
 
-        excludes = list()
-        if not self.model.config.train_pn2kc:
-            excludes += ['w_glo']
-        if not self.model.config.train_kc_bias:
-            excludes += ['b_glo']
-        if not self.model.config.train_orn2pn:
-            excludes += ['w_orn', 'b_orn']
-
         lr_dict = {
-            # 'w_orn': FLAGS.update_lr,'b_orn': FLAGS.update_lr,
-            # 'w_glo': FLAGS.update_lr,'b_glo': FLAGS.update_lr,
-            'w_output':FLAGS.update_lr,'b_output': FLAGS.update_lr
+            # 'w_orn': 0,
+            # 'b_orn': 0,
+            # 'w_glo': 0,
+            # 'b_glo': 0,
+            'w_output': tf.math.minimum(1.0, self.update_lr[0]),
+            # 'b_output': self.update_lr[1]
                           }
-        fast_weights = _update_weights(task_lossa, excludes, lr_dict, weights)
+        fast_weights = _update_weights(task_lossa, lr_dict, weights)
 
         # Compute the loss of the network post inner update
         # using an independent set of input/label
@@ -128,7 +120,7 @@ class MAML:
         for j in range(num_updates - 1):
             loss = self.loss_func(
                 self.model.build_activity(inputa, fast_weights, training=True, reuse=True)[0], labela)
-            fast_weights = _update_weights(loss, excludes, lr_dict, fast_weights)
+            fast_weights = _update_weights(loss, lr_dict, fast_weights)
             output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
             task_outputbs.append(output)
             task_lossesb.append(self.loss_func(output, labelb))
@@ -155,6 +147,8 @@ class MAML:
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE) as training_scope:
             # Define the weights
             self.weights = self.model.build_weights()
+            self.update_lr = tf.get_variable('lr', shape=(2), dtype=tf.float32,
+                                             initializer=tf.constant_initializer([.1, -.01]))
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             num_updates = max(self.test_num_updates, FLAGS.num_updates)
@@ -190,11 +184,34 @@ class MAML:
         # after the map_fn
         self.outputas, self.outputbs, self.outputcs = outputas, outputbs, outputcs
 
+        excludes = list()
+        if not self.model.config.train_orn2pn:
+            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                          scope='model/layer1')
+        if not self.model.config.train_pn2kc:
+            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                          scope='model/layer2/kernel:0')
+        if not self.model.config.train_kc_bias:
+            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                          scope='model/layer2/bias:0')
+        excludes += [self.update_lr]
+        var_list = [v for v in tf.trainable_variables() if v not in excludes]
+        print('Training variables')
+        for v in var_list:
+            print(v)
         optimizer = tf.train.AdamOptimizer(FLAGS.meta_lr)
-        self.gvs = gvs = optimizer.compute_gradients(
-            self.total_loss2[FLAGS.num_updates-1]
-        )
+        self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[FLAGS.num_updates-1], var_list)
         self.metatrain_op = optimizer.apply_gradients(gvs)
+
+        training_learning_rate = True
+        update_lr_learning_rate = .01
+        if training_learning_rate:
+            print(self.update_lr)
+            optimizer_lr = tf.train.AdamOptimizer(update_lr_learning_rate)
+            self.gvs_lr = gvs = optimizer_lr.compute_gradients(self.total_loss2[FLAGS.num_updates - 1], self.update_lr)
+            self.metatrain_op_lr = optimizer_lr.apply_gradients(gvs)
+        else:
+            self.metatrain_op_lr = None
 
         ## Summaries
         tf.summary.scalar('Pre-update loss', self.total_loss1)

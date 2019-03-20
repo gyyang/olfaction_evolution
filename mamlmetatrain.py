@@ -14,16 +14,17 @@ import tools
 from mamldataset import load_data
 from mamlmodel import MAML
 from mamldataset import DataGenerator
+import numpy as np
 
 FLAGS = flags.FLAGS
 
 ## Training options
 flags.DEFINE_integer('metatrain_iterations', 100000, 'number of metatraining iterations.') # 15k for omniglot, 50k for sinusoid
-flags.DEFINE_integer('meta_batch_size', 32, 'number of tasks sampled per meta-update')
+flags.DEFINE_integer('meta_batch_size', 16, 'number of tasks sampled per meta-update')
 flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
-flags.DEFINE_integer('num_samples_per_class', 16, 'number of examples used for inner gradient update (K for K-shot learning).')
-flags.DEFINE_float('update_lr', .01, 'step size alpha for inner gradient update.') # 0.1 for omniglot
-flags.DEFINE_integer('num_updates', 2, 'number of inner gradient updates during training.')
+flags.DEFINE_integer('num_samples_per_class', 8, 'number of examples used for inner gradient update (K for K-shot learning).')
+flags.DEFINE_float('update_lr', .3, 'step size alpha for inner gradient update.') # 0.1 for omniglot
+flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.')
 
 ## Model options
 flags.DEFINE_string('norm', 'None', 'batch_norm, layer_norm, or None')
@@ -89,7 +90,12 @@ def train(config):
 
         total_time, start_time = 0, time.time()
         for itr in range(FLAGS.metatrain_iterations):
-            input_tensors = [model.metatrain_op]
+            if model.metatrain_op_lr is not None:
+                input_tensors = [model.metatrain_op, model.metatrain_op_lr]
+                ix = 2
+            else:
+                input_tensors = [model.metatrain_op]
+                ix = 1
 
             if itr % PRINT_INTERVAL == 0:
                 input_tensors.extend(
@@ -119,7 +125,10 @@ def train(config):
                 start_time = time.time()
 
                 print('Meta-train')
-                print_results(res[1:])
+                lr = sess.run(model.update_lr)
+                print('Learned update_lr is : ' +
+                      np.array2string(lr, precision=2, separator=',', suppress_small=True))
+                print_results(res[ix:])
                 model.save_pickle(itr)
                 train_writer.add_summary(res[-1], itr)
 
@@ -144,22 +153,23 @@ def main():
     config = configs.FullConfig()
     config.N_KC = 2500
 
-    config.N_CLASS = 2
+    config.N_CLASS = 20
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.label_type = 'one_hot'
     config.skip_orn2pn = False
     config.direct_glo = False
     config.train_orn2pn = True
+    config.pn_norm_pre = 'batch_norm'
 
     config.kc_dropout = True
     config.sign_constraint_pn2kc = True
 
-    # config.sparse_pn2kc = False
-    # config.train_pn2kc = True
+    config.kc_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
     config.train_kc_bias = False
 
-    # config.n_class_valence = 2
     config.save_path = './files/metatrain/valence_peter/0'
     config.data_dir = './datasets/proto/test'
     try:
