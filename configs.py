@@ -210,6 +210,8 @@ class FullConfig(BaseConfig):
 class MetaConfig(FullConfig):
     def __init__(self):
         super(MetaConfig, self).__init__()
+        # data directory
+        self.data_dir = './datasets/proto/standard'
         # how many points for input generation
         self.meta_n_dataset = 1000 * 32
         # number of classes

@@ -34,10 +34,10 @@ PRINT_INTERVAL = 500
 def print_results(res):
     # TODO: need cleaning
     n_steps = len(res[1])
-    print('Pre-update train loss {:0.4f}  acc {:0.2f}'.format(res[0], res[3]))
-    print('Post-update train loss {:0.4f}  acc {:0.2f}'.format(res[2], res[5]))
-    print('Post-update val loss step 1 {:0.4f}  acc {:0.2f}'.format(res[1][0], res[4][0]))
-    print('Post-update val loss step {:d} {:0.4f}  acc {:0.2f}'.format(n_steps, res[1][-1],res[4][-1]))
+    print('Pre-update train loss >> {:0.4f}.  acc >> {:0.2f}, {:0.2f}'.format(res[0], res[3][0],res[3][1]))
+    print('Post-update train loss >> {:0.4f}.  acc >> {:0.2f}, {:0.2f} '.format(res[2], res[5][0],res[5][1]))
+    print('Post-update val loss step 1 >> {:0.4f}.  acc >> {:0.2f}, {:0.2f}'.format(res[1][0], res[4][0][0],res[4][0][1]))
+    print('Post-update val loss step {:d} >> {:0.4f}.  acc >> {:0.2f}, {:0.2f}'.format(n_steps, res[1][-1],res[4][-1][0],res[4][-1][1]))
 
 def train(config):
     tf.reset_default_graph()
@@ -46,6 +46,9 @@ def train(config):
     dataset_config = tools.load_config(config.data_dir)
     dataset_config.update(config)
     config = dataset_config
+    if not os.path.exists(config.save_path):
+        os.makedirs(config.save_path)
+    tools.save_config(config, save_path=config.save_path)
 
     if LOAD_DATA:
         train_x, train_y = load_data(None, './datasets/proto/meta_proto')
@@ -70,9 +73,17 @@ def train(config):
         train_x_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
                                                  data_generator.batch_size,
                                                  config.N_PN))
-        train_y_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
-                                                 data_generator.batch_size,
-                                                 dim_output))
+
+        if config.label_type == 'one_hot':
+            train_y_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
+                                                     data_generator.batch_size,
+                                                     dim_output))
+        elif config.label_type == 'multi_head_one_hot':
+            train_y_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
+                                                     data_generator.batch_size,
+                                                     dim_output + config.n_class_valence))
+        else:
+            raise ValueError('label type {} is not recognized'.format(config.label_type))
         model = MAML(train_x_ph, train_y_ph, config)
 
     model.summ_op = tf.summary.merge_all()
@@ -130,6 +141,7 @@ def train(config):
                       np.array2string(lr, precision=2, separator=',', suppress_small=True))
                 print_results(res[ix:])
                 model.save_pickle(itr)
+                model.save()
                 train_writer.add_summary(res[-1], itr)
 
                 if not LOAD_DATA:
@@ -143,29 +155,32 @@ def train(config):
                     print('Meta-val')
                     print_results(res)
         model.save_pickle()
+        model.save()
 
 def main():
     import shutil
-
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     config = configs.MetaConfig()
-    config.N_CLASS = 5
-    config.meta_output_dimension = 5
+    config.metatrain_iterations = 501
+    config.N_CLASS = 10
+    config.meta_output_dimension = 10
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = False
+    config.skip_orn2pn = True
     config.direct_glo = False
-    config.train_orn2pn = True
+    config.train_orn2pn = False
     # config.pn_norm_pre = 'batch_norm'
 
-    config.kc_norm_post = 'batch_norm'
+    config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.train_kc_bias = True
+    config.train_kc_bias = False
 
     config.save_path = './files/metatrain/0'
-    config.data_dir = './datasets/proto/standard'
+
+    config.data_dir = './datasets/proto/multi_head'
+    config.label_type = 'multi_head_one_hot'
     
     try:
         shutil.rmtree(config.save_path)

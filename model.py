@@ -532,13 +532,24 @@ class FullModel(Model):
                 class_loss += loss1
             if config.train_head2:
                 class_loss += loss2
+        elif config.label_type == 'multi_head_one_hot':
+            y1 = y[:,:self.config.N_CLASS]
+            y2 = y[:, self.config.N_CLASS:]
+            loss1 = tf.losses.softmax_cross_entropy(onehot_labels=y1, logits=logits)
+            loss2 = tf.losses.softmax_cross_entropy(onehot_labels=y2, logits=logits2)
+            if config.train_head1:
+                class_loss += loss1
+            if config.train_head2:
+                class_loss += loss2
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
+        self.loss = class_loss
         return class_loss
 
     def accuracy_func(self, logits, logits2, y):
         config = self.config
+        self.acc2 = tf.constant(0, dtype=tf.float32)
         if config.label_type == 'combinatorial':
 
             self.acc = tf.contrib.metrics.streaming_pearson_correlation(
@@ -558,10 +569,22 @@ class FullModel(Model):
             acc2 = tf.reduce_mean(tf.to_float(tf.equal(pred2, y2)))
             self.acc = acc1
             self.acc2 = acc2
+        elif config.label_type == 'multi_head_one_hot':
+            y1 = y[:,:self.config.N_CLASS]
+            y2 = y[:, self.config.N_CLASS:]
+            pred1 = tf.argmax(logits, axis=-1, output_type=tf.int32)
+            labels1 = tf.argmax(y1, axis=-1, output_type=tf.int32)
+            acc1 = tf.reduce_mean(tf.to_float(tf.equal(pred1, labels1)))
+            pred2 = tf.argmax(logits2, axis=-1, output_type=tf.int32)
+            labels2 = tf.argmax(y2, axis=-1, output_type=tf.int32)
+            acc2 = tf.reduce_mean(tf.to_float(tf.equal(pred2, labels2)))
+            self.acc = acc1
+            self.acc2 = acc2
+
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
-        return self.acc
+        return (self.acc, self.acc2)
 
 
     def _build(self, x, y, training):
@@ -761,7 +784,7 @@ class FullModel(Model):
             self.weights['w_output'] = w_output
             self.weights['b_output'] = b_output
 
-        if config.label_type == 'multi_head_sparse':
+        if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
             with tf.variable_scope('layer3_2', reuse=tf.AUTO_REUSE):
                 w_output = tf.get_variable(
                     'kernel', shape=(config.N_KC, config.n_class_valence),
@@ -856,10 +879,10 @@ class FullModel(Model):
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
             logits = tf.matmul(kc, weights['w_output']) + weights['b_output']
 
-            if config.label_type == 'multi_head_sparse':
+            if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
                 logits2= tf.matmul(kc, weights['w_output_head2']) + weights['b_output_head2']
             else:
-                logits2 = None
+                logits2 = tf.constant(0, dtype=tf.float32)
 
         self.logits = logits
         self.logits2 = logits2
