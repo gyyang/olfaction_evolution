@@ -43,20 +43,24 @@ def acc_func(pred, label):
 
 
 class MAML:
-    def __init__(self, x, y, config, test_num_updates=5):
+    def __init__(self, x, y, config, test_num_updates=5, training=True):
         """MAML model."""
         self.test_num_updates = test_num_updates
 
         self.model = FullModel(x=None, y=None, config=config, meta_learn=True)
-        self.loss_func = lambda logits, y: self.model.loss_func(logits, None, y)
-        self.acc_func = lambda logits, y: self.model.accuracy_func(logits, None, y)
+        self.loss_func = lambda logits1, logits2, y: self.model.loss_func(logits1, logits2, y)
+        self.acc_func = lambda logits1, logits2, y: self.model.accuracy_func(logits1, logits2, y)
 
         # self.model = PNKCModel(config)
         # self.loss_func = xent
         # self.acc_func = acc_func
 
+        self._build(x, y, training=training)
         self.save_pickle = self.model.save_pickle
-        self._build(x, y)
+        self.load = self.model.load
+        self.save = self.model.save
+        self.lesion_units = self.model.lesion_units
+        self.model.saver = tf.train.Saver(max_to_keep=None)
 
     def task_metalearn(self, inp, reuse=True):
         """ Perform gradient descent for one task in the meta-batch.
@@ -97,15 +101,14 @@ class MAML:
         inputa, inputb, labela, labelb = inp
         task_outputbs, task_lossesb, task_accuraciesb = [], [], []
 
-        task_outputa = self.model.build_activity(inputa, weights, training=True, reuse=reuse)[0]  # only reuse on the first iter
-        task_lossa = self.loss_func(task_outputa, labela)
-        task_accuracya = self.acc_func(task_outputa, labela)
+        # only reuse on the first iter
+        task_outputa_head1, task_outputa_head2 = self.model.build_activity(inputa, weights, training=True, reuse=reuse)
+        task_lossa = self.loss_func(task_outputa_head1, task_outputa_head2, labela)
+        task_accuracya_head1, task_accuracya_head2 = self.acc_func(task_outputa_head1, task_outputa_head2, labela)
+        task_outputa = (task_outputa_head1, task_outputa_head2)
+        task_accuracya = (task_accuracya_head1, task_accuracya_head2)
 
         lr_dict = {
-            # 'w_orn': 0,
-            # 'b_orn': 0,
-            # 'w_glo': 0,
-            # 'b_glo': 0,
             'w_output': tf.math.minimum(1.0, self.update_lr[0]),
             # 'b_output': self.update_lr[1]
                           }
@@ -113,36 +116,46 @@ class MAML:
 
         # Compute the loss of the network post inner update
         # using an independent set of input/label
-        output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
-        task_outputbs.append(output)
-        task_lossesb.append(self.loss_func(output, labelb))
+        output_head1, output_head2 = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)
+        task_outputbs.append((output_head1, output_head2))
+        task_lossesb.append(self.loss_func(output_head1, output_head2, labelb))
 
         for j in range(num_updates - 1):
-            loss = self.loss_func(
-                self.model.build_activity(inputa, fast_weights, training=True, reuse=True)[0], labela)
+            output_head1, output_head2 = self.model.build_activity(inputa, fast_weights, training=True, reuse=True)
+            loss = self.loss_func(output_head1, output_head2, labela)
             fast_weights = _update_weights(loss, lr_dict, fast_weights)
-            output = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)[0]
-            task_outputbs.append(output)
-            task_lossesb.append(self.loss_func(output, labelb))
+            output_head1, output_head2 = self.model.build_activity(inputb, fast_weights, training=True, reuse=True)
+            task_lossesb.append(self.loss_func(output_head1, output_head2, labelb))
+            task_outputbs.append((output_head1, output_head2))
 
         # Compute loss/acc using new weights and inputa
-        task_outputc = self.model.build_activity(inputa, fast_weights,
-                                                 training=True, reuse=True)[0]
-        task_lossc = self.loss_func(task_outputc, labela)
-        task_accuracyc = self.acc_func(task_outputc, labela)
+        task_outputc_head1, task_outputc_head2 = self.model.build_activity(inputa, fast_weights, training=True, reuse=True)
+        task_lossc = self.loss_func(task_outputc_head1, task_outputc_head2, labela)
+        task_accuracyc_head1, task_accuracyc_head2 = self.acc_func(task_outputc_head1, task_outputa_head2, labela)
+        task_outputc = (task_outputc_head1, task_outputc_head2)
+        task_accuracyc = (task_accuracyc_head1, task_accuracyc_head2)
 
         for task_outputb in task_outputbs:
-            task_accuraciesb.append(self.acc_func(task_outputb, labelb))
+            acc_head1, acc_head2 = self.acc_func(task_outputb[0], task_outputb[1], labelb)
+            task_accuraciesb.append((acc_head1, acc_head2))
 
         return [task_outputa, task_outputbs, task_outputc,
                 task_lossa, task_lossesb, task_lossc,
                 task_accuracya, task_accuraciesb, task_accuracyc]
 
-    def _build(self, x, y):
+    def _build(self, x, y, training=True):
         # a: training data for inner gradient, b: test data for meta gradient
 
         self.inputa, self.inputb = tf.split(x, 2, axis=1)
-        self.labela, self.labelb = tf.split(y, 2, axis=1)
+        if self.model.config.label_type == 'multi_head_one_hot':
+            y1 = y[:,:,:self.model.config.N_CLASS]
+            y2 = y[:,:, self.model.config.N_CLASS:]
+            labela_1, labelb_1 = tf.split(y1, 2, axis=1)
+            labela_2, labelb_2 = tf.split(y2, 2, axis=1)
+            self.labela = tf.concat([labela_1, labela_2], axis=2)
+            self.labelb = tf.concat([labelb_1, labelb_2], axis=2)
+        else:
+            self.labela, self.labelb = tf.split(y, 2, axis=1)
 
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE) as training_scope:
             # Define the weights
@@ -160,9 +173,11 @@ class MAML:
             # do metalearn for each meta-example in the meta-batch
             # self.inputa has shape (meta_batch_size, batch_size, dim_input)
             # do metalearn on (i, batch_size, dim_input) for i in range(meta_batch_size)
-            out_dtype = [tf.float32, [tf.float32] * num_updates, tf.float32,
+
+            output_dt = (tf.float32, tf.float32)
+            out_dtype = [output_dt, [output_dt] * num_updates, output_dt,
                          tf.float32, [tf.float32] * num_updates, tf.float32,
-                         tf.float32, [tf.float32] * num_updates, tf.float32]
+                         output_dt, [output_dt] * num_updates, output_dt]
             results = tf.map_fn(
                 self.task_metalearn,
                 elems=(self.inputa, self.inputb, self.labela, self.labelb),
@@ -178,52 +193,58 @@ class MAML:
         self.total_loss1 = tf.reduce_mean(lossesa)
         self.total_loss2 = [tf.reduce_mean(l) for l in lossesb]
         self.total_loss3 = tf.reduce_mean(lossesc)
-        self.total_acc1 = tf.reduce_mean(acca)
-        self.total_acc2 = [tf.reduce_mean(a) for a in accb]
-        self.total_acc3 = tf.reduce_mean(accc)
+        self.total_acc1 = tf.reduce_mean(acca, axis=1)
+        self.total_acc2 = [tf.reduce_mean(a, axis=1) for a in accb]
+        self.total_acc3 = tf.reduce_mean(accc, axis=1)
         # after the map_fn
         self.outputas, self.outputbs, self.outputcs = outputas, outputbs, outputcs
 
-        excludes = list()
-        if not self.model.config.train_orn2pn:
-            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                          scope='model/layer1')
-        if not self.model.config.train_pn2kc:
-            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                          scope='model/layer2/kernel:0')
-        if not self.model.config.train_kc_bias:
-            excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                          scope='model/layer2/bias:0')
-        excludes += [self.update_lr]
-        var_list = [v for v in tf.trainable_variables() if v not in excludes]
-        print('Training variables')
-        for v in var_list:
-            print(v)
-        optimizer = tf.train.AdamOptimizer(self.model.config.meta_lr)
-        self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[self.model.config.meta_num_updates-1], var_list)
-        self.metatrain_op = optimizer.apply_gradients(gvs)
+        if training:
+            excludes = list()
+            if not self.model.config.train_orn2pn:
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope='model/layer1')
+            if not self.model.config.train_pn2kc:
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope='model/layer2/kernel:0')
+            if not self.model.config.train_kc_bias:
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope='model/layer2/bias:0')
+            excludes += [self.update_lr]
+            var_list = [v for v in tf.trainable_variables() if v not in excludes]
+            print('Training variables')
+            for v in var_list:
+                print(v)
+            optimizer = tf.train.AdamOptimizer(self.model.config.meta_lr)
+            self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[self.model.config.meta_num_updates-1], var_list)
+            self.metatrain_op = optimizer.apply_gradients(gvs)
 
-        training_learning_rate = True
-        update_lr_learning_rate = .01
-        if training_learning_rate:
-            print(self.update_lr)
-            optimizer_lr = tf.train.AdamOptimizer(update_lr_learning_rate)
-            self.gvs_lr = gvs = optimizer_lr.compute_gradients(self.total_loss2[self.model.config.meta_num_updates - 1], self.update_lr)
-            self.metatrain_op_lr = optimizer_lr.apply_gradients(gvs)
-        else:
-            self.metatrain_op_lr = None
+            training_learning_rate = True
+            update_lr_learning_rate = .01
+            if training_learning_rate:
+                print(self.update_lr)
+                optimizer_lr = tf.train.AdamOptimizer(update_lr_learning_rate)
+                self.gvs_lr = gvs = optimizer_lr.compute_gradients(self.total_loss2[self.model.config.meta_num_updates - 1], self.update_lr)
+                self.metatrain_op_lr = optimizer_lr.apply_gradients(gvs)
+            else:
+                self.metatrain_op_lr = None
+
 
         ## Summaries
         tf.summary.scalar('Pre-update loss', self.total_loss1)
-        tf.summary.scalar('Pre-update accuracy', self.total_acc1)
+        tf.summary.scalar('Pre-update accuracy_head1', self.total_acc1[0])
+        tf.summary.scalar('Pre-update accuracy_head2', self.total_acc1[1])
         tf.summary.scalar('Post-update train loss', self.total_loss3)
-        tf.summary.scalar('Post-update train accuracy', self.total_acc3)
+        tf.summary.scalar('Post-update train accuracy_head1', self.total_acc3[0])
+        tf.summary.scalar('Post-update train accuracy_head2', self.total_acc3[1])
 
         for j in range(num_updates):
             tf.summary.scalar(
                 'Post-update val loss, step ' + str(j+1), self.total_loss2[j])
             tf.summary.scalar(
-                'Post-update val accuracy, step ' + str(j+1), self.total_acc2[j])
+                'Post-update val accuracy_head1, step ' + str(j+1), self.total_acc2[j][0])
+            tf.summary.scalar(
+                'Post-update val accuracy_head2, step ' + str(j+1), self.total_acc2[j][1])
 
 from model import _sparse_range, _initializer
 

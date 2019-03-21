@@ -32,12 +32,28 @@ class DataGenerator(object):
         self.train_x = train_x
         self.train_y = train_y
 
-        # dictionary mapping class to odor indices
-        unique_y = np.unique(train_y)
-        self.ind_dict = {y: np.where(train_y==y)[0] for y in unique_y}
+        if np.ndim(train_y) == 2: #hack for multi_class_one_hot
+            class_y, valence_y = train_y[:,0], train_y[:,1]
+            self.train_y = class_y
+            self.valence_y = valence_y
+            self.n_valence_class = np.unique(valence_y).size
 
-        self.metatrain_classes = unique_y[:int(0.5 * len(unique_y))]
-        self.metaval_classes = unique_y[int(0.5 * len(unique_y)):]
+        else:
+            class_y = train_y
+            self.train_y = class_y
+            self.n_valence_class = None
+
+        # dictionary mapping class to odor indices
+        unique_y = np.unique(class_y)
+        self.ind_dict = {y: np.where(class_y==y)[0] for y in unique_y}
+
+        if np.ndim(train_y) == 2:
+            self.metatrain_classes = unique_y
+            self.metaval_classes = unique_y
+        else:
+            self.metatrain_classes = unique_y[:int(0.5 * len(unique_y))]
+            self.metaval_classes = unique_y[int(0.5 * len(unique_y)):]
+
 
         if np.mod(num_class, dim_output) != 0:
             raise ValueError('Now only supporting num_class multiples of dim_output')
@@ -50,7 +66,7 @@ class DataGenerator(object):
 
         Returns:
             inputs: array, (meta_batch_size, n_samples_per_class, dim_input)
-            outputs: array, (meta_batch_size, n_samples_per_class, dim_output)
+            outputs_head1: array, (meta_batch_size, n_samples_per_class, dim_output)
         """
         if dataset_type == 'train':
             all_classes = self.metatrain_classes
@@ -64,7 +80,9 @@ class DataGenerator(object):
         assert n_sample_per_class * n_class_per_batch * 2 == self.batch_size
 
         inputs = np.zeros([self.meta_bs, self.batch_size, self.train_x.shape[-1]])
-        outputs = np.zeros([self.meta_bs, self.batch_size, self.dim_output])
+        outputs_head1 = np.zeros([self.meta_bs, self.batch_size, self.dim_output])
+        if self.n_valence_class is not None:
+            outputs_head2 = np.zeros([self.meta_bs, self.batch_size, self.n_valence_class])
 
         for i in range(self.meta_bs):
             # randomly select several classes to train on
@@ -83,22 +101,31 @@ class DataGenerator(object):
                     ind = np.random.choice(
                         self.ind_dict[c], n_sample_per_class, replace=False)
                     inputs[i, j:j+n_sample_per_class, :] = self.train_x[ind, :]
-                    outputs[i, j:j+n_sample_per_class, l] = 1.0  # one-hot
+                    outputs_head1[i, j:j+n_sample_per_class, l] = 1.0  # one-hot
+
+                    if self.n_valence_class:
+                        outputs_head2[i,j:j+n_sample_per_class, self.valence_y[ind]] = 1.0
                     j += n_sample_per_class
 
+        if self.n_valence_class is not None:
+            outputs_head = np.concatenate((outputs_head1, outputs_head2), axis=2)
+        else:
+            outputs_head = outputs_head1
         # n_orn = 50
         # for i in range(self.meta_bs):
         #     prototypes = np.random.uniform(0, 1, (n_class_per_batch, n_orn))
         #     odors = np.random.uniform(0, 1, (self.batch_size, n_orn))
         #     labels = task._get_labels(prototypes, odors, percent_generalization=100)
         #     inputs[i,:,:] = odors
-        #     outputs[i, np.arange(labels.size), labels] = 1
+        #     outputs_head1[i, np.arange(labels.size), labels] = 1
 
-        return inputs, outputs
+        return inputs, outputs_head
 
 
 def _generate_meta_proto():
     config = configs.MetaConfig()
+    config.label_type = 'multi_head_one_hot'
+    config.data_dir = './datasets/proto/multi_head'
     num_samples_per_class = config.meta_num_samples_per_class
     num_class = config.N_CLASS
     meta_batch_size = config.meta_batch_size

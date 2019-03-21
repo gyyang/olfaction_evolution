@@ -26,16 +26,16 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 def main():
-    foldername = 'multi_head'
+    foldername = 'metatrain'
     # foldername = 'tmp_train'
 
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
 
-    analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+    # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
 
     # TODO: clean up these paths
-    path = os.path.join(path, '000000')
+    path = os.path.join(path, '0')
     config = tools.load_config(path)
     config.data_dir = rootpath + config.data_dir[1:]
     config.save_path = rootpath + config.save_path[1:]
@@ -49,6 +49,7 @@ def main():
 
     # Compute sparsity
     thres = analysis_pn2kc_training.infer_threshold(wglo)
+    thres = .03
     sparsity = np.count_nonzero(wglo > thres, axis=0)
 
 
@@ -195,7 +196,6 @@ def main():
             val_loss, val_acc, val_acc2 = sess.run(
                 [val_model.loss, val_model.acc, val_model.acc2],
                 {val_x_ph: val_x, val_y_ph: val_y})
-
             return val_acc, val_acc2
 
     val_accs = list()
