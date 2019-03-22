@@ -45,7 +45,7 @@ class Model(object):
         """Save model using pickle."""
         pass
 
-    def lesion_units(self, name, units, verbose=False):
+    def lesion_units(self, name, units, verbose=False, arg='outbound'):
         """Lesion units given by units.
 
         Args:
@@ -65,7 +65,14 @@ class Model(object):
         v = [tmp for tmp in tf.trainable_variables() if tmp.name == name][0]
         # Connection weights
         v_val = sess.run(v)
-        v_val[units, :] = 0
+
+        if arg == 'outbound':
+            v_val[units, :] = 0
+        elif arg == 'inbound':
+            v_val[:,units] = 0
+        else:
+            raise ValueError('did not recognize lesion argument: {}'.format(arg))
+
         sess.run(v.assign(v_val))
 
         if verbose:

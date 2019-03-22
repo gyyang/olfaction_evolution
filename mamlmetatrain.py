@@ -162,9 +162,9 @@ def main():
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     config = configs.MetaConfig()
-    config.metatrain_iterations = 501
-    config.N_CLASS = 10
-    config.meta_output_dimension = 10
+    config.metatrain_iterations = 30000
+    config.N_CLASS = 2
+    config.meta_output_dimension = 2
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True
@@ -175,17 +175,19 @@ def main():
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.train_kc_bias = False
+    config.train_kc_bias = True
 
     config.save_path = './files/metatrain/0'
 
     config.data_dir = './datasets/proto/multi_head'
     config.label_type = 'multi_head_one_hot'
-    
-    try:
-        shutil.rmtree(config.save_path)
-    except FileNotFoundError:
-        pass
+    # config.data_dir = './datasets/proto/standard'
+    # config.label_type = 'one_hot'
+
+    # try:
+    #     shutil.rmtree(config.save_path)
+    # except FileNotFoundError:
+    #     pass
     train(config)
 
 if __name__ == "__main__":
