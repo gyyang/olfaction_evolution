@@ -26,8 +26,8 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 def main():
-    foldername = 'metatrain'
-    # foldername = 'tmp_train'
+    # foldername = 'metatrain'
+    foldername = 'tmp_multihead'
 
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
@@ -49,7 +49,8 @@ def main():
 
     # Compute sparsity
     thres = analysis_pn2kc_training.infer_threshold(wglo)
-    thres = .03
+    # thres = .1
+    print('Threshold: {:0.3f}'.format(thres))
     sparsity = np.count_nonzero(wglo > thres, axis=0)
 
 
@@ -75,7 +76,7 @@ def main():
 
     xlabel = 'PN Input degree'
     ylabel = 'Conn. to valence'
-    xmin, xmax, ymin, ymax = 0, 15, 0, 3
+    xmin, xmax, ymin, ymax = 0, 50, 0, 3
 
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
