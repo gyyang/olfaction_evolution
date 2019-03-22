@@ -7,13 +7,6 @@ def make_standard_dataset():
     task_config = task.input_ProtoConfig()
     task.save_proto(config=task_config, seed=0, folder_name='standard')
 
-def make_multi_head_dataset():
-    task_config = task.input_ProtoConfig()
-    task_config.label_type = 'multi_head_sparse'
-    task_config.has_special_odors = True
-    task_config.n_proto_valence = 3
-    task.save_proto(config=task_config, seed=0, folder_name='multi_head')
-
 def make_primordial_dataset():
     config = configs.input_ProtoConfig()
     config.label_type = 'multi_head_sparse'
@@ -85,6 +78,12 @@ def make_small_training_set_datasets():
         print('Done small training dataset: ' + str(i))
 
 
+def make_multi_head_dataset():
+    task_config = task.input_ProtoConfig()
+    task_config.label_type = 'multi_head_sparse'
+    task.save_proto(config=task_config, seed=0, folder_name='multi_head')
+
+
 def temp():
     config = configs.input_ProtoConfig()
     config.N_CLASS = 200
@@ -96,7 +95,6 @@ def temp():
 
 if __name__ == '__main__':
     # make_standard_dataset()
-    make_multi_head_dataset()
     # make_relabel_datasets_small()
     # make_relabel_datasets_large()
     # make_concentration_dataset()
@@ -105,4 +103,5 @@ if __name__ == '__main__':
     # make_mask_row_dataset()
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
+    make_multi_head_dataset()
     # temp()
