@@ -163,12 +163,12 @@ def main():
 
     config = configs.MetaConfig()
     config.metatrain_iterations = 30000
-    config.meta_lr = .01
+    config.meta_lr = .001
     config.N_CLASS = 2
     config.meta_output_dimension = 2
 
-    config.meta_batch_size = 8
-    config.meta_num_samples_per_class = 2
+    config.meta_batch_size = 16
+    config.meta_num_samples_per_class = 8
 
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1

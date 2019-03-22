@@ -70,10 +70,6 @@ def train_multihead():
     config.ORN_NOISE_STD = 0
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    # config.initial_pn2kc = .1
-    # config.train_kc_bias = False
-    # config.kc_loss = False
-
     config.pn_norm_pre = 'batch_norm'
     config.data_dir = './datasets/proto/multi_head'
     config.save_every_epoch = True
@@ -92,15 +88,14 @@ path = './files/multi_head'
 
 # analysis_multihead.main1(arg='multi_head')
 #
-# path = './files/metatrain'
-# analysis_training.plot_distribution(path, xrange=.5)
-# analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.03)
+path = './files/metatrain'
+analysis_training.plot_distribution(path, xrange=.5)
+analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.03)
 
 epoch_path = './files/metatrain/0/epoch'
 sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
 sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
 
-#
 # def plot_weight_change_vs_meta_update_magnitude(path, mat):
 #     from standard.analysis import _easy_save
 #     def _helper_plot(ax, data, color, label):
