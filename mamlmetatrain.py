@@ -167,8 +167,8 @@ def main():
     config.N_CLASS = 2
     config.meta_output_dimension = 2
 
-    config.meta_batch_size = 8
-    config.meta_num_samples_per_class = 4
+    config.meta_batch_size = 16
+    config.meta_num_samples_per_class = 8
 
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
