@@ -81,7 +81,7 @@ def train(config):
         elif config.label_type == 'multi_head_one_hot':
             train_y_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
                                                      data_generator.batch_size,
-                                                     dim_output + config.n_class_valence))
+                                                     dim_output + config.n_proto_valence))
         else:
             raise ValueError('label type {} is not recognized'.format(config.label_type))
         model = MAML(train_x_ph, train_y_ph, config)
@@ -163,14 +163,19 @@ def main():
 
     config = configs.MetaConfig()
     config.metatrain_iterations = 30000
+    config.meta_lr = .01
     config.N_CLASS = 2
     config.meta_output_dimension = 2
+
+    config.meta_batch_size = 8
+    config.meta_num_samples_per_class = 2
+
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
+    config.skip_orn2pn = False
     config.direct_glo = False
-    config.train_orn2pn = False
-    # config.pn_norm_pre = 'batch_norm'
+    config.train_orn2pn = True
+    config.pn_norm_pre = 'batch_norm'
 
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
@@ -184,10 +189,10 @@ def main():
     # config.data_dir = './datasets/proto/standard'
     # config.label_type = 'one_hot'
 
-    # try:
-    #     shutil.rmtree(config.save_path)
-    # except FileNotFoundError:
-    #     pass
+    try:
+        shutil.rmtree(config.save_path)
+    except FileNotFoundError:
+        pass
     train(config)
 
 if __name__ == "__main__":

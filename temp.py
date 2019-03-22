@@ -84,21 +84,21 @@ def train_multihead():
     return config, hp_ranges
 
 path = './files/multi_head'
-try:
-    shutil.rmtree(path)
-except:
-    pass
-t(train_multihead(), path, s=0, e=100)
+# try:
+#     shutil.rmtree(path)
+# except:
+#     pass
+# t(train_multihead(), path, s=0, e=100)
 
-analysis_multihead.main()
-
+# analysis_multihead.main1(arg='multi_head')
+#
 # path = './files/metatrain'
 # analysis_training.plot_distribution(path, xrange=.5)
 # analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.03)
-#
-# epoch_path = './files/metatrain/0/epoch'
-# sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
-# sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
+
+epoch_path = './files/metatrain/0/epoch'
+sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
+sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
 
 #
 # def plot_weight_change_vs_meta_update_magnitude(path, mat):

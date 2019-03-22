@@ -35,6 +35,7 @@ def _get_data(path):
 
     thres = analysis_pn2kc_training.infer_threshold(wglo)
     # thres = .03
+    print(thres)
     sparsity = np.count_nonzero(wglo > thres, axis=0)
     v1 = sparsity
     strength_wout2 = np.linalg.norm(wout2, axis=1)
@@ -46,8 +47,8 @@ def _get_data(path):
 
 def _get_groups(data_norm, config):
     labels = KMeans(n_clusters=2, random_state=0).fit_predict(data_norm)
-    group0 = np.arange(config.N_KC)[labels == 1]
-    group1 = np.arange(config.N_KC)[labels == 0]
+    group0 = np.arange(config.N_KC)[labels == 0]
+    group1 = np.arange(config.N_KC)[labels == 1]
     print('Group 0 has {:d} neurons'.format(len(group0)))
     print('Group 1 has {:d} neurons'.format(len(group1)))
     return group0, group1
@@ -221,12 +222,12 @@ def main1(arg):
         foldername = 'metatrain'
         subdir = '0'
         ylim_head1 = .5
-        ylim_head2 = .8
+        ylim_head2 = .5
     else:
         foldername = 'multi_head'
         subdir = '000000'
         ylim_head1 = 0
-        ylim_head2 = .9
+        ylim_head2 = .5
 
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
