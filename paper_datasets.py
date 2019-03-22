@@ -81,6 +81,7 @@ def make_small_training_set_datasets():
 def make_multi_head_dataset():
     task_config = task.input_ProtoConfig()
     task_config.label_type = 'multi_head_sparse'
+    task_config.has_special_odors = False
     task.save_proto(config=task_config, seed=0, folder_name='multi_head')
 
 
