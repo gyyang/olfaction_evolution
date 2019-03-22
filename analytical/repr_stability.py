@@ -28,9 +28,8 @@ def normalize(x):
     """Normalize along axis=1."""
     return (x.T/np.sqrt(np.sum(x**2, axis=1))).T
 
-
 def _get_M(n_pn, n_kc, n_kc_claw, sign_constraint=True):
-    M = model.get_sparse_mask(n_pn, n_kc, n_kc_claw) / n_kc_claw
+    M = model.get_sparse_mask(n_pn, n_kc, n_kc_claw) / np.sqrt(n_kc_claw)
     
     M = perturb(M, 0.5, 'multiplicative')  # pre-perturb
     
@@ -54,18 +53,32 @@ def perturb(M, beta, mode='multiplicative'):
 
 
 def analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
-                    coding_level=None, same_threshold=True, n_pts=10):
+                    coding_level=None, same_threshold=True, n_pts=10,
+                    perturb_mode='weight', ff_inh=False, normalize_x=True):
     X = np.random.rand(n_pts, n_pn)
-    
-    X = normalize(X)
+    if normalize_x:
+        X = normalize(X)
 
     M = _get_M(n_pn, n_kc, n_kc_claw)
+    
+    # M = np.random.uniform(0.5, 1.5, size=(n_pn, n_kc)) * (np.random.rand(n_pn, n_kc)<n_kc_claw/n_pn)
+
+    if ff_inh:
+        # TODO: think how to weight perturb with ff inh
+        M = M - M.sum(axis=0).mean()
+    
     Y = np.dot(X, M)
 
-    # M2 = perturb(M, beta=0.5, mode='multiplicative')
-    M2 = perturb(M, beta=0.1, mode='additive')
-    # M2 = _get_M(n_pn, n_kc, n_kc_claw)
-    Y2 = np.dot(X, M2)
+    if perturb_mode == 'weight':
+        M2 = perturb(M, beta=0.5, mode='multiplicative')
+        # M2 = perturb(M, beta=0.1, mode='additive')
+        # M2 = _get_M(n_pn, n_kc, n_kc_claw)
+        Y2 = np.dot(X, M2)
+    elif perturb_mode == 'pn_activity':
+        X2 = X + np.random.randn(*X.shape) * 0.1
+        Y2 = np.dot(X2, M)
+    else:
+        raise ValueError('Unknown perturb mode: ' + str(perturb_mode))
     
     if coding_level is not None:
         threshold = np.percentile(Y.flatten(), 100-coding_level)
@@ -178,18 +191,27 @@ def get_proj(n_kc_claw, n_rep=1, **kwargs):
 
 
 def vary_kc_claw():
-    n_kc_claws = np.arange(1, 50)
+    """Main analysis file."""
+    perturb_mode = 'weight'
+    # perturb_mode = 'pn_activity'
+    n_kc_claws = np.arange(1, 50, 1)
     
     projs = list()
     proj2s = list()
     for i, n_kc_claw in enumerate(n_kc_claws):    
-        proj, proj2 = get_proj(n_kc_claw, n_rep=2, coding_level=10)
+        proj, proj2 = get_proj(n_kc_claw, n_rep=5, coding_level=10,
+                               n_pn=50, perturb_mode=perturb_mode,
+                               ff_inh=True)
         projs.append(proj)
         proj2s.append(proj2)
     
     names = ['projected_signal', 'projected_noise',
              'signal_noise_ratio', 'p_sign_preserve']
     
+    from scipy.signal import savgol_filter
+    
+    x = n_kc_claws
+    res = dict()
     for value_name in names:
         values = list()
         for i in range(len(n_kc_claws)):
@@ -201,18 +223,30 @@ def vary_kc_claw():
             elif value_name == 'projected_noise':
                 value = np.std(proj-proj2)
             elif value_name == 'signal_noise_ratio':
-                value = np.std(proj)/np.std(proj-proj2)
+                value = (np.std(proj))/(np.std(proj-proj2))
             else:
                 raise ValueError('Unknown value name')
             values.append(value)
-            
+        res[value_name] = np.array(values)
+    
+    for key, val in res.items():
         fig = plt.figure(figsize=(2, 2))
         ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
-        ax.plot(n_kc_claws, values, 'o-')
-        ax.set_xticks([1, 3, 7, 10, 20, 30])
+        ax.plot(x, val, 'o', markersize=1)
+        
+        if key in ['p_sign_preserve', 'signal_noise_ratio']:
+            yhat = savgol_filter(val, 11, 3) # window size 51, polynomial order 3
+            ax.plot(x, yhat, '-', linewidth=1)
+            ax.set_title('Max at K={:d}'.format(x[np.argmax(yhat)]))
+            
+        if key == 'p_sign_preserve':
+            ypred = 1 - 1/np.pi*np.arctan(1/res['signal_noise_ratio'])
+            # ax.plot(x, ypred)
+        
+        # ax.set_xticks([1, 3, 7, 10, 20, 30])
         ax.set_xlabel('Number of KC claws')
-        ax.set_ylabel(value_name)
-        # _easy_save('analytical', value_name)
+        ax.set_ylabel(key)
+        # _easy_save('analytical', value_name+'perturb_'+perturb_mode)
     
     
 def plot_proj_hist():
@@ -293,6 +327,20 @@ def plot_proj_hist_varyclaws():
     plt.title('Distribution of randomly projected perturbation')
     plt.legend()
     _easy_save('analytical', 'hist_pert_proj')
+    
 
-
-# proj, proj2 = _get_proj(n_kc_claw=7, n_pts=500, n_proj=1, coding_level=10)
+n_kc_claws = [1, 3, 5, 7, 10, 12, 15, 20, 30, 40]
+for n_kc_claw in n_kc_claws:
+    coding_level = 10
+    n_pts = 1000
+    kwargs = {'normalize_x': True}
+    X, Y, Y2 = analyze_perturb(
+                n_kc_claw=n_kc_claw, coding_level=coding_level, n_pts=n_pts, **kwargs)
+    
+    cos_theta = (np.sum(Y * Y2, axis=1) /
+                 (np.linalg.norm(Y, axis=1) * np.linalg.norm(Y2, axis=1)))
+    theta = np.arccos(cos_theta)/np.pi*180
+    plt.figure(figsize=(3, 1.0))
+    _ = plt.hist(theta)
+    plt.xlim([0, 180])
+    plt.title('K: {:d} Mean Angle: {:0.2f}'.format(n_kc_claw, np.mean(theta)))
