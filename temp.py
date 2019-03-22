@@ -70,10 +70,6 @@ def train_multihead():
     config.ORN_NOISE_STD = 0
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    # config.initial_pn2kc = .1
-    # config.train_kc_bias = False
-    # config.kc_loss = False
-
     config.pn_norm_pre = 'batch_norm'
     config.data_dir = './datasets/proto/multi_head'
     config.save_every_epoch = True
