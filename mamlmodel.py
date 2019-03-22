@@ -229,7 +229,6 @@ class MAML:
             else:
                 self.metatrain_op_lr = None
 
-
         ## Summaries
         tf.summary.scalar('Pre-update loss', self.total_loss1)
         tf.summary.scalar('Pre-update accuracy_head1', self.total_acc1[0])

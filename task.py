@@ -383,12 +383,20 @@ def _generate_proto_threshold(
     elif label_type == 'multi_head_sparse':
         if not has_special_odors:
             # labels 0-4 will be good, 5-9 will be bad, others will be neutral
+            print('no special odors')
+            good_ix = 5
+            bad_ix = 10
             train_labels_valence = np.zeros_like(train_labels)
-            train_labels_valence[(0<=train_labels)*(train_labels<5)] = 1
-            train_labels_valence[(5 <= train_labels) * (train_labels < 10)] = 2
+            train_labels_valence[(0<=train_labels)*(train_labels< good_ix)] = 1
+            train_labels_valence[(good_ix <= train_labels) * (train_labels < bad_ix)] = 2
             val_labels_valence = np.zeros_like(val_labels)
-            val_labels_valence[(0 <= val_labels) * (val_labels < 5)] = 1
-            val_labels_valence[(5 <= val_labels) * (val_labels < 10)] = 2
+            val_labels_valence[(0 <= val_labels) * (val_labels < good_ix)] = 1
+            val_labels_valence[(good_ix <= val_labels) * (val_labels < bad_ix)] = 2
+
+            # innate_generalization = 100
+            # prototypes_valence = rng.uniform(0, max_activation, (n_proto_valence-1, n_orn))
+            # train_labels_valence = _get_labels(prototypes_valence, train_odors_forlabels, innate_generalization)
+            # val_labels_valence = _get_labels(prototypes_valence, val_odors_forlabels, innate_generalization)
 
         train_labels = np.stack([train_labels, train_labels_valence]).T
         val_labels = np.stack([val_labels, val_labels_valence]).T
