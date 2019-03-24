@@ -109,7 +109,8 @@ class MAML:
         task_accuracya = (task_accuracya_head1, task_accuracya_head2)
 
         lr_dict = {
-            'w_output': tf.minimum(1.0, self.update_lr[0]),
+            # 'w_output': tf.minimum(0.2, self.update_lr[0]),
+            'w_output': self.update_lr[0],
             # 'b_output': self.update_lr[1]
                           }
         fast_weights = _update_weights(task_lossa, lr_dict, weights)
@@ -161,7 +162,7 @@ class MAML:
             # Define the weights
             self.weights = self.model.build_weights()
             self.update_lr = tf.get_variable('lr', shape=(2), dtype=tf.float32,
-                                             initializer=tf.constant_initializer([.1, -.01]))
+                                             initializer=tf.constant_initializer([.1, .01]))
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             num_updates = max(self.test_num_updates, self.model.config.meta_num_updates)

@@ -26,6 +26,7 @@ import standard.analysis_pn2kc_random as analysis_pn2kc_random
 import standard.analysis_orn2pn as analysis_orn2pn
 import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
+import standard.analysis_metalearn as analysis_metalearn
 import oracle.evaluatewithnoise as evaluatewithnoise
 import matplotlib as mpl
 
@@ -58,7 +59,7 @@ if args.experiment == 'core':
                    'vary_pn2kc_loss', 'vary_kc_dropout', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
                    'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization',
                    'kcrole', 'kc_generalization',
-                   'multi_head']
+                   'multi_head', 'metalearn']
 else:
     experiments = args.experiment
 
@@ -67,7 +68,7 @@ else:
 TRAIN = True
 ANALYZE = True
 is_test = True
-experiments = ['multi_head']
+experiments = ['metalearn']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -301,7 +302,7 @@ if 'multi_head' in experiments:
     if TRAIN:
         local_train(se.train_multihead(is_test), path)
     if ANALYZE:
-        analysis_multihead.main()
+        analysis_multihead.main1('multi_head')
 
 if 'vary_kc_activity_fixed' in experiments:
     # Vary KC activity under different number of relabels
@@ -326,7 +327,6 @@ if 'vary_kc_activity_trainable' in experiments:
         # analysis_activity.sparseness_activity(path, 'kc_out')
         # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
 
-
 if 'kcrole' in experiments:
     # Compare with or without KC layer
     path = './files/kcrole'
@@ -342,3 +342,16 @@ if 'kc_generalization' in experiments:
         local_sequential_train(se.kc_generalization(is_test), path)
     if ANALYZE:
         sa.plot_progress(path, legends=['No KC', 'Fixed KC'])
+
+if 'metalearn' in experiments:
+    path = './files/metalearn'
+    if TRAIN:
+        local_train(se.metalearn(is_test), path, train_arg='metalearn')
+    if ANALYZE:
+        analysis_pn2kc_training.plot_distribution(path, xrange=1)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
+        sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
+        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=True)
+        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo')
+        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn')
+        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0')

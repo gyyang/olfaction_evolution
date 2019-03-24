@@ -227,7 +227,7 @@ def main1(arg):
         foldername = 'multi_head'
         subdir = '000000'
         ylim_head1 = 0
-        ylim_head2 = .5
+        ylim_head2 = .9
 
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
