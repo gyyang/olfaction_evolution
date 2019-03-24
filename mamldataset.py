@@ -111,6 +111,7 @@ class DataGenerator(object):
             outputs_head = np.concatenate((outputs_head1, outputs_head2), axis=2)
         else:
             outputs_head = outputs_head1
+
         # n_orn = 50
         # for i in range(self.meta_bs):
         #     prototypes = np.random.uniform(0, 1, (n_class_per_batch, n_orn))
@@ -118,6 +119,7 @@ class DataGenerator(object):
         #     labels = task._get_labels(prototypes, odors, percent_generalization=100)
         #     inputs[i,:,:] = odors
         #     outputs_head1[i, np.arange(labels.size), labels] = 1
+        # outputs_head = outputs_head1
 
         return inputs, outputs_head
 

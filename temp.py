@@ -93,7 +93,7 @@ path = './files/multi_head'
 #
 path = './files/metatrain'
 analysis_training.plot_distribution(path, xrange=.5)
-analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
+analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.05)
 #
 epoch_path = './files/metatrain/0/epoch'
 sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)

@@ -65,10 +65,10 @@ else:
 
 
 # #peter specific
-TRAIN = True
+TRAIN = False
 ANALYZE = True
 is_test = True
-experiments = ['metalearn']
+experiments = ['standard']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -77,12 +77,12 @@ if 'standard' in experiments:
         local_train(se.train_standardnet(is_test), path)
     if ANALYZE:
         # # accuracy, glo score, cosine similarity
-        sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
+        # sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
         # analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
         # #
         # # #weights
-        # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
-        # sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
+        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
+        sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
         #
         # # #sign constraint
         # sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
@@ -90,8 +90,8 @@ if 'standard' in experiments:
         # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
 
         # # #random analysis
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        # analysis_pn2kc_training.plot_distribution(path)
+        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
         # analysis_pn2kc_random.plot_distribution(path)
         # analysis_pn2kc_random.claw_distribution(path, 'random')
         # analysis_pn2kc_random.pair_distribution(path, 'preserve')

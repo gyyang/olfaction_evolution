@@ -288,7 +288,12 @@ def plot_distribution(dir, xrange = 1.0):
             distribution = w.flatten()
             save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
             print(save_name)
-            _plot_distribution(distribution, save_name,
+
+            if j == 0:
+                cutoff = 0
+            else:
+                cutoff = infer_threshold(distribution)
+            _plot_distribution(distribution, save_name, cutoff = cutoff,
                                title=titles[j], xrange= xrange, yrange=5000)
 
 def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
@@ -348,7 +353,7 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
 
-def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
+def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, cutoff = 0):
     fig = plt.figure(figsize=(3, 2))
     if not broken_axis:
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -372,6 +377,7 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
+        ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
 
     else:
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.5])
@@ -414,6 +420,9 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
         ax2.set_yticks([np.max(n)])
         ax2.set_yticklabels(['{:d}K'.format(int(np.max(n)/1000))])
         ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
+        ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
+        ax2.plot([cutoff, cutoff], ax2.get_ylim(), '--', color='gray')
+
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
 

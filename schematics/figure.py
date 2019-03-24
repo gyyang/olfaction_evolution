@@ -14,6 +14,10 @@ sys.path.append(rootpath)
 from schematics.plotVoronoi import voronoi_plot_2d
 from standard.analysis import _easy_save
 
+mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
 
 def get_labels(prototypes, odors):
     dist = euclidean_distances(prototypes, odors)
@@ -21,7 +25,7 @@ def get_labels(prototypes, odors):
     return label
 
 
-def plot_task(mode='standard'):
+def plot_task(mode='standard', include_prototypes=False):
     colors = ['c','y','m','g']
     
     # =============================================================================
@@ -53,9 +57,8 @@ def plot_task(mode='standard'):
     rand_colors = [colors[i] for i in rand_labels]
     
     #plotting
-    mpl.rcParams['font.size'] = 7
     fig = plt.figure(figsize=(2.5, 1.8))
-    ax = plt.gca()
+    ax = fig.add_axes([.2, .2, .7, .7])
     plt.sca(ax)
     
     vor = Voronoi(proto_points)
@@ -65,9 +68,10 @@ def plot_task(mode='standard'):
                     show_points= False,
                     line_colors='k',
                     line_width=1)
-    
-    for c,p in zip(colors, proto_points):
-        ax.scatter(p[0], p[1], color=c, s=15, marker='^')
+
+    if include_prototypes:
+        for c,p in zip(colors, proto_points):
+            ax.scatter(p[0], p[1], color=c, s=15, marker='^')
     
     for c,p in zip(rand_colors, rand_points):
         ax.scatter(p[0], p[1], color=c, s=2)
@@ -84,10 +88,10 @@ def plot_task(mode='standard'):
     plt.ylabel('ORN 2 Activity', labelpad=-5)
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
-    _easy_save('schematics', mode + '_task')
+    _easy_save('schematics', '_' + mode + '_task')
     # plt.savefig('task.pdf',transparent=True)
     
 
 if __name__ == '__main__':
-    # plot_task('standard')
-    plot_task('relabel')
+    plot_task('standard', include_prototypes=False)
+    # plot_task('relabel')
