@@ -403,7 +403,7 @@ def _generate_proto_threshold(
     else:
         raise ValueError('Unknown label type: ', str(label_type))
 
-    debug = True
+    debug = False
     if debug:
         plt.hist(np.sum(train_odors, axis=1), density=True)
         plt.show()

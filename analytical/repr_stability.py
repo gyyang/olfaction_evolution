@@ -54,8 +54,30 @@ def perturb(M, beta, mode='multiplicative'):
 
 def analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
                     coding_level=None, same_threshold=True, n_pts=10,
+                    perturb_mode='weight', ff_inh=False, normalize_x=True,
+                    n_rep=1):
+
+    X, Y, Y2 = list(), list(), list()
+    for i in range(n_rep):
+        X0, Y0, Y20 = _analyze_perturb(n_pn, n_kc, n_kc_claw, coding_level,
+                                    same_threshold, n_pts, perturb_mode,
+                                    ff_inh, normalize_x)
+        X.append(X0)
+        Y.append(Y0)
+        Y2.append(Y20)
+    
+    X = np.concatenate(X, axis=0)
+    Y = np.concatenate(Y, axis=0)
+    Y2 = np.concatenate(Y2, axis=0)
+    
+    return X, Y, Y2
+    
+
+def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
+                    coding_level=None, same_threshold=True, n_pts=10,
                     perturb_mode='weight', ff_inh=False, normalize_x=True):
     X = np.random.rand(n_pts, n_pn)
+    # X = abs(np.random.randn(n_pts, n_pn))  # TODO: TEMP
     if normalize_x:
         X = normalize(X)
 
@@ -70,7 +92,7 @@ def analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
     Y = np.dot(X, M)
 
     if perturb_mode == 'weight':
-        M2 = perturb(M, beta=0.5, mode='multiplicative')
+        M2 = perturb(M, beta=0.1, mode='multiplicative')
         # M2 = perturb(M, beta=0.1, mode='additive')
         # M2 = _get_M(n_pn, n_kc, n_kc_claw)
         Y2 = np.dot(X, M2)
@@ -329,18 +351,101 @@ def plot_proj_hist_varyclaws():
     _easy_save('analytical', 'hist_pert_proj')
     
 
-n_kc_claws = [1, 3, 5, 7, 10, 12, 15, 20, 30, 40]
-for n_kc_claw in n_kc_claws:
+Ks = [1, 3, 5, 7, 10, 12, 15, 20, 30, 40]
+# Ks = [40]
+# Ks = [40]
+# n_kc_claws = [7]
+approxs = list()
+ground_truth = list()
+for K in Ks:
     coding_level = 10
-    n_pts = 1000
+    n_pts = 500
     kwargs = {'normalize_x': True}
     X, Y, Y2 = analyze_perturb(
-                n_kc_claw=n_kc_claw, coding_level=coding_level, n_pts=n_pts, **kwargs)
+                n_kc_claw=K, coding_level=coding_level, n_pts=n_pts, n_rep=10, **kwargs)
     
-    cos_theta = (np.sum(Y * Y2, axis=1) /
-                 (np.linalg.norm(Y, axis=1) * np.linalg.norm(Y2, axis=1)))
+    norm_Y = np.linalg.norm(Y, axis=1)
+    norm_Y2 = np.linalg.norm(Y2, axis=1)
+    norm_dY = np.linalg.norm(Y2-Y, axis=1)
+    
+    cos_theta = (np.sum(Y * Y2, axis=1) / (norm_Y * norm_Y2))
+    cos_theta = cos_theta[(norm_Y * norm_Y2)>0]
     theta = np.arccos(cos_theta)/np.pi*180
-    plt.figure(figsize=(3, 1.0))
-    _ = plt.hist(theta)
-    plt.xlim([0, 180])
-    plt.title('K: {:d} Mean Angle: {:0.2f}'.format(n_kc_claw, np.mean(theta)))
+    
+    norm_ratio = norm_dY/norm_Y
+    norm_ratio = norm_ratio[norm_Y>0]
+    
+    S = norm_Y**2
+    R = norm_dY**2
+    
+    corr = np.var(S)/np.mean(S)**2
+    first_third_term = np.mean(R)/np.mean(S) * (1+corr)
+    
+    
+    second_term = np.mean((R-np.mean(R))*(S-np.mean(S)))/np.mean(S)**2
+    
+    approx = np.sqrt(first_third_term-second_term)
+    
+# =============================================================================
+#     plt.figure(figsize=(3, 1.0))
+#     _ = plt.hist(theta)
+#     plt.xlim([0, 180])
+#     plt.title('K: {:d} Mean Angle: {:0.2f}, norm ratio {:0.3f}'.format(
+#             K, np.mean(theta), norm_ratio.mean()))
+# =============================================================================
+    
+    print('')
+    print(K)
+    # print(np.mean(theta)/180*np.pi/np.mean(norm_ratio))
+    print(np.mean(norm_ratio))
+    print(np.sqrt(np.mean(norm_ratio**2)))
+    print(np.mean(norm_dY)/np.mean(norm_Y))
+    print(np.sqrt(np.mean(norm_dY**2)/np.mean(norm_Y**2)))
+    
+    print('Approximation')
+    # print(corr)
+    print(approx)
+    
+    print('First and Third term')
+    print(first_third_term)
+    print('Second term')
+    print(second_term)
+    
+    ground_truth.append(np.mean(norm_ratio))
+    approxs.append(approx)
+    
+    
+
+# =============================================================================
+# plt.figure()
+# kk = np.sum(Y>0, axis=1)
+# kk2 = np.sum(Y2>0, axis=1)
+# plt.scatter(kk, kk2)
+# plt.plot([150, 350], [150, 350])
+# 
+# norm_Y = np.linalg.norm(Y, axis=1)
+# norm_dY = np.linalg.norm(Y2 - Y, axis=1)
+# 
+# plt.figure()
+# plt.scatter(norm_Y, norm_dY)
+# plt.xlabel('Norm Pre-perturb Y')
+# plt.xlabel('Norm Y perturbation')
+# =============================================================================
+    
+# =============================================================================
+# m = 50
+# c = 2
+# def fun(k):
+#     b = -(k/2 + c * np.sqrt(k/3-k**2/(4*m)))
+#     return 3*k + 4 - 3*k/m + 12*b + 12*b**2/k
+# 
+# ks = np.linspace(1, 49)
+# plt.plot(ks, fun(ks))
+# 
+# =============================================================================
+
+
+plt.figure()
+plt.plot(Ks, ground_truth, label='ground truth')
+plt.plot(Ks, approxs, label='approximation')
+plt.legend()

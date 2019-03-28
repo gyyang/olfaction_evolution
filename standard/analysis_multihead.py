@@ -217,15 +217,19 @@ def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
     ax.set_yticks(ylim)
     _easy_save(figpath, savename)
 
-def main1(arg):
+def main1(arg, foldername=None, subdir=None):
     if arg == 'metatrain':
-        foldername = 'metatrain'
-        subdir = '0'
+        if foldername is None:
+            foldername = 'metatrain'
+        if subdir is None:
+            subdir = '0'
         ylim_head1 = .5
         ylim_head2 = .5
     else:
-        foldername = 'multi_head'
-        subdir = '000000'
+        if foldername is None:
+            foldername = 'multi_head'
+        if subdir is None:
+            subdir = '000000'
         ylim_head1 = 0
         ylim_head2 = .9
 
@@ -269,8 +273,8 @@ def main1(arg):
 
 
 def main():
-    foldername = 'metatrain'
-    # foldername = 'tmp_train'
+    # foldername = 'metatrain'
+    foldername = 'tmp_multihead'
 
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
@@ -292,7 +296,8 @@ def main():
 
     # Compute sparsity
     thres = analysis_pn2kc_training.infer_threshold(wglo)
-    thres = .03
+    # thres = .1
+    print('Threshold: {:0.3f}'.format(thres))
     sparsity = np.count_nonzero(wglo > thres, axis=0)
 
 
@@ -322,7 +327,7 @@ def main():
 
     xlabel = 'PN Input degree'
     ylabel = 'Conn. to valence'
-    xmin, xmax, ymin, ymax = 0, 15, 0, 3
+    xmin, xmax, ymin, ymax = 0, 50, 0, 3
 
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
@@ -417,4 +422,4 @@ def main():
     _plot_hist('head2')
 
 if __name__ == '__main__':
-    main1('metatrain')
+    main1('multi_head', foldername='tmp_multihead', subdir='0')
