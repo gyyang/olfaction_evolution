@@ -217,15 +217,19 @@ def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
     ax.set_yticks(ylim)
     _easy_save(figpath, savename)
 
-def main1(arg):
+def main1(arg, foldername=None, subdir=None):
     if arg == 'metatrain':
-        foldername = 'metatrain'
-        subdir = '0'
+        if foldername is None:
+            foldername = 'metatrain'
+        if subdir is None:
+            subdir = '0'
         ylim_head1 = .5
         ylim_head2 = .5
     else:
-        foldername = 'multi_head'
-        subdir = '000000'
+        if foldername is None:
+            foldername = 'multi_head'
+        if subdir is None:
+            subdir = '000000'
         ylim_head1 = 0
         ylim_head2 = .5
 
@@ -418,4 +422,4 @@ def main():
     _plot_hist('head2')
 
 if __name__ == '__main__':
-    main1('metatrain')
+    main1('multi_head', foldername='tmp_multihead', subdir='0')
