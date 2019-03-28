@@ -68,7 +68,7 @@ else:
 TRAIN = False
 ANALYZE = True
 is_test = True
-experiments = ['standard']
+experiments = ['metalearn']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -346,12 +346,13 @@ if 'kc_generalization' in experiments:
 if 'metalearn' in experiments:
     path = './files/metalearn'
     if TRAIN:
-        local_train(se.metalearn(is_test), path, train_arg='metalearn')
+        local_sequential_train(se.metalearn(is_test), path, train_arg='metalearn')
     if ANALYZE:
-        analysis_pn2kc_training.plot_distribution(path, xrange=1)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
-        sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=0)
-        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=True)
-        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo')
-        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn')
-        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0')
+        # analysis_pn2kc_training.plot_distribution(path, xrange=1)
+        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
+        # sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=1)
+        # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
+        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
+        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
+        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
+        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)

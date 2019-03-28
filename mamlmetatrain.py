@@ -30,7 +30,6 @@ import numpy as np
 # flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
 
 LOAD_DATA = False
-PRINT_INTERVAL = 500
 def print_results(res):
     # TODO: need cleaning
     n_steps = len(res[1])
@@ -50,6 +49,7 @@ def train(config):
         os.makedirs(config.save_path)
     tools.save_config(config, save_path=config.save_path)
 
+    PRINT_INTERVAL = config.meta_print_interval
     if LOAD_DATA:
         train_x, train_y = load_data(None, './datasets/proto/meta_proto')
         # Build train model
@@ -163,25 +163,23 @@ def main():
 
     config = configs.MetaConfig()
     config.metatrain_iterations = 20000
-    config.meta_lr = .0003
-    config.N_CLASS = 2
-    config.meta_output_dimension = 2
-    config.meta_batch_size = 32
-    config.meta_num_samples_per_class = 32
+    config.meta_lr = .001
+    config.N_CLASS = 5
+    config.meta_output_dimension = 5
+    config.meta_batch_size = 16
+    config.meta_num_samples_per_class = 8
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
-    config.skip_orn2pn = False
-    config.direct_glo = False
     config.train_orn2pn = True
     config.pn_norm_pre = 'batch_norm'
+    # config.direct_glo = True
 
-    config.kc_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
-    config.train_kc_bias = True
+    # config.kc_norm_pre = 'batch_norm'
+    # config.sparse_pn2kc = False
+    # config.train_pn2kc = True
 
-    config.save_path = './files/metatrain/0'
+    config.save_path = './files/metalearn/0'
 
     # config.data_dir = './datasets/proto/multi_head'
     # config.label_type = 'multi_head_one_hot'

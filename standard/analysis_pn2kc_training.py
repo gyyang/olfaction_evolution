@@ -275,7 +275,6 @@ def plot_distribution(dir, xrange = 1.0):
     dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
     titles = ['Before Training', 'After Training']
 
-
     for i, d in enumerate(dirs):
         print('Analyzing results from: ' + str(d))
         try:

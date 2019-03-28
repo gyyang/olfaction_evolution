@@ -91,13 +91,13 @@ path = './files/multi_head'
 #
 # analysis_multihead.main1(arg='multi_head')
 #
-path = './files/metatrain'
+path = './files/metalearn'
 analysis_training.plot_distribution(path, xrange=.5)
-analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.05)
+analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.1)
 #
-epoch_path = './files/metatrain/0/epoch'
+epoch_path = './files/metalearn/000001/epoch'
 sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
-sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
+# sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
 
 
 
