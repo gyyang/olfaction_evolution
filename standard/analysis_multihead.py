@@ -47,8 +47,8 @@ def _get_data(path):
 
 def _get_groups(data_norm, config):
     labels = KMeans(n_clusters=2, random_state=0).fit_predict(data_norm)
-    group0 = np.arange(config.N_KC)[labels == 0]
-    group1 = np.arange(config.N_KC)[labels == 1]
+    group0 = np.arange(config.N_KC)[labels == 1]
+    group1 = np.arange(config.N_KC)[labels == 0]
     print('Group 0 has {:d} neurons'.format(len(group0)))
     print('Group 1 has {:d} neurons'.format(len(group1)))
     return group0, group1
