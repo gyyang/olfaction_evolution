@@ -41,8 +41,26 @@ def normalize(x):
     """Normalize along axis=1."""
     return (x.T/np.sqrt(np.sum(x**2, axis=1))).T
 
+
+def perturb(M, beta, mode='multiplicative', dist='uniform'):
+    if mode == 'multiplicative':
+        if dist == 'uniform':
+            P = np.random.uniform(1-beta, 1+beta, size=M.shape)            
+        else:
+            P = np.random.randn(*M.shape) * beta + 1
+        return M * P
+    elif mode == 'additive':
+        if dist == 'uniform':
+            P = np.random.uniform(-beta, beta, size=M.shape) * np.max(M)
+        else:
+            P = np.random.randn(*M.shape) * beta
+        return M + P * (M > 1e-6)  # only applied on connected weights
+    else:
+        raise ValueError('Unknown perturb mode')
+
+
 def _get_M(n_pn, n_kc, n_kc_claw, sign_constraint=True,
-           mode='exact', normalize=True):
+           mode='exact', normalize=True, dist='uniform'):
     if mode == 'exact':
         M = get_sparse_mask(n_pn, n_kc, n_kc_claw)
     elif mode == 'bernoulli':
@@ -56,40 +74,35 @@ def _get_M(n_pn, n_kc, n_kc_claw, sign_constraint=True,
     # M = (np.random.rand(n_pn, n_kc) < (n_kc_claw/n_pn)) / np.sqrt(n_kc_claw)
     # M = (np.random.rand(n_pn, n_kc) < (n_kc_claw/n_pn))
     
-    M = perturb(M, 0.5, 'multiplicative')  # pre-perturb
+    # TEMPORARYLY SKIPPED
+# =============================================================================
+#     if dist == 'uniform':
+#         M = perturb(M, 0.5, 'multiplicative')  # pre-perturb
+#     else:
+#         M = perturb(M, 0.2, 'multiplicative', 'gaussian')  # pre-perturb
+# =============================================================================
     
     # M = model.get_sparse_mask(n_pn, n_kc, n_kc_claw)
     return M
-
-
-def perturb(M, beta, mode='multiplicative'):
-    if mode == 'multiplicative':
-        P = np.random.uniform(1-beta, 1+beta, size=M.shape)
-        return M * P
-    elif mode == 'additive':
-        # P = np.random.randn(*M.shape) * beta
-        P = np.random.uniform(-beta, beta, size=M.shape) * np.max(M)
-        return M + P * (M > 1e-6)  # only applied on connected weights
-    else:
-        raise ValueError('Unknown perturb mode')
 
 
 def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
                     coding_level=None, same_threshold=True, n_pts=10,
                     perturb_mode='multiplicative', ff_inh=False, normalize_x=True,
                     x_dist='uniform', w_mode='exact', normalize_w=True,
-                    b_mode='percentile', use_relu=True):
+                    b_mode='percentile', use_relu=True, w_dist='uniform',
+                    perturb_dist='uniform'):
     if x_dist == 'uniform':
         X = np.random.rand(n_pts, n_pn)
     elif x_dist == 'gaussian':
-        X = abs(np.random.randn(n_pts, n_pn))  # TODO: TEMP
+        X = np.random.randn(n_pts, n_pn) * 0.5 + 0.5
     else:
         raise NotImplementedError()
 
     if normalize_x:
         X = normalize(X)
 
-    M = _get_M(n_pn, n_kc, n_kc_claw, mode=w_mode, normalize=normalize_w)
+    M = _get_M(n_pn, n_kc, n_kc_claw, mode=w_mode, normalize=normalize_w, dist=w_dist)
     
     # M = np.random.uniform(0.5, 1.5, size=(n_pn, n_kc)) * (np.random.rand(n_pn, n_kc)<n_kc_claw/n_pn)
 
@@ -99,16 +112,17 @@ def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
     
     Y = np.dot(X, M)
 
-    M2 = perturb(M, beta=0.01, mode=perturb_mode)
-    # M2 = perturb(M, beta=0.1, mode='additive')
-    # M2 = _get_M(n_pn, n_kc, n_kc_claw)
+    M2 = perturb(M, beta=0.01, mode=perturb_mode, dist=perturb_dist)
+
     Y2 = np.dot(X, M2)
     
     if coding_level is not None:
         if b_mode == 'percentile':
             b = -np.percentile(Y.flatten(), 100-coding_level)
         elif b_mode == 'gaussian':
-            b = -(np.mean(Y) + np.std(Y)*1)
+            # b = -(np.mean(Y) + np.std(Y)*1)
+            b = - (K/2 + np.sqrt(K/4))
+            # print(n_kc_claw, np.mean(Y), np.std(Y)**2/K*4)
         else:
             raise NotImplementedError()
         Y = Y + b
@@ -162,8 +176,9 @@ def simulation(K, **kwargs):
     corr = np.var(S)/np.mean(S)**2
     mu_S = np.mean(S)
     mu_R = np.mean(R)
+    ES2 = np.mean(S**2)
     first_term = mu_R/mu_S
-    second_term = first_term * (np.mean(S**2)/mu_S**2)
+    second_term = first_term * (ES2/mu_S**2)
     third_term = np.mean(S*R)/mu_S**2
         
     approx = np.sqrt(first_term+second_term-third_term)
@@ -180,35 +195,95 @@ def simulation(K, **kwargs):
     res['mu_R/mu_S'] = first_term
     res['E[S^2]mu_R/mu_S^3'] = second_term
     res['E[SR]/mu_S^2'] = third_term
+    res['E[S^2]'] = ES2
     return res
 
 
-def analytical(K):
-    m = 50
-    k = K
+from scipy.integrate import quad, dblquad
+def I(k):
+    m = 50.
+    rho = k/m
+    a = 1
+    # return dblquad(lambda x, y: (x-a)**2*(y-a)**2*np.exp(-x**2/2-y**2/2+x*y/(1-rho**2)), a, np.inf, a, np.inf)
+    tmp = dblquad(lambda x, y: (x-a)**2*(y-a)**2*np.exp(-(x**2+y**2-2*rho*x*y)/2/(1-rho**2)),
+                   a, np.inf, lambda x: a, lambda x: np.inf)[0]
+    return tmp / (1-rho**2) * k**2
+
+
+from scipy.special import erf
+def f(r, K):
+    mu_x = 0.5
+    sigma_x = np.sqrt(0.5)
+    mu_r = (K-1)*mu_x
+    sigma_r = np.sqrt(K-1)*sigma_x
     c = 1
+    b = -(K*mu_x+c*np.sqrt(K)*sigma_x)
+    B = (mu_x+mu_r+b + np.sqrt(2)*sigma_r*r)/np.sqrt(2)/sigma_x
     
-    b = -(k/2+c*np.sqrt(k/3-k**2/4/m))
+    tmp1 = np.sqrt(np.pi)/2*(mu_x**2+sigma_x**2)*(erf(B)+1)
+    tmp2 = (np.sqrt(2)*sigma_x*mu_x-sigma_x**2*B)*np.exp(-B**2)
     
-    c1 = 1/48*k**3/m*(3*m*k+8*m-2*k)
-    c2 = 1/6*b*k**2/m*(3*k*m+4*m-k)
-    c3 = b**2/6*k*(9*k+4-k/m)
-    c4 = 2*b**3*k
-    c5 = b**4
+    tmp = tmp1 + tmp2
+    return np.exp(-r**2) * tmp / np.pi
+
+
+
+def G1(q, x, K):
+    mu_x = 0.5
+    sigma_x = np.sqrt(0.5)
+    mu_q = (K-2)*mu_x
+    sigma_q = np.sqrt(K-2)*sigma_x
+    c = 1
+    b = -(K*mu_x+c*np.sqrt(K)*sigma_x)
+    B = np.sqrt(2)*sigma_x*x+mu_x+np.sqrt(2)*sigma_q*q+mu_q+b
+    tmp = np.sqrt(2)*sigma_x*np.exp(-B**2)/2+mu_x/2*np.sqrt(np.pi)*(erf(B)+1)
+    return np.exp(-q**2-x**2)*(x*np.sqrt(2)*sigma_x+mu_x)*tmp / np.pi**1.5
+
+
+def G2(r, K):
+    mu_x = 0.5
+    sigma_x = np.sqrt(0.5)
+    mu_r = (K-1)*mu_x
+    sigma_r = np.sqrt(K-1)*sigma_x
+    c = 1
+    b = -(K*mu_x+c*np.sqrt(K)*sigma_x)
+    B = (mu_x+mu_r+b + np.sqrt(2)*sigma_r*r)/np.sqrt(2)/sigma_x
     
-    d1 = 1/48*k**2/m*(4*k*m+4*m+k)
-    d2 = 1/3*b*k**2
-    d3 = 1/3*b**2*k
+    tmp1 = np.sqrt(np.pi)/2*mu_x*(erf(B)+1)
+    tmp2 = np.sqrt(2)*sigma_x*np.exp(-B**2)/2
+    tmp = tmp1 + tmp2
+    return np.exp(-r**2) * tmp / np.pi
+
+
+def I2(k):
+    mu_x = 0.5
+    sigma_x = np.sqrt(0.5)
+    c = 1
+    b = -(k*mu_x+c*np.sqrt(k)*sigma_x)
     
-    mu_S = k*(1+c**2)*(4-3*k/m)/12
-    mu_R = k/3
-    # e_s2_tmp = c**2*k**2*(9*c**2*k**2 - 24*c**2*k*m + 16*c**2*m**2 + 6*k**2 - 32*k*m + 32*m**2)/(144*m**2)
-    e_s2 = c1+c2+c3+c4+c5
-    # e_sr_tmp = (12 - 12*c**2/m + 3*k/m + 16*c**2)/144*k**2
-    e_sr = d1 + d2 + d3
+    tmp1 = dblquad(lambda q, x: G1(q, x, k),
+                   -np.inf, np.inf, -np.inf, np.inf)[0]
+        
+    tmp2 = quad(lambda r: G2(r, k), -np.inf, np.inf)[0]
+        
+    tmp = tmp1 * k**3 + 2*b*k**2*tmp2 + b**2
+    return tmp
+
+# =============================================================================
+# for K in np.arange(1, 40):
+#     res = quad(lambda x: f(x, K), -np.inf, np.inf)
+#     print(K, res)
+# =============================================================================
+
+def analytical(K):
+    k = K
+
+    mu_S = 1/4 * k
+    mu_R = k*quad(lambda x: f(x, K), -np.inf, np.inf)[0]
     
-    # e_sr = k**2/144*(12-12*c**2/m+3*k/m+16*c**2)
-    
+    e_s2 = I(k)
+    e_sr = I2(k) * mu_R
+        
     first_term = mu_R/mu_S
     second_term = e_s2*mu_R/(mu_S**3)
     third_term = e_sr/mu_S**2
@@ -219,29 +294,35 @@ def analytical(K):
     res['K'] = k
     res['mu_S'] = mu_S
     res['mu_R'] = mu_R
+    res['E[SR]'] = e_sr
     
     res['Three-term approx'] = approx
-    res['mu_R/mu_S'] = first_term
-    res['E[S^2]mu_R/mu_S^3'] = second_term
-    res['E[SR]/mu_S^2'] = third_term
+    res['mu_R/mu_S'] = mu_R/mu_S
+    
+    res['E[SR]/mu_S^2'] = e_sr/mu_S**2
+    res['E[S^2]'] = e_s2
+    res['E[S^2]mu_R/mu_S^3'] = res['E[S^2]'] * res['mu_R'] / res['mu_S']**3
+    # res['E[S^2]'] = k**2
     return res
 
 
-K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20, 30, 40])
-kwargs = {'x_dist': 'uniform',
+K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
+kwargs = {'x_dist': 'gaussian',
           'normalize_x': False,
-          # 'w_mode': 'exact',
-          'w_mode': 'bernoulli',
+          'w_mode': 'exact',
+          # 'w_mode': 'bernoulli',
+          'w_dist': 'gaussian',
           'normalize_w': False,
-          'b_mode': 'percentile',
-          # 'b_mode': 'gaussian',
+          # 'b_mode': 'percentile',
+          'b_mode': 'gaussian',
           'coding_level': 10,
           'use_relu': True,
           # 'use_relu': False,
-          # 'perturb_mode': 'additive',
+          # 'perturb_mode': 'multiplicative',
           'perturb_mode': 'additive',
+          'perturb_dist': 'gaussian',
           'n_pts': 500,
-          'n_rep': 3}
+          'n_rep': 5}
 
 values_sim = defaultdict(list)
 values_an = defaultdict(list)
@@ -250,7 +331,7 @@ for K in K_sim:
     for key, val in res.items():
         values_sim[key].append(val)
 
-K_an = np.linspace(1, 40, 100)
+K_an = np.linspace(K_sim.min(), K_sim.max(), 10)
 for K in K_an:
     res = analytical(K)
     for key, val in res.items():
@@ -259,17 +340,10 @@ for K in K_an:
 values_sim = {key: np.array(val) for key, val in values_sim.items()}
 values_an = {key: np.array(val) for key, val in values_an.items()}
 
-values_sim['mu_R_scaled'] = values_sim['mu_R']/values_sim['mu_R'].max()
-values_sim['mu_S_scaled'] = values_sim['mu_S']/values_sim['mu_S'].max()
-values_sim['Three-term approx scaled'] = \
-    values_sim['Three-term approx']/values_sim['Three-term approx'].max()    
-values_sim['mu_R/mu_S_scaled'] = values_sim['mu_R/mu_S']/values_sim['mu_R/mu_S'].max()
-
-values_an['mu_R_scaled'] = values_an['mu_R']/values_an['mu_R'].max()
-values_an['mu_S_scaled'] = values_an['mu_S']/values_an['mu_S'].max()
-values_an['Three-term approx scaled'] = \
-    values_an['Three-term approx']/values_an['Three-term approx'].max()
-values_an['mu_R/mu_S_scaled'] = values_an['mu_R/mu_S']/values_an['mu_R/mu_S'].max()
+keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
+for key in keys:
+    values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
+    values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
 
 plt.figure(figsize=(4, 2))
 keys = ['theta']
@@ -295,16 +369,25 @@ def _plot_compare(keys):
     axes[1].set_xlabel('K')
     plt.tight_layout()
     plt.legend()
+    fname = ''.join(keys)
+    fname = fname.replace('/', '')
+    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+    plt.savefig('../figures/analytical/'+fname+'.png')
     
 def _plot_compare_overlay(keys):
     colors = ['red', 'green', 'blue', 'orange']
     fig = plt.figure(figsize=(4, 3))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
     for i, key in enumerate(keys):
-        ax.plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
+        ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
         ax.plot(values_an['K'], values_an[key], color=colors[i])
     ax.set_xlabel('K')
     plt.legend()
+    fname = ''.join(keys)
+    fname = fname.replace('/', '')
+    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+    plt.savefig('../figures/analytical/'+fname+'.png')
+
     
 def plot_compare(keys, overlay=True):
     if overlay:
@@ -312,7 +395,7 @@ def plot_compare(keys, overlay=True):
     else:
         _plot_compare(keys)
     
-plot_compare(['Three-term approx scaled'], overlay=True)
+plot_compare(['Three-term approx_scaled'], overlay=True)
     
 plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
 
@@ -322,3 +405,7 @@ plot_compare(['mu_S_scaled'], overlay=True)
 plot_compare(['mu_R_scaled'], overlay=True)
 
 plot_compare(['mu_R/mu_S_scaled'], overlay=True)
+
+plot_compare(['E[S^2]_scaled'], overlay=True)
+
+
