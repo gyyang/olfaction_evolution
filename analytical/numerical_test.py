@@ -6,6 +6,8 @@ from collections import defaultdict
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import minimize_scalar
+from sklearn.linear_model import LinearRegression
 
 N_PN = 50
 N_KC = 2500
@@ -200,12 +202,11 @@ def simulation(K, **kwargs):
 
 
 from scipy.integrate import quad, dblquad
-def I(k):
-    m = 50.
+def I(k, m):
     rho = k/m
     a = 1
     # return dblquad(lambda x, y: (x-a)**2*(y-a)**2*np.exp(-x**2/2-y**2/2+x*y/(1-rho**2)), a, np.inf, a, np.inf)
-    tmp = dblquad(lambda x, y: (x-a)**2*(y-a)**2*np.exp(-(x**2+y**2-2*rho*x*y)/2/(1-rho**2)),
+    tmp = dblquad(lambda y, x: (x-a)**2*(y-a)**2*np.exp(-(x**2+y**2-2*rho*x*y)/2/(1-rho**2)),
                    a, np.inf, lambda x: a, lambda x: np.inf)[0]
     return tmp / (1-rho**2) * k**2
 
@@ -228,7 +229,7 @@ def f(r, K):
 
 
 
-def G1(q, x, K):
+def G1(x, q, K):
     mu_x = 0.5
     sigma_x = np.sqrt(0.5)
     mu_q = (K-2)*mu_x
@@ -261,7 +262,7 @@ def I2(k):
     c = 1
     b = -(k*mu_x+c*np.sqrt(k)*sigma_x)
     
-    tmp1 = dblquad(lambda q, x: G1(q, x, k),
+    tmp1 = dblquad(lambda x, q: G1(x, q, k),
                    -np.inf, np.inf, -np.inf, np.inf)[0]
         
     tmp2 = quad(lambda r: G2(r, k), -np.inf, np.inf)[0]
@@ -269,26 +270,35 @@ def I2(k):
     tmp = tmp1 * k**3 + 2*b*k**2*tmp2 + b**2
     return tmp
 
+
+def P1(C):
+    np.exp(((C - mu_A)/sigma_A)**2/2) * (A+b)**2
+    
+
 # =============================================================================
 # for K in np.arange(1, 40):
 #     res = quad(lambda x: f(x, K), -np.inf, np.inf)
 #     print(K, res)
 # =============================================================================
 
-def analytical(K):
+def analytical(K, m=50):
     k = K
+    sigma_x = np.sqrt(0.5)
 
     mu_S = 1/4 * k
     mu_R = k*quad(lambda x: f(x, K), -np.inf, np.inf)[0]
     
-    e_s2 = I(k)
-    e_sr = I2(k) * mu_R
+    e_s2 = I(k, m)
+    # e_sr = I2(k) * mu_R
+    tmp = 1
+    e_sr = mu_R * k * (sigma_x**2) * tmp
         
     first_term = mu_R/mu_S
     second_term = e_s2*mu_R/(mu_S**3)
     third_term = e_sr/mu_S**2
     
-    approx = np.sqrt(first_term + second_term - third_term)
+    # approx = np.sqrt(first_term + second_term - third_term)
+    approx = np.sqrt(first_term + second_term)
     
     res = dict()
     res['K'] = k
@@ -306,106 +316,153 @@ def analytical(K):
     return res
 
 
-K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
-kwargs = {'x_dist': 'gaussian',
-          'normalize_x': False,
-          'w_mode': 'exact',
-          # 'w_mode': 'bernoulli',
-          'w_dist': 'gaussian',
-          'normalize_w': False,
-          # 'b_mode': 'percentile',
-          'b_mode': 'gaussian',
-          'coding_level': 10,
-          'use_relu': True,
-          # 'use_relu': False,
-          # 'perturb_mode': 'multiplicative',
-          'perturb_mode': 'additive',
-          'perturb_dist': 'gaussian',
-          'n_pts': 500,
-          'n_rep': 5}
+def get_optimal_k(m):
+    res = minimize_scalar(lambda k: analytical(k, m)['Three-term approx'],
+                          bounds=(1, m), method='bounded')
+    optimal_k = res.x
+    return optimal_k
 
-values_sim = defaultdict(list)
-values_an = defaultdict(list)
-for K in K_sim:
-    res = simulation(K, **kwargs)
-    for key, val in res.items():
-        values_sim[key].append(val)
 
-K_an = np.linspace(K_sim.min(), K_sim.max(), 10)
-for K in K_an:
-    res = analytical(K)
-    for key, val in res.items():
-        values_an[key].append(val)
+def plot_optimal_k():
+    ms = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+    optimal_ks = [get_optimal_k(m) for m in ms]
     
-values_sim = {key: np.array(val) for key, val in values_sim.items()}
-values_an = {key: np.array(val) for key, val in values_an.items()}
-
-keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
-for key in keys:
-    values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
-    values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
-
-plt.figure(figsize=(4, 2))
-keys = ['theta']
-for i, key in enumerate(keys):
-    plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
-plt.legend()
-
-
-plt.figure(figsize=(4, 3))
-keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
-for i, key in enumerate(keys):
-    plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
-plt.legend()
-
-
-def _plot_compare(keys):
-    colors = ['red', 'green', 'blue', 'orange']
-    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
-    for i, key in enumerate(keys):
-        axes[0].plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
-    for i, key in enumerate(keys):
-        axes[1].plot(values_an['K'], values_an[key], label=key, color=colors[i])
-    axes[1].set_xlabel('K')
-    plt.tight_layout()
-    plt.legend()
-    fname = ''.join(keys)
-    fname = fname.replace('/', '')
-    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-    plt.savefig('../figures/analytical/'+fname+'.png')
+    x = np.log(ms)
+    y = np.log(optimal_ks)
     
-def _plot_compare_overlay(keys):
-    colors = ['red', 'green', 'blue', 'orange']
-    fig = plt.figure(figsize=(4, 3))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    for i, key in enumerate(keys):
-        ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
-        ax.plot(values_an['K'], values_an[key], color=colors[i])
-    ax.set_xlabel('K')
-    plt.legend()
-    fname = ''.join(keys)
-    fname = fname.replace('/', '')
+    x_plot = np.linspace(x[0], x[-1], 100)
+
+    # model = Ridge()
+    model = LinearRegression()
+    model.fit(x[:, np.newaxis], y)
+    y_plot = model.predict(x_plot[:, np.newaxis])
+    
+    fig = plt.figure(figsize=(4, 4))
+    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+    ax.plot(x, y, 'o', label='analytical')
+    fit_txt = '$log k = {:0.2f}log m + {:0.2f}$'.format(model.coef_[0], model.intercept_)
+    ax.plot(x_plot, y_plot, label='fit: ' + fit_txt)
+    ax.set_xlabel('m')
+    ax.set_ylabel('optimal K')
+    xticks = np.array([10, 100, 1000, 10000])
+    ax.set_xticks(np.log(xticks))
+    ax.set_xticklabels([str(t) for t in xticks])
+    yticks = np.array([10, 100])
+    ax.set_yticks(np.log(yticks))
+    ax.set_yticklabels([str(t) for t in yticks])
+    ax.legend()
+    fname = 'optimal_k'
     plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
     plt.savefig('../figures/analytical/'+fname+'.png')
 
+
+def main_plot_compare():
+    m = 150
+    if m == 50:
+        K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
+    elif m == 150:
+        K_sim = np.array([5, 7, 10, 12, 13, 15, 20])
+    elif m == 1000:
+        K_sim = np.array([30, 33, 35, 40, 45, 50, 55, 60])
+    kwargs = {'x_dist': 'gaussian',
+              'normalize_x': False,
+              'w_mode': 'exact',
+              # 'w_mode': 'bernoulli',
+              'w_dist': 'gaussian',
+              'normalize_w': False,
+              # 'b_mode': 'percentile',
+              'b_mode': 'gaussian',
+              'coding_level': 10,
+              'use_relu': True,
+              # 'use_relu': False,
+              # 'perturb_mode': 'multiplicative',
+              'perturb_mode': 'additive',
+              'perturb_dist': 'gaussian',
+              'n_pts': 500,
+              'n_rep': 5,
+              'n_pn': m}
     
-def plot_compare(keys, overlay=True):
-    if overlay:
-        _plot_compare_overlay(keys)
-    else:
-        _plot_compare(keys)
+    values_sim = defaultdict(list)
+    values_an = defaultdict(list)
+    for K in K_sim:
+        res = simulation(K, **kwargs)
+        for key, val in res.items():
+            values_sim[key].append(val)
     
-plot_compare(['Three-term approx_scaled'], overlay=True)
+    K_an = np.linspace(K_sim.min(), K_sim.max(), 100)
+    for K in K_an:
+        res = analytical(K, m)
+        for key, val in res.items():
+            values_an[key].append(val)
+        
+    values_sim = {key: np.array(val) for key, val in values_sim.items()}
+    values_an = {key: np.array(val) for key, val in values_an.items()}
     
-plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
-
-# plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
-plot_compare(['mu_S_scaled'], overlay=True)
-
-plot_compare(['mu_R_scaled'], overlay=True)
-
-plot_compare(['mu_R/mu_S_scaled'], overlay=True)
-
-plot_compare(['E[S^2]_scaled'], overlay=True)
-
+    keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
+    for key in keys:
+        values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
+        values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
+    
+    plt.figure(figsize=(4, 2))
+    keys = ['theta']
+    for i, key in enumerate(keys):
+        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
+    plt.legend()
+    
+    
+    plt.figure(figsize=(4, 3))
+    keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
+    for i, key in enumerate(keys):
+        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
+    plt.legend()
+    
+    
+    def _plot_compare(keys):
+        colors = ['red', 'green', 'blue', 'orange']
+        fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
+        for i, key in enumerate(keys):
+            axes[0].plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
+        for i, key in enumerate(keys):
+            axes[1].plot(values_an['K'], values_an[key], label=key, color=colors[i])
+        axes[1].set_xlabel('K')
+        plt.tight_layout()
+        plt.legend()
+        fname = ''.join(keys)
+        fname = fname.replace('/', '')
+        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+        plt.savefig('../figures/analytical/'+fname+'.png')
+        
+    def _plot_compare_overlay(keys):
+        colors = ['red', 'green', 'blue', 'orange']
+        fig = plt.figure(figsize=(4, 3))
+        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+        for i, key in enumerate(keys):
+            ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
+            ax.plot(values_an['K'], values_an[key], color=colors[i])
+        ax.set_xlabel('K')
+        plt.legend()
+        fname = ''.join(keys)
+        fname = fname.replace('/', '')
+        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+        plt.savefig('../figures/analytical/'+fname+'.png')
+    
+        
+    def plot_compare(keys, overlay=True):
+        if overlay:
+            _plot_compare_overlay(keys)
+        else:
+            _plot_compare(keys)
+        
+    plot_compare(['Three-term approx_scaled'], overlay=True)
+        
+    plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
+    
+    # plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
+    plot_compare(['mu_S_scaled'], overlay=True)
+    
+    plot_compare(['mu_R_scaled'], overlay=True)
+    
+    plot_compare(['mu_R/mu_S_scaled'], overlay=True)
+    
+    plot_compare(['E[S^2]_scaled'], overlay=True)
 
