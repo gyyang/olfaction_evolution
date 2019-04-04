@@ -32,8 +32,8 @@ def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix):
     for i in range(0, len(list_of_lr)-1):
         relevant_lr.append(list_of_lr[i][lr_ix])
 
-    fig = plt.figure(figsize=(2.25, 1.5))
-    ax = fig.add_axes([0.2, 0.2, 0.6, 0.6])
+    fig = plt.figure(figsize=(1.5, 1.2))
+    ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
     ax_ = ax.twinx()
 
     _helper_plot(ax, relevant_lr, 'C0', 'Update Rate')
@@ -42,6 +42,7 @@ def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix):
     ax.set_ylabel('Magnitude')
 
     ax.set_yticks([0, .1, .2])
+    ax.set_ylim([-0.02, .23])
     ax_.set_yticks([])
     ax.legend(loc=1, bbox_to_anchor=(1, .6), frameon=False, fontsize=5)
     ax_.legend(loc=1, bbox_to_anchor=(1, .4), frameon=False, fontsize=5)

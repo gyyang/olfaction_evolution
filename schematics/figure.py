@@ -41,7 +41,7 @@ def plot_task(mode='standard', include_prototypes=False):
     
     if mode == 'standard':
         proto_points = np.array([[2, 4], [4, 3], [3, 2],[1, 1]])
-        texts = ['Odor ' + i for i in ['A','B','C','D']]
+        texts = ['Class ' + i for i in ['A','B','C','D']]
     elif mode == 'relabel':        
         proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], [4, 1], [4, 3]])
         ind = [0, 1, 2, 3, 2, 1]

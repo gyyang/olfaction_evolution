@@ -95,6 +95,32 @@ def vary_kc_configs(argTest=False):
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
+def vary_kc_no_dropout_configs(argTest=False):
+    '''
+    Vary number of KCs while also training ORN2PN.
+    Results:
+        GloScore and Accuracy peaks at >2500 KCs for all noise values
+        GloScore does not depend on noise. Should be lower for higher noise values
+        GloScore depends on nKC. Should be lower for lower nKC
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_dropout = False
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
+
+    if argTest:
+        config.max_epoch = testing_epochs
+        hp_ranges['N_KC'] = [50, 100, 200, 500, 1000, 2500, 10000, 20000]
+        hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
+    return config, hp_ranges
+
+
 def vary_claw_configs(argTest=False):
     '''
     Vary number of inputs to KCs while skipping ORN2PN layer
@@ -161,11 +187,9 @@ def train_claw_configs(argTest=False):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['train_pn2kc'] = [True, True, False]
-    hp_ranges['sparse_pn2kc'] = [False, False, True]
-    hp_ranges['train_kc_bias'] = [False, False, True]
-    hp_ranges['kc_loss'] = [False, True, False]
-    hp_ranges['initial_pn2kc'] = [.1, .1, 0]
+    hp_ranges['train_pn2kc'] = [True, False]
+    hp_ranges['sparse_pn2kc'] = [False, True]
+    hp_ranges['train_kc_bias'] = [False, True]
 
     if argTest:
         config.max_epoch = testing_epochs

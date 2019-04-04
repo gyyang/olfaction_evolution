@@ -167,13 +167,14 @@ def plot_activity(rnn_outputs, dir_ix, path):
     xticks = [50, 500, 3000]
 
 
-    fig = plt.figure(figsize=(2, 2))
-    ax = fig.add_axes([0.25, 0.2, 0.65, 0.65])
-    ax.plot(log_neurons_active, 'o-')
+    fig = plt.figure(figsize=(1.5, 1.2 ))
+    ax = fig.add_axes([0.35, 0.3, .15 * len(rnn_outputs), 0.6])
+    ax.plot(log_neurons_active, 'o-', markersize=3)
     ax.set_xlabel('Time')
-    ax.set_ylabel('Number of Active Neurons')
+    ax.set_ylabel('Active Neurons')
     ax.set_yticks(np.log(xticks))
     ax.set_yticklabels([str(x) for x in xticks])
+    ax.set_xticks(np.arange(len(rnn_outputs)))
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -219,83 +220,83 @@ def analyze_t_greater(w_rnn, time_steps):
 
     plot_activity(rnn_outputs, dir_ix=dir_ix, path=path)
 
-    ## plot activity
-    #ORN activation
-    x_range = 1000
-    _easy_weights(rnn_outputs[0][:100,:x_range], dir_ix=dir_ix, y_label='Odors', x_label='T=0',
-                  xticks = [0, 500, x_range],
-                  extra_str='focused', save_path=path)
-    _easy_weights(rnn_outputs[0][:100,:], dir_ix=dir_ix, y_label='Odors', x_label='T=0',
-                  xticks = [0, 500, w_rnn.shape[0]],
-                  save_path=path)
-    #PN activation, sorted to T=1
-    i = 1
-    x_range = 100
-    _easy_weights(rnn_outputs[i][:100, ixs[0][:x_range]], dir_ix= dir_ix, y_label='Odors',
-                  x_label='T=' + str(i),
-                  xticks=[0, 50, x_range],
-                  extra_str='focused', save_path=path)
-    _easy_weights(rnn_outputs[i][:100, ixs[0]], dir_ix= dir_ix, y_label='Odors',
-                  x_label='T=' + str(i),
-                  save_path=path)
-
-    if time_steps == 3:
-        i = 2
-        _easy_weights(rnn_outputs[i][:100, ixs[1][:x_range]], dir_ix=dir_ix, y_label='Odors',
-                      x_label='T=' + str(i),
-                      xticks=[0, 50, x_range],
-                      extra_str='focused', save_path=path)
-        _easy_weights(rnn_outputs[i][:100, ixs[1]], dir_ix=dir_ix, y_label='Odors',
-                      x_label='T=' + str(i),
-                      save_path=path)
-
-    #KC activation, sorted to T=1
-    _easy_weights(rnn_outputs[time_steps][:100, ixs[0]], dir_ix= dir_ix, y_label='Odors',
-                  x_label='T=' + str(time_steps),
-                  save_path=path)
-
-
-    ## plot weight
-    w_orn = w_rnn[:N_ORN, pn_ixs[0]]
-    ind_max = np.argmax(w_orn, axis=1)
-    ind_sort = np.argsort(ind_max)
-    w_orn_reshaped = w_orn[ind_sort,:]
-    _easy_weights(w_orn_reshaped, y_label='T=0', x_label='T=1', extra_str= 'reshaped', vlim=.4,
-                  dir_ix= dir_ix, save_path = path)
-
-    w_orn_mean = tools._reshape_worn(w_orn, N_OR, mode='tile')
-    w_orn_mean = w_orn_mean.mean(axis=0)
-    ind_max = np.argmax(w_orn_mean, axis=0)
-    ind_sort = np.argsort(ind_max)
-    w_orn_mean = w_orn_mean[:, ind_sort]
-    _easy_weights(w_orn_mean, y_label='T=0', x_label='T=1', extra_str='mean',
-                  dir_ix= dir_ix, save_path = path)
-
-    w_glo = w_rnn[pn_ixs[-1], :]
-    rnn_distribution(w_glo, dir_ix, path)
-    rnn_sparsity(w_glo, dir_ix, path)
-
-    w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
-
-    if time_steps == 3:
-        pn_to_pn1 = w_rnn[pn_ixs[0][:,None], pn_ixs[1]]
-        ind_max = np.argmax(pn_to_pn1, axis=1)
-        ind_sort = np.argsort(ind_max)
-        pn_to_pn1_reshaped = pn_to_pn1[ind_sort,:]
-        _easy_weights(pn_to_pn1_reshaped, dir_ix= dir_ix, y_label='T=1', x_label='T=2', extra_str='sorted',
-                      save_path=path)
-
-        _easy_weights(w_glo_sorted, y_label='T=2', x_label='T=3', extra_str='sorted',
-                      dir_ix= dir_ix, save_path = path)
-
-        w_glo_subsample = w_glo[:, 1000:1020]
-        _easy_weights(w_glo_subsample, y_label='T=2', x_label='T=3', dir_ix=dir_ix, save_path = path)
-    else:
-        _easy_weights(w_glo_sorted, y_label='T=1', x_label='T=2', extra_str='sorted',
-                      dir_ix=dir_ix, save_path=path)
-
-        w_glo_subsample = w_glo[:, 1000:1020]
-        _easy_weights(w_glo_subsample, y_label='T=1', x_label='T=2', dir_ix=dir_ix, save_path=path)
+    # ## plot activity
+    # #ORN activation
+    # x_range = 1000
+    # _easy_weights(rnn_outputs[0][:100,:x_range], dir_ix=dir_ix, y_label='Odors', x_label='T=0',
+    #               xticks = [0, 500, x_range],
+    #               extra_str='focused', save_path=path)
+    # _easy_weights(rnn_outputs[0][:100,:], dir_ix=dir_ix, y_label='Odors', x_label='T=0',
+    #               xticks = [0, 500, w_rnn.shape[0]],
+    #               save_path=path)
+    # #PN activation, sorted to T=1
+    # i = 1
+    # x_range = 100
+    # _easy_weights(rnn_outputs[i][:100, ixs[0][:x_range]], dir_ix= dir_ix, y_label='Odors',
+    #               x_label='T=' + str(i),
+    #               xticks=[0, 50, x_range],
+    #               extra_str='focused', save_path=path)
+    # _easy_weights(rnn_outputs[i][:100, ixs[0]], dir_ix= dir_ix, y_label='Odors',
+    #               x_label='T=' + str(i),
+    #               save_path=path)
+    #
+    # if time_steps == 3:
+    #     i = 2
+    #     _easy_weights(rnn_outputs[i][:100, ixs[1][:x_range]], dir_ix=dir_ix, y_label='Odors',
+    #                   x_label='T=' + str(i),
+    #                   xticks=[0, 50, x_range],
+    #                   extra_str='focused', save_path=path)
+    #     _easy_weights(rnn_outputs[i][:100, ixs[1]], dir_ix=dir_ix, y_label='Odors',
+    #                   x_label='T=' + str(i),
+    #                   save_path=path)
+    #
+    # #KC activation, sorted to T=1
+    # _easy_weights(rnn_outputs[time_steps][:100, ixs[0]], dir_ix= dir_ix, y_label='Odors',
+    #               x_label='T=' + str(time_steps),
+    #               save_path=path)
+    #
+    #
+    # ## plot weight
+    # w_orn = w_rnn[:N_ORN, pn_ixs[0]]
+    # ind_max = np.argmax(w_orn, axis=1)
+    # ind_sort = np.argsort(ind_max)
+    # w_orn_reshaped = w_orn[ind_sort,:]
+    # _easy_weights(w_orn_reshaped, y_label='T=0', x_label='T=1', extra_str= 'reshaped', vlim=.4,
+    #               dir_ix= dir_ix, save_path = path)
+    #
+    # w_orn_mean = tools._reshape_worn(w_orn, N_OR, mode='tile')
+    # w_orn_mean = w_orn_mean.mean(axis=0)
+    # ind_max = np.argmax(w_orn_mean, axis=0)
+    # ind_sort = np.argsort(ind_max)
+    # w_orn_mean = w_orn_mean[:, ind_sort]
+    # _easy_weights(w_orn_mean, y_label='T=0', x_label='T=1', extra_str='mean',
+    #               dir_ix= dir_ix, save_path = path)
+    #
+    # w_glo = w_rnn[pn_ixs[-1], :]
+    # rnn_distribution(w_glo, dir_ix, path)
+    # rnn_sparsity(w_glo, dir_ix, path)
+    #
+    # w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
+    #
+    # if time_steps == 3:
+    #     pn_to_pn1 = w_rnn[pn_ixs[0][:,None], pn_ixs[1]]
+    #     ind_max = np.argmax(pn_to_pn1, axis=1)
+    #     ind_sort = np.argsort(ind_max)
+    #     pn_to_pn1_reshaped = pn_to_pn1[ind_sort,:]
+    #     _easy_weights(pn_to_pn1_reshaped, dir_ix= dir_ix, y_label='T=1', x_label='T=2', extra_str='sorted',
+    #                   save_path=path)
+    #
+    #     _easy_weights(w_glo_sorted, y_label='T=2', x_label='T=3', extra_str='sorted',
+    #                   dir_ix= dir_ix, save_path = path)
+    #
+    #     w_glo_subsample = w_glo[:, 1000:1020]
+    #     _easy_weights(w_glo_subsample, y_label='T=2', x_label='T=3', dir_ix=dir_ix, save_path = path)
+    # else:
+    #     _easy_weights(w_glo_sorted, y_label='T=1', x_label='T=2', extra_str='sorted',
+    #                   dir_ix=dir_ix, save_path=path)
+    #
+    #     w_glo_subsample = w_glo[:, 1000:1020]
+    #     _easy_weights(w_glo_subsample, y_label='T=1', x_label='T=2', dir_ix=dir_ix, save_path=path)
 
 N_OR = 50
 N_ORN = 500
@@ -304,8 +305,8 @@ if dir_ix == 0:
     analyze_t0(w_rnn)
 else:
     analyze_t_greater(w_rnn, config.TIME_STEPS)
-
-
+#
+#
 # if config.TIME_STEPS == 1:
 #     ixs = [np.arange(w_rnn.shape[0])]
 #     pn_ixs = [np.arange(N_OR)]
