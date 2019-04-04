@@ -520,6 +520,7 @@ class FullModel(Model):
         self.x = x
 
     def loss_func(self, logits, logits2, y):
+        valence_loss_coeff = 1
         config = self.config
         class_loss = 0
         if config.label_type == 'combinatorial':
@@ -538,7 +539,7 @@ class FullModel(Model):
             if config.train_head1:
                 class_loss += loss1
             if config.train_head2:
-                class_loss += loss2
+                class_loss += valence_loss_coeff * loss2
         elif config.label_type == 'multi_head_one_hot':
             y1 = y[:,:self.config.N_CLASS]
             y2 = y[:, self.config.N_CLASS:]
@@ -547,7 +548,7 @@ class FullModel(Model):
             if config.train_head1:
                 class_loss += loss1
             if config.train_head2:
-                class_loss += loss2
+                class_loss += valence_loss_coeff * loss2
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")

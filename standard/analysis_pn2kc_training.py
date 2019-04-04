@@ -275,7 +275,6 @@ def plot_distribution(dir, xrange = 1.0):
     dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
     titles = ['Before Training', 'After Training']
 
-
     for i, d in enumerate(dirs):
         print('Analyzing results from: ' + str(d))
         try:
@@ -288,7 +287,12 @@ def plot_distribution(dir, xrange = 1.0):
             distribution = w.flatten()
             save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
             print(save_name)
-            _plot_distribution(distribution, save_name,
+
+            if j == 0:
+                cutoff = 0
+            else:
+                cutoff = infer_threshold(distribution)
+            _plot_distribution(distribution, save_name, cutoff = cutoff,
                                title=titles[j], xrange= xrange, yrange=5000)
 
 def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
@@ -326,8 +330,8 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
 
 
 def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
-    fig = plt.figure(figsize=(2.5, 2))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    fig = plt.figure(figsize=(2, 1.5))
+    ax = fig.add_axes([0.25, 0.25, 0.7, 0.6])
     plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
     plt.plot([7, 7], [0, yrange], '--', color='gray')
     ax.set_xlabel('PN inputs per KC')
@@ -348,10 +352,10 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
 
-def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
-    fig = plt.figure(figsize=(3, 2))
+def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, cutoff = 0):
+    fig = plt.figure(figsize=(2, 1.5))
     if not broken_axis:
-        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+        ax = fig.add_axes([0.25, 0.25, 0.6, 0.6])
         plt.hist(data, bins=50, range=[0, xrange], density=False)
         ax.set_xlabel('PN to KC Weight')
         ax.set_ylabel('Number of Connections')
@@ -372,10 +376,11 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
+        ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
 
     else:
-        ax = fig.add_axes([0.2, 0.2, 0.7, 0.5])
-        ax2 = fig.add_axes([0.2, 0.75, 0.7, 0.1])
+        ax = fig.add_axes([0.25, 0.25, 0.7, 0.45])
+        ax2 = fig.add_axes([0.25, 0.75, 0.7, 0.1])
         n, bins, _ = ax2.hist(data, bins=50, range=[0, xrange], density=False)
         ax.hist(data, bins=50, range=[0, xrange], density=False)
 
@@ -405,8 +410,8 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
         xticks = np.arange(0, xrange + 0.01, .5)
         ax.set_xticks(xticks)
         ax.set_xticklabels([str(x) for x in xticks])
-        yticks = [0, 1000, 2000, 3000, 4000, 5000]
-        yticklabels = ['0', '1K', '2K', '3K', '4K', '5K']
+        yticks = [0, 2500, 5000]
+        yticklabels = ['0', '2.5K', '5K']
         ax.set_yticks(yticks)
         ax.set_yticklabels(yticklabels)
         ax.set_ylim(0, yrange)  # most of the data
@@ -414,6 +419,9 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True):
         ax2.set_yticks([np.max(n)])
         ax2.set_yticklabels(['{:d}K'.format(int(np.max(n)/1000))])
         ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
+        ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
+        ax2.plot([cutoff, cutoff], ax2.get_ylim(), '--', color='gray')
+
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
 
