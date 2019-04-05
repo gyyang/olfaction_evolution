@@ -21,6 +21,7 @@ from tools import nicename
 
 mpl.rcParams['font.size'] = 7
 
+oracle_dir = 'kcrole'
 # Load dataset
 data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
 train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
@@ -29,7 +30,7 @@ train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
 def _evaluate(name, value, model, model_dir, n_rep=1):
     assert name is not 'weight_perturb'
     if model == 'oracle':
-        path = os.path.join(rootpath, 'files', 'directglo_shallow', '0')
+        path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
         path = model_dir
 
@@ -86,7 +87,7 @@ def _evaluate(name, value, model, model_dir, n_rep=1):
 
 def _evaluate_weight_perturb(values, model, model_dir):
     if model == 'oracle':
-        path = os.path.join(rootpath, 'files', 'directglo_shallow', '0')
+        path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
         path = model_dir
 
@@ -107,6 +108,7 @@ def _evaluate_weight_perturb(values, model, model_dir):
         config.skip_pn2kc = True
         config.kc_dropout = False
         config.set_oracle = True
+        config.oracle_scale = 8
         # Helper model for oracle
         oracle_x_ph = tf.placeholder(val_x.dtype,
                                      [config.N_CLASS, val_x.shape[1]])
@@ -127,16 +129,23 @@ def _evaluate_weight_perturb(values, model, model_dir):
 
         val_loss = list()
         val_acc = list()
+        reps = 10
         for value in values:
-            val_model.perturb_weights(value)
+            temp_loss, temp_acc = 0, 0
+            for rep in range(reps):
+                val_model.perturb_weights(value)
 
-            # Validation
-            val_loss_tmp, val_acc_tmp = sess.run(
-                [val_model.loss, val_model.acc],
-                {val_x_ph: val_x, val_y_ph: val_y})
+                # Validation
+                val_loss_tmp, val_acc_tmp = sess.run(
+                    [val_model.loss, val_model.acc],
+                    {val_x_ph: val_x, val_y_ph: val_y})
+                temp_loss += val_loss_tmp
+                temp_acc += val_acc_tmp
+            temp_loss /= reps
+            temp_acc /= reps
 
-            val_loss.append(val_loss_tmp)
-            val_acc.append(val_acc_tmp)
+            val_loss.append(temp_loss)
+            val_acc.append(temp_acc)
 
     return val_loss, val_acc
 
@@ -150,7 +159,6 @@ def evaluate(name, values, model, model_dir, n_rep=1):
         losses.append(val_loss)
         accs.append(val_acc)
     return losses, accs
-
 
 
 def evaluate_weight_perturb(values, model, model_dir, n_rep=1):
@@ -179,6 +187,8 @@ def evaluate_kcrole(path, name):
 
     models = ['oracle', 'sgd + no kc', 'sgd + trained kc', 'sgd + fixed kc']
     model_dirs = ['none', '000002', '000000', '000001']
+    # models = ['oracle', 'sgd + no kc', 'sgd + trained kc']
+    # model_dirs = ['none', '000002', '000000']
     loss_dict = {}
     acc_dict = {}
     for model, model_dir in zip(models, model_dirs):
@@ -210,40 +220,38 @@ def plot_kcrole(path, name):
     values = results['values']
     loss_dict = results['loss_dict']
     acc_dict = results['acc_dict']
-    models = results['models']
-
+    # models = results['models']
+    models = ['oracle', 'sgd + no kc', 'sgd + trained kc']
     for ylabel in ['val_acc', 'val_loss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
-        fig = plt.figure(figsize=(2.5, 2.5))
-        ax = fig.add_axes([0.3, 0.3, 0.6, 0.6])
+        fig = plt.figure(figsize=(2.75, 2))
+        ax = fig.add_axes([0.2, 0.2, 0.4, 0.6])
         for model in models:
             res_plot = res_dict[model]
             if ylabel == 'val_loss':
                 res_plot = np.log(res_plot)
-            ax.plot(values, res_plot, '-', label=model)
+            ax.plot(values, res_plot, 'o-', markersize=3, label=model)
         plt.xlabel(nicename(name))
         plt.ylabel(nicename(ylabel))
-        plt.legend()
-        plt.ylim([0, 1])
+        plt.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon=False)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
         if ylabel == 'val_acc':
-            plt.ylim([0, 1])
+            plt.ylim([0, 1.05])
             ax.set_yticks([0, 0.5, 1.0])
-            yrange = [0, 1]
         else:
-            ax.set_yticks([-2, -1, 0, 1, 2, 3])
-            yrange = [-2, 1]
+            ax.set_yticks([-2, -1, 0, 1, 2, 3, 4])
+            plt.ylim([-2, 4])
         figname = ylabel + '_' + name
-        # _easy_save('kc_role', figname)
+        _easy_save('kc_role', figname)
 
 
 def evaluate_acrossmodels():
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
-    values = [0, 0.01, 0.05, 0.1, 0.3]
+    values = [0, 0.05, 0.1, 0.3]
     n_rep = 10
 
     path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
@@ -297,14 +305,14 @@ def plot_acrossmodels():
     
     for ylabel in ['val_acc', 'val_loss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
-        fig = plt.figure(figsize=(4.0, 2.5))
-        ax = fig.add_axes([0.3, 0.3, 0.3, 0.6])
+        fig = plt.figure(figsize=(2.5, 2))
+        ax = fig.add_axes([0.2, 0.25, 0.45, 0.5])
 
         for i in range(len(values)):
             res_plot = [res_dict[model][i] for model in models]
             if ylabel == 'val_loss':
                 res_plot = np.log(res_plot)  # TODO: this log?
-            ax.plot(models, res_plot, 'o-', label=values[i], color=colors[i])
+            ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
         ax.set_xlabel(nicename(model_var))
         ax.set_ylabel(nicename(ylabel))
         ax.spines["right"].set_visible(False)
@@ -318,9 +326,10 @@ def plot_acrossmodels():
         else:
             ax.set_yticks([-2, -1, 0, 1])
             yrange = [-2, 1]
+        ax.set_xticks([3, 7, 15, 30, 50])
         plt.ylim(yrange)
         ax.plot([7, 7], yrange, '--', color='gray')
-        l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0))
+        l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
         l.set_title(nicename(name))
         figname = ylabel+model_var+name
         _easy_save('vary_kc_claws_new', figname)
