@@ -5,7 +5,7 @@ import task
 import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 12
+testing_epochs = 8
 
 def train_standardnet(argTest=False):
     """Standard training setting"""
@@ -142,7 +142,7 @@ def vary_claw_configs(argTest=False):
     hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['kc_inputs'] = [3, 5, 7, 11, 13, 15, 20, 35, 50]
+        hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
@@ -166,7 +166,7 @@ def vary_claw_configs_new(argTest=False):
     hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['kc_inputs'] = [3, 7, 15]
+        hp_ranges['kc_inputs'] = [1, 3, 7, 10, 15, 30]
     return config, hp_ranges
 
 def train_claw_configs(argTest=False):

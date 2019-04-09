@@ -55,7 +55,7 @@ if args.experiment == 'core':
                    'pn_normalization',
                    'vary_kc',
                    'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
-                   'vary_kc_claws', 'train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
+                   'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'vary_pn2kc_loss', 'vary_kc_dropout', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
                    'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization',
                    'kcrole', 'kc_generalization',
@@ -65,10 +65,10 @@ else:
 
 
 # #peter specific
-TRAIN = True
+TRAIN = False
 ANALYZE = True
 is_test = True
-experiments = ['vary_kc_activity_trainable']
+experiments = ['kcrole']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -244,6 +244,14 @@ if 'vary_kc_claws' in experiments:
                         figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
 
+if 'vary_kc_claws_new' in experiments:
+    path = './files/vary_kc_claws_new'
+    if TRAIN:
+        local_train(se.vary_claw_configs_new(is_test), path)
+    if ANALYZE:
+        evaluatewithnoise.evaluate_acrossmodels()
+        evaluatewithnoise.plot_acrossmodels()
+
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
     if TRAIN:
@@ -350,7 +358,7 @@ if 'vary_kc_activity_trainable' in experiments:
     if ANALYZE:
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=True)
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=False, thres=.25)
         # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
         # analysis_activity.sparseness_activity(path, 'kc_out')
         # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
@@ -361,8 +369,9 @@ if 'kcrole' in experiments:
     if TRAIN:
         local_sequential_train(se.train_kcrole(is_test), path)
     if ANALYZE:
-        evaluatewithnoise.evaluate_kcrole(path, 'weight_perturb')
+        # evaluatewithnoise.evaluate_kcrole(path, 'weight_perturb')
         evaluatewithnoise.plot_kcrole(path, 'weight_perturb')
+
 
 if 'kc_generalization' in experiments:
     path = './files/kc_generalization'

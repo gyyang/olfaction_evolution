@@ -103,10 +103,10 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, thres 
 
     for i, wglo in enumerate(wglos):
         # dynamically infer threshold after training
-        if dynamic_thres and i > 0:
+        if dynamic_thres:
             thres = infer_threshold(wglo)
-        elif i == 0:
-            thres = 0.01
+        else:
+            thres = thres
         sparsity = np.count_nonzero(wglo > thres, axis=0)
 
         y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
@@ -124,8 +124,11 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, thres 
     yticks_mean = [0, 3, 7, 15, 20]
     yticks_zero = [0., .5, 1]
     sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key,
-                    ax_args={'ylim':[1, 15],'yticks':[1, 5, 7, 9, 15]})
-    sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key)
+                    ax_args={'ylim':[1, 15],'yticks':[1, 5, 7, 9, 15]},
+                    figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+    sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key,
+                    ax_args={'ylim': [0, 1], 'yticks': [0, .5, 1]},
+                    figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
 
 def image_pn2kc_parameters(dir, dynamic_thres=False):
     def _rank(coor):
