@@ -392,7 +392,7 @@ def _generate_proto_threshold(
             val_labels_valence = np.zeros_like(val_labels)
             val_labels_valence[(0 <= val_labels) * (val_labels < good_ix)] = 1
             val_labels_valence[(good_ix <= val_labels) * (val_labels < bad_ix)] = 2
-
+            #
             # innate_generalization = 100
             # prototypes_valence = rng.uniform(0, max_activation, (n_proto_valence-1, n_orn))
             # train_labels_valence = _get_labels(prototypes_valence, train_odors_forlabels, innate_generalization)

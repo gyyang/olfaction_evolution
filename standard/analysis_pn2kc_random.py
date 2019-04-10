@@ -215,20 +215,23 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
         corr, similarity_matrix = _get_similarity(np.transpose(wglo))
         y.append(corr)
 
-    n_shuffle = 10
-    shuffled_similarities = []
-    for i in range(n_shuffle):
-        if i == 0:
-            thres = THRES
-        else:
-            thres = analysis_pn2kc_training.infer_threshold(wglos[-1])
-        shuffled = _shuffle(wglo_binaries[-1]>thres, arg=shuffle_arg)
-        shuffled_similarity, _ = _get_similarity(shuffled)
-        shuffled_similarities.append(shuffled_similarity)
-    y_shuffled = np.mean(shuffled_similarities)
-    legends = ['Trained', 'Shuffled']
+    n_shuffle = 3
+    y_shuffled = []
+    for j in range(len(wglo_binaries)):
+        shuffled_similarities = []
+        for i in range(n_shuffle):
+            if j == 0:
+                thres = 0
+            else:
+                thres = analysis_pn2kc_training.infer_threshold(wglos[j])
+            shuffled = _shuffle(wglo_binaries[j]>thres, arg=shuffle_arg)
+            shuffled_similarity, _ = _get_similarity(shuffled)
+            shuffled_similarities.append(shuffled_similarity)
+        temp = np.mean(shuffled_similarities)
+        y_shuffled.append(temp)
 
-    figsize = (2, 2)
+    legends = ['Trained', 'Shuffled']
+    figsize = (1.5, 1.2)
     rect = [0.3, 0.3, 0.65, 0.5]
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(rect)
@@ -239,11 +242,11 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
         yticks = [0, 1, 2, 3]
         ylim = [0, 3]
     else:
-        yticks = np.linspace(0, 1, 5)
+        yticks = [0, .5, 1]
         ylim = [0, 1]
     xlim = len(y)
     ax.plot(y)
-    ax.plot([0, xlim], [y_shuffled, y_shuffled], '--', color='gray')
+    # ax.plot(range(xlim), y_shuffled, '--', color='gray')
     # ax.legend(legends, fontsize=5)
     xticks =np.arange(0, xlim, 10)
     ax.set_xlabel('Epoch')

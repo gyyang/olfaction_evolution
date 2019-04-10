@@ -70,8 +70,8 @@ def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
         _image(data, zticks=zticks, name = 'image_' + arg + '_' + str(i), xlabel=xlabel, ylabel='Odors')
 
 def _distribution(data, save_path, name, xlabel, ylabel, xrange):
-    fig = plt.figure(figsize=(2.5, 2))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    fig = plt.figure(figsize=(1.5, 1.5))
+    ax = fig.add_axes((0.27, 0.25, 0.65, 0.65))
     plt.hist(data, bins= 100, range=[xrange[0], xrange[1]], density=False, align='left')
 
     xticks = np.linspace(xrange[0], xrange[1], 5)
@@ -174,6 +174,7 @@ def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key= None, select_
         tools.save_config(config, d)
     sa.plot_results(save_path, x_key= x_key, y_key= arg + '_sparse_mean',
                     ax_args= {'yticks': [0, .2, .4, .6, .8]},
+                    figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                     loop_key=loop_key,
                     select_dict=select_dict)
 

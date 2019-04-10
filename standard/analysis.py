@@ -67,7 +67,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
 
         if legends is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
-            ax.legend(legends, fontsize=4, frameon=False)
+            ax.legend(legends, fontsize=7, frameon=False)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -136,7 +136,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=Fal
         pass
 
     if var_name == 'w_glo':
-        w_plot = w_plot[:,:50]
+        w_plot = w_plot[:,:20]
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
@@ -265,6 +265,7 @@ def plot_activity(save_path):
 
 
 def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = None,
+                 figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
                  ax_args={}, plot_args={}, sort = True):
     """Plot results for varying parameters experiments.
 
@@ -297,8 +298,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         for key, val in res.items():
             res[key] = val[ind_sort]
 
-    fig = plt.figure(figsize=(2, 2))
-    ax = fig.add_axes([0.25, 0.2, 0.65, 0.65], **ax_args)
+    fig = plt.figure(figsize= figsize)
+    ax = fig.add_axes(ax_box, **ax_args)
     if loop_key:
         for x in np.unique(res[loop_key]):
             ind = res[loop_key] == x
@@ -309,8 +310,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
             if y_key in log_plot_dict.keys():
                 y_plot = np.log(y_plot)
             label = str(x).rsplit('/',1)[-1]
-            x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
-            ax.plot(x_plot, y_plot, 'o-', label=label, **plot_args)
+            # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
+            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label, **plot_args)
     else:
         x_plot = res[x_key]
         y_plot = res[y_key]
@@ -318,7 +319,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
             x_plot = np.log(x_plot)
         if y_key in log_plot_dict.keys():
             y_plot = np.log(y_plot)
-        ax.plot(x_plot, y_plot, 'o-', **plot_args)
+        ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
 
     if x_key in log_plot_dict.keys():
         xticks = np.array(log_plot_dict[x_key])
@@ -349,7 +350,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
     if loop_key:
-        l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 5, frameon=False)
+        l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 7, frameon=False)
         l.set_title(nicename(loop_key))
 
     figname = '_' + y_key + '_vs_' + x_key
@@ -357,8 +358,11 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
         figname += '_vary' + loop_key
     if select_dict:
         for k, v in select_dict.items():
-            v = [x.rsplit('/',1)[-1] for x in v]
-            v = str('__'.join(v))
+            if isinstance(v, list):
+                v = [x.rsplit('/',1)[-1] for x in v]
+                v = str('__'.join(v))
+            else:
+                v = str(v)
             figname += k + '_' + v + '__'
 
 

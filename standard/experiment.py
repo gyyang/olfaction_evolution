@@ -5,7 +5,7 @@ import task
 import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 12
+testing_epochs = 8
 
 def train_standardnet(argTest=False):
     """Standard training setting"""
@@ -95,6 +95,32 @@ def vary_kc_configs(argTest=False):
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
+def vary_kc_no_dropout_configs(argTest=False):
+    '''
+    Vary number of KCs while also training ORN2PN.
+    Results:
+        GloScore and Accuracy peaks at >2500 KCs for all noise values
+        GloScore does not depend on noise. Should be lower for higher noise values
+        GloScore depends on nKC. Should be lower for lower nKC
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_dropout = False
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
+
+    if argTest:
+        config.max_epoch = testing_epochs
+        hp_ranges['N_KC'] = [50, 100, 200, 500, 1000, 2500, 10000, 20000]
+        hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
+    return config, hp_ranges
+
+
 def vary_claw_configs(argTest=False):
     '''
     Vary number of inputs to KCs while skipping ORN2PN layer
@@ -116,7 +142,7 @@ def vary_claw_configs(argTest=False):
     hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['kc_inputs'] = [3, 5, 7, 11, 13, 15, 20, 35, 50]
+        hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
@@ -140,7 +166,7 @@ def vary_claw_configs_new(argTest=False):
     hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['kc_inputs'] = [3, 7, 15]
+        hp_ranges['kc_inputs'] = [1, 3, 7, 10, 15, 30]
     return config, hp_ranges
 
 def train_claw_configs(argTest=False):
@@ -161,11 +187,9 @@ def train_claw_configs(argTest=False):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['train_pn2kc'] = [True, True, False]
-    hp_ranges['sparse_pn2kc'] = [False, False, True]
-    hp_ranges['train_kc_bias'] = [False, False, True]
-    hp_ranges['kc_loss'] = [False, True, False]
-    hp_ranges['initial_pn2kc'] = [.1, .1, 0]
+    hp_ranges['train_pn2kc'] = [True, False]
+    hp_ranges['sparse_pn2kc'] = [False, True]
+    hp_ranges['train_kc_bias'] = [False, True]
 
     if argTest:
         config.max_epoch = testing_epochs
@@ -422,6 +446,35 @@ def kc_generalization(argTest=False):
 
     if argTest:
         pass
+    return config, hp_ranges
+
+def metalearn(argTest=False):
+    config = configs.MetaConfig()
+    config.meta_lr = .001
+    config.N_CLASS = 5
+    config.save_every_epoch = True
+    config.meta_output_dimension = 5
+    config.meta_batch_size = 16
+    config.meta_num_samples_per_class = 8
+    config.meta_print_interval = 250
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+    config.train_kc_bias = True
+
+    if argTest:
+        pass
+
+    hp_ranges = OrderedDict()
+    hp_ranges['metatrain_iterations'] = [5000, 7500]
+    hp_ranges['direct_glo'] = [False, True]
+    hp_ranges['pn_norm_pre'] = ['batch_norm','None']
+    hp_ranges['train_orn2pn'] = [True, False]
+
+    hp_ranges['sparse_pn2kc'] = [True, False]
+    hp_ranges['train_pn2kc'] = [False, True]
+    hp_ranges['kc_norm_pre'] = ['None', 'batch_norm']
+
     return config, hp_ranges
 
 def temp(argTest):

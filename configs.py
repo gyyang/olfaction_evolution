@@ -236,3 +236,5 @@ class MetaConfig(FullConfig):
         self.meta_stop_grad = False
         # label type for the meta dataset
         self.label_type = 'one_hot'
+        # saving / printing epoch interval
+        self.meta_print_interval = 250

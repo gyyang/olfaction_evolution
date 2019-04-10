@@ -520,6 +520,7 @@ class FullModel(Model):
         self.x = x
 
     def loss_func(self, logits, logits2, y):
+        valence_loss_coeff = 1
         config = self.config
         class_loss = 0
         if config.label_type == 'combinatorial':
@@ -538,7 +539,7 @@ class FullModel(Model):
             if config.train_head1:
                 class_loss += loss1
             if config.train_head2:
-                class_loss += loss2
+                class_loss += valence_loss_coeff * loss2
         elif config.label_type == 'multi_head_one_hot':
             y1 = y[:,:self.config.N_CLASS]
             y2 = y[:, self.config.N_CLASS:]
@@ -547,7 +548,7 @@ class FullModel(Model):
             if config.train_head1:
                 class_loss += loss1
             if config.train_head2:
-                class_loss += loss2
+                class_loss += valence_loss_coeff * loss2
         else:
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
@@ -782,8 +783,12 @@ class FullModel(Model):
             n_logits = config.N_CLASS
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
+            if config.skip_pn2kc:
+                input_size = config.N_PN
+            else:
+                input_size = config.N_KC
             w_output = tf.get_variable(
-                'kernel', shape=(config.N_KC, n_logits),
+                'kernel', shape=(input_size, n_logits),
                 dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
             b_output = tf.get_variable(
                 'bias', shape=(n_logits,), dtype=tf.float32,
@@ -925,7 +930,7 @@ class FullModel(Model):
         sess = tf.get_default_session()
         prototype = np.load(os.path.join(config.data_dir, 'prototype.npy'))
         # Connection weights
-        prototype_repr = sess.run(self.pre_out, {self.x: prototype})
+        prototype_repr = sess.run(self.kc, {self.x: prototype})
         w_oracle, b_oracle = _get_oracle(prototype_repr)
         w_oracle *= config.oracle_scale
         b_oracle *= config.oracle_scale

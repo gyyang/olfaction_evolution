@@ -3,8 +3,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import model
+# import model
 
+def _get_sparse_mask(nx, ny, non, complex=False, nOR=50):
+    """Generate a binary mask.
+
+    The mask will be of size (nx, ny)
+    For all the nx connections to each 1 of the ny units, only non connections are 1.
+
+    Args:
+        nx: int
+        ny: int
+        non: int, must not be larger than nx
+
+    Return:
+        mask: numpy array (nx, ny)
+    """
+    mask = np.zeros((nx, ny))
+
+    if not complex:
+        mask[:non] = 1
+        for i in range(ny):
+            np.random.shuffle(mask[:, i])  # shuffling in-place
+    return mask.astype(np.float32)
 
 def _get_cond(q, n_orn, n_pn, n_kc, n_kc_claw):
     M = np.random.rand(n_orn, n_pn)
@@ -13,12 +34,14 @@ def _get_cond(q, n_orn, n_pn, n_kc, n_kc_claw):
     # J = np.random.rand(N_PN, N_KC) / np.sqrt(N_PN + N_KC)
     # J = np.random.randn(N_PN, N_KC) / np.sqrt(N_PN + N_KC)
     J = np.random.rand(n_pn, n_kc)
-    mask = model.get_sparse_mask(n_pn, n_kc, n_kc_claw) / n_kc_claw
+    mask = _get_sparse_mask(n_pn, n_kc, n_kc_claw) / n_kc_claw
     J = J * mask
 
     K = np.dot(M_new, J)
     
-    cond = np.linalg.cond(K)
+    # cond = np.linalg.cond(K)
+
+    cond = np.linalg.norm(np.linalg.pinv(K)) * np.linalg.norm(K)
     return cond
 
 
@@ -65,10 +88,11 @@ def plot_cond_by_n_kc():
     plt.xlabel('N_KC')
     
     
-n_kc_claws = np.arange(1, 21)
+n_kc_claws = np.arange(1, 50)
 conds = np.array([get_logcond(n_kc_claw=n) for n in n_kc_claws])
 
 plt.figure()
 plt.plot(n_kc_claws, conds, 'o-')
 plt.xticks(n_kc_claws)
 plt.xlabel('N_KC_claw')
+plt.show()
