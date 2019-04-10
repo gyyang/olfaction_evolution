@@ -356,113 +356,114 @@ def plot_optimal_k():
     plt.savefig('../figures/analytical/'+fname+'.png')
 
 
-def main_plot_compare():
-    m = 150
-    if m == 50:
-        K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
-    elif m == 150:
-        K_sim = np.array([5, 7, 10, 12, 13, 15, 20])
-    elif m == 1000:
-        K_sim = np.array([30, 33, 35, 40, 45, 50, 55, 60])
-    kwargs = {'x_dist': 'gaussian',
-              'normalize_x': False,
-              'w_mode': 'exact',
-              # 'w_mode': 'bernoulli',
-              'w_dist': 'gaussian',
-              'normalize_w': False,
-              # 'b_mode': 'percentile',
-              'b_mode': 'gaussian',
-              'coding_level': 10,
-              'use_relu': True,
-              # 'use_relu': False,
-              # 'perturb_mode': 'multiplicative',
-              'perturb_mode': 'additive',
-              'perturb_dist': 'gaussian',
-              'n_pts': 500,
-              'n_rep': 5,
-              'n_pn': m}
+# def main_plot_compare():
+m = 1000
+if m == 50:
+    K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
+elif m == 150:
+    K_sim = np.array([5, 7, 10, 12, 13, 15, 20])
+elif m == 1000:
+    K_sim = np.array([60, 65, 70, 75])
+kwargs = {'x_dist': 'gaussian',
+          'normalize_x': False,
+          'w_mode': 'exact',
+          # 'w_mode': 'bernoulli',
+          'w_dist': 'gaussian',
+          'normalize_w': False,
+          'b_mode': 'percentile',
+          # 'b_mode': 'gaussian',
+          'coding_level': 10,
+          'use_relu': True,
+          # 'use_relu': False,
+          # 'perturb_mode': 'multiplicative',
+          'perturb_mode': 'additive',
+          'perturb_dist': 'gaussian',
+          'n_pts': 500,
+          'n_rep': 500,
+          'n_pn': m}
+
+values_sim = defaultdict(list)
+values_an = defaultdict(list)
+for K in K_sim:
+    res = simulation(K, **kwargs)
+    for key, val in res.items():
+        values_sim[key].append(val)
+
+K_an = np.linspace(K_sim.min(), K_sim.max(), 100)
+for K in K_an:
+    res = analytical(K, m)
+    for key, val in res.items():
+        values_an[key].append(val)
     
-    values_sim = defaultdict(list)
-    values_an = defaultdict(list)
-    for K in K_sim:
-        res = simulation(K, **kwargs)
-        for key, val in res.items():
-            values_sim[key].append(val)
-    
-    K_an = np.linspace(K_sim.min(), K_sim.max(), 100)
-    for K in K_an:
-        res = analytical(K, m)
-        for key, val in res.items():
-            values_an[key].append(val)
-        
-    values_sim = {key: np.array(val) for key, val in values_sim.items()}
-    values_an = {key: np.array(val) for key, val in values_an.items()}
-    
-    keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
-    for key in keys:
-        values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
-        values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
-    
-    plt.figure(figsize=(4, 2))
-    keys = ['theta']
+values_sim = {key: np.array(val) for key, val in values_sim.items()}
+values_an = {key: np.array(val) for key, val in values_an.items()}
+
+keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
+for key in keys:
+    values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
+    values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
+
+plt.figure(figsize=(4, 2))
+keys = ['theta']
+for i, key in enumerate(keys):
+    plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
+plt.legend()
+
+
+plt.figure(figsize=(4, 3))
+keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
+for i, key in enumerate(keys):
+    plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
+plt.legend()
+
+
+def _plot_compare(keys):
+    colors = ['red', 'green', 'blue', 'orange']
+    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
     for i, key in enumerate(keys):
-        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
-    plt.legend()
-    
-    
-    plt.figure(figsize=(4, 3))
-    keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
+        axes[0].plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
     for i, key in enumerate(keys):
-        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
+        axes[1].plot(values_an['K'], values_an[key], label=key, color=colors[i])
+    axes[1].set_xlabel('K')
+    plt.tight_layout()
     plt.legend()
+    fname = ''.join(keys)
+    fname = fname.replace('/', '')
+    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+    plt.savefig('../figures/analytical/'+fname+'.png')
     
+def _plot_compare_overlay(keys):
+    colors = ['red', 'green', 'blue', 'orange']
+    fig = plt.figure(figsize=(4, 3))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    for i, key in enumerate(keys):
+        ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
+        ax.plot(values_an['K'], values_an[key], color=colors[i])
+    ax.set_xlabel('K')
+    plt.legend()
+    fname = ''.join(keys)
+    fname = fname.replace('/', '')
+    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+    plt.savefig('../figures/analytical/'+fname+'.png')
+
     
-    def _plot_compare(keys):
-        colors = ['red', 'green', 'blue', 'orange']
-        fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
-        for i, key in enumerate(keys):
-            axes[0].plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
-        for i, key in enumerate(keys):
-            axes[1].plot(values_an['K'], values_an[key], label=key, color=colors[i])
-        axes[1].set_xlabel('K')
-        plt.tight_layout()
-        plt.legend()
-        fname = ''.join(keys)
-        fname = fname.replace('/', '')
-        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-        plt.savefig('../figures/analytical/'+fname+'.png')
-        
-    def _plot_compare_overlay(keys):
-        colors = ['red', 'green', 'blue', 'orange']
-        fig = plt.figure(figsize=(4, 3))
-        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-        for i, key in enumerate(keys):
-            ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
-            ax.plot(values_an['K'], values_an[key], color=colors[i])
-        ax.set_xlabel('K')
-        plt.legend()
-        fname = ''.join(keys)
-        fname = fname.replace('/', '')
-        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-        plt.savefig('../figures/analytical/'+fname+'.png')
+def plot_compare(keys, overlay=True):
+    if overlay:
+        _plot_compare_overlay(keys)
+    else:
+        _plot_compare(keys)
     
-        
-    def plot_compare(keys, overlay=True):
-        if overlay:
-            _plot_compare_overlay(keys)
-        else:
-            _plot_compare(keys)
-        
-    plot_compare(['Three-term approx_scaled'], overlay=True)
-        
-    plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
+plot_compare(['Three-term approx_scaled'], overlay=True)
     
-    # plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
-    plot_compare(['mu_S_scaled'], overlay=True)
+plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
+
+# plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
+plot_compare(['mu_S_scaled'], overlay=True)
+
+plot_compare(['mu_R_scaled'], overlay=True)
+
+plot_compare(['mu_R/mu_S_scaled'], overlay=True)
+
+plot_compare(['E[S^2]_scaled'], overlay=True)
     
-    plot_compare(['mu_R_scaled'], overlay=True)
-    
-    plot_compare(['mu_R/mu_S_scaled'], overlay=True)
-    
-    plot_compare(['E[S^2]_scaled'], overlay=True)
 
