@@ -131,6 +131,8 @@ class FullConfig(BaseConfig):
         self.or2orn_normalization = True
         # If True, add bias to receptor weights
         self.or_bias = False
+        # ORN normalization. orn never experiences nonlinearity so no distinction between pre and post
+        self.orn_norm = None
 
         # ORN--> PN connections
         # whether to dropout at ORN layer

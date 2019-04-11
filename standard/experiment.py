@@ -5,16 +5,17 @@ import task
 import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 8
+testing_epochs = 12
 
 def train_standardnet(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
     config.max_epoch = 30
+
+    config.pn_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    # config.train_kc_bias = False
-    config.pn_norm_pre = 'batch_norm'  # TODO: check if this is necessary
+
     config.data_dir = './datasets/proto/standard'
     config.save_every_epoch = True
     hp_ranges = OrderedDict()
@@ -23,6 +24,28 @@ def train_standardnet(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def train_standardnet_with_or2orn(argTest=False):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 20
+
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+    config.replicate_orn_with_tiling= True
+    config.N_ORN_DUPLICATION = 10
+    config.ORN_NOISE_STD = 0.25
+
+    config.kc_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+
+    config.data_dir = './datasets/proto/standard'
+    config.save_every_epoch = True
+    hp_ranges = OrderedDict()
+    hp_ranges['sign_constraint_orn2pn'] = [True]
+    if argTest:
+        config.max_epoch = 12
+    return config, hp_ranges
 
 def vary_orn_duplication_configs(argTest=False):
     '''
