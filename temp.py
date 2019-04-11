@@ -43,13 +43,14 @@ def temp():
     # task.save_proto(config, folder_name='multi_head')
 
     config = configs.FullConfig()
-    config.max_epoch = 12
+    config.max_epoch = 25
     config.batch_size = 256
     config.save_every_epoch = True
 
     config.receptor_layer = True
-    config.or2orn_normalization = True
+    # config.or2orn_normalization = True
     config.kc_norm_pre = 'batch_norm'
+    # config.orn_norm = 'batch_norm'
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
@@ -66,7 +67,7 @@ def temp():
 
     return config, hp_ranges
 
-path = './files/temp'
+path = './files/standard_net_with_or2orn'
 # try:
 #     shutil.rmtree(path)
 # except:
@@ -87,12 +88,13 @@ path = './files/temp'
 # sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix=0)
 # sa.plot_weights(path, var_name = 'w_orn', sort_axis=1, dir_ix=0)
 # sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
-
+# sa.plot_weights(path, var_name = 'w_glo', dir_ix=0)
+#
 
 # analysis_multihead.main1(arg='multi_head')
 #
 # path = './files/metalearn'
-analysis_training.plot_distribution(path, xrange=.5, log=False)
+# analysis_training.plot_distribution(path, xrange=.5, log=False)
 analysis_training.plot_distribution(path, xrange=.5, log=True)
 # analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.1, visualize=True)
 # plt.show()
