@@ -34,27 +34,6 @@ def st(experiment, save_path, s=0,e=1000):
             train.train(config)
 
 def temp():
-    config = configs.FullConfig()
-    config.max_epoch = 9
-    config.data_dir = './datasets/proto/standard'
-    # config.direct_glo = True
-    # config.sparse_pn2kc = False
-    # config.kc_dropout = False
-    # config.train_pn2kc = True
-    config.pn_norm_pre = 'batch_norm'
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.ORN_NOISE_STD = 0
-    config.kc_dropout = True
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    i = [0, .6]
-    # config.datasets = ['./datasets/proto/standard','./datasets/proto/80_20']
-    hp_ranges['apl'] = [False]
-    return config, hp_ranges
-
-def train_multihead():
     '''
 
     '''
@@ -64,39 +43,62 @@ def train_multihead():
     # task.save_proto(config, folder_name='multi_head')
 
     config = configs.FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 12
     config.batch_size = 256
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-    config.pn_norm_pre = 'batch_norm'
-    config.data_dir = './datasets/proto/multi_head'
     config.save_every_epoch = True
 
-    config.train_head1 = True
-    config.train_head2 = True
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+    config.kc_norm_pre = 'batch_norm'
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+    config.ORN_NOISE_STD = 0.25
+
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+    # config.kc_norm_pre = 'batch_norm'
+
+    config.data_dir = './datasets/proto/standard'
 
     hp_ranges = OrderedDict()
-    hp_ranges['dummy_var'] = [True]
+    hp_ranges['kc_dropout'] = [True]
 
     return config, hp_ranges
 
-path = './files/multi_head'
+path = './files/temp'
 # try:
 #     shutil.rmtree(path)
 # except:
 #     pass
-# t(train_multihead(), path, s=0, e=100)
-#
+# t(temp(), path, s=0, e=100)
+
+# path_ = os.path.join(path, '000000')
+# glo_in, glo_out, kc_out, results = sa.load_activity(path_)
+# b_orns = tools.load_pickle(path, 'b_glo')
+# plt.hist(glo_in.flatten(), bins=20)
+# plt.show()
+
+# w_orns = tools.load_pickle(path, 'w_orn')
+# avg_gs, all_gs = tools.compute_glo_score(w_orns[0], 50, mode='tile', w_or = None)
+# plt.hist(all_gs, bins=20, range=[0,1])
+# sa._easy_save(path, 'hist')
+
+# sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix=0)
+# sa.plot_weights(path, var_name = 'w_orn', sort_axis=1, dir_ix=0)
+# sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
+
+
 # analysis_multihead.main1(arg='multi_head')
 #
-path = './files/metalearn'
-analysis_training.plot_distribution(path, xrange=.5)
-analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.1)
-#
-epoch_path = './files/metalearn/000001/epoch'
-sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
+# path = './files/metalearn'
+analysis_training.plot_distribution(path, xrange=.5, log=False)
+analysis_training.plot_distribution(path, xrange=.5, log=True)
+# analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.1, visualize=True)
+# plt.show()
+
+# epoch_path = './files/metalearn/000001/epoch'
+# sa.plot_weights(epoch_path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
 # sa.plot_weights(epoch_path, var_name='w_orn', sort_axis=1, dir_ix=-1, average=True)
 
 
