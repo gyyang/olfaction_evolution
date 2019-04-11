@@ -67,8 +67,8 @@ else:
 # #peter specific
 TRAIN = False
 ANALYZE = True
-is_test = True
-experiments = ['kcrole']
+is_test = False
+experiments = ['vary_kc_claws_new']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
