@@ -270,7 +270,7 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
     _plot(means, stds, THRES)
 
 
-def plot_distribution(dir, xrange = 1.0):
+def plot_distribution(dir, xrange = 1.0, log = False):
     # TODO(gry): I don't like how this function plots everything from subdirectories of dir
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
@@ -295,8 +295,13 @@ def plot_distribution(dir, xrange = 1.0):
                 cutoff = 0
             else:
                 cutoff = infer_threshold(distribution)
-            _plot_distribution(distribution, save_name, cutoff = cutoff,
-                               title=titles[j], xrange= xrange, yrange=5000)
+
+            if log == False:
+                _plot_distribution(distribution, save_name, cutoff = cutoff,
+                                   title=titles[j], xrange= xrange, yrange=5000)
+            else:
+                _plot_log_distribution(distribution, save_name, cutoff = cutoff,
+                                   title=titles[j], xrange= xrange, yrange=5000)
 
 def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
     save_name = dir.split('/')[-1]
@@ -354,6 +359,41 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     ax.yaxis.set_ticks_position('left')
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
+
+def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0):
+    data = np.log(data)
+    cutoff = np.log(cutoff)
+    xrange = np.log(xrange)
+
+    xticks = ['$10^{-6}$','$10^{-4}$', '.01', '1']
+    xticks_log = np.log([1e-6, 1e-4, 1e-2, 1])
+
+    fig = plt.figure(figsize=(2, 1.5))
+    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
+    plt.hist(data, bins=50, density=False)
+    ax.set_xlabel('PN to KC Weight')
+    ax.set_ylabel('Number of Connections')
+    name = title
+    ax.set_title(name)
+
+    ax.set_xticks(xticks_log)
+    ax.set_xticklabels(xticks)
+
+    # yticks = [0, 1000, 2000, 3000, 4000, 5000]
+    # yticklabels = ['0', '1K', '2K', '3K', '4K', '>100K']
+    # ax.set_yticks(yticks)
+    # ax.set_yticklabels(yticklabels)
+    # plt.ylim([0, yrange])
+    # plt.xlim([0, xrange])
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    ax.plot([cutoff, cutoff], [0, plt.ylim()[1]], '--', color='gray')
+    plt.savefig(savename + '_log.png', dpi=500)
+    plt.savefig(savename + '_log.pdf', transparent=True)
+
 
 def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, cutoff = 0):
     fig = plt.figure(figsize=(2, 1.5))
