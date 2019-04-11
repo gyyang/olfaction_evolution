@@ -384,7 +384,7 @@ def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0):
     # ax.set_yticks(yticks)
     # ax.set_yticklabels(yticklabels)
     # plt.ylim([0, yrange])
-    # plt.xlim([0, xrange])
+    plt.xlim([-12, 3])
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

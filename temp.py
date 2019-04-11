@@ -67,7 +67,7 @@ def temp():
 
     return config, hp_ranges
 
-path = './files/temp'
+path = './files/standard_net_with_or2orn'
 # try:
 #     shutil.rmtree(path)
 # except:
@@ -85,18 +85,18 @@ path = './files/temp'
 # plt.hist(all_gs, bins=20, range=[0,1])
 # sa._easy_save(path, 'hist')
 
-sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix=0)
-sa.plot_weights(path, var_name = 'w_orn', sort_axis=1, dir_ix=0)
-sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
-sa.plot_weights(path, var_name = 'w_glo', dir_ix=0)
-
+# sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix=0)
+# sa.plot_weights(path, var_name = 'w_orn', sort_axis=1, dir_ix=0)
+# sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
+# sa.plot_weights(path, var_name = 'w_glo', dir_ix=0)
+#
 
 # analysis_multihead.main1(arg='multi_head')
 #
 # path = './files/metalearn'
-analysis_training.plot_distribution(path, xrange=.5, log=False)
+# analysis_training.plot_distribution(path, xrange=.5, log=False)
 analysis_training.plot_distribution(path, xrange=.5, log=True)
-analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.1, visualize=True)
+# analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.1, visualize=True)
 # plt.show()
 
 # epoch_path = './files/metalearn/000001/epoch'
