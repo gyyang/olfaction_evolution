@@ -825,6 +825,8 @@ class FullModel(Model):
             else:
                 orn = x
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
+
+        orn = _normalize(orn, config.orn_norm, training)
         if config.orn_dropout:
             # This is interpreted as noise, so it's always on
             orn = tf.layers.dropout(orn, config.orn_dropout_rate, training=True)

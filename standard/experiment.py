@@ -10,11 +10,16 @@ testing_epochs = 8
 def train_standardnet(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 20
+
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+
+    config.kc_norm_pre = 'batch_norm'
+    # config.pn_norm_pre = 'batch_norm'  #
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    # config.train_kc_bias = False
-    config.pn_norm_pre = 'batch_norm'  # TODO: check if this is necessary
+
     config.data_dir = './datasets/proto/standard'
     config.save_every_epoch = True
     hp_ranges = OrderedDict()
