@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 """Representation stability analysis."""
 
+import time
 from collections import defaultdict
+import pickle
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar
 from sklearn.linear_model import LinearRegression
 
@@ -356,114 +358,161 @@ def plot_optimal_k():
     plt.savefig('../figures/analytical/'+fname+'.png')
 
 
-# def main_plot_compare():
-m = 1000
-if m == 50:
-    K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
-elif m == 150:
-    K_sim = np.array([5, 7, 10, 12, 13, 15, 20])
-elif m == 1000:
-    K_sim = np.array([60, 65, 70, 75])
-kwargs = {'x_dist': 'gaussian',
-          'normalize_x': False,
-          'w_mode': 'exact',
-          # 'w_mode': 'bernoulli',
-          'w_dist': 'gaussian',
-          'normalize_w': False,
-          'b_mode': 'percentile',
-          # 'b_mode': 'gaussian',
-          'coding_level': 10,
-          'use_relu': True,
-          # 'use_relu': False,
-          # 'perturb_mode': 'multiplicative',
-          'perturb_mode': 'additive',
-          'perturb_dist': 'gaussian',
-          'n_pts': 500,
-          'n_rep': 500,
-          'n_pn': m}
-
-values_sim = defaultdict(list)
-values_an = defaultdict(list)
-for K in K_sim:
-    res = simulation(K, **kwargs)
-    for key, val in res.items():
-        values_sim[key].append(val)
-
-K_an = np.linspace(K_sim.min(), K_sim.max(), 100)
-for K in K_an:
-    res = analytical(K, m)
-    for key, val in res.items():
-        values_an[key].append(val)
+def main_plot_compare():
+    m = 1000
+    if m == 50:
+        K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
+    elif m == 150:
+        K_sim = np.array([5, 7, 10, 12, 13, 15, 20])
+    elif m == 1000:
+        K_sim = np.array([60, 65, 70, 75])
+    kwargs = {'x_dist': 'gaussian',
+              'normalize_x': False,
+              'w_mode': 'exact',
+              # 'w_mode': 'bernoulli',
+              'w_dist': 'gaussian',
+              'normalize_w': False,
+              'b_mode': 'percentile',
+              # 'b_mode': 'gaussian',
+              'coding_level': 10,
+              'use_relu': True,
+              # 'use_relu': False,
+              # 'perturb_mode': 'multiplicative',
+              'perturb_mode': 'additive',
+              'perturb_dist': 'gaussian',
+              'n_pts': 500,
+              'n_rep': 500,
+              'n_pn': m}
     
-values_sim = {key: np.array(val) for key, val in values_sim.items()}
-values_an = {key: np.array(val) for key, val in values_an.items()}
-
-keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
-for key in keys:
-    values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
-    values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
-
-plt.figure(figsize=(4, 2))
-keys = ['theta']
-for i, key in enumerate(keys):
-    plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
-plt.legend()
-
-
-plt.figure(figsize=(4, 3))
-keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
-for i, key in enumerate(keys):
-    plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
-plt.legend()
-
-
-def _plot_compare(keys):
-    colors = ['red', 'green', 'blue', 'orange']
-    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
+    values_sim = defaultdict(list)
+    values_an = defaultdict(list)
+    for K in K_sim:
+        res = simulation(K, **kwargs)
+        for key, val in res.items():
+            values_sim[key].append(val)
+    
+    K_an = np.linspace(K_sim.min(), K_sim.max(), 100)
+    for K in K_an:
+        res = analytical(K, m)
+        for key, val in res.items():
+            values_an[key].append(val)
+        
+    values_sim = {key: np.array(val) for key, val in values_sim.items()}
+    values_an = {key: np.array(val) for key, val in values_an.items()}
+    
+    keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
+    for key in keys:
+        values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
+        values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
+    
+    plt.figure(figsize=(4, 2))
+    keys = ['theta']
     for i, key in enumerate(keys):
-        axes[0].plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
-    for i, key in enumerate(keys):
-        axes[1].plot(values_an['K'], values_an[key], label=key, color=colors[i])
-    axes[1].set_xlabel('K')
-    plt.tight_layout()
+        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
     plt.legend()
-    fname = ''.join(keys)
-    fname = fname.replace('/', '')
-    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-    plt.savefig('../figures/analytical/'+fname+'.png')
     
-def _plot_compare_overlay(keys):
-    colors = ['red', 'green', 'blue', 'orange']
-    fig = plt.figure(figsize=(4, 3))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    
+    plt.figure(figsize=(4, 3))
+    keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
     for i, key in enumerate(keys):
-        ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
-        ax.plot(values_an['K'], values_an[key], color=colors[i])
-    ax.set_xlabel('K')
+        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
     plt.legend()
-    fname = ''.join(keys)
-    fname = fname.replace('/', '')
-    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-    plt.savefig('../figures/analytical/'+fname+'.png')
-
     
-def plot_compare(keys, overlay=True):
-    if overlay:
-        _plot_compare_overlay(keys)
-    else:
-        _plot_compare(keys)
     
-plot_compare(['Three-term approx_scaled'], overlay=True)
+    def _plot_compare(keys):
+        colors = ['red', 'green', 'blue', 'orange']
+        fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
+        for i, key in enumerate(keys):
+            axes[0].plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
+        for i, key in enumerate(keys):
+            axes[1].plot(values_an['K'], values_an[key], label=key, color=colors[i])
+        axes[1].set_xlabel('K')
+        plt.tight_layout()
+        plt.legend()
+        fname = ''.join(keys)
+        fname = fname.replace('/', '')
+        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+        plt.savefig('../figures/analytical/'+fname+'.png')
+        
+    def _plot_compare_overlay(keys):
+        colors = ['red', 'green', 'blue', 'orange']
+        fig = plt.figure(figsize=(4, 3))
+        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+        for i, key in enumerate(keys):
+            ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
+            ax.plot(values_an['K'], values_an[key], color=colors[i])
+        ax.set_xlabel('K')
+        plt.legend()
+        fname = ''.join(keys)
+        fname = fname.replace('/', '')
+        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+        plt.savefig('../figures/analytical/'+fname+'.png')
     
-plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
-
-# plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
-plot_compare(['mu_S_scaled'], overlay=True)
-
-plot_compare(['mu_R_scaled'], overlay=True)
-
-plot_compare(['mu_R/mu_S_scaled'], overlay=True)
-
-plot_compare(['E[S^2]_scaled'], overlay=True)
+        
+    def plot_compare(keys, overlay=True):
+        if overlay:
+            _plot_compare_overlay(keys)
+        else:
+            _plot_compare(keys)
+        
+    plot_compare(['Three-term approx_scaled'], overlay=True)
+        
+    plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
+    
+    # plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
+    plot_compare(['mu_S_scaled'], overlay=True)
+    
+    plot_compare(['mu_R_scaled'], overlay=True)
+    
+    plot_compare(['mu_R/mu_S_scaled'], overlay=True)
+    
+    plot_compare(['E[S^2]_scaled'], overlay=True)
     
 
+def get_optimal_K_simulation():
+    def guess_optimal_K(m):
+        """Get the optimal K based on latest estimation."""
+        return np.exp(-0.75)*(m**0.706)
+    
+    ms = [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+    # for m in ms:
+    for m in [75]:
+        K_mid = int(guess_optimal_K(m))
+        K_sim = np.arange(int(K_mid)-5, int(K_mid)+5)
+        
+        kwargs = {'x_dist': 'gaussian',
+                  'normalize_x': False,
+                  'w_mode': 'exact',
+                  # 'w_mode': 'bernoulli',
+                  'w_dist': 'gaussian',
+                  'normalize_w': False,
+                  'b_mode': 'percentile',
+                  # 'b_mode': 'gaussian',
+                  'coding_level': 10,
+                  'use_relu': True,
+                  # 'use_relu': False,
+                  # 'perturb_mode': 'multiplicative',
+                  'perturb_mode': 'additive',
+                  'perturb_dist': 'gaussian',
+                  'n_pts': 500,
+                  'n_rep': 1,
+                  'n_pn': m}
+        
+        n_rep = 100
+        all_values = list()
+        for i in range(n_rep):
+            start_time = time.time()
+            values_sim = defaultdict(list)
+            for K in K_sim:
+                res = simulation(K, **kwargs)
+                for key, val in res.items():
+                    values_sim[key].append(val)
+            all_values.append(values_sim)
+            print('Time taken : {:0.2f}s'.format(time.time() - start_time))
+        
+        fn = 'all_value_m' + str(m)
+        try:
+            pickle.dump(all_values, open('./files/analytical/'+fn+'.pkl', "wb"))
+        except FileNotFoundError:
+            pickle.dump(all_values, open('../files/analytical/'+fn+'.pkl', "wb"))
+    
