@@ -475,8 +475,8 @@ def get_optimal_K_simulation():
         return np.exp(-0.75)*(m**0.706)
     
     ms = [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-    # for m in ms:
-    for m in [75]:
+    for m in ms:
+    # for m in [75]:
         K_mid = int(guess_optimal_K(m))
         K_sim = np.arange(int(K_mid)-5, int(K_mid)+5)
         
