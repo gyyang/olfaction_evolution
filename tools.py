@@ -147,7 +147,7 @@ def load_all_results(rootpath, argLast= True):
     Returns:
         res: dictionary of numpy arrays, containing information from all models
     """
-    dirs = [os.path.join(rootpath, n) for n in os.listdir(rootpath)]
+    dirs = get_allmodeldirs(rootpath)
 
     from collections import defaultdict
     res = defaultdict(list)
