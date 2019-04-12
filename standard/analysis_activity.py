@@ -133,18 +133,15 @@ def sparseness_activity(save_path, arg, activity_threshold=0.):
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
 
-        plt.figure()
-        plt.imshow(data, aspect='auto')
-        plt.xlabel('Neurons')
-        plt.ylabel('Odors')
+        # plt.figure()
+        # plt.imshow(data, aspect='auto')
+        # plt.xlabel('Neurons')
+        # plt.ylabel('Odors')
 
         data1 = np.mean(data > activity_threshold, axis=1)
         _distribution(data1, save_path, name= 'spars_' + arg + '_' + str(i),
                       xlabel='Fraction of Active '+name+'s',
                       ylabel='Number of Odors', xrange=zticks)
-        # plt.close()
-        # plt.imshow(data[:100,:])
-        # plt.show()
 
         data2 = np.mean(data > activity_threshold, axis=0)
         _distribution(data2, save_path, name='spars_' + arg + '2_' + str(i),

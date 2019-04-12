@@ -6,7 +6,7 @@ import task
 import train
 import configs
 
-testing_epochs = 10
+testing_epochs = 12
 
 def vary_kc_dropout_configs(argTest):
     '''
@@ -21,21 +21,24 @@ def vary_kc_dropout_configs(argTest):
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.skip_orn2pn = True
+    config.direct_glo = True
+
+    config.pn_norm_pre = 'batch_norm'
 
     config.train_kc_bias=False
     config.train_pn2kc = True
     config.sparse_pn2kc = False
     config.initial_pn2kc = .1
     config.save_every_epoch = True
+    config.kc_dropout = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_dropout'] = [0, .1, .2, .3, .4, .5, .6]
+    hp_ranges['kc_dropout_rate'] = [0, .1, .2, .3, .4, .5, .6]
 
     if argTest:
         config.max_epoch=testing_epochs
-        hp_ranges['kc_dropout'] = [0, .2, .4, .6]
+        hp_ranges['kc_dropout_rate'] = [0, .3, .6]
     return config, hp_ranges
 
 def vary_pn2kc_noise_configs(argTest=False):
@@ -52,7 +55,8 @@ def vary_pn2kc_noise_configs(argTest=False):
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.skip_orn2pn = True
+    config.direct_glo = True
+    config.pn_norm_pre = 'batch_norm'
 
     config.train_kc_bias=False
     config.train_pn2kc = True
@@ -65,6 +69,7 @@ def vary_pn2kc_noise_configs(argTest=False):
     hp_ranges['ORN_NOISE_STD'] = [0, .05, .1, .15]
 
     if argTest:
+        hp_ranges['ORN_NOISE_STD'] = [0, .12]
         config.max_epoch = testing_epochs
     return config, hp_ranges
 

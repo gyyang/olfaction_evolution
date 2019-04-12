@@ -88,7 +88,7 @@ def make_multi_head_dataset():
 
 def temp():
     config = configs.input_ProtoConfig()
-    config.N_CLASS = 200
+    config.N_CLASS = 1000
     # config.n_trueclass = 80
     # config.relabel = True
     # config.realistic_orn_mask = True
@@ -105,5 +105,5 @@ if __name__ == '__main__':
     # make_mask_row_dataset()
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
-    make_multi_head_dataset()
-    # temp()
+    # make_multi_head_dataset()
+    temp()

@@ -477,27 +477,29 @@ def metalearn(argTest=False):
     config.N_CLASS = 5
     config.save_every_epoch = True
     config.meta_output_dimension = 5
-    config.meta_batch_size = 16
-    config.meta_num_samples_per_class = 8
+    config.meta_batch_size = 32
+    config.meta_num_samples_per_class = 32
     config.meta_print_interval = 250
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.train_kc_bias = True
 
+    config.metatrain_iterations = 20000
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+
+    config.data_dir = './datasets/proto/test'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy'] = [True]
+
     if argTest:
         pass
 
     hp_ranges = OrderedDict()
-    hp_ranges['metatrain_iterations'] = [5000, 7500]
-    hp_ranges['direct_glo'] = [False, True]
-    hp_ranges['pn_norm_pre'] = ['batch_norm','None']
-    hp_ranges['train_orn2pn'] = [True, False]
-
-    hp_ranges['sparse_pn2kc'] = [True, False]
-    hp_ranges['train_pn2kc'] = [False, True]
-    hp_ranges['kc_norm_pre'] = ['None', 'batch_norm']
-
     return config, hp_ranges
 
 def temp(argTest):

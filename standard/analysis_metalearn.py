@@ -9,7 +9,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
-def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix):
+def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix, xlim = 25):
     from standard.analysis import _easy_save
     def _helper_plot(ax, data, color, label):
         ax.plot(np.arange(len(data)), data, color=color, label=label)
@@ -19,14 +19,19 @@ def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix):
     dir = dirs[dir_ix]
     epoch_path = os.path.join(dir, 'epoch')
     lr_ix = 0
-    list_of_wglo = tools.load_pickle(epoch_path, mat)
+    list_of_wglo = tools.load_pickle(epoch_path, 'w_glo')
+    list_of_worn = tools.load_pickle(epoch_path, 'w_orn')
     list_of_lr = tools.load_pickle(epoch_path, 'model/lr:0')
 
     weight_diff = []
     for i in range(len(list_of_wglo)-1):
-        change = list_of_wglo[i+1] - list_of_wglo[i]
-        change = np.mean(np.abs(change))
-        weight_diff.append(change)
+        change_wglo = list_of_wglo[i+1] - list_of_wglo[i]
+        change_wglo = np.mean(np.abs(change_wglo))
+
+        change_worn = list_of_worn[i+1] - list_of_worn[i]
+        change_worn = np.mean(np.abs(change_worn))
+        print([change_worn, change_wglo])
+        weight_diff.append(change_worn + change_wglo)
 
     relevant_lr = []
     for i in range(0, len(list_of_lr)-1):
@@ -41,6 +46,7 @@ def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix):
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Magnitude')
 
+    ax.set_xlim([0, xlim])
     ax.set_yticks([0, .1, .2])
     ax.set_ylim([-0.02, .23])
     ax_.set_yticks([])
@@ -51,6 +57,6 @@ def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix):
     ax_.spines["top"].set_visible(False)
     ax_.spines["right"].set_visible(False)
 
-    mat = mat.replace('/', '_')
-    mat = mat.replace(':0', '')
-    _easy_save(path, '_{}_change_vs_lr_{}'.format(mat, dir_ix), pdf=True)
+    # mat = mat.replace('/', '_')
+    # mat = mat.replace(':0', '')
+    _easy_save(path, '_{}_change_vs_lr_{}'.format('weight', dir_ix), pdf=True)

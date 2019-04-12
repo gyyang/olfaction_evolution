@@ -113,13 +113,19 @@ class DataGenerator(object):
             outputs_head = outputs_head1
 
         # n_orn = 50
+        # noise = .01
         # for i in range(self.meta_bs):
         #     prototypes = np.random.uniform(0, 1, (n_class_per_batch, n_orn))
-        #     odors = np.random.uniform(0, 1, (self.batch_size, n_orn))
+        #
+        #     labels = np.random.random_integers(0, n_class_per_batch-1, self.batch_size)
+        #     odor_noise = np.random.uniform(0, noise, (self.batch_size, n_orn))
+        #     odor_base = prototypes[labels,:]
+        #     odors = odor_base + odor_noise
+        #
         #     labels = task._get_labels(prototypes, odors, percent_generalization=100)
         #     inputs[i,:,:] = odors
         #     outputs_head1[i, np.arange(labels.size), labels] = 1
-        # outputs_head = outputs_head1
+        outputs_head = outputs_head1
 
         return inputs, outputs_head
 

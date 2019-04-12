@@ -43,7 +43,7 @@ def acc_func(pred, label):
 
 
 class MAML:
-    def __init__(self, x, y, config, test_num_updates=5, training=True):
+    def __init__(self, x, y, config, test_num_updates=2, training=True):
         """MAML model."""
         self.test_num_updates = test_num_updates
 
@@ -110,8 +110,6 @@ class MAML:
 
         lr_dict = {
             'w_output': tf.minimum(0.2, self.update_lr[0]),
-            # 'w_output': self.update_lr[0],
-            # 'b_output': self.update_lr[1]
                           }
         fast_weights = _update_weights(task_lossa, lr_dict, weights)
 
@@ -218,6 +216,7 @@ class MAML:
                 print(v)
             optimizer = tf.train.AdamOptimizer(self.model.config.meta_lr)
             self.gvs = gvs = optimizer.compute_gradients(self.total_loss2[self.model.config.meta_num_updates-1], var_list)
+            # self.gvs = gvs = optimizer.compute_gradients(self.total_loss3, var_list)
             self.metatrain_op = optimizer.apply_gradients(gvs)
 
             training_learning_rate = True
