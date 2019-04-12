@@ -133,7 +133,8 @@ def _evaluate_weight_perturb(values, model, model_dir):
         for value in values:
             temp_loss, temp_acc = 0, 0
             for rep in range(reps):
-                val_model.perturb_weights(value)
+                # val_model.perturb_weights(value)
+                val_model.perturb_weights(value, perturb_var=['model/layer1/kernel:0'])
 
                 # Validation
                 val_loss_tmp, val_acc_tmp = sess.run(
@@ -248,10 +249,19 @@ def plot_kcrole(path, name):
         _easy_save('kc_role', figname)
 
 
+def select_config(config, select_dict):
+    if select_dict is not None:
+        for key, val in select_dict.items():
+            if getattr(config, key) != val:
+                return False
+    return True
+
+
 def evaluate_acrossmodels(select_dict=None):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
-    values = [0, 0.05, 0.1]
+    # values = [0, 0.05, 0.1]
+    values = [0, 0.1, 0.3]
     # n_rep = 10
     n_rep = 1
 
@@ -266,6 +276,9 @@ def evaluate_acrossmodels(select_dict=None):
 
     for model_dir in model_dirs:
         config = tools.load_config(model_dir)
+        if not select_config(config, select_dict):
+            continue
+        
         model = getattr(config, model_var)
         if name == 'weight_perturb':
             losses, accs = evaluate_weight_perturb(
@@ -334,7 +347,7 @@ def plot_acrossmodels():
         l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
         l.set_title(nicename(name))
         figname = ylabel+model_var+name
-        # _easy_save('vary_kc_claws_new', figname)
+        _easy_save('vary_kc_claws_new', figname)
 
 
 if __name__ == '__main__':
@@ -346,7 +359,7 @@ if __name__ == '__main__':
     # evaluate_kcrole(path, 'weight_perturb')
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
-    # evaluate_acrossmodels()
+    evaluate_acrossmodels(select_dict={'ORN_NOISE_STD': 0.1})
     plot_acrossmodels()
 
 
