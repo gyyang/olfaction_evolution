@@ -248,11 +248,12 @@ def plot_kcrole(path, name):
         _easy_save('kc_role', figname)
 
 
-def evaluate_acrossmodels():
+def evaluate_acrossmodels(select_dict=None):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
-    values = [0, 0.05, 0.1, 0.3]
-    n_rep = 10
+    values = [0, 0.05, 0.1]
+    # n_rep = 10
+    n_rep = 1
 
     path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
     model_dirs = tools.get_allmodeldirs(path)
@@ -310,8 +311,8 @@ def plot_acrossmodels():
 
         for i in range(len(values)):
             res_plot = [res_dict[model][i] for model in models]
-            if ylabel == 'val_loss':
-                res_plot = np.log(res_plot)  # TODO: this log?
+            # if ylabel == 'val_loss':
+            #     res_plot = np.log(res_plot)  # TODO: this log?
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
         ax.set_xlabel(nicename(model_var))
         ax.set_ylabel(nicename(ylabel))
@@ -319,32 +320,33 @@ def plot_acrossmodels():
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        if ylabel == 'val_acc':
-            plt.ylim([0, 1])
-            ax.set_yticks([0, 0.5, 1.0])
-            yrange = [0, 1]
-        else:
-            ax.set_yticks([-2, -1, 0, 1])
-            yrange = [-2, 1]
-        ax.set_xticks([3, 7, 15, 30, 50])
-        plt.ylim(yrange)
-        ax.plot([7, 7], yrange, '--', color='gray')
+# =============================================================================
+#         if ylabel == 'val_acc':
+#             ax.set_yticks([0.8, 0.9, 1.0])
+#             yrange = [0.8, 1]
+#         else:
+#             ax.set_yticks([-2, -1, 0, 1])
+#             yrange = [-2.5, -0.5]
+#         ax.set_xticks([3, 7, 15, 30, 50])
+#         plt.ylim(yrange)
+# =============================================================================
+        # ax.plot([7, 7], yrange, '--', color='gray')
         l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
         l.set_title(nicename(name))
         figname = ylabel+model_var+name
-        _easy_save('vary_kc_claws_new', figname)
-    
+        # _easy_save('vary_kc_claws_new', figname)
+
 
 if __name__ == '__main__':
     # evaluate_withnoise()
     # evaluate_plot('orn_dropout_rate')
     # evaluate_plot('orn_noise_std')
     # evaluate_plot('alpha')
-    path = os.path.join(rootpath, 'files', 'kcrole')
-    evaluate_kcrole(path, 'weight_perturb')
-    plot_kcrole(path, 'weight_perturb')
+    # path = os.path.join(rootpath, 'files', 'kcrole')
+    # evaluate_kcrole(path, 'weight_perturb')
+    # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
     # evaluate_acrossmodels()
-    # plot_acrossmodels()
+    plot_acrossmodels()
 
 
