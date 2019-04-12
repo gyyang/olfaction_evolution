@@ -179,16 +179,17 @@ def vary_claw_configs_new(argTest=False):
     # TODO: Need to merge this with vary_claw_configs
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    # config.N_ORN_DUPLICATION = 1
-    # config.skip_orn2pn = True
-    # config.kc_dropout = False
-    config.direct_glo = True
-    config.pn_norm_pre = 'batch_norm'  # not necessary, but for standardization
+    config.max_epoch = 20
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.kc_dropout = False
+    # config.direct_glo = True
+    # config.pn_norm_pre = 'batch_norm'  # not necessary, but for standardization
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 30]
+    hp_ranges['kc_inputs'] = [1, 3, 5, 7, 9, 12, 15, 20, 25, 30]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.1]
     if argTest:
         config.max_epoch = testing_epochs
         hp_ranges['kc_inputs'] = [1, 3, 7, 10, 15, 30]
