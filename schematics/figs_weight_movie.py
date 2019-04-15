@@ -40,6 +40,7 @@ def ani_frame(weight, xlabel, ylabel, title, vlim = .25, interval=30, fps = 30):
     writer = animation.writers['ffmpeg'](fps=fps)
     dpi = 200
     ani.save(title + '.mp4', writer=writer, dpi=dpi)
+    print(title)
     return ani
 
 def w_orn_reshape(w_orn):
@@ -49,10 +50,10 @@ def w_orn_reshape(w_orn):
     w_orn = w_orn[:, ind_sort,:]
     print(w_orn.shape)
     w_orn = np.concatenate((
-        w_orn[0:50:1, ::],
-        w_orn[50:100:2, ::],
-        w_orn[100:1000:20, ::],
-        w_orn[1000:6000:40, ::],
+        w_orn[0:100:1, ::],
+        # w_orn[50:100:2, ::],
+        w_orn[100:1000:10, ::],
+        w_orn[1000:4500:20, ::],
         ), axis=0)
     print(w_orn.shape)
     return w_orn
@@ -62,10 +63,10 @@ def w_glo_reshape(w_glo):
     w_glo = w_glo[:,:,:30]
     print(w_glo.shape)
     w_glo = np.concatenate((
-        w_glo[0:100:2, ::],
-        w_glo[100:500:5, ::],
-        w_glo[500:1000:10, ::],
-        w_glo[1000:3900:20, ::],
+        w_glo[0:50:1, ::],
+        w_glo[50:100:2, ::],
+        w_glo[100:1000:10, ::],
+        w_glo[1000:4500:20, ::],
         ), axis=0)
     print(w_glo.shape)
     return w_glo
@@ -73,15 +74,15 @@ def w_glo_reshape(w_glo):
 mpl.rcParams['font.size'] = 14
 
 
-# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\temp\000000\weights_over_time.pickle'
-# with open(path, 'rb') as handle:
-#     mat = pickle.load(handle)
-# unzipped = list(zip(*mat))
-# w_orn, w_glo = np.stack(unzipped[0],axis=0), np.stack(unzipped[1],axis=0)
-# w_orn = w_orn_reshape(w_orn)
-# ani_frame(w_orn, ylabel = 'From ORNs', xlabel = 'to PNs', title= 'ORN-PN connectivity')
+path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\temp\000000\weights_over_time.pickle'
+with open(path, 'rb') as handle:
+    mat = pickle.load(handle)
+unzipped = list(zip(*mat))
+w_orn, w_glo = np.stack(unzipped[0],axis=0), np.stack(unzipped[1],axis=0)
+w_orn = w_orn_reshape(w_orn)
+ani_frame(w_orn, ylabel = 'From ORNs', xlabel = 'to PNs', title= 'ORN-PN connectivity')
 
-# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\movie_kc\000000\weights_over_time.pickle'
+# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\temp\000000\weights_over_time.pickle'
 # with open(path, 'rb') as handle:
 #     mat = pickle.load(handle)
 # unzipped = list(zip(*mat))

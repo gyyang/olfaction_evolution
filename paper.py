@@ -66,7 +66,7 @@ else:
 
 
 # #peter specific
-TRAIN = False
+TRAIN = True
 ANALYZE = True
 is_test = True
 experiments = ['vary_pn2kc_noise']

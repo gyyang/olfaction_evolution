@@ -28,7 +28,6 @@ def vary_kc_dropout_configs(argTest):
     config.train_kc_bias=False
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    config.initial_pn2kc = .1
     config.save_every_epoch = True
     config.kc_dropout = True
 
@@ -61,7 +60,6 @@ def vary_pn2kc_noise_configs(argTest=False):
     config.train_kc_bias=False
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    config.initial_pn2kc = .1
     config.save_every_epoch = True
 
     # Ranges of hyperparameters to loop over
@@ -69,7 +67,7 @@ def vary_pn2kc_noise_configs(argTest=False):
     hp_ranges['ORN_NOISE_STD'] = [0, .05, .1, .15]
 
     if argTest:
-        hp_ranges['ORN_NOISE_STD'] = [0, .12]
+        hp_ranges['ORN_NOISE_STD'] = [0, .06, .12]
         config.max_epoch = testing_epochs
     return config, hp_ranges
 

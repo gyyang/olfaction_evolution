@@ -326,10 +326,9 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
             elif j == 0:
                 thres = 0.01
             elif dynamic_thres == True:
-                thres = None
+                thres = infer_threshold(w, visualize=visualize, force_thres=thres)
             else:
                 thres = dynamic_thres
-            thres = infer_threshold(w, visualize=visualize, force_thres=thres)
             print('thres=', str(thres))
 
             sparsity = np.count_nonzero(w > thres, axis=0)
