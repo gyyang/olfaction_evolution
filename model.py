@@ -573,7 +573,7 @@ class FullModel(Model):
                 dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
             self.weights['w_output'] = w_output
 
-            if config.output_bias:
+            if 'output_bias' not in dir(config) or config.output_bias:
                 b_output = tf.get_variable(
                     'bias', shape=(n_logits,), dtype=tf.float32,
                     initializer=tf.zeros_initializer())
@@ -675,7 +675,7 @@ class FullModel(Model):
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
             logits = tf.matmul(kc, weights['w_output'])
-            if config.output_bias:
+            if 'output_bias' not in dir(config) or config.output_bias:
                 logits = logits + weights['b_output']
 
             if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
