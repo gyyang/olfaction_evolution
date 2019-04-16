@@ -168,6 +168,7 @@ def load_all_results(rootpath, argLast= True):
     # TODO: exclude models that didn't finish training
     for key, val in res.items():
         res[key] = np.array(val)
+    res['val_logloss'] = np.log(res['val_loss'])
     return res
 
 
@@ -181,7 +182,8 @@ nicename_dict = {
         'or_glo_score': 'OR to ORN GloScore',
         'combined_glo_score': 'OR to PN GloScore',
         'val_acc': 'Accuracy',
-        'val_loss': 'Log Loss',
+        'val_loss': 'Loss',
+        'val_logloss': 'Log Loss',
         'epoch': 'Epoch',
         'kc_dropout': 'KC Dropout Rate',
         'kc_loss_alpha': r'$\alpha$',

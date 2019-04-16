@@ -262,12 +262,12 @@ def evaluate_acrossmodels(select_dict=None):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
     # values = [0, 0.05, 0.1]
-    values = [0, 0.1, 0.2]
+    values = [0, 0.1, 0.2, 0.3]
     # n_rep = 10
     n_rep = 1
 
     # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    path = os.path.join(rootpath, 'files', 'tmp_perturb')
+    path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
     model_dirs = tools.get_allmodeldirs(path)
 
     loss_dict = {}
@@ -308,7 +308,7 @@ def plot_acrossmodels():
     model_var = 'kc_inputs'
 
     # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    path = os.path.join(rootpath, 'files', 'tmp_perturb')
+    path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
     file = os.path.join(path, name + '_' + model_var + '.pkl')
     with open(file, 'rb') as f:
         results = pickle.load(f)
@@ -321,14 +321,14 @@ def plot_acrossmodels():
 
     colors = plt.cm.cool(np.linspace(0, 1, len(values)))
     
-    for ylabel in ['val_acc', 'val_loss']:
+    for ylabel in ['val_acc', 'val_logloss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.25, 0.45, 0.5])
 
         for i in range(len(values)):
             res_plot = [res_dict[model][i] for model in models]
-            if ylabel == 'val_loss':
+            if ylabel == 'val_logloss':
                 res_plot = np.log(res_plot)  # TODO: this log?
             print(res_plot)
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
@@ -365,7 +365,11 @@ if __name__ == '__main__':
     # evaluate_kcrole(path, 'weight_perturb')
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
-    evaluate_acrossmodels(select_dict={'ORN_NOISE_STD': 0})
-    plot_acrossmodels()
+    # evaluate_acrossmodels(select_dict={'ORN_NOISE_STD': 0})
+    # plot_acrossmodels()
+    
+    from standard.analysis import plot_progress
+    path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
+    plot_progress(path, exclude_epoch0=True)
 
 

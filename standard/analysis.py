@@ -92,7 +92,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
                 figname += k + '_' + str(v) + '_'
         _easy_save(save_path, figname)
 
-    _plot_progress('epoch', 'val_loss')
+    _plot_progress('epoch', 'val_logloss')
     _plot_progress('epoch', 'val_acc')
     _plot_progress('epoch', 'glo_score')
     try:
