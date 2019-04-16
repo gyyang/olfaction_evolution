@@ -282,14 +282,12 @@ if 'vary_kc_claws_new' in experiments:
         sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
                         figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
         sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', loop_key='ORN_NOISE_STD',
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
         sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', select_dict={'ORN_NOISE_STD': 0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
 
-        # evaluatewithnoise.evaluate_acrossmodels()
-        # evaluatewithnoise.plot_acrossmodels()
+        evaluatewithnoise.evaluate_acrossmodels(select_dict={'ORN_NOISE_STD': 0})
+        evaluatewithnoise.plot_acrossmodels()
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'

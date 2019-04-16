@@ -130,11 +130,12 @@ def _evaluate_weight_perturb(values, model, model_dir):
         val_loss = list()
         val_acc = list()
         reps = 10
+        perturb_var = None
+        perturb_var = ['model/layer3/kernel:0']
         for value in values:
             temp_loss, temp_acc = 0, 0
             for rep in range(reps):
-                # val_model.perturb_weights(value)
-                val_model.perturb_weights(value, perturb_var=['model/layer1/kernel:0'])
+                val_model.perturb_weights(value, perturb_var=perturb_var)
 
                 # Validation
                 val_loss_tmp, val_acc_tmp = sess.run(
@@ -261,11 +262,12 @@ def evaluate_acrossmodels(select_dict=None):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
     # values = [0, 0.05, 0.1]
-    values = [0, 0.1, 0.3]
+    values = [0, 0.1, 0.2]
     # n_rep = 10
     n_rep = 1
 
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
+    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
+    path = os.path.join(rootpath, 'files', 'tmp_perturb')
     model_dirs = tools.get_allmodeldirs(path)
 
     loss_dict = {}
@@ -305,7 +307,8 @@ def plot_acrossmodels():
     name = 'weight_perturb'
     model_var = 'kc_inputs'
 
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
+    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
+    path = os.path.join(rootpath, 'files', 'tmp_perturb')
     file = os.path.join(path, name + '_' + model_var + '.pkl')
     with open(file, 'rb') as f:
         results = pickle.load(f)
@@ -314,6 +317,7 @@ def plot_acrossmodels():
     loss_dict = results['loss_dict']
     acc_dict = results['acc_dict']
     models = results['models']
+    print(models)
 
     colors = plt.cm.cool(np.linspace(0, 1, len(values)))
     
@@ -324,8 +328,9 @@ def plot_acrossmodels():
 
         for i in range(len(values)):
             res_plot = [res_dict[model][i] for model in models]
-            # if ylabel == 'val_loss':
-            #     res_plot = np.log(res_plot)  # TODO: this log?
+            if ylabel == 'val_loss':
+                res_plot = np.log(res_plot)  # TODO: this log?
+            print(res_plot)
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
         ax.set_xlabel(nicename(model_var))
         ax.set_ylabel(nicename(ylabel))
@@ -350,6 +355,7 @@ def plot_acrossmodels():
         _easy_save('vary_kc_claws_new', figname)
 
 
+
 if __name__ == '__main__':
     # evaluate_withnoise()
     # evaluate_plot('orn_dropout_rate')
@@ -359,7 +365,7 @@ if __name__ == '__main__':
     # evaluate_kcrole(path, 'weight_perturb')
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
-    evaluate_acrossmodels(select_dict={'ORN_NOISE_STD': 0.1})
+    evaluate_acrossmodels(select_dict={'ORN_NOISE_STD': 0})
     plot_acrossmodels()
 
 
