@@ -266,6 +266,9 @@ class FullModel(Model):
             self._build(x, y, training)
             if training:
                 optimizer = tf.train.AdamOptimizer(self.config.lr)
+                # optimizer = tf.train.AdagradOptimizer(self.config.lr)
+                # optimizer = tf.train.GradientDescentOptimizer(self.config.lr)
+                # optimizer = tf.train.RMSPropOptimizer(self.config.lr)
 
                 excludes = list()
                 if 'train_orn2pn' in dir(self.config) and not self.config.train_orn2pn:
@@ -568,11 +571,13 @@ class FullModel(Model):
             w_output = tf.get_variable(
                 'kernel', shape=(input_size, n_logits),
                 dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
-            b_output = tf.get_variable(
-                'bias', shape=(n_logits,), dtype=tf.float32,
-                initializer=tf.zeros_initializer())
             self.weights['w_output'] = w_output
-            self.weights['b_output'] = b_output
+
+            if config.output_bias:
+                b_output = tf.get_variable(
+                    'bias', shape=(n_logits,), dtype=tf.float32,
+                    initializer=tf.zeros_initializer())
+                self.weights['b_output'] = b_output
 
         if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
             with tf.variable_scope('layer3_2', reuse=tf.AUTO_REUSE):
@@ -669,7 +674,9 @@ class FullModel(Model):
         config = self.config
 
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
-            logits = tf.matmul(kc, weights['w_output']) + weights['b_output']
+            logits = tf.matmul(kc, weights['w_output'])
+            if config.output_bias:
+                logits = logits + weights['b_output']
 
             if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
                 logits2= tf.matmul(kc, weights['w_output_head2']) + weights['b_output_head2']
