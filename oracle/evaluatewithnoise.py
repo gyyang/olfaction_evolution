@@ -87,7 +87,38 @@ def _evaluate(name, value, model, model_dir, n_rep=1):
     return val_loss, val_acc
 
 
-def _evaluate_weight_perturb(values, model, model_dir, dataset='val'):
+def perturb_weights(self, scale, perturb_var=None, perturb_dir=None):
+    """Perturb all weights with multiplicative noise.
+
+    Args:
+        scale: float. Perturb weights with
+            random variables ~ U[1-scale, 1+scale]
+        perturb_var: list of variables names to be perturbed
+        perturb_dir: if not None, the direction of weight perturbation.
+            By default, the weights
+    """
+    sess = tf.get_default_session()
+
+
+
+    def perturb(w, d):
+        w = w + d * scale
+        w = w * np.random.uniform(1-scale, 1+scale, size=w.shape)
+        return w
+
+    # record original weight values when perturb for the first time
+    if not hasattr(self, 'origin_weights'):
+        print('Perturbing weights:')
+        for v in perturb_var:
+            print(v)
+        self.origin_weights = [sess.run(v) for v in perturb_var]
+
+    for v_value, v in zip(self.origin_weights, perturb_var):
+        sess.run(v.assign(perturb(v_value)))
+
+
+def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
+                             perturb_mode='multiplicative'):
     if model == 'oracle':
         path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
@@ -120,6 +151,10 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val'):
 
     val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
 
+    # Variables to perturb
+    perturb_var = None
+    perturb_var = ['model/layer3/kernel:0']
+
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
@@ -129,24 +164,43 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val'):
         else:
             val_model.load()
 
+        if dataset == 'val':
+            data_x, data_y = val_x, val_y
+        elif dataset == 'train':
+            rnd_ind = np.random.choice(
+                train_x.shape[0], size=(val_x.shape[0],), replace=False)
+            data_x, data_y = train_x[rnd_ind], train_y[rnd_ind]
+        else:
+            raise ValueError('Wrong dataset type')
+
+        print('Perturbing weights:')
+        for v in perturb_var:
+            print(v)
+
+        if perturb_var is None:
+            perturb_var = tf.trainable_variables()
+        else:
+            perturb_var = [v for v in tf.trainable_variables() if
+                           v.name in perturb_var]
+
+        origin_weights = [sess.run(v) for v in perturb_var]
+
         val_loss = list()
         val_acc = list()
         reps = 10
-        perturb_var = None
-        perturb_var = ['model/layer2/kernel:0']
+
         for value in values:
             temp_loss, temp_acc = 0, 0
             for rep in range(reps):
-                val_model.perturb_weights(value, perturb_var=perturb_var)
 
-                if dataset == 'val':
-                    data_x, data_y = val_x, val_y
-                elif dataset == 'train':
-                    rnd_ind = np.random.choice(
-                        train_x.shape[0], size=(val_x.shape[0],), replace=False)
-                    data_x, data_y = train_x[rnd_ind], train_y[rnd_ind]
+                if perturb_mode == 'multiplicative':
+                    new_var_val = [w*np.random.uniform(1-value, 1+value, size=w.shape)
+                                   for w in origin_weights]
                 else:
-                    raise ValueError('Wrong dataset type')
+                    raise ValueError()
+
+                for j in range(len(perturb_var)):
+                    sess.run(perturb_var[j].assign(new_var_val[j]))
 
                 # Validation
                 val_loss_tmp, val_acc_tmp = sess.run(
