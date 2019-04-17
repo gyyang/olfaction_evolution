@@ -23,7 +23,9 @@ mpl.rcParams['font.size'] = 7
 
 oracle_dir = 'kcrole'
 # Load dataset
-data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
+# TODO: Make sure this works for dataset is different
+data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
+# data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
 train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
 
 
@@ -85,7 +87,7 @@ def _evaluate(name, value, model, model_dir, n_rep=1):
     return val_loss, val_acc
 
 
-def _evaluate_weight_perturb(values, model, model_dir):
+def _evaluate_weight_perturb(values, model, model_dir, dataset='val'):
     if model == 'oracle':
         path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
@@ -131,16 +133,25 @@ def _evaluate_weight_perturb(values, model, model_dir):
         val_acc = list()
         reps = 10
         perturb_var = None
-        perturb_var = ['model/layer3/kernel:0']
+        perturb_var = ['model/layer2/kernel:0']
         for value in values:
             temp_loss, temp_acc = 0, 0
             for rep in range(reps):
                 val_model.perturb_weights(value, perturb_var=perturb_var)
 
+                if dataset == 'val':
+                    data_x, data_y = val_x, val_y
+                elif dataset == 'train':
+                    rnd_ind = np.random.choice(
+                        train_x.shape[0], size=(val_x.shape[0],), replace=False)
+                    data_x, data_y = train_x[rnd_ind], train_y[rnd_ind]
+                else:
+                    raise ValueError('Wrong dataset type')
+
                 # Validation
                 val_loss_tmp, val_acc_tmp = sess.run(
                     [val_model.loss, val_model.acc],
-                    {val_x_ph: val_x, val_y_ph: val_y})
+                    {val_x_ph: data_x, val_y_ph: data_y})
                 temp_loss += val_loss_tmp
                 temp_acc += val_acc_tmp
             temp_loss /= reps
@@ -163,11 +174,11 @@ def evaluate(name, values, model, model_dir, n_rep=1):
     return losses, accs
 
 
-def evaluate_weight_perturb(values, model, model_dir, n_rep=1):
+def evaluate_weight_perturb(values, model, model_dir, n_rep=1, dataset='val'):
     new_values = np.repeat(values, n_rep)
 
     val_loss, val_acc = _evaluate_weight_perturb(
-        new_values, model, model_dir)
+        new_values, model, model_dir, dataset=dataset)
 
     losses = np.array(val_loss).reshape(len(values), n_rep).mean(axis=1)
     accs = np.array(val_acc).reshape(len(values), n_rep).mean(axis=1)
@@ -258,16 +269,16 @@ def select_config(config, select_dict):
     return True
 
 
-def evaluate_acrossmodels(select_dict=None):
+def evaluate_acrossmodels(path, select_dict=None, dataset='val'):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
     # values = [0, 0.05, 0.1]
-    values = [0, 0.1, 0.2, 0.3]
+    values = [0, 0.2, 0.5]
     # n_rep = 10
     n_rep = 1
 
     # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
+    # path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
     model_dirs = tools.get_allmodeldirs(path)
 
     loss_dict = {}
@@ -284,7 +295,7 @@ def evaluate_acrossmodels(select_dict=None):
         model = getattr(config, model_var)
         if name == 'weight_perturb':
             losses, accs = evaluate_weight_perturb(
-                values, model, model_dir, n_rep=n_rep)
+                values, model, model_dir, n_rep=n_rep, dataset=dataset)
         else:
             losses, accs = evaluate(name, values, model, model_dir, n_rep=n_rep)
         loss_dict[model] = losses
@@ -298,18 +309,18 @@ def evaluate_acrossmodels(select_dict=None):
                'values': values,
                'name': name}
 
-    file = os.path.join(path, name + '_' + model_var + '.pkl')
+    file = os.path.join(path, name + '_' + model_var+ '_' + dataset + '.pkl')
     with open(file, 'wb') as f:
         pickle.dump(results, f)
 
 
-def plot_acrossmodels():
+def plot_acrossmodels(path, dataset='val'):
     name = 'weight_perturb'
     model_var = 'kc_inputs'
 
     # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
-    file = os.path.join(path, name + '_' + model_var + '.pkl')
+    # path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
+    file = os.path.join(path, name + '_' + model_var+ '_' + dataset + '.pkl')
     with open(file, 'rb') as f:
         results = pickle.load(f)
 
@@ -321,7 +332,7 @@ def plot_acrossmodels():
 
     colors = plt.cm.cool(np.linspace(0, 1, len(values)))
     
-    for ylabel in ['val_acc', 'val_logloss']:
+    for ylabel in ['val_acc', 'val_loss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
         fig = plt.figure(figsize=(2.5, 2))
         ax = fig.add_axes([0.2, 0.25, 0.45, 0.5])
@@ -351,9 +362,8 @@ def plot_acrossmodels():
         # ax.plot([7, 7], yrange, '--', color='gray')
         l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
         l.set_title(nicename(name))
-        figname = ylabel+model_var+name
-        _easy_save('vary_kc_claws_new', figname)
-
+        figname = ylabel+model_var+name+dataset
+        _easy_save(path.split('/')[-1], figname)
 
 
 if __name__ == '__main__':
@@ -365,11 +375,14 @@ if __name__ == '__main__':
     # evaluate_kcrole(path, 'weight_perturb')
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
-    # evaluate_acrossmodels(select_dict={'ORN_NOISE_STD': 0})
-    # plot_acrossmodels()
+    path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
+    evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0}, dataset='train')
+    plot_acrossmodels(path, dataset='train')
     
-    from standard.analysis import plot_progress
-    path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
-    plot_progress(path, exclude_epoch0=True)
+# =============================================================================
+#     from standard.analysis import plot_progress
+#     path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
+#     plot_progress(path, exclude_epoch0=True)
+# =============================================================================
 
 
