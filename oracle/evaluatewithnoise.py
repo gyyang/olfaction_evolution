@@ -24,8 +24,8 @@ mpl.rcParams['font.size'] = 7
 oracle_dir = 'kcrole'
 # Load dataset
 # TODO: Make sure this works for dataset is different
-data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
-# data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
+# data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
+data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
 train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
 
 
@@ -87,38 +87,29 @@ def _evaluate(name, value, model, model_dir, n_rep=1):
     return val_loss, val_acc
 
 
-def perturb_weights(self, scale, perturb_var=None, perturb_dir=None):
-    """Perturb all weights with multiplicative noise.
+def _select_random_directions(weight):
+    """Select normalized random direction given a weight matrix.
 
     Args:
-        scale: float. Perturb weights with
-            random variables ~ U[1-scale, 1+scale]
-        perturb_var: list of variables names to be perturbed
-        perturb_dir: if not None, the direction of weight perturbation.
-            By default, the weights
+        weight: numpy array (n_pre, n_post). It is important that the matrix
+            is oriented such that the n_pre is the first dimension
+
+    Return:
+        d: a direction in weight space in the same shape as weight
     """
-    sess = tf.get_default_session()
+    d = np.random.randn(*weight.shape)
+    d /= np.linalg.norm(d, axis=0)
+    d *= np.linalg.norm(weight, axis=0)
+    return d
 
 
-
-    def perturb(w, d):
-        w = w + d * scale
-        w = w * np.random.uniform(1-scale, 1+scale, size=w.shape)
-        return w
-
-    # record original weight values when perturb for the first time
-    if not hasattr(self, 'origin_weights'):
-        print('Perturbing weights:')
-        for v in perturb_var:
-            print(v)
-        self.origin_weights = [sess.run(v) for v in perturb_var]
-
-    for v_value, v in zip(self.origin_weights, perturb_var):
-        sess.run(v.assign(perturb(v_value)))
+def select_random_directions(weights):
+    """Select normalized random directions in the weight space."""
+    return [_select_random_directions(w) for w in weights]
 
 
 def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
-                             perturb_mode='multiplicative'):
+                             perturb_mode='feature_norm'):
     if model == 'oracle':
         path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
@@ -184,6 +175,8 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
                            v.name in perturb_var]
 
         origin_weights = [sess.run(v) for v in perturb_var]
+        if perturb_mode == 'feature_norm':
+            directions = select_random_directions(origin_weights)
 
         val_loss = list()
         val_acc = list()
@@ -196,6 +189,9 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
                 if perturb_mode == 'multiplicative':
                     new_var_val = [w*np.random.uniform(1-value, 1+value, size=w.shape)
                                    for w in origin_weights]
+                elif perturb_mode == 'feature_norm':
+                    new_var_val = [w + d*value
+                                   for w, d in zip(origin_weights, directions)]
                 else:
                     raise ValueError()
 
@@ -429,9 +425,10 @@ if __name__ == '__main__':
     # evaluate_kcrole(path, 'weight_perturb')
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
-    path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
-    evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0}, dataset='train')
-    plot_acrossmodels(path, dataset='train')
+    # path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
+    path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
+    evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0}, dataset='val')
+    plot_acrossmodels(path, dataset='val')
     
 # =============================================================================
 #     from standard.analysis import plot_progress
