@@ -178,14 +178,12 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
         if perturb_mode == 'feature_norm':
             directions = select_random_directions(origin_weights)
 
-        val_loss = list()
-        val_acc = list()
-        reps = 10
+        reps = 50
+        val_loss = np.zeros((reps, len(values)))
+        val_acc = np.zeros((reps, len(values)))
 
-        for value in values:
-            temp_loss, temp_acc = 0, 0
-            for rep in range(reps):
-
+        for i_rep, rep in enumerate(range(reps)):
+            for i_value, value in enumerate(values):
                 if perturb_mode == 'multiplicative':
                     new_var_val = [w*np.random.uniform(1-value, 1+value, size=w.shape)
                                    for w in origin_weights]
@@ -202,15 +200,11 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
                 val_loss_tmp, val_acc_tmp = sess.run(
                     [val_model.loss, val_model.acc],
                     {val_x_ph: data_x, val_y_ph: data_y})
-                temp_loss += val_loss_tmp
-                temp_acc += val_acc_tmp
-            temp_loss /= reps
-            temp_acc /= reps
 
-            val_loss.append(temp_loss)
-            val_acc.append(temp_acc)
+                val_loss[i_rep, i_value] = val_loss_tmp
+                val_acc[i_rep, i_value] = val_acc_tmp
 
-    return val_loss, val_acc
+    return val_loss.mean(axis=0), val_acc.mean(axis=0)
 
 
 def evaluate(name, values, model, model_dir, n_rep=1):
