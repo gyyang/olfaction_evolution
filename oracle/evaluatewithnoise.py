@@ -108,9 +108,26 @@ def select_random_directions(weights):
     return [_select_random_directions(w) for w in weights]
 
 
-def evaluate_weight_perturb(values, model, model_dir, n_rep=1, dataset='val',
+def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val',
                              perturb_mode='feature_norm', epoch=None):
-    if model == 'oracle':
+    """Evaluate the performance under weight perturbation.
+
+    Args:
+        values: a list of floats about the strength of perturbations
+        modelname: str, the model name
+        model_dir: str, the model directory
+        n_rep: int, the number of repetition
+        dataset: 'train' or 'val', the dataset for computing loss
+        perturb_mode: 'feature_norm' or 'multiplicative'.
+            If 'feature_norm', uses feature-normalized perturbation
+            If 'multiplicative', uses independent multiplicative perturbation
+        epoch: int or None. If int, analyze the results at specific training epoch
+
+    Return:
+        losses: a np array of losses, the same size as values
+        accs: np array of accuracies, the same size as values
+    """
+    if modelname == 'oracle':
         path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
         path = model_dir
@@ -126,7 +143,7 @@ def evaluate_weight_perturb(values, model, model_dir, n_rep=1, dataset='val',
     val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
     val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
 
-    if model == 'oracle':
+    if modelname == 'oracle':
         # Over-write config
         config.skip_orn2pn = True
         config.skip_pn2kc = True
@@ -154,7 +171,7 @@ def evaluate_weight_perturb(values, model, model_dir, n_rep=1, dataset='val',
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
         sess.run(tf.global_variables_initializer())
-        if model == 'oracle':
+        if modelname == 'oracle':
             oracle.set_oracle_weights()
         else:
             val_model.load()
