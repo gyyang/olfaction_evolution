@@ -108,8 +108,8 @@ def select_random_directions(weights):
     return [_select_random_directions(w) for w in weights]
 
 
-def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
-                             perturb_mode='feature_norm'):
+def evaluate_weight_perturb(values, model, model_dir, n_rep=1, dataset='val',
+                             perturb_mode='feature_norm', epoch=None):
     if model == 'oracle':
         path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
@@ -141,6 +141,10 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
                            training=False)
 
     val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
+    
+    if epoch is not None:
+        val_model.save_path = os.path.join(
+                val_model.save_path, 'epoch', str(epoch).zfill(4))
 
     # Variables to perturb
     perturb_var = None
@@ -175,14 +179,15 @@ def _evaluate_weight_perturb(values, model, model_dir, dataset='val',
                            v.name in perturb_var]
 
         origin_weights = [sess.run(v) for v in perturb_var]
-        if perturb_mode == 'feature_norm':
-            directions = select_random_directions(origin_weights)
 
-        reps = 50
-        val_loss = np.zeros((reps, len(values)))
-        val_acc = np.zeros((reps, len(values)))
 
-        for i_rep, rep in enumerate(range(reps)):
+        val_loss = np.zeros((n_rep, len(values)))
+        val_acc = np.zeros((n_rep, len(values)))
+
+        for i_rep, rep in enumerate(range(n_rep)):
+            if perturb_mode == 'feature_norm':
+                directions = select_random_directions(origin_weights)
+
             for i_value, value in enumerate(values):
                 if perturb_mode == 'multiplicative':
                     new_var_val = [w*np.random.uniform(1-value, 1+value, size=w.shape)
@@ -215,17 +220,6 @@ def evaluate(name, values, model, model_dir, n_rep=1):
                                       n_rep=n_rep)
         losses.append(val_loss)
         accs.append(val_acc)
-    return losses, accs
-
-
-def evaluate_weight_perturb(values, model, model_dir, n_rep=1, dataset='val'):
-    new_values = np.repeat(values, n_rep)
-
-    val_loss, val_acc = _evaluate_weight_perturb(
-        new_values, model, model_dir, dataset=dataset)
-
-    losses = np.array(val_loss).reshape(len(values), n_rep).mean(axis=1)
-    accs = np.array(val_acc).reshape(len(values), n_rep).mean(axis=1)
     return losses, accs
 
 
@@ -313,16 +307,11 @@ def select_config(config, select_dict):
     return True
 
 
-def evaluate_acrossmodels(path, select_dict=None, dataset='val'):
+def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
+                          file=None, n_rep=1, epoch=None):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
-    # values = [0, 0.05, 0.1]
-    values = [0, 0.2, 0.5]
-    # n_rep = 10
-    n_rep = 1
 
-    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    # path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
     model_dirs = tools.get_allmodeldirs(path)
 
     loss_dict = {}
@@ -337,11 +326,10 @@ def evaluate_acrossmodels(path, select_dict=None, dataset='val'):
             continue
         
         model = getattr(config, model_var)
-        if name == 'weight_perturb':
-            losses, accs = evaluate_weight_perturb(
-                values, model, model_dir, n_rep=n_rep, dataset=dataset)
-        else:
-            losses, accs = evaluate(name, values, model, model_dir, n_rep=n_rep)
+        losses, accs = evaluate_weight_perturb(
+            values, model, model_dir, n_rep=n_rep,
+            dataset=dataset, epoch=epoch)
+
         loss_dict[model] = losses
         acc_dict[model] = accs
         models.append(model)
@@ -353,19 +341,28 @@ def evaluate_acrossmodels(path, select_dict=None, dataset='val'):
                'values': values,
                'name': name}
 
-    file = os.path.join(path, name + '_' + model_var+ '_' + dataset + '.pkl')
-    with open(file, 'wb') as f:
+    if file is None:
+        file = os.path.join(path, name + '_' + model_var+ '_' + dataset)
+        if epoch is not None:
+            file = file + 'ep' + str(epoch)
+    else:
+        file = os.path.join(path, file)
+    with open(file+'.pkl', 'wb') as f:
         pickle.dump(results, f)
 
 
-def plot_acrossmodels(path, dataset='val'):
+def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
     name = 'weight_perturb'
     model_var = 'kc_inputs'
 
-    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    # path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
-    file = os.path.join(path, name + '_' + model_var+ '_' + dataset + '.pkl')
-    with open(file, 'rb') as f:
+    if file is None:
+        file = os.path.join(path, name + '_' + model_var+ '_' + dataset)
+        if epoch is not None:
+            file = file + 'ep' + str(epoch)
+    else:
+        file = os.path.join(path, file)
+
+    with open(file + '.pkl', 'rb') as f:
         results = pickle.load(f)
 
     values = results['values']
@@ -405,9 +402,76 @@ def plot_acrossmodels(path, dataset='val'):
 # =============================================================================
         # ax.plot([7, 7], yrange, '--', color='gray')
         l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
-        l.set_title(nicename(name))
+        title_txt = nicename(dataset)
         figname = ylabel+model_var+name+dataset
+        if epoch is not None:
+            title_txt += ' epoch ' + str(epoch)
+            figname = figname + 'ep' + str(epoch)
+            
+        plt.title(title_txt)
         _easy_save(path.split('/')[-1], figname)
+        
+
+def evaluate_onedim_perturb(path, dataset='val', epoch=None):
+    filename = 'onedim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
+                          values=np.linspace(-1, 1, 15),
+                          n_rep=50, dataset=dataset, epoch=epoch,
+                          file=filename)
+
+def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
+    filename = 'onedim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    file = os.path.join(path, filename+'.pkl')
+    with open(file, 'rb') as f:
+        results = pickle.load(f)
+    
+    import matplotlib as mpl
+    colors = mpl.cm.viridis(np.linspace(0, 1, len(results['models'])))
+
+    plt.figure()    
+    for i, name in enumerate(results['models']):
+        y_plot = results['loss_dict'][name]
+        if minzero:
+            y_plot -= y_plot.min()
+        plt.plot(results['values'], y_plot,
+                 label=str(name), color=colors[i])
+    plt.legend(title='K')
+    plt.xlabel('alpha')
+    if minzero:
+        plt.ylabel('loss (min zero)')
+    else:
+        plt.ylabel('loss')
+    title_txt = nicename(dataset)
+    figname = 'onedim_perturb'+dataset
+    if epoch is not None:
+        title_txt += ' epoch ' + str(epoch)
+        figname += 'ep'+str(epoch)
+    plt.title(title_txt)
+    _easy_save(path.split('/')[-1], figname)
+    
+    end_points = list()
+    for i, name in enumerate(results['models']):
+        y_plot = results['loss_dict'][name]
+        if minzero:
+            y_plot -= y_plot.min()
+        end_points.append(y_plot[0])
+        
+    fig = plt.figure(figsize=(2, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    plt.plot(results['models'], end_points, 'o-')
+    plt.xlabel('K')
+    plt.ylabel('Change in loss (sharpness)')
+    title_txt = nicename(dataset)
+    figname = 'onedim_losschange'+dataset
+    if epoch is not None:
+        title_txt += ' epoch ' + str(epoch)
+        figname += 'ep'+str(epoch)
+    plt.title(title_txt)        
+    # _easy_save(path.split('/')[-1], figname)
 
 
 if __name__ == '__main__':
@@ -420,14 +484,14 @@ if __name__ == '__main__':
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
     # path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0}, dataset='val')
-    plot_acrossmodels(path, dataset='val')
+    path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
+    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_dev')
+# =============================================================================
+#     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
+#                           values=[0, 0.2, 0.3],
+#                           n_rep=10, dataset='val', epoch=2)
+#     plot_acrossmodels(path, dataset='val', epoch=2)
+# =============================================================================
+    # evaluate_onedim_perturb(path, dataset='val', epoch=None)
+    plot_onedim_perturb(path, dataset='val', epoch=5, minzero=True)
     
-# =============================================================================
-#     from standard.analysis import plot_progress
-#     path = os.path.join(rootpath, 'files', 'tmp_perturb_nobias')
-#     plot_progress(path, exclude_epoch0=True)
-# =============================================================================
-
-
