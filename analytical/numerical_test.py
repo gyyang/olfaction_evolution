@@ -7,7 +7,7 @@ from collections import defaultdict
 import pickle
 
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar
 from sklearn.linear_model import LinearRegression
 
@@ -359,7 +359,8 @@ def plot_optimal_k():
 
 
 def main_plot_compare():
-    m = 1000
+    m = 50
+    # m = 1000
     if m == 50:
         K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
     elif m == 150:
@@ -381,7 +382,7 @@ def main_plot_compare():
               'perturb_mode': 'additive',
               'perturb_dist': 'gaussian',
               'n_pts': 500,
-              'n_rep': 500,
+              'n_rep': 5,
               'n_pn': m}
     
     values_sim = defaultdict(list)
@@ -515,4 +516,6 @@ def get_optimal_K_simulation():
             pickle.dump(all_values, open('./files/analytical/'+fn+'.pkl', "wb"))
         except FileNotFoundError:
             pickle.dump(all_values, open('../files/analytical/'+fn+'.pkl', "wb"))
-    
+
+if __name__ == '__main__':
+    main_plot_compare()
