@@ -109,7 +109,8 @@ def select_random_directions(weights):
 
 
 def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val',
-                             perturb_mode='feature_norm', epoch=None):
+                            perturb_mode='feature_norm', epoch=None,
+                            multidirection=False):
     """Evaluate the performance under weight perturbation.
 
     Args:
@@ -122,6 +123,8 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
             If 'feature_norm', uses feature-normalized perturbation
             If 'multiplicative', uses independent multiplicative perturbation
         epoch: int or None. If int, analyze the results at specific training epoch
+        multidirection: int or False. if not False, then the perturbation
+            will be along multiple directions, values must be list of (multidirection)-tuple
 
     Return:
         losses: a np array of losses, the same size as values
@@ -203,15 +206,29 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
 
         for i_rep, rep in enumerate(range(n_rep)):
             if perturb_mode == 'feature_norm':
-                directions = select_random_directions(origin_weights)
+                if multidirection:
+                    directions_list = [select_random_directions(origin_weights)
+                                       for _ in range(multidirection)]
+                else:
+                    directions = select_random_directions(origin_weights)
 
             for i_value, value in enumerate(values):
                 if perturb_mode == 'multiplicative':
                     new_var_val = [w*np.random.uniform(1-value, 1+value, size=w.shape)
                                    for w in origin_weights]
                 elif perturb_mode == 'feature_norm':
-                    new_var_val = [w + d*value
-                                   for w, d in zip(origin_weights, directions)]
+                    if multidirection:
+                        new_var_val = list()
+                        for i_w, w in enumerate(origin_weights):
+                            new_w = 0
+                            for v, d_list in zip(value, directions_list):
+                                new_w += d_list[i_w] * v
+                            new_w += w
+                            new_var_val.append(new_w)
+                    else:
+                        new_var_val = list()
+                        for w, d in zip(origin_weights, directions):
+                            new_var_val.append(w+d*value)
                 else:
                     raise ValueError()
 
@@ -325,7 +342,7 @@ def select_config(config, select_dict):
 
 
 def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
-                          file=None, n_rep=1, epoch=None):
+                          file=None, n_rep=1, epoch=None, multidirection=False):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
 
@@ -345,7 +362,7 @@ def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
         model = getattr(config, model_var)
         losses, accs = evaluate_weight_perturb(
             values, model, model_dir, n_rep=n_rep,
-            dataset=dataset, epoch=epoch)
+            dataset=dataset, epoch=epoch, multidirection=multidirection)
 
         loss_dict[model] = losses
         acc_dict[model] = accs
@@ -491,6 +508,57 @@ def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
     # _easy_save(path.split('/')[-1], figname)
 
 
+def evaluate_twodim_perturb(path, dataset='val', epoch=None, K=None):
+    filename = 'twodim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    if K is not None:
+        filename += 'K'+str(K)
+    X, Y = np.meshgrid(np.linspace(-1, 1, 15), np.linspace(-1, 1, 15))
+    values = list(zip(X.flatten(), Y.flatten()))
+    select_dict = {'ORN_NOISE_STD': 0}
+    if K is not None:
+        select_dict['kc_inputs'] = K
+    evaluate_acrossmodels(path, select_dict=select_dict,
+                          values=values,
+                          n_rep=1, dataset=dataset, epoch=epoch,
+                          file=filename, multidirection=2)
+    
+
+def plot_twodim_perturb(path, dataset='val', epoch=None, K=None):
+    filename = 'twodim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    if K is not None:
+        filename += 'K'+str(K)
+    file = os.path.join(path, filename+'.pkl')
+    with open(file, 'rb') as f:
+        results = pickle.load(f)
+    
+    import matplotlib as mpl
+    colors = mpl.cm.viridis(np.linspace(0, 1, len(results['models'])))
+
+    plt.figure()
+    X, Y = zip(*results['values'])
+    name = results['models'][0]
+    Z = results['loss_dict'][name]
+    
+    nx = int(np.sqrt(len(X)))
+    X = np.reshape(X, (nx, nx))
+    Y = np.reshape(Y, (nx, nx))
+    Z = np.reshape(Z, (nx, nx))
+    
+    
+    from mpl_toolkits.mplot3d import Axes3D
+
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    
+    # Plot the surface.
+    surf = ax.plot_surface(X, Y, Z, cmap=mpl.cm.coolwarm,
+                           linewidth=0, antialiased=False)
+    
+
 if __name__ == '__main__':
     # evaluate_withnoise()
     # evaluate_plot('orn_dropout_rate')
@@ -501,7 +569,7 @@ if __name__ == '__main__':
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
     # path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
+    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
     # path = os.path.join(rootpath, 'files', 'vary_kc_claws_dev')
 # =============================================================================
 #     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
@@ -510,5 +578,9 @@ if __name__ == '__main__':
 #     plot_acrossmodels(path, dataset='val', epoch=2)
 # =============================================================================
     # evaluate_onedim_perturb(path, dataset='val', epoch=None)
-    plot_onedim_perturb(path, dataset='val', epoch=5, minzero=True)
+    # plot_onedim_perturb(path, dataset='val', epoch=5, minzero=True)
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+
     
