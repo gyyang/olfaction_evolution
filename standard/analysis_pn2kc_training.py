@@ -303,7 +303,34 @@ def plot_distribution(dir, xrange = 1.0, log = False):
                 _plot_log_distribution(distribution, save_name, cutoff = cutoff,
                                    title=titles[j], xrange= xrange, yrange=5000)
 
-def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
+
+def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False, thres=THRES):
+    print('Analyzing results from: ' + str(d))
+    try:
+        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
+    except KeyError:
+        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
+    w = wglos[epoch]
+
+    w[np.isnan(w)] = 0
+
+    # dynamically infer threshold after training
+    if dynamic_thres is False:
+        thres = thres
+    elif epoch == 0:
+        thres = 0.01
+    elif dynamic_thres == True:
+        thres = None
+    else:
+        thres = dynamic_thres
+    thres = infer_threshold(w, visualize=visualize, force_thres=thres)
+    print('thres=', str(thres))
+
+    sparsity = np.count_nonzero(w > thres, axis=0)
+    return sparsity
+
+
+def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
@@ -311,28 +338,9 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
     titles = ['Before Training', 'After Training']
     yrange = [1, 0.5]
     for i, d in enumerate(dirs):
-        print('Analyzing results from: ' + str(d))
-        try:
-            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
-        except KeyError:
-            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
-        wglo = [wglo[0]] + [wglo[-1]]
-        for j, w in enumerate(wglo):
-            w[np.isnan(w)] = 0
-
-            # dynamically infer threshold after training
-            if dynamic_thres is False:
-                thres = thres
-            elif j == 0:
-                thres = 0.01
-            elif dynamic_thres == True:
-                thres = None
-            else:
-                thres = dynamic_thres
-            thres = infer_threshold(w, visualize=visualize, force_thres=thres)
-            print('thres=', str(thres))
-
-            sparsity = np.count_nonzero(w > thres, axis=0)
+        for j, epoch in enumerate([0, -1]):
+            sparsity = compute_sparsity(d, epoch, dynamic_thres=dynamic_thres,
+                                        visualize=visualize, thres=thres)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
             _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])
 
