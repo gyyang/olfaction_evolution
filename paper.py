@@ -443,3 +443,11 @@ if 'metalearn' in experiments:
         analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
         analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
         analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
+
+if 'vary_n_orn' in experiments:
+    # Train networks with different numbers of ORs
+    path = './files/vary_n_orn'
+    if TRAIN:
+        local_sequential_train(se.vary_n_orn(is_test), path)
+    if ANALYZE:
+        pass

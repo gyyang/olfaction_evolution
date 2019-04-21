@@ -539,6 +539,28 @@ def metalearn(argTest=False):
 
     return config, hp_ranges
 
+
+def vary_n_orn(argTest=False):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 30
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+
+    config.save_every_epoch = True
+
+    hp_ranges = OrderedDict()
+    n_pns = [20, 50, 100, 150, 200]
+    hp_ranges['N_PN'] = n_pns
+    hp_ranges['data_dir'] = ['./datasets/proto/orn'+str(n) for n in n_pns]
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def temp(argTest):
     config = configs.FullConfig()
     config.data_dir = '../datasets/proto/standard'
