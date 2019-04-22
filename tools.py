@@ -177,7 +177,7 @@ nicename_dict = {
         'N_PN': 'Number of PNs',
         'N_KC': 'Number of KCs',
         'N_ORN_DUPLICATION': 'ORNs per type',
-        'kc_inputs': 'Number of KC Claws',
+        'kc_inputs': 'PN inputs per KC',
         'glo_score': 'GloScore',
         'or_glo_score': 'OR to ORN GloScore',
         'combined_glo_score': 'OR to PN GloScore',
