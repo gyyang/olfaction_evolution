@@ -405,12 +405,15 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
     models = results['models']
     print(models)
 
-    colors = plt.cm.cool(np.linspace(0, 1, len(values)))
+    if len(values) > 1:
+        colors = plt.cm.cool(np.linspace(0, 1, len(values)))
+    else:
+        colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
     
     for ylabel in ['val_acc', 'val_loss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
-        fig = plt.figure(figsize=(2.5, 2))
-        ax = fig.add_axes([0.2, 0.25, 0.45, 0.5])
+        fig = plt.figure(figsize=(1.5, 1.5))
+        ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
 
         for i in range(len(values)):
             res_plot = [res_dict[model][i] for model in models]
@@ -424,6 +427,10 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks([3, 7, 15, 30])
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+        
+        plt.locator_params(axis='y', nbins=2)
 # =============================================================================
 #         if ylabel == 'val_acc':
 #             ax.set_yticks([0.8, 0.9, 1.0])
@@ -435,14 +442,18 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
 #         plt.ylim(yrange)
 # =============================================================================
         # ax.plot([7, 7], yrange, '--', color='gray')
-        l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
-        title_txt = nicename(dataset)
+        if len(values) > 1:
+            l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
+        if dataset == 'train':
+            title_txt = nicename(dataset) + ' '
+        else:
+            title_txt = ''
         figname = ylabel+model_var+name+dataset
         if epoch is not None:
-            title_txt += ' epoch ' + str(epoch)
+            title_txt += 'Epoch ' + str(epoch)
             figname = figname + 'ep' + str(epoch)
             
-        plt.title(title_txt)
+        plt.title(title_txt, fontsize=7)
         _easy_save(path.split('/')[-1], figname)
         
 
@@ -569,14 +580,15 @@ if __name__ == '__main__':
     # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
     # path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
-    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
+    path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
     # path = os.path.join(rootpath, 'files', 'vary_kc_claws_dev')
 # =============================================================================
 #     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
-#                           values=[0, 0.2, 0.3],
-#                           n_rep=10, dataset='val', epoch=2)
-#     plot_acrossmodels(path, dataset='val', epoch=2)
+#                           values=[0],
+#                           n_rep=1, dataset='train', epoch=1)
+#     plot_acrossmodels(path, dataset='val', epoch=1)
 # =============================================================================
+    
     # evaluate_onedim_perturb(path, dataset='val', epoch=None)
     # plot_onedim_perturb(path, dataset='val', epoch=5, minzero=True)
 

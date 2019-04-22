@@ -300,7 +300,10 @@ if 'vary_kc_claws_dev' in experiments:
     if TRAIN:
         local_train(se.vary_claw_configs_dev(is_test), path)
     if ANALYZE:
-        pass
+        evaluatewithnoise.evaluate_acrossmodels(
+            path, select_dict={'ORN_NOISE_STD': 0},
+            values=[0], n_rep=1, dataset='val', epoch=1)
+        evaluatewithnoise.plot_acrossmodels(path, dataset='val', epoch=1)
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
