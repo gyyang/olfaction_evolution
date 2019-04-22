@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """Representation stability analysis."""
 
+import os
+import sys
 import time
 from collections import defaultdict
 import pickle
@@ -10,6 +12,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar
 from sklearn.linear_model import LinearRegression
+
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)
+
+from tools import nicename
 
 N_PN = 50
 N_KC = 2500
@@ -160,7 +167,7 @@ def analyze_perturb(n_kc_claw=N_KC_CLAW, n_rep=1, **kwargs):
     return X, Y, Y2, dY
 
 
-def simulation(K, **kwargs):
+def simulation(K, compute_dimension=False, **kwargs):
     X, Y, Y2, dY = analyze_perturb(n_kc_claw=K, **kwargs)
 
     norm_Y = np.linalg.norm(Y, axis=1)
@@ -187,6 +194,12 @@ def simulation(K, **kwargs):
         
     approx = np.sqrt(first_term+second_term-third_term)
     
+    if compute_dimension:
+        Y_centered = Y - Y.mean(axis=0)
+        u, s, vh = np.linalg.svd(Y_centered, full_matrices=False)
+        l = s**2
+        dim = np.sum(l)**2/np.sum(l**2)
+    
     res = dict()
     res['K'] = K
     res['E[norm_dY/norm_Y]'] = np.mean(norm_ratio)
@@ -200,6 +213,8 @@ def simulation(K, **kwargs):
     res['E[S^2]mu_R/mu_S^3'] = second_term
     res['E[SR]/mu_S^2'] = third_term
     res['E[S^2]'] = ES2
+    if compute_dimension:
+        res['dim'] = dim
     return res
 
 
@@ -358,11 +373,12 @@ def plot_optimal_k():
     plt.savefig('../figures/analytical/'+fname+'.png')
 
 
-def main_plot_compare():
+def main_compare():
     m = 50
     # m = 1000
     if m == 50:
-        K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20])
+        # K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20, 25, 30])
+        K_sim = np.arange(1, 31)
     elif m == 150:
         K_sim = np.array([5, 7, 10, 12, 13, 15, 20])
     elif m == 1000:
@@ -382,13 +398,13 @@ def main_plot_compare():
               'perturb_mode': 'additive',
               'perturb_dist': 'gaussian',
               'n_pts': 500,
-              'n_rep': 5,
+              'n_rep': 50,
               'n_pn': m}
     
     values_sim = defaultdict(list)
     values_an = defaultdict(list)
     for K in K_sim:
-        res = simulation(K, **kwargs)
+        res = simulation(K, compute_dimension=False, **kwargs)
         for key, val in res.items():
             values_sim[key].append(val)
     
@@ -397,7 +413,22 @@ def main_plot_compare():
         res = analytical(K, m)
         for key, val in res.items():
             values_an[key].append(val)
-        
+    
+    for v, name in zip([values_sim, values_an], ['sim', 'an']):       
+        file = os.path.join(rootpath, 'files', 'analytical', name+'_m'+str(m)+'.pkl')
+        with open(file, 'wb') as f:
+            pickle.dump(values_sim, f)
+
+
+def main_plot():
+    m = 50
+    values = list()
+    for name in ['sim', 'an']:       
+        file = os.path.join(rootpath, 'files', 'analytical', name+'_m'+str(m)+'.pkl')
+        with open(file, 'rb') as f:
+            values.append(pickle.load(f))
+    
+    values_sim, values_an = values
     values_sim = {key: np.array(val) for key, val in values_sim.items()}
     values_an = {key: np.array(val) for key, val in values_an.items()}
     
@@ -406,20 +437,35 @@ def main_plot_compare():
         values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
         values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
     
-    plt.figure(figsize=(4, 2))
-    keys = ['theta']
-    for i, key in enumerate(keys):
-        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
-    plt.legend()
+    colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
+    fig = plt.figure(figsize=(1.5, 1.5))
+    ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
+    ax.plot(values_sim['K'], values_sim['theta'], 'o-', markersize=2, color=colors[0])
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks([3, 7, 15, 30])
+    plt.xlabel(nicename('kc_inputs'))
+    plt.ylabel('Mean perturbation angle')
+    ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+    plt.locator_params(axis='y', nbins=2)
+    figname = os.path.join(rootpath, 'figures', 'analytical', 'theta_vs_K')
+    plt.savefig(figname+'.pdf', transparent=True)
+    plt.savefig(figname+'.png')
     
+    try:
+        plt.figure(figsize=(4, 2))
+        plt.plot(values_sim['K'], values_sim['dim'], 'o-')
+    except KeyError:
+        pass
     
     plt.figure(figsize=(4, 3))
     keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
     for i, key in enumerate(keys):
         plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
     plt.legend()
-    
-    
+
     def _plot_compare(keys):
         colors = ['red', 'green', 'blue', 'orange']
         fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
@@ -432,8 +478,9 @@ def main_plot_compare():
         plt.legend()
         fname = ''.join(keys)
         fname = fname.replace('/', '')
-        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-        plt.savefig('../figures/analytical/'+fname+'.png')
+        fname = os.path.join(rootpath, 'figures', 'analytical', fname)
+        plt.savefig(fname+'.pdf', transparent=True)
+        plt.savefig(fname+'.png')
         
     def _plot_compare_overlay(keys):
         colors = ['red', 'green', 'blue', 'orange']
@@ -446,9 +493,9 @@ def main_plot_compare():
         plt.legend()
         fname = ''.join(keys)
         fname = fname.replace('/', '')
-        plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-        plt.savefig('../figures/analytical/'+fname+'.png')
-    
+        fname = os.path.join(rootpath, 'figures', 'analytical', fname)
+        plt.savefig(fname+'.pdf', transparent=True)
+        plt.savefig(fname+'.png')
         
     def plot_compare(keys, overlay=True):
         if overlay:
@@ -511,11 +558,10 @@ def get_optimal_K_simulation():
             all_values.append(values_sim)
             print('Time taken : {:0.2f}s'.format(time.time() - start_time))
         
-        fn = 'all_value_m' + str(m)
-        try:
-            pickle.dump(all_values, open('./files/analytical/'+fn+'.pkl', "wb"))
-        except FileNotFoundError:
-            pickle.dump(all_values, open('../files/analytical/'+fn+'.pkl', "wb"))
+        fname = 'all_value_m' + str(m)
+        fname = os.path.join(rootpath, 'files', 'analytical', fname)
+        pickle.dump(all_values, open(fname+'.pkl', "wb"))
 
 if __name__ == '__main__':
-    main_plot_compare()
+    # main_compare()
+    main_plot()

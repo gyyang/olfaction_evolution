@@ -28,6 +28,8 @@ import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
 import standard.analysis_metalearn as analysis_metalearn
 import oracle.evaluatewithnoise as evaluatewithnoise
+import analytical.numerical_test as numerical_test
+import analytical.analyze_simulation_resuts as analyze_simulation_resuts
 import matplotlib as mpl
 
 parser = argparse.ArgumentParser()
@@ -454,3 +456,12 @@ if 'vary_n_orn' in experiments:
         local_sequential_train(se.vary_n_orn(is_test), path)
     if ANALYZE:
         pass
+
+if 'analytical' in experiments:
+    if TRAIN:
+        numerical_test.get_optimal_K_simulation()
+    if ANALYZE:
+        numerical_test.main_compare()
+        numerical_test.main_plot()
+        analyze_simulation_resuts.main()
+

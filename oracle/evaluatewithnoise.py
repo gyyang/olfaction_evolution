@@ -200,7 +200,6 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
 
         origin_weights = [sess.run(v) for v in perturb_var]
 
-
         val_loss = np.zeros((n_rep, len(values)))
         val_acc = np.zeros((n_rep, len(values)))
 
@@ -243,7 +242,7 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
                 val_loss[i_rep, i_value] = val_loss_tmp
                 val_acc[i_rep, i_value] = val_acc_tmp
 
-    return val_loss.mean(axis=0), val_acc.mean(axis=0)
+    return val_loss, val_acc
 
 
 def evaluate(name, values, model, model_dir, n_rep=1):
@@ -416,7 +415,7 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
         ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
 
         for i in range(len(values)):
-            res_plot = [res_dict[model][i] for model in models]
+            res_plot = [res_dict[model][i].mean(axis=0) for model in models]
             if ylabel == 'val_logloss':
                 res_plot = np.log(res_plot)  # TODO: this log?
             print(res_plot)
@@ -462,7 +461,7 @@ def evaluate_onedim_perturb(path, dataset='val', epoch=None):
     if epoch is not None:
         filename += 'ep'+str(epoch)
     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
-                          values=np.linspace(-1, 1, 15),
+                          values=np.linspace(-1, 1, 3),
                           n_rep=50, dataset=dataset, epoch=epoch,
                           file=filename)
 
@@ -479,7 +478,7 @@ def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
 
     plt.figure()    
     for i, name in enumerate(results['models']):
-        y_plot = results['loss_dict'][name]
+        y_plot = np.median(results['loss_dict'][name], axis=0)
         if minzero:
             y_plot -= y_plot.min()
         plt.plot(results['values'], y_plot,
@@ -498,25 +497,43 @@ def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
     plt.title(title_txt)
     _easy_save(path.split('/')[-1], figname)
     
-    end_points = list()
-    for i, name in enumerate(results['models']):
-        y_plot = results['loss_dict'][name]
-        if minzero:
-            y_plot -= y_plot.min()
-        end_points.append(y_plot[0])
+    
+    for ylabel in ['val_acc', 'val_loss']:
+        res_dict = results['acc_dict'] if ylabel == 'val_acc' else results['loss_dict']
+        end_points = list()
+        for i, name in enumerate(results['models']):
+            y_plot = np.median(res_dict[name], axis=0)
+            if minzero:
+                if ylabel == 'val_loss':
+                    y_plot -= y_plot.min()
+                if ylabel == 'val_acc':
+                    y_plot -= y_plot.max()
+            end_points.append(y_plot[0])
+            
+        colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
         
-    fig = plt.figure(figsize=(2, 2))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    plt.plot(results['models'], end_points, 'o-')
-    plt.xlabel('K')
-    plt.ylabel('Change in loss (sharpness)')
-    title_txt = nicename(dataset)
-    figname = 'onedim_losschange'+dataset
-    if epoch is not None:
-        title_txt += ' epoch ' + str(epoch)
-        figname += 'ep'+str(epoch)
-    plt.title(title_txt)        
-    # _easy_save(path.split('/')[-1], figname)
+        fig = plt.figure(figsize=(1.5, 1.5))
+        ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
+        ax.plot(results['models'], end_points, 'o-', markersize=3, color=colors[0])
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks([3, 7, 15, 30])
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')        
+        plt.locator_params(axis='y', nbins=2)                
+        plt.xlabel(nicename('kc_inputs'))
+        plt.ylabel('Change in loss (sharpness)')        
+        if dataset == 'train':
+            title_txt = nicename(dataset) + ' '
+        else:
+            title_txt = ''
+        figname = 'onedim_losschange'+dataset
+        if epoch is not None:
+            title_txt += 'Epoch ' + str(epoch)
+            figname += 'ep'+str(epoch)
+        plt.title(title_txt, fontsize=7)        
+        _easy_save(path.split('/')[-1], figname)
 
 
 def evaluate_twodim_perturb(path, dataset='val', epoch=None, K=None):
@@ -589,8 +606,8 @@ if __name__ == '__main__':
 #     plot_acrossmodels(path, dataset='val', epoch=1)
 # =============================================================================
     
-    # evaluate_onedim_perturb(path, dataset='val', epoch=None)
-    # plot_onedim_perturb(path, dataset='val', epoch=5, minzero=True)
+    # evaluate_onedim_perturb(path, dataset='val', epoch=1)
+    plot_onedim_perturb(path, dataset='val', epoch=1, minzero=True)
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
