@@ -29,7 +29,7 @@ import standard.analysis_multihead as analysis_multihead
 import standard.analysis_metalearn as analysis_metalearn
 import oracle.evaluatewithnoise as evaluatewithnoise
 import analytical.numerical_test as numerical_test
-import analytical.analyze_simulation_resuts as analyze_simulation_resuts
+import analytical.analyze_simulation_results as analyze_simulation_results
 import matplotlib as mpl
 
 parser = argparse.ArgumentParser()
@@ -451,8 +451,10 @@ if 'metalearn' in experiments:
 
 if 'vary_n_orn' in experiments:
     # Train networks with different numbers of ORs
-    path = './files/vary_n_orn'
+    path = './files/vary_n_orn2'
     if TRAIN:
+        import paper_datasets
+        paper_datasets.make_vary_or_datasets()
         local_sequential_train(se.vary_n_orn(is_test), path)
     if ANALYZE:
         pass
@@ -463,5 +465,5 @@ if 'analytical' in experiments:
     if ANALYZE:
         numerical_test.main_compare()
         numerical_test.main_plot()
-        analyze_simulation_resuts.main()
+        analyze_simulation_results.main()
 
