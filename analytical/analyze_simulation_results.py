@@ -121,12 +121,12 @@ def main():
     ax.yaxis.set_ticks_position('left')
     
     fit_txt = 'log K = {:0.3f}log N + {:0.3f}'.format(model.coef_[0], model.intercept_)
-    ax.plot(x_plot, y_plot, label=fit_txt, color=color_blue, zorder=1)
+    ax.plot(x_plot, y_plot, label=fit_txt, color=color_red, zorder=1)
     ax.plot(x_plot, x_plot*0.5, '--', label='log K = 0.5log N', color='gray', zorder=1.5)
     # ax.errorbar(x, y, yerr=[yerr_low, yerr_high], fmt='o', label='simulation', markersize=3)
-    ax.scatter(x, y, marker='o', label='Prediction', s=8, color=color_blue, zorder=2)
+    ax.scatter(x, y, marker='o', label='Prediction', s=8, color=color_red, zorder=2)
     ax.scatter(x_training, y_training, marker='+', label='Training', s=40,
-               color=color_red, zorder=3)
+               color=color_blue, zorder=3)
     ax.set_xlabel('Number of ORs (N)')
     ax.set_ylabel('Optimal K')
     xticks = np.array([50, 100, 200, 500, 1000])
@@ -141,7 +141,8 @@ def main():
     plt.savefig(fname+'.pdf', transparent=True)
     plt.savefig(fname+'.png')
     
-    
+if __name__ == '__main__':
+    main()
 
 
 

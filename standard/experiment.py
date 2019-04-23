@@ -553,7 +553,7 @@ def vary_n_orn(argTest=False):
     config.save_every_epoch = True
 
     hp_ranges = OrderedDict()
-    n_pns = [20, 50, 100, 150, 200]
+    n_pns = [50, 100, 150, 200, 300, 400, 500, 800, 1000] * 5
     hp_ranges['N_PN'] = n_pns
     hp_ranges['data_dir'] = ['./datasets/proto/orn'+str(n) for n in n_pns]
     if argTest:
