@@ -9,7 +9,8 @@ def plot_weights(weight, xlabel, ylabel, title, vlim):
     rect_cb = [0.82, 0.15, 0.02, 0.65]
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_axes(rect)
-    im = ax.imshow(weight, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
+    cmap = tools.get_colormap()
+    im = ax.imshow(weight, cmap=cmap, vmin=0, vmax=vlim,
                    interpolation='none')
     plt.axis('tight')
     plt.title(title)
@@ -21,7 +22,7 @@ def plot_weights(weight, xlabel, ylabel, title, vlim):
     ax.set_xticks([0, weight.shape[1]])
     ax.set_yticks([0, weight.shape[0]])
     ax = fig.add_axes(rect_cb)
-    cb = plt.colorbar(im, cax=ax, ticks=[-vlim, vlim])
+    cb = plt.colorbar(im, cax=ax, ticks=[0, vlim])
     cb.outline.set_linewidth(0.5)
     cb.set_label('Weight', labelpad=-10)
     plt.tick_params(axis='both', which='major')
@@ -60,7 +61,7 @@ def w_orn_reshape(w_orn):
 
 def w_glo_reshape(w_glo):
     w_glo = np.stack(w_glo, axis=0)
-    w_glo = w_glo[:,:,:30]
+    w_glo = w_glo[:,:,30:60]
     print(w_glo.shape)
     w_glo = np.concatenate((
         w_glo[0:50:1, ::],
@@ -74,21 +75,20 @@ def w_glo_reshape(w_glo):
 mpl.rcParams['font.size'] = 14
 
 
-path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\temp\000000\weights_over_time.pickle'
-with open(path, 'rb') as handle:
-    mat = pickle.load(handle)
-unzipped = list(zip(*mat))
-w_orn, w_glo = np.stack(unzipped[0],axis=0), np.stack(unzipped[1],axis=0)
-w_orn = w_orn_reshape(w_orn)
-ani_frame(w_orn, ylabel = 'From ORNs', xlabel = 'to PNs', title= 'ORN-PN connectivity')
-
-# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\temp\000000\weights_over_time.pickle'
+path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files_temp\movies\000000\weights_over_time.pickle'
 # with open(path, 'rb') as handle:
 #     mat = pickle.load(handle)
 # unzipped = list(zip(*mat))
 # w_orn, w_glo = np.stack(unzipped[0],axis=0), np.stack(unzipped[1],axis=0)
-# w_glo = w_glo_reshape(w_glo)
-# ani_frame(w_glo, ylabel = 'From PNs', xlabel = 'to KCs', title= 'PN-KC connectivity', vlim=.5)
+# w_orn = w_orn_reshape(w_orn)
+# ani_frame(w_orn, ylabel = 'From ORNs', xlabel = 'to PNs', title= 'ORN-PN connectivity')
+
+with open(path, 'rb') as handle:
+    mat = pickle.load(handle)
+unzipped = list(zip(*mat))
+w_orn, w_glo = np.stack(unzipped[0],axis=0), np.stack(unzipped[1],axis=0)
+w_glo = w_glo_reshape(w_glo)
+ani_frame(w_glo, ylabel = 'From PNs', xlabel = 'to KCs', title= 'PN-KC connectivity', vlim=.5)
 
 ## MBON WEIGHTS
 # import os

@@ -90,7 +90,9 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extr
     ax = fig.add_axes(rect)
     if vlim == None:
         vlim = np.round(np.max(abs(w_plot)), decimals=1)
-    im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
+
+    cmap = tools.get_colormap()
+    im = ax.imshow(w_plot, cmap=cmap, vmin=0, vmax=vlim,
                    interpolation='none')
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
@@ -106,7 +108,7 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extr
 
     ax.set_yticks([0, w_plot.shape[0]])
     ax = fig.add_axes(rect_cb)
-    cb = plt.colorbar(im, cax=ax, ticks=[-vlim, vlim])
+    cb = plt.colorbar(im, cax=ax, ticks=[0, vlim])
     cb.outline.set_linewidth(0.5)
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
@@ -185,12 +187,12 @@ def plot_activity(rnn_outputs, dir_ix, path):
     sa._easy_save(path, fig_name, pdf=True)
 
 
-path = './files/RNN_nodrop'
+path = './files/RNN'
 # st(rnn(), path, s=0, e=100)
 
 var_name = 'w_rnn'
 dirs = [os.path.join(path, n) for n in os.listdir(path)]
-dir_ix = 1
+dir_ix = 2
 save_path = dirs[dir_ix]
 config = tools.load_config(save_path)
 rnn_outputs = load_activity(save_path)

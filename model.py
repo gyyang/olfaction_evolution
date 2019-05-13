@@ -963,16 +963,21 @@ class FullModel(Model):
 
         def perturb(w):
             w = w * np.random.uniform(1-scale, 1+scale, size=w.shape)
+            # w = w + np.random.uniform(0, scale, size=w.shape)
             return w
 
         # record original weight values when perturb for the first time
+        weights = [self.weights['w_output']]
+        # weights = tf.trainable_variables()
+
         if not hasattr(self, 'origin_weights'):
             print('Perturbing weights:')
-            for v in tf.trainable_variables():
-                print(v)
-            self.origin_weights = [sess.run(v) for v in tf.trainable_variables()]
 
-        for v_value, v in zip(self.origin_weights, tf.trainable_variables()):
+            for v in weights:
+                print(v)
+            self.origin_weights = [sess.run(v) for v in weights]
+
+        for v_value, v in zip(self.origin_weights, weights):
             sess.run(v.assign(perturb(v_value)))
 
 
