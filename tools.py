@@ -206,6 +206,12 @@ def nicename(name):
         return name
 
 
+# colors from https://visme.co/blog/color-combinations/ # 14
+blue = np.array([2,148,165])/255.
+red = np.array([193,64,61])/255.
+gray = np.array([167, 156, 147])/255.
+darkblue = np.array([3, 53, 62])/255.
+
 def _reshape_worn(w_orn, unique_orn, mode='tile'):
     """Reshape w_orn."""
     n_orn, n_pn = w_orn.shape

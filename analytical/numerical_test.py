@@ -16,7 +16,9 @@ from sklearn.linear_model import LinearRegression
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
+import tools
 from tools import nicename
+from oracle.evaluatewithnoise import _select_random_directions
 
 N_PN = 50
 N_KC = 2500
@@ -53,7 +55,7 @@ def normalize(x):
     return (x.T/np.sqrt(np.sum(x**2, axis=1))).T
 
 
-def perturb(M, beta, mode='multiplicative', dist='uniform'):
+def perturb(M, beta, mode='multiplicative', dist='uniform', normalize_w=False, K=None):
     if mode == 'multiplicative':
         if dist == 'uniform':
             P = np.random.uniform(1-beta, 1+beta, size=M.shape)            
@@ -65,6 +67,8 @@ def perturb(M, beta, mode='multiplicative', dist='uniform'):
             P = np.random.uniform(-beta, beta, size=M.shape) * np.max(M)
         else:
             P = np.random.randn(*M.shape) * beta
+        if normalize_w:
+            P /= K
         return M + P * (M > 1e-6)  # only applied on connected weights
     else:
         raise ValueError('Unknown perturb mode')
@@ -101,7 +105,7 @@ def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
                     coding_level=None, same_threshold=True, n_pts=10,
                     perturb_mode='multiplicative', ff_inh=False, normalize_x=True,
                     x_dist='uniform', w_mode='exact', normalize_w=True,
-                    b_mode='percentile', use_relu=True, w_dist='uniform',
+                    b_mode='percentile', activation='relu', w_dist='uniform',
                     perturb_dist='uniform'):
     if x_dist == 'uniform':
         X = np.random.rand(n_pts, n_pn)
@@ -123,16 +127,20 @@ def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
     
     Y = np.dot(X, M)
 
-    M2 = perturb(M, beta=0.01, mode=perturb_mode, dist=perturb_dist)
-
-    Y2 = np.dot(X, M2)
+    if perturb_mode == 'input':
+        dX = np.random.randn(*X.shape)*0.01
+        Y2 = np.dot(X+dX, M)
+    else:
+        M2 = perturb(M, beta=0.01, mode=perturb_mode, dist=perturb_dist,
+                     normalize_w=normalize_w, K=n_kc_claw)
+        Y2 = np.dot(X, M2)
     
     if coding_level is not None:
         if b_mode == 'percentile':
             b = -np.percentile(Y.flatten(), 100-coding_level)
         elif b_mode == 'gaussian':
-            # b = -(np.mean(Y) + np.std(Y)*1)
-            b = - (K/2 + np.sqrt(K/4))
+            b = -(np.mean(Y) + np.std(Y)*1)
+            # b = - (K/2 + np.sqrt(K/4))
             # print(n_kc_claw, np.mean(Y), np.std(Y)**2/K*4)
         else:
             raise NotImplementedError()
@@ -141,9 +149,19 @@ def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
             b = -np.percentile(Y2.flatten(), 100-coding_level)
         Y2 = Y2 + b
         
-        if use_relu:
+        if activation == 'relu':
             Y = relu(Y)
             Y2 = relu(Y2)
+        elif activation == 'tanh':
+            Y = np.tanh(Y)
+            Y2 = np.tanh(Y2)
+        elif activation == 'retanh':
+            Y = np.tanh(relu(Y))
+            Y2 = np.tanh(relu(Y2))
+        elif activation == 'none':
+            pass
+        else:
+            raise NotImplementedError('Unknown activation')
     
     dY = Y2 - Y
     
@@ -168,6 +186,7 @@ def analyze_perturb(n_kc_claw=N_KC_CLAW, n_rep=1, **kwargs):
 
 
 def simulation(K, compute_dimension=False, **kwargs):
+    print('Simulating K = ' + str(K))
     X, Y, Y2, dY = analyze_perturb(n_kc_claw=K, **kwargs)
 
     norm_Y = np.linalg.norm(Y, axis=1)
@@ -194,12 +213,6 @@ def simulation(K, compute_dimension=False, **kwargs):
         
     approx = np.sqrt(first_term+second_term-third_term)
     
-    if compute_dimension:
-        Y_centered = Y - Y.mean(axis=0)
-        u, s, vh = np.linalg.svd(Y_centered, full_matrices=False)
-        l = s**2
-        dim = np.sum(l)**2/np.sum(l**2)
-    
     res = dict()
     res['K'] = K
     res['E[norm_dY/norm_Y]'] = np.mean(norm_ratio)
@@ -213,8 +226,62 @@ def simulation(K, compute_dimension=False, **kwargs):
     res['E[S^2]mu_R/mu_S^3'] = second_term
     res['E[SR]/mu_S^2'] = third_term
     res['E[S^2]'] = ES2
+    
     if compute_dimension:
-        res['dim'] = dim
+        Y_centered = Y - Y.mean(axis=0)
+        # l, _ = np.linalg.eig(np.dot(Y_centered.T, Y_centered))
+        # u, s, vh = np.linalg.svd(Y_centered, full_matrices=False)
+        # l = s**2
+        # dim = np.sum(l)**2/np.sum(l**2)        
+        
+        C = np.dot(Y_centered.T, Y_centered) / Y.shape[0]
+        C2 = C**2
+    
+        diag_mask = np.eye(C.shape[0],dtype=bool)
+            
+        E_C2ij = np.mean(C2[~diag_mask])
+        E_C2ii = np.mean(C2[diag_mask])
+        E_Cii = np.mean(C[diag_mask])
+        
+        dim = n_kc * E_Cii**2 / (E_C2ii + (n_kc-1) * E_C2ij)
+
+        res['E_Cii'] = E_Cii
+        res['E_C2ii'] = E_C2ii
+        res['E_C2ij'] = E_C2ij
+        res['dim'] = m * E_Cii**2 / (E_C2ii + (m-1) * E_C2ij)
+        
+    return res
+
+
+def simulation_perturboutput(K, **kwargs):
+    # Get the representation at the expansion layer
+    X, Y, Y2, dY = analyze_perturb(n_kc_claw=K, **kwargs)
+
+    W = np.random.randn(Y.shape[1], 100)/np.sqrt(Y.shape[1])
+    W2 = _select_random_directions(W)*0.01
+    # W2 = np.random.randn(Y.shape[1], 100)/np.sqrt(Y.shape[1])*0.1
+    
+    Y_original = Y.copy()
+    Y = np.dot(Y_original, W)
+    dY = np.dot(Y_original, W2)
+    Y2 = Y+dY
+
+    norm_Y = np.linalg.norm(Y, axis=1)
+    norm_Y2 = np.linalg.norm(Y2, axis=1)
+    norm_dY = np.linalg.norm(dY, axis=1)
+    
+    cos_theta = (np.sum(Y * Y2, axis=1) / (norm_Y * norm_Y2))
+    cos_theta = cos_theta[(norm_Y * norm_Y2)>0]
+    theta = np.arccos(cos_theta)/np.pi*180
+    
+    norm_ratio = norm_dY/norm_Y
+    norm_ratio = norm_ratio[norm_Y>0]
+
+    res = dict()
+    res['K'] = K
+    res['E[norm_dY/norm_Y]'] = np.mean(norm_ratio)
+    res['theta'] = np.mean(theta)
+
     return res
 
 
@@ -333,16 +400,31 @@ def analytical(K, m=50):
     return res
 
 
-def get_optimal_k(m):
+def _get_optimal_k(m):
     res = minimize_scalar(lambda k: analytical(k, m)['Three-term approx'],
                           bounds=(1, m), method='bounded')
     optimal_k = res.x
     return optimal_k
 
 
+def get_optimal_k():
+    ms = np.logspace(1, 4, 100, dtype=int)
+    optimal_Ks = list()
+    for m in ms:
+        k = _get_optimal_k(m)
+        print('m ', m, ' k ', k)
+        optimal_Ks.append(k)
+        
+    res = {'ms': ms, 'optimal_Ks': optimal_Ks}
+    
+    file = os.path.join(rootpath, 'files', 'analytical', 'optimal_k_two_term')
+    with open(file+'.pkl', 'wb') as f:
+        pickle.dump(res, f)
+
+    return ms, optimal_Ks
+
 def plot_optimal_k():
-    ms = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
-    optimal_ks = [get_optimal_k(m) for m in ms]
+    # ms = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
     
     x = np.log(ms)
     y = np.log(optimal_ks)
@@ -369,20 +451,27 @@ def plot_optimal_k():
     ax.set_yticklabels([str(t) for t in yticks])
     ax.legend()
     fname = 'optimal_k'
-    plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
-    plt.savefig('../figures/analytical/'+fname+'.png')
+    # plt.savefig('../figures/analytical/'+fname+'.pdf', transparent=True)
+    # plt.savefig('../figures/analytical/'+fname+'.png')
 
 
-def main_compare():
-    m = 50
-    # m = 1000
+def main_compare(perturb='pn2kc', m=50, activation='relu',
+                 compute_dimension=False):
     if m == 50:
         # K_sim = np.array([1, 3, 5, 7, 10, 12, 15, 20, 25, 30])
         K_sim = np.arange(1, 31)
     elif m == 150:
         K_sim = np.array([5, 7, 10, 12, 13, 15, 20])
     elif m == 1000:
-        K_sim = np.array([60, 65, 70, 75])
+        K_sim = np.logspace(0.8, 2.5, 20, dtype='int')
+    
+    if not compute_dimension:
+        n_rep = 50
+        n_pts = 500
+    else:
+        n_rep = 1
+        n_pts = 5000
+        
     kwargs = {'x_dist': 'gaussian',
               'normalize_x': False,
               'w_mode': 'exact',
@@ -392,55 +481,263 @@ def main_compare():
               'b_mode': 'percentile',
               # 'b_mode': 'gaussian',
               'coding_level': 10,
-              'use_relu': True,
-              # 'use_relu': False,
+              # 'coding_level': 70,
+              'activation': activation,
+              # 'activation': False,
               # 'perturb_mode': 'multiplicative',
               'perturb_mode': 'additive',
               'perturb_dist': 'gaussian',
-              'n_pts': 500,
-              'n_rep': 50,
+              'n_pts': n_pts,
+              # 'n_rep': 50,
+              'n_rep': n_rep,
               'n_pn': m}
     
-    values_sim = defaultdict(list)
-    values_an = defaultdict(list)
-    for K in K_sim:
-        res = simulation(K, compute_dimension=False, **kwargs)
-        for key, val in res.items():
-            values_sim[key].append(val)
-    
-    K_an = np.linspace(K_sim.min(), K_sim.max(), 100)
-    for K in K_an:
-        res = analytical(K, m)
-        for key, val in res.items():
-            values_an[key].append(val)
-    
-    for v, name in zip([values_sim, values_an], ['sim', 'an']):       
-        file = os.path.join(rootpath, 'files', 'analytical', name+'_m'+str(m)+'.pkl')
-        with open(file, 'wb') as f:
+    if perturb == 'pn2kc':
+        values_sim = defaultdict(list)
+        values_an = defaultdict(list)
+        for K in K_sim:
+            res = simulation(K, compute_dimension=compute_dimension, **kwargs)
+            for key, val in res.items():
+                values_sim[key].append(val)
+        
+        K_an = np.linspace(K_sim.min(), K_sim.max(), 100)
+        for K in K_an:
+            res = analytical(K, m)
+            for key, val in res.items():
+                values_an[key].append(val)
+        
+        for v, name in zip([values_sim, values_an], ['sim', 'an']):       
+            file = os.path.join(rootpath, 'files', 'analytical', name+'_m'+str(m))
+            if activation != 'relu':
+                file = file + activation
+            if compute_dimension:
+                file = file + '_dim'
+            with open(file+'.pkl', 'wb') as f:
+                pickle.dump(v, f)
+
+    elif perturb == 'output':        
+        values_sim = defaultdict(list)
+        for K in K_sim:
+            res = simulation_perturboutput(K, **kwargs)
+            for key, val in res.items():
+                values_sim[key].append(val)
+        
+        file = os.path.join(rootpath, 'files', 'analytical', 'sim_perturboutput_m'+str(m))
+        if activation != 'relu':
+            file = file + activation
+        with open(file+'.pkl', 'wb') as f:
             pickle.dump(values_sim, f)
+    
+    elif perturb == 'input':
+        kwargs['perturb_mode'] = 'input'
+        values_sim = defaultdict(list)
+        for K in K_sim:
+            res = simulation(K, **kwargs)
+            for key, val in res.items():
+                values_sim[key].append(val)
+        
+        file = os.path.join(rootpath, 'files', 'analytical', 'sim_perturbinput_m'+str(m))
+        if activation != 'relu':
+            file = file + activation
+        with open(file+'.pkl', 'wb') as f:
+            pickle.dump(values_sim, f)
+            
+            
+def _plot_compare(values, keys):
+    colors = ['red', 'green', 'blue', 'orange']
+    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
+    for i, key in enumerate(keys):
+        axes[0].plot(values['sim']['K'], values['sim'][key], 'o-', label=key, color=colors[i])
+    for i, key in enumerate(keys):
+        axes[1].plot(values['an']['K'], values['an'][key], label=key, color=colors[i])
+    axes[1].set_xlabel('K')
+    plt.tight_layout()
+    plt.legend()
+    fname = ''.join(keys)
+    fname = fname.replace('/', '')
+    fname = os.path.join(rootpath, 'figures', 'analytical', fname)
+    plt.savefig(fname+'.pdf', transparent=True)
+    plt.savefig(fname+'.png')
+
+    
+def _plot_compare_overlay(values, keys):
+    colors = ['red', 'green', 'blue', 'orange']
+    fig = plt.figure(figsize=(4, 3))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    for i, key in enumerate(keys):
+        ax.plot(values['sim']['K'], values['sim'][key], 'o', label=key, color=colors[i], alpha=0.5)
+        ax.plot(values['an']['K'], values['an'][key], color=colors[i])
+    ax.set_xlabel('K')
+    plt.legend()
+    fname = ''.join(keys)
+    fname = fname.replace('/', '')
+    fname = os.path.join(rootpath, 'figures', 'analytical', fname)
+    plt.savefig(fname+'.pdf', transparent=True)
+    plt.savefig(fname+'.png')
+
+    
+def plot_compare(values, keys, overlay=True):
+    if overlay:
+        _plot_compare_overlay(values, keys)
+    else:
+        _plot_compare(values, keys)
 
 
-def main_plot():
-    m = 50
+def main_plot(m=50, logK=False, activation='relu'):
     values = list()
     for name in ['sim', 'an']:       
-        file = os.path.join(rootpath, 'files', 'analytical', name+'_m'+str(m)+'.pkl')
-        with open(file, 'rb') as f:
+        file = os.path.join(rootpath, 'files', 'analytical', name+'_m'+str(m))
+        if activation != 'relu':
+            file = file + activation
+        with open(file+'.pkl', 'rb') as f:
             values.append(pickle.load(f))
     
     values_sim, values_an = values
     values_sim = {key: np.array(val) for key, val in values_sim.items()}
     values_an = {key: np.array(val) for key, val in values_an.items()}
     
-    keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]']
+    values_sim['E[S^2]/mu_S^2'] = values_sim['E[S^2]']/(values_sim['mu_S'])**2
+    values_an['E[S^2]/mu_S^2'] = values_an['E[S^2]']/(values_an['mu_S'])**2
+    
+    keys = ['mu_R', 'mu_S', 'Three-term approx', 'mu_R/mu_S', 'E[S^2]',
+            'E[S^2]/mu_S^2']
     for key in keys:
         values_sim[key+'_scaled'] = values_sim[key]/values_sim[key].max()
         values_an[key+'_scaled'] = values_an[key]/values_an[key].max()
     
-    colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
+    if m == 50:
+        xticks = [3, 7, 15, 30]
+    elif m == 1000:
+        xticks = [10, 100, 1000]
+    else:
+        xticks = []
+        
+    if logK:
+        xplot = np.log(values_sim['K'])
+    else:
+        xplot = values_sim['K']
+    
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
-    ax.plot(values_sim['K'], values_sim['theta'], 'o-', markersize=2, color=colors[0])
+    ax.plot(xplot, values_sim['theta'], 'o-', markersize=2, color=tools.red)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    if logK:
+        ax.xaxis.set_ticks([np.log(xtick) for xtick in xticks])
+        ax.xaxis.set_ticklabels([str(xtick) for xtick in xticks])
+    else:
+        ax.xaxis.set_ticks(xticks)
+    plt.xlabel('K')
+    plt.ylabel('Mean perturbation angle')
+    if m == 50:
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+    plt.locator_params(axis='y', nbins=2)
+    plt.title('N = ' + str(m), fontsize=7)
+    figname = os.path.join(rootpath, 'figures', 'analytical',
+                           'theta_vs_K_N'+str(m))
+    if activation != 'relu':
+        figname = figname + activation
+    plt.savefig(figname+'.pdf', transparent=True)
+    plt.savefig(figname+'.png')
+
+    try:
+        fig = plt.figure(figsize=(1.5, 1.5))
+        ax = fig.add_axes((0.35, 0.3, 0.6, 0.55))
+        ax.plot(values_sim['K'], values_sim['dim'], 'o-', markersize=2, color=tools.red)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks(xticks)
+        plt.xlabel(nicename('kc_inputs'))
+        plt.ylabel('Dimensionality')
+        if m == 50:
+            ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+        plt.locator_params(axis='y', nbins=2)
+        figname = os.path.join(rootpath, 'figures', 'analytical', 'dim_vs_K')
+        plt.savefig(figname+'.pdf', transparent=True)
+        plt.savefig(figname+'.png')
+    except KeyError:
+        pass
+    
+    values = {'sim': values_sim, 'an': values_an}
+    
+    plt.figure(figsize=(4, 3))
+    keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
+    for i, key in enumerate(keys):
+        plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
+    plt.legend()
+        
+    plot_compare(values, ['Three-term approx_scaled'], overlay=True)
+        
+    plot_compare(values, ['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'],
+                 overlay=False)
+    
+    # plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
+    plot_compare(values, ['mu_S_scaled'], overlay=True)
+    
+    plot_compare(values, ['mu_R_scaled'], overlay=True)
+    
+    plot_compare(values, ['mu_R/mu_S_scaled'], overlay=True)
+    
+    plot_compare(values, ['E[S^2]_scaled'], overlay=True)
+    
+    plot_compare(values, ['E[S^2]/mu_S^2_scaled'], overlay=True)
+    
+
+def compare_dim_plot(m=50, logK=False, activation='relu'):
+    """Compare dimensionality relevant variables with weight perturbation."""
+    values = list()
+    for name in ['', '_dim']:       
+        file = os.path.join(rootpath, 'files', 'analytical', 'sim_m'+str(m))
+        if activation != 'relu':
+            file = file + activation
+        file += name
+        with open(file+'.pkl', 'rb') as f:
+            value = pickle.load(f)
+        
+        value = {key: np.array(val) for key, val in value.items()}
+        values.append(value)
+    
+    values, values_dim = values
+        
+    if m == 50:
+        xticks = [3, 7, 15, 30]
+    elif m == 1000:
+        xticks = [10, 100, 1000]
+    else:
+        xticks = []
+        
+    if logK:
+        xplot = np.log(values_dim['K'])
+    else:
+        xplot = values_dim['K']
+    
+    keys = ['dim', 'E_Cii', 'E_C2ij', 'E_C2ii']
+    for i, key in enumerate(keys):
+        plt.figure(figsize=(4, 3))
+        plt.plot(values_dim['K'], values_dim[key], 'o-', label=key)
+        plt.legend()
+        
+    keys = ['E[S^2]']
+    for i, key in enumerate(keys):
+        plt.figure(figsize=(4, 3))
+        plt.plot(values['K'], values[key], 'o-', label=key)
+        plt.legend()
+    
+    
+def main_plot_perturb(perturb):
+    m = 50
+    file = os.path.join(rootpath, 'files', 'analytical',
+                        'sim_perturb'+perturb+'_m'+str(m))
+    with open(file+'.pkl', 'rb') as f:
+        values_sim = pickle.load(f)
+
+    fig = plt.figure(figsize=(1.5, 1.5))
+    ax = fig.add_axes((0.35, 0.3, 0.6, 0.55))
+    ax.plot(values_sim['K'], values_sim['theta'], 'o-', markersize=2, color=tools.red)
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
@@ -450,72 +747,18 @@ def main_plot():
     plt.ylabel('Mean perturbation angle')
     ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
     plt.locator_params(axis='y', nbins=2)
-    figname = os.path.join(rootpath, 'figures', 'analytical', 'theta_vs_K')
+    figname = os.path.join(rootpath, 'figures', 'analytical', 'theta_vs_K_perturb'+perturb)
+    plt.title('Perturbing '+perturb, fontsize=7)
     plt.savefig(figname+'.pdf', transparent=True)
     plt.savefig(figname+'.png')
-    
-    try:
-        plt.figure(figsize=(4, 2))
-        plt.plot(values_sim['K'], values_sim['dim'], 'o-')
-    except KeyError:
-        pass
+
     
     plt.figure(figsize=(4, 3))
-    keys = ['E[norm_dY/norm_Y]', 'Three-term approx']
+    keys = ['E[norm_dY/norm_Y]']
     for i, key in enumerate(keys):
         plt.plot(values_sim['K'], values_sim[key], 'o-', label=key)
     plt.legend()
 
-    def _plot_compare(keys):
-        colors = ['red', 'green', 'blue', 'orange']
-        fig, axes = plt.subplots(2, 1, sharex=True, figsize=(4, 4))
-        for i, key in enumerate(keys):
-            axes[0].plot(values_sim['K'], values_sim[key], 'o-', label=key, color=colors[i])
-        for i, key in enumerate(keys):
-            axes[1].plot(values_an['K'], values_an[key], label=key, color=colors[i])
-        axes[1].set_xlabel('K')
-        plt.tight_layout()
-        plt.legend()
-        fname = ''.join(keys)
-        fname = fname.replace('/', '')
-        fname = os.path.join(rootpath, 'figures', 'analytical', fname)
-        plt.savefig(fname+'.pdf', transparent=True)
-        plt.savefig(fname+'.png')
-        
-    def _plot_compare_overlay(keys):
-        colors = ['red', 'green', 'blue', 'orange']
-        fig = plt.figure(figsize=(4, 3))
-        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-        for i, key in enumerate(keys):
-            ax.plot(values_sim['K'], values_sim[key], 'o', label=key, color=colors[i], alpha=0.5)
-            ax.plot(values_an['K'], values_an[key], color=colors[i])
-        ax.set_xlabel('K')
-        plt.legend()
-        fname = ''.join(keys)
-        fname = fname.replace('/', '')
-        fname = os.path.join(rootpath, 'figures', 'analytical', fname)
-        plt.savefig(fname+'.pdf', transparent=True)
-        plt.savefig(fname+'.png')
-        
-    def plot_compare(keys, overlay=True):
-        if overlay:
-            _plot_compare_overlay(keys)
-        else:
-            _plot_compare(keys)
-        
-    plot_compare(['Three-term approx_scaled'], overlay=True)
-        
-    plot_compare(['mu_R/mu_S', 'E[S^2]mu_R/mu_S^3', 'E[SR]/mu_S^2'], overlay=False)
-    
-    # plot_compare(['mu_R_scaled', 'mu_S_scaled'], overlay=True)
-    plot_compare(['mu_S_scaled'], overlay=True)
-    
-    plot_compare(['mu_R_scaled'], overlay=True)
-    
-    plot_compare(['mu_R/mu_S_scaled'], overlay=True)
-    
-    plot_compare(['E[S^2]_scaled'], overlay=True)
-    
 
 def get_optimal_K_simulation():
     def guess_optimal_K(m):
@@ -537,8 +780,7 @@ def get_optimal_K_simulation():
                   'b_mode': 'percentile',
                   # 'b_mode': 'gaussian',
                   'coding_level': 10,
-                  'use_relu': True,
-                  # 'use_relu': False,
+                  'activation': 'relu',
                   # 'perturb_mode': 'multiplicative',
                   'perturb_mode': 'additive',
                   'perturb_dist': 'gaussian',
@@ -561,7 +803,296 @@ def get_optimal_K_simulation():
         fname = 'all_value_m' + str(m)
         fname = os.path.join(rootpath, 'files', 'analytical', fname)
         pickle.dump(all_values, open(fname+'.pkl', "wb"))
+        
+
+def get_optimal_K_simulation_participationratio():
+    def guess_optimal_K(m):
+        """Get the optimal K based on latest estimation."""
+        return np.exp(0.568)*(m**0.2)
+    
+    ms = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
+    # ms = [50, 1000]
+    for m in ms:
+    # for m in [75]:
+        K_mid = int(guess_optimal_K(m))
+        min_K = max(1, int(K_mid)-10)
+        K_sim = np.arange(min_K, int(K_mid)+10)
+        
+        kwargs = {'x_dist': 'gaussian',
+                  'normalize_x': False,
+                  'w_mode': 'exact',
+                  # 'w_mode': 'bernoulli',
+                  'w_dist': 'gaussian',
+                  'normalize_w': False,
+                  'b_mode': 'percentile',
+                  # 'b_mode': 'gaussian',
+                  'coding_level': 10,
+                  'activation': 'relu',
+                  # 'perturb_mode': 'multiplicative',
+                  'perturb_mode': 'additive',
+                  'perturb_dist': 'gaussian',
+                  'n_pts': 5000,
+                  'n_rep': 1,
+                  'n_kc': 2500,
+                  'n_pn': m}
+        
+        n_rep = 10
+        all_values = list()
+        for i in range(n_rep):
+            print('m: ' + str(m) + ' rep ' + str(i))
+            start_time = time.time()
+            values_sim = defaultdict(list)
+            for K in K_sim:
+                res = simulation(K, compute_dimension=True, **kwargs)
+                for key, val in res.items():
+                    values_sim[key].append(val)
+            all_values.append(values_sim)
+            print('Time taken : {:0.2f}s'.format(time.time() - start_time))
+        
+        fname = 'all_value_withdim_m' + str(m)
+        fname = os.path.join(rootpath, 'files', 'analytical', fname)
+        pickle.dump(all_values, open(fname+'.pkl', "wb"))
+
+
+def compute_optimalloss_onestepgradient():
+    import time
+    m = 50
+    for K in [1, 3, 7, 10, 20]:
+        start = time.time()
+        kwargs = {'x_dist': 'gaussian',
+                      'normalize_x': False,
+                      'w_mode': 'exact',
+                      # 'w_mode': 'bernoulli',
+                      'w_dist': 'gaussian',
+                      'normalize_w': False,
+                      'b_mode': 'percentile',
+                      # 'b_mode': 'gaussian',
+                      'coding_level': 10,
+                      'activation': 'relu',
+                      'ff_inh': False,
+                      # 'perturb_mode': 'multiplicative',
+                      'perturb_mode': 'additive',
+                      'perturb_dist': 'gaussian',
+                      'n_pts': 5000,
+                      'n_rep': 1,
+                      'n_kc': 2500,
+                      'n_pn': m}
+
+        X, Y, Y2, dY = analyze_perturb(n_kc_claw=K, **kwargs)
+        
+        print('K', K)
+        
+        # compute_expected_loss_singley(Y)
+        # e_L = compute_expected_loss_doubley(Y)
+        # e_L = compute_expected_loss_multiy(Y)
+        
+        n_pts, n_dim = Y.shape
+        
+        P = 100
+        
+        # print('time1', time.time() - start)
+        
+        # z = (np.random.rand(n_pts)>0.5)*1.0
+        z = (np.mod(np.arange(n_pts), P) == 0)*1.0  # only one 1 every P
+        
+        s = np.sum(Y, axis=1)
+        s2 = s**2
+        
+        e_s = np.mean(s)
+        e_s2 = np.mean(s2)
+        e_z = np.mean(z)
+        e_z2 = np.mean(z**2)
+        
+        # beta = Es*Ez/Es^2
+        beta = e_s*e_z/e_s2
+        
+# =============================================================================
+#         d = beta*s-z
+#         
+#         print('beta', beta)
+#         
+#         C0 = e_z2 - e_s**2*e_z**2 / e_s2
+#         print('C0', C0)
+#         
+#         Q = np.dot(Y, Y.T)
+#         dd = np.outer(d, d)  # (n_pts, n_pts)
+#         ddQ = Q * dd
+#         offdiag_mask = ~np.eye(ddQ.shape[0],dtype=bool)
+# 
+#         # C1 = E[d_i d_j Q_ij]
+#         # C1_tmp1 E[d_i^2 Q_ii]
+#         C1_tmp1 = np.mean(d**2 * Q.diagonal()) / P
+#         # C1_tmp2 E[d_i d_j Q_ij | i \neq j]
+#         C1_tmp2 = np.mean(ddQ[offdiag_mask]) * (P-1)/P
+#         print('C1_tmp1', C1_tmp1)
+#         print('C1_tmp2', C1_tmp2)
+#         
+#         C1 = C1_tmp1 + C1_tmp2
+#         print('C1', C1)
+#         
+#         # C2 = E[d_j d_k q_ji q_ki]
+#         # C2_tmp1 E[d_i^2 q_ii^2]
+#         C2_tmp1 = np.mean(d**2 * Q.diagonal()**2) / P**2
+#         # C2_tmp2 E[d_i d_j q_ij q_ii]
+#         C2_tmp2 = np.mean((ddQ*Q.diagonal())[offdiag_mask]) *2*(P-1)/P**2
+#         
+#         C2 = C2_tmp1 + C2_tmp2
+#         
+#         
+#         print('C2_tmp1', C2_tmp1)
+#         print('C2_tmp2', C2_tmp2)
+#         
+#         print('C2', C2)
+#         print('C1^2/C2', C1**2/C2)
+#         
+#         e_L = C0 - C1**2/C2
+#         
+#         alpha = C1 / C2
+#         print('alpha', alpha)
+#            
+#         print('Loss', e_L)
+# =============================================================================
+# =============================================================================
+#         old_beta = beta
+# 
+#         def get_orig_L(beta):
+#             w = np.ones(n_dim) * beta
+#             d = np.dot(Y, w) - z
+#             L = np.mean(d**2)
+#             return L
+#         
+#         res = minimize_scalar(get_orig_L, bounds=(1e-7, 1), method='bounded', 
+#                               options={'xatol': 1e-5})
+#         print('old beta', old_beta)
+#         print(res)
+#         L = res.fun
+#         beta = res.x
+# =============================================================================
+        
+        d = beta * s - z
+        # Q = np.dot(Y, Y.T)
+        
+        A = np.zeros(n_pts)
+        for i in range(n_pts):
+            ind = np.mod(np.arange(i, i+P), n_pts)
+            A[i] = np.mean(d[ind] * np.dot(Y[ind, :], Y[i]))
+        
+        B = d
+        
+        
+        alpha = np.mean(A*B) / np.mean(A**2)  # this is correct
+        
+        # print('alpha prediction', alpha)
+        
+        w = np.ones(n_dim) * beta
+        d = np.dot(Y, w) - z
+        L = np.mean(d**2)
+        dY = (d*Y.T).T  # d * Y
+        
+        print('Direct estimate loss0', L)  # this should match C0
+        
+        def get_L(alpha):
+            def _get_L(indices):
+                delta_w = -alpha * np.mean(dY[indices, :], axis=0)
+                d = np.dot(Y[indices, :], w+delta_w) - z[indices]
+                L = np.mean(d**2)
+                return L
+            
+            L = 0
+            for i in np.arange(n_pts - P):
+                ind = np.arange(i, i+P)
+                L_tmp = _get_L(ind)
+                L += L_tmp
+            L /= n_pts - P
+            return L
+        
+# =============================================================================
+#         res = minimize_scalar(get_L, bounds=(1e-7, 100), method='bounded', 
+#                               options={'xatol': 1e-5})
+#         # L = get_L(alpha/2)
+#         L = res.fun
+#         print(res)
+# =============================================================================
+        
+        # L = get_L(alpha)
+        
+        L = np.mean((B-alpha*A)**2)
+        
+        print('Direct estimate loss', L)  # this should match e_L
+        
+        print('')
+       
 
 if __name__ == '__main__':
-    # main_compare()
-    main_plot()
+    # main_compare(m=50, activation='relu', compute_dimension=False)
+    main_plot(m=50, logK=False, activation='relu')
+    # main_compare(perturb='pn2kc')
+    # main_plot_perturboutput()
+    # main_compare(perturb='input')
+    # main_plot_perturb(perturb='input')
+    # get_optimal_K_simulation_participationratio()
+    # get_optimal_k()
+    # compare_dim_plot()
+    
+# =============================================================================
+#     m  = 50
+#     logK = False
+#     activation = 'relu'
+#     
+#     values = list()
+#     for name in ['', '_dim']:       
+#         file = os.path.join(rootpath, 'files', 'analytical', 'sim_m'+str(m))
+#         if activation != 'relu':
+#             file = file + activation
+#         file += name
+#         with open(file+'.pkl', 'rb') as f:
+#             value = pickle.load(f)
+#         
+#         value = {key: np.array(val) for key, val in value.items()}
+#         values.append(value)
+#     
+#     values, values_dim = values
+#         
+#     if m == 50:
+#         xticks = [3, 7, 15, 30]
+#     elif m == 1000:
+#         xticks = [10, 100, 1000]
+#     else:
+#         xticks = []
+#         
+#     if logK:
+#         xplot = np.log(values_dim['K'])
+#     else:
+#         xplot = values_dim['K']
+#     
+#     keys = ['dim', 'E_Cii', 'E_C2ij', 'E_C2ii']
+#     for i, key in enumerate(keys):
+#         plt.figure(figsize=(4, 3))
+#         plt.plot(values_dim['K'], values_dim[key], 'o-', label=key)
+#         plt.legend()
+#         
+#     keys = ['E[S^2]']
+#     for i, key in enumerate(keys):
+#         plt.figure(figsize=(4, 3))
+#         plt.plot(values['K'], values[key], 'o-', label=key)
+#         plt.legend()
+#         
+#     plt.figure()
+#     plt.scatter(values_dim['K']/values_dim['dim'], values_dim['E_C2ij'])
+#         
+#     plt.figure()
+#     plt.scatter(values['E[S^2]']/1e9, np.sqrt(values_dim['E_C2ij']))
+#     
+#     plt.figure()
+#     plt.scatter(values['E[S^2]']/values['mu_S']**2, 1/np.sqrt(values_dim['dim']))
+#     
+#     plt.figure()
+#     plt.plot(values['K'], values['E[S^2]']/values['mu_S']**2)
+# 
+#     plt.figure()
+#     plt.plot(values_dim['K'], 1/np.sqrt(values_dim['dim']))
+#     
+#     plt.figure()
+#     plt.plot(values['K'], values['mu_R']/values['mu_S'])
+# 
+# =============================================================================

@@ -110,7 +110,7 @@ def select_random_directions(weights):
 
 def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val',
                             perturb_mode='feature_norm', epoch=None,
-                            multidirection=False):
+                            multidirection=False, perturb_output=True):
     """Evaluate the performance under weight perturbation.
 
     Args:
@@ -168,7 +168,10 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
 
     # Variables to perturb
     perturb_var = None
-    perturb_var = ['model/layer3/kernel:0']
+    if perturb_output:
+        perturb_var = ['model/layer3/kernel:0']
+    else:
+        perturb_var = ['model/layer2/kernel:0']
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
@@ -380,6 +383,7 @@ def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
             file = file + 'ep' + str(epoch)
     else:
         file = os.path.join(path, file)
+
     with open(file+'.pkl', 'wb') as f:
         pickle.dump(results, f)
 
@@ -394,7 +398,7 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
             file = file + 'ep' + str(epoch)
     else:
         file = os.path.join(path, file)
-
+    
     with open(file + '.pkl', 'rb') as f:
         results = pickle.load(f)
 
@@ -402,12 +406,11 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
     loss_dict = results['loss_dict']
     acc_dict = results['acc_dict']
     models = results['models']
-    print(models)
 
     if len(values) > 1:
         colors = plt.cm.cool(np.linspace(0, 1, len(values)))
     else:
-        colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
+        colors = [tools.blue]
     
     for ylabel in ['val_acc', 'val_loss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
@@ -418,7 +421,6 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
             res_plot = [res_dict[model][i].mean(axis=0) for model in models]
             if ylabel == 'val_logloss':
                 res_plot = np.log(res_plot)  # TODO: this log?
-            print(res_plot)
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
         ax.set_xlabel(nicename(model_var))
         ax.set_ylabel(nicename(ylabel))
@@ -509,26 +511,24 @@ def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
                 if ylabel == 'val_acc':
                     y_plot -= y_plot.max()
             end_points.append(y_plot[0])
-            
-        colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
-        
+                    
         fig = plt.figure(figsize=(1.5, 1.5))
         ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
-        ax.plot(results['models'], end_points, 'o-', markersize=3, color=colors[0])
+        ax.plot(results['models'], end_points, 'o-', markersize=3, color=tools.blue)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
         ax.xaxis.set_ticks([3, 7, 15, 30])
-        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')        
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')        
         plt.locator_params(axis='y', nbins=2)                
         plt.xlabel(nicename('kc_inputs'))
-        plt.ylabel('Change in loss (sharpness)')        
+        plt.ylabel('Change in '+nicename(ylabel)+'\n(sharpness)')        
         if dataset == 'train':
             title_txt = nicename(dataset) + ' '
         else:
             title_txt = ''
-        figname = 'onedim_losschange'+dataset
+        figname = 'onedim_'+ylabel+'change'+dataset
         if epoch is not None:
             title_txt += 'Epoch ' + str(epoch)
             figname += 'ep'+str(epoch)
@@ -602,11 +602,11 @@ if __name__ == '__main__':
 # =============================================================================
 #     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
 #                           values=[0],
-#                           n_rep=1, dataset='train', epoch=1)
-#     plot_acrossmodels(path, dataset='val', epoch=1)
+#                           n_rep=1, dataset='val', epoch=1)
 # =============================================================================
+    # plot_acrossmodels(path, dataset='val', epoch=1)
     
-    # evaluate_onedim_perturb(path, dataset='val', epoch=1)
+    evaluate_onedim_perturb(path, dataset='val', epoch=1)
     plot_onedim_perturb(path, dataset='val', epoch=1, minzero=True)
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"

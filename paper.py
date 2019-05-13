@@ -459,6 +459,16 @@ if 'vary_n_orn' in experiments:
     if ANALYZE:
         pass
 
+if 'frequent_eval' in experiments:
+    path = './files/frequent_eval'
+    if TRAIN:
+        local_train(se.vary_claw_configs_frequentevaluation(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), )
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), )
+
 if 'analytical' in experiments:
     if TRAIN:
         numerical_test.get_optimal_K_simulation()
