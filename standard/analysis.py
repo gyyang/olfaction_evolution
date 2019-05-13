@@ -290,7 +290,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                      'initial_pn2kc':[.05, .1, 1],
                      'N_ORN_DUPLICATION':[1,3,10,30,100,300],
                      'n_trueclass':[100, 200, 500, 1000],
-                     'val_loss':[],
+                     # 'val_loss':[],
                      'glo_dimensionality':[5, 50, 200, 1000]}
 
     plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}

@@ -46,7 +46,10 @@ def train(config, reload=False, save_everytrainloss=False):
     train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
 
     batch_size = config.batch_size
-    n_batch = train_x.shape[0] // batch_size
+    if 'n_batch' in dir(config):
+        n_batch = config.n_batch
+    else:
+        n_batch = train_x.shape[0] // batch_size
 
     if config.model == 'full':
         CurrentModel = FullModel
