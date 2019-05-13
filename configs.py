@@ -203,6 +203,7 @@ class FullConfig(BaseConfig):
         self.extra_layer_neurons = 200
 
         # Output connections
+        self.output_bias = True
         # If True, set the output weights to be the oracle (pattern-matching)
         self.set_oracle = False
         # Scale the oracle weights

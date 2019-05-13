@@ -41,15 +41,17 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
         plt.show()
     # plt.close()
 
-def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, legends= None):
+
+def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
+                  legends=None, exclude_epoch0=False):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
 
-
     log = tools.load_all_results(save_path, argLast=False)
     if select_dict is not None:
         log = dict_methods.filter(log, select_dict)
+
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)
         rect = [0.3, 0.3, 0.65, 0.5]
@@ -58,12 +60,13 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
 
         ys = log[ykey]
         xs = log[xkey]
-        if linestyles is not None:
-            for x, y, s in zip(xs, ys, linestyles):
-                ax.plot(x, y, alpha= alpha, linestyle=s)
-        else:
-            for x, y in zip(xs, ys):
-                ax.plot(x, y, alpha= alpha)
+
+        lstyles = ['-'] * len(xs) if linestyles is None else linestyles
+
+        for x, y, s in zip(xs, ys, lstyles):
+            if exclude_epoch0:
+                x, y = x[1:], y[1:]
+            ax.plot(x, y, alpha=alpha, linestyle=s)
 
         if legends is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
@@ -89,7 +92,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
                 figname += k + '_' + str(v) + '_'
         _easy_save(save_path, figname)
 
-    _plot_progress('epoch', 'val_loss')
+    _plot_progress('epoch', 'val_logloss')
     _plot_progress('epoch', 'val_acc')
     _plot_progress('epoch', 'glo_score')
     try:

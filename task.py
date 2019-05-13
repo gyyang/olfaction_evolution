@@ -384,8 +384,8 @@ def _generate_proto_threshold(
         if not has_special_odors:
             # labels 0-4 will be good, 5-9 will be bad, others will be neutral
             print('no special odors')
-            good_ix = 5
-            bad_ix = 10
+            # good_ix, bad_ix = 5, 10
+            good_ix, bad_ix = 50, 100
             train_labels_valence = np.zeros_like(train_labels)
             train_labels_valence[(0<=train_labels)*(train_labels< good_ix)] = 1
             train_labels_valence[(good_ix <= train_labels) * (train_labels < bad_ix)] = 2

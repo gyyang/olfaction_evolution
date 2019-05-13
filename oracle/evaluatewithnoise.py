@@ -23,6 +23,8 @@ mpl.rcParams['font.size'] = 7
 
 oracle_dir = 'kcrole'
 # Load dataset
+# TODO: Make sure this works for dataset is different
+# data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
 data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
 train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
 
@@ -85,8 +87,50 @@ def _evaluate(name, value, model, model_dir, n_rep=1):
     return val_loss, val_acc
 
 
-def _evaluate_weight_perturb(values, model, model_dir):
-    if model == 'oracle':
+def _select_random_directions(weight):
+    """Select normalized random direction given a weight matrix.
+
+    Args:
+        weight: numpy array (n_pre, n_post). It is important that the matrix
+            is oriented such that the n_pre is the first dimension
+
+    Return:
+        d: a direction in weight space in the same shape as weight
+    """
+    d = np.random.randn(*weight.shape)
+    d /= np.linalg.norm(d, axis=0)
+    d *= np.linalg.norm(weight, axis=0)
+    return d
+
+
+def select_random_directions(weights):
+    """Select normalized random directions in the weight space."""
+    return [_select_random_directions(w) for w in weights]
+
+
+def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val',
+                            perturb_mode='feature_norm', epoch=None,
+                            multidirection=False):
+    """Evaluate the performance under weight perturbation.
+
+    Args:
+        values: a list of floats about the strength of perturbations
+        modelname: str, the model name
+        model_dir: str, the model directory
+        n_rep: int, the number of repetition
+        dataset: 'train' or 'val', the dataset for computing loss
+        perturb_mode: 'feature_norm' or 'multiplicative'.
+            If 'feature_norm', uses feature-normalized perturbation
+            If 'multiplicative', uses independent multiplicative perturbation
+        epoch: int or None. If int, analyze the results at specific training epoch
+        multidirection: int or False. if not False, then the perturbation
+            will be along multiple directions, values must be list of (multidirection)-tuple
+
+    Return:
+        losses: a np array of losses, the same size as values
+        accs: np array of accuracies, the same size as values
+    """
+    if modelname == 'oracle':
         path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
         path = model_dir
@@ -102,7 +146,7 @@ def _evaluate_weight_perturb(values, model, model_dir):
     val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
     val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
 
-    if model == 'oracle':
+    if modelname == 'oracle':
         # Over-write config
         config.skip_orn2pn = True
         config.skip_pn2kc = True
@@ -117,35 +161,86 @@ def _evaluate_weight_perturb(values, model, model_dir):
                            training=False)
 
     val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
+    
+    if epoch is not None:
+        val_model.save_path = os.path.join(
+                val_model.save_path, 'epoch', str(epoch).zfill(4))
+
+    # Variables to perturb
+    perturb_var = None
+    perturb_var = ['model/layer3/kernel:0']
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
     with tf.Session(config=tf_config) as sess:
         sess.run(tf.global_variables_initializer())
-        if model == 'oracle':
+        if modelname == 'oracle':
             oracle.set_oracle_weights()
         else:
             val_model.load()
 
-        val_loss = list()
-        val_acc = list()
-        reps = 10
-        for value in values:
-            temp_loss, temp_acc = 0, 0
-            for rep in range(reps):
-                val_model.perturb_weights(value)
+        if dataset == 'val':
+            data_x, data_y = val_x, val_y
+        elif dataset == 'train':
+            rnd_ind = np.random.choice(
+                train_x.shape[0], size=(val_x.shape[0],), replace=False)
+            data_x, data_y = train_x[rnd_ind], train_y[rnd_ind]
+        else:
+            raise ValueError('Wrong dataset type')
+
+        print('Perturbing weights:')
+        for v in perturb_var:
+            print(v)
+
+        if perturb_var is None:
+            perturb_var = tf.trainable_variables()
+        else:
+            perturb_var = [v for v in tf.trainable_variables() if
+                           v.name in perturb_var]
+
+        origin_weights = [sess.run(v) for v in perturb_var]
+
+        val_loss = np.zeros((n_rep, len(values)))
+        val_acc = np.zeros((n_rep, len(values)))
+
+        for i_rep, rep in enumerate(range(n_rep)):
+            if perturb_mode == 'feature_norm':
+                if multidirection:
+                    directions_list = [select_random_directions(origin_weights)
+                                       for _ in range(multidirection)]
+                else:
+                    directions = select_random_directions(origin_weights)
+
+            for i_value, value in enumerate(values):
+                if perturb_mode == 'multiplicative':
+                    new_var_val = [w*np.random.uniform(1-value, 1+value, size=w.shape)
+                                   for w in origin_weights]
+                elif perturb_mode == 'feature_norm':
+                    if multidirection:
+                        new_var_val = list()
+                        for i_w, w in enumerate(origin_weights):
+                            new_w = 0
+                            for v, d_list in zip(value, directions_list):
+                                new_w += d_list[i_w] * v
+                            new_w += w
+                            new_var_val.append(new_w)
+                    else:
+                        new_var_val = list()
+                        for w, d in zip(origin_weights, directions):
+                            new_var_val.append(w+d*value)
+                else:
+                    raise ValueError()
+
+                for j in range(len(perturb_var)):
+                    sess.run(perturb_var[j].assign(new_var_val[j]))
 
                 # Validation
                 val_loss_tmp, val_acc_tmp = sess.run(
                     [val_model.loss, val_model.acc],
-                    {val_x_ph: val_x, val_y_ph: val_y})
-                temp_loss += val_loss_tmp
-                temp_acc += val_acc_tmp
-            temp_loss /= reps
-            temp_acc /= reps
+                    {val_x_ph: data_x, val_y_ph: data_y})
 
-            val_loss.append(temp_loss)
-            val_acc.append(temp_acc)
+                val_loss[i_rep, i_value] = val_loss_tmp
+                val_acc[i_rep, i_value] = val_acc_tmp
 
     return val_loss, val_acc
 
@@ -158,17 +253,6 @@ def evaluate(name, values, model, model_dir, n_rep=1):
                                       n_rep=n_rep)
         losses.append(val_loss)
         accs.append(val_acc)
-    return losses, accs
-
-
-def evaluate_weight_perturb(values, model, model_dir, n_rep=1):
-    new_values = np.repeat(values, n_rep)
-
-    val_loss, val_acc = _evaluate_weight_perturb(
-        new_values, model, model_dir)
-
-    losses = np.array(val_loss).reshape(len(values), n_rep).mean(axis=1)
-    accs = np.array(val_acc).reshape(len(values), n_rep).mean(axis=1)
     return losses, accs
 
 
@@ -248,13 +332,19 @@ def plot_kcrole(path, name):
         _easy_save('kc_role', figname)
 
 
-def evaluate_acrossmodels():
+def select_config(config, select_dict):
+    if select_dict is not None:
+        for key, val in select_dict.items():
+            if getattr(config, key) != val:
+                return False
+    return True
+
+
+def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
+                          file=None, n_rep=1, epoch=None, multidirection=False):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
-    values = [0, 0.05, 0.1, 0.3]
-    n_rep = 10
 
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
     model_dirs = tools.get_allmodeldirs(path)
 
     loss_dict = {}
@@ -265,12 +355,14 @@ def evaluate_acrossmodels():
 
     for model_dir in model_dirs:
         config = tools.load_config(model_dir)
+        if not select_config(config, select_dict):
+            continue
+        
         model = getattr(config, model_var)
-        if name == 'weight_perturb':
-            losses, accs = evaluate_weight_perturb(
-                values, model, model_dir, n_rep=n_rep)
-        else:
-            losses, accs = evaluate(name, values, model, model_dir, n_rep=n_rep)
+        losses, accs = evaluate_weight_perturb(
+            values, model, model_dir, n_rep=n_rep,
+            dataset=dataset, epoch=epoch, multidirection=multidirection)
+
         loss_dict[model] = losses
         acc_dict[model] = accs
         models.append(model)
@@ -282,36 +374,51 @@ def evaluate_acrossmodels():
                'values': values,
                'name': name}
 
-    file = os.path.join(path, name + '_' + model_var + '.pkl')
-    with open(file, 'wb') as f:
+    if file is None:
+        file = os.path.join(path, name + '_' + model_var+ '_' + dataset)
+        if epoch is not None:
+            file = file + 'ep' + str(epoch)
+    else:
+        file = os.path.join(path, file)
+    with open(file+'.pkl', 'wb') as f:
         pickle.dump(results, f)
 
 
-def plot_acrossmodels():
+def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
     name = 'weight_perturb'
     model_var = 'kc_inputs'
 
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_new')
-    file = os.path.join(path, name + '_' + model_var + '.pkl')
-    with open(file, 'rb') as f:
+    if file is None:
+        file = os.path.join(path, name + '_' + model_var+ '_' + dataset)
+        if epoch is not None:
+            file = file + 'ep' + str(epoch)
+    else:
+        file = os.path.join(path, file)
+
+    with open(file + '.pkl', 'rb') as f:
         results = pickle.load(f)
 
     values = results['values']
     loss_dict = results['loss_dict']
     acc_dict = results['acc_dict']
     models = results['models']
+    print(models)
 
-    colors = plt.cm.cool(np.linspace(0, 1, len(values)))
+    if len(values) > 1:
+        colors = plt.cm.cool(np.linspace(0, 1, len(values)))
+    else:
+        colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
     
     for ylabel in ['val_acc', 'val_loss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
-        fig = plt.figure(figsize=(2.5, 2))
-        ax = fig.add_axes([0.2, 0.25, 0.45, 0.5])
+        fig = plt.figure(figsize=(1.5, 1.5))
+        ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
 
         for i in range(len(values)):
-            res_plot = [res_dict[model][i] for model in models]
-            if ylabel == 'val_loss':
+            res_plot = [res_dict[model][i].mean(axis=0) for model in models]
+            if ylabel == 'val_logloss':
                 res_plot = np.log(res_plot)  # TODO: this log?
+            print(res_plot)
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
         ax.set_xlabel(nicename(model_var))
         ax.set_ylabel(nicename(ylabel))
@@ -319,20 +426,165 @@ def plot_acrossmodels():
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        if ylabel == 'val_acc':
-            plt.ylim([0, 1])
-            ax.set_yticks([0, 0.5, 1.0])
-            yrange = [0, 1]
+        ax.xaxis.set_ticks([3, 7, 15, 30])
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+        
+        plt.locator_params(axis='y', nbins=2)
+# =============================================================================
+#         if ylabel == 'val_acc':
+#             ax.set_yticks([0.8, 0.9, 1.0])
+#             yrange = [0.8, 1]
+#         else:
+#             ax.set_yticks([-2, -1, 0, 1])
+#             yrange = [-2.5, -0.5]
+#         ax.set_xticks([3, 7, 15, 30, 50])
+#         plt.ylim(yrange)
+# =============================================================================
+        # ax.plot([7, 7], yrange, '--', color='gray')
+        if len(values) > 1:
+            l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
+        if dataset == 'train':
+            title_txt = nicename(dataset) + ' '
         else:
-            ax.set_yticks([-2, -1, 0, 1])
-            yrange = [-2, 1]
-        ax.set_xticks([3, 7, 15, 30, 50])
-        plt.ylim(yrange)
-        ax.plot([7, 7], yrange, '--', color='gray')
-        l = ax.legend(loc=2, bbox_to_anchor=(1.0, 1.0), frameon = False)
-        l.set_title(nicename(name))
-        figname = ylabel+model_var+name
-        _easy_save('vary_kc_claws_new', figname)
+            title_txt = ''
+        figname = ylabel+model_var+name+dataset
+        if epoch is not None:
+            title_txt += 'Epoch ' + str(epoch)
+            figname = figname + 'ep' + str(epoch)
+            
+        plt.title(title_txt, fontsize=7)
+        _easy_save(path.split('/')[-1], figname)
+        
+
+def evaluate_onedim_perturb(path, dataset='val', epoch=None):
+    filename = 'onedim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
+                          values=np.linspace(-1, 1, 3),
+                          n_rep=50, dataset=dataset, epoch=epoch,
+                          file=filename)
+
+def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
+    filename = 'onedim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    file = os.path.join(path, filename+'.pkl')
+    with open(file, 'rb') as f:
+        results = pickle.load(f)
+    
+    import matplotlib as mpl
+    colors = mpl.cm.viridis(np.linspace(0, 1, len(results['models'])))
+
+    plt.figure()    
+    for i, name in enumerate(results['models']):
+        y_plot = np.median(results['loss_dict'][name], axis=0)
+        if minzero:
+            y_plot -= y_plot.min()
+        plt.plot(results['values'], y_plot,
+                 label=str(name), color=colors[i])
+    plt.legend(title='K')
+    plt.xlabel('alpha')
+    if minzero:
+        plt.ylabel('loss (min zero)')
+    else:
+        plt.ylabel('loss')
+    title_txt = nicename(dataset)
+    figname = 'onedim_perturb'+dataset
+    if epoch is not None:
+        title_txt += ' epoch ' + str(epoch)
+        figname += 'ep'+str(epoch)
+    plt.title(title_txt)
+    _easy_save(path.split('/')[-1], figname)
+    
+    
+    for ylabel in ['val_acc', 'val_loss']:
+        res_dict = results['acc_dict'] if ylabel == 'val_acc' else results['loss_dict']
+        end_points = list()
+        for i, name in enumerate(results['models']):
+            y_plot = np.median(res_dict[name], axis=0)
+            if minzero:
+                if ylabel == 'val_loss':
+                    y_plot -= y_plot.min()
+                if ylabel == 'val_acc':
+                    y_plot -= y_plot.max()
+            end_points.append(y_plot[0])
+            
+        colors = np.array([[85,122,149]])/255.  # https://visme.co/blog/website-color-schemes/ #7
+        
+        fig = plt.figure(figsize=(1.5, 1.5))
+        ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
+        ax.plot(results['models'], end_points, 'o-', markersize=3, color=colors[0])
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks([3, 7, 15, 30])
+        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')        
+        plt.locator_params(axis='y', nbins=2)                
+        plt.xlabel(nicename('kc_inputs'))
+        plt.ylabel('Change in loss (sharpness)')        
+        if dataset == 'train':
+            title_txt = nicename(dataset) + ' '
+        else:
+            title_txt = ''
+        figname = 'onedim_losschange'+dataset
+        if epoch is not None:
+            title_txt += 'Epoch ' + str(epoch)
+            figname += 'ep'+str(epoch)
+        plt.title(title_txt, fontsize=7)        
+        _easy_save(path.split('/')[-1], figname)
+
+
+def evaluate_twodim_perturb(path, dataset='val', epoch=None, K=None):
+    filename = 'twodim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    if K is not None:
+        filename += 'K'+str(K)
+    X, Y = np.meshgrid(np.linspace(-1, 1, 15), np.linspace(-1, 1, 15))
+    values = list(zip(X.flatten(), Y.flatten()))
+    select_dict = {'ORN_NOISE_STD': 0}
+    if K is not None:
+        select_dict['kc_inputs'] = K
+    evaluate_acrossmodels(path, select_dict=select_dict,
+                          values=values,
+                          n_rep=1, dataset=dataset, epoch=epoch,
+                          file=filename, multidirection=2)
+    
+
+def plot_twodim_perturb(path, dataset='val', epoch=None, K=None):
+    filename = 'twodim_perturb'+dataset
+    if epoch is not None:
+        filename += 'ep'+str(epoch)
+    if K is not None:
+        filename += 'K'+str(K)
+    file = os.path.join(path, filename+'.pkl')
+    with open(file, 'rb') as f:
+        results = pickle.load(f)
+    
+    import matplotlib as mpl
+    colors = mpl.cm.viridis(np.linspace(0, 1, len(results['models'])))
+
+    plt.figure()
+    X, Y = zip(*results['values'])
+    name = results['models'][0]
+    Z = results['loss_dict'][name]
+    
+    nx = int(np.sqrt(len(X)))
+    X = np.reshape(X, (nx, nx))
+    Y = np.reshape(Y, (nx, nx))
+    Z = np.reshape(Z, (nx, nx))
+    
+    
+    from mpl_toolkits.mplot3d import Axes3D
+
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    
+    # Plot the surface.
+    surf = ax.plot_surface(X, Y, Z, cmap=mpl.cm.coolwarm,
+                           linewidth=0, antialiased=False)
     
 
 if __name__ == '__main__':
@@ -340,11 +592,24 @@ if __name__ == '__main__':
     # evaluate_plot('orn_dropout_rate')
     # evaluate_plot('orn_noise_std')
     # evaluate_plot('alpha')
-    path = os.path.join(rootpath, 'files', 'kcrole')
-    evaluate_kcrole(path, 'weight_perturb')
-    plot_kcrole(path, 'weight_perturb')
+    # path = os.path.join(rootpath, 'files', 'kcrole')
+    # evaluate_kcrole(path, 'weight_perturb')
+    # plot_kcrole(path, 'weight_perturb')
     # evaluate_acrossmodels('weight_perturb')
-    # evaluate_acrossmodels()
-    # plot_acrossmodels()
+    # path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
+    path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
+    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_dev')
+# =============================================================================
+#     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
+#                           values=[0],
+#                           n_rep=1, dataset='train', epoch=1)
+#     plot_acrossmodels(path, dataset='val', epoch=1)
+# =============================================================================
+    
+    # evaluate_onedim_perturb(path, dataset='val', epoch=1)
+    plot_onedim_perturb(path, dataset='val', epoch=1, minzero=True)
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
+    
