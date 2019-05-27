@@ -270,12 +270,16 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
     _plot(means, stds, THRES)
 
 
-def plot_distribution(dir, xrange = 1.0, log = False):
-    # TODO(gry): I don't like how this function plots everything from subdirectories of dir
+def plot_distribution(dir, xrange=1.0, log=False):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path, exist_ok=True)
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    if tools._islikemodeldir(dir):
+        dirs = [dir]
+    else:
+        dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+        dirs = [d for d in dirs if tools._islikemodeldir(d)]
+
     titles = ['Before Training', 'After Training']
 
     for i, d in enumerate(dirs):
@@ -334,7 +338,13 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+
+    if tools._islikemodeldir(dir):
+        dirs = [dir]
+    else:
+        dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+        dirs = [d for d in dirs if tools._islikemodeldir(d)]
+
     titles = ['Before Training', 'After Training']
     yrange = [1, 0.5]
     for i, d in enumerate(dirs):
