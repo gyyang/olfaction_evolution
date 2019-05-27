@@ -154,10 +154,10 @@ def _normalize(inputs, norm_type, training=True):
     if norm_type is not None:
         if norm_type == 'layer_norm':
             # Apply layer norm before activation function
-            # outputs = tf.contrib.layers.layer_norm(
-            #     inputs, center=True, scale=True)
             outputs = tf.contrib.layers.layer_norm(
-                inputs, center=True, scale=False)
+                inputs, center=True, scale=True)
+            # outputs = tf.contrib.layers.layer_norm(
+            #     inputs, center=True, scale=False)
         elif norm_type == 'batch_norm':
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
@@ -652,15 +652,15 @@ class FullModel(Model):
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
 
+            if config.kc_dropout:
+                kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+
             if 'apl' in dir(config) and config.apl:
                 w_kc2apl = weights['w_apl_in']
                 b_apl = weights['b_apl']
                 w_apl2kc = weights['w_apl_out']
                 apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
                 kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
-
-            if config.kc_dropout:
-                kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
 
             if config.extra_layer:
                 w3 = weights['w_extra_layer']
