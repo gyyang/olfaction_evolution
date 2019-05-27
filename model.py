@@ -393,7 +393,10 @@ class FullModel(Model):
     def build_activity(self, x, weights, training, reuse=True):
         orn = self._build_orn_activity(x, weights, training)
         pn = self._build_pn_activity(orn, weights, training)
-        kc = self._build_kc_activity(pn, weights, training)
+        if 'apl' in dir(self.config) and self.config.apl:
+            kc = self._build_kc_activity_withapl(pn, weights, training)
+        else:
+            kc = self._build_kc_activity(pn, weights, training)
         logits, logits2 = self._build_logit_activity(kc, weights, training)
         return logits, logits2
 
@@ -649,23 +652,48 @@ class FullModel(Model):
             kc_in = _normalize(kc_in, config.kc_norm_pre, training)
             if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
                 kc_in = pn
+
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
 
             if config.kc_dropout:
                 kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
 
-            if 'apl' in dir(config) and config.apl:
-                w_kc2apl = weights['w_apl_in']
-                b_apl = weights['b_apl']
-                w_apl2kc = weights['w_apl_out']
-                apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
-                kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
-
             if config.extra_layer:
                 w3 = weights['w_extra_layer']
                 b3 = weights['b_extra_layer']
                 kc = tf.nn.relu(tf.matmul(kc, w3) + b3)
+        self.kc_in = kc_in
+        self.kc = kc
+        return kc
+
+    def _build_kc_activity_withapl(self, pn, weights, training):
+        # KC input before activation function
+        config = self.config
+        w_glo = weights['w_glo']
+        b_glo = weights['b_glo']
+
+        kc_in = tf.matmul(pn, w_glo) + b_glo
+        # kc_in = tf.matmul(pn, w_glo)
+        kc = tf.nn.relu(kc_in)
+
+        w_kc2apl = weights['w_apl_in']
+        b_apl = weights['b_apl']
+        w_apl2kc = weights['w_apl_out']
+
+        # if training:
+        #     w_kc2apl = tf.nn.dropout(w_kc2apl, 0.5)
+
+        # apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
+        apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)
+
+        kc_in = tf.matmul(apl, w_apl2kc) + kc_in
+        kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+        kc = tf.nn.relu(kc_in)
+
+        if config.kc_dropout:
+            kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+
         self.kc_in = kc_in
         self.kc = kc
         return kc
