@@ -285,7 +285,7 @@ def plot_distribution(dir, xrange=1.0, log=False):
     for i, d in enumerate(dirs):
         print('Analyzing results from: ' + str(d))
         try:
-            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
         except KeyError:
             wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
         for j in [0, -1]:
