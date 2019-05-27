@@ -369,7 +369,7 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     ax.set_xticks(xticks)
     ax.set_yticks(np.linspace(0, yrange, 3))
     plt.ylim([0, yrange])
-    plt.xlim([0, xrange])
+    plt.xlim([-1, xrange])
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

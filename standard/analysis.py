@@ -102,16 +102,14 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         pass
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=False):
+def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
     """
-    #TODO: fix code
-    dirs = [os.path.join(path, n) for n in os.listdir(path)]
-    save_path = dirs[dir_ix]
     # Load network at the end of training
-    model_dir = os.path.join(save_path, 'model.pkl')
+    model_dir = os.path.join(path, 'model.pkl')
+    print('Plotting ' + var_name + ' from ' + model_dir)
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
         w_plot = var_dict[var_name]
