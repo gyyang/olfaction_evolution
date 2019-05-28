@@ -125,8 +125,7 @@ def sparseness_activity(save_path, arg, activity_threshold=0.,
     if tools._islikemodeldir(save_path):
         dirs = [save_path]
     else:
-        dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
-        dirs = [d for d in dirs if tools._islikemodeldir(d)]
+        dirs = tools._get_alldirs(save_path, model=True, sort=True)
     for i, d in enumerate(dirs):
         glo_in, glo_out, kc_out, results = sa.load_activity(d, lesion_kwargs)
         if arg == 'glo_out':
