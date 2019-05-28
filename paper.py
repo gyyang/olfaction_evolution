@@ -477,3 +477,15 @@ if 'analytical' in experiments:
         numerical_test.main_plot()
         analyze_simulation_results.main()
 
+if 'apl' in experiments:
+    path = './files/apl'
+    if TRAIN:
+        local_train(se.vary_apl(is_test), path)
+    if ANALYZE:
+        analysis_activity.sparseness_activity(
+            path, 'kc_out', activity_threshold=0., lesion_kwargs=None)
+        lk = {'name': 'model/apl2kc/kernel:0',
+              'units': 0, 'arg': 'outbound'}
+        analysis_activity.sparseness_activity(
+            path, 'kc_out', activity_threshold=0., lesion_kwargs=lk,
+            figname='lesion_apl_')

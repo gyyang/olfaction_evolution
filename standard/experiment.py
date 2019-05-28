@@ -594,6 +594,27 @@ def vary_n_orn(argTest=False):
     return config, hp_ranges
 
 
+def vary_apl(argTest=False):
+    """Vary APL."""
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+
+    config.save_every_epoch = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['apl'] = [False, True]
+    hp_ranges['kc_norm_pre'] = [None, 'batch_norm']
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def temp(argTest):
     config = configs.FullConfig()
     config.data_dir = '../datasets/proto/standard'
