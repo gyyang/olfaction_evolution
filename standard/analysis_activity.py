@@ -115,7 +115,7 @@ def distribution_activity(save_path, arg):
 
 
 def sparseness_activity(save_path, arg, activity_threshold=0.,
-                        lesion_kwargs=None):
+                        lesion_kwargs=None, figname=None):
     """Plot the sparseness of activity.
 
     Args:
@@ -126,6 +126,8 @@ def sparseness_activity(save_path, arg, activity_threshold=0.,
         dirs = [save_path]
     else:
         dirs = tools._get_alldirs(save_path, model=True, sort=True)
+    if figname is None:
+        figname = ''
     for i, d in enumerate(dirs):
         glo_in, glo_out, kc_out, results = sa.load_activity(d, lesion_kwargs)
         if arg == 'glo_out':
@@ -145,7 +147,8 @@ def sparseness_activity(save_path, arg, activity_threshold=0.,
         plt.ylabel('Odors')
 
         data1 = np.mean(data > activity_threshold, axis=1)
-        _distribution(data1, save_path, name= 'spars_' + arg + '_' + str(i),
+        figname_new = figname + 'spars_' + arg + '_' + str(i)
+        _distribution(data1, save_path, name=figname_new,
                       xlabel='Fraction of Active '+name+'s',
                       ylabel='Number of Odors', xrange=zticks)
         # plt.close()
@@ -153,12 +156,14 @@ def sparseness_activity(save_path, arg, activity_threshold=0.,
         # plt.show()
 
         data2 = np.mean(data > activity_threshold, axis=0)
-        _distribution(data2, save_path, name='spars_' + arg + '2_' + str(i),
+        figname_new = figname + 'spars_' + arg + '2_' + str(i)
+        _distribution(data2, save_path, name=figname_new,
                       xlabel='Fraction of Odors',
                       ylabel='Number of '+name+'s', xrange=zticks)
 
 
-def plot_mean_activity_sparseness(save_path, arg, x_key, loop_key= None, select_dict = None):
+def plot_mean_activity_sparseness(save_path, arg, x_key,
+                                  loop_key=None, select_dict=None):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
 
     mean_sparseness = []

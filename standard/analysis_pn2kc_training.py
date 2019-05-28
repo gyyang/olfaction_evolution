@@ -277,8 +277,7 @@ def plot_distribution(dir, xrange=1.0, log=False):
     if tools._islikemodeldir(dir):
         dirs = [dir]
     else:
-        dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-        dirs = [d for d in dirs if tools._islikemodeldir(d)]
+        dirs = tools._get_alldirs(dir, model=True, sort=True)
 
     titles = ['Before Training', 'After Training']
 
@@ -342,8 +341,7 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES):
     if tools._islikemodeldir(dir):
         dirs = [dir]
     else:
-        dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-        dirs = [d for d in dirs if tools._islikemodeldir(d)]
+        dirs = tools._get_alldirs(dir, model=True, sort=True)
 
     titles = ['Before Training', 'After Training']
     yrange = [1, 0.5]
