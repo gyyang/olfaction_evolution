@@ -686,13 +686,14 @@ class FullModel(Model):
         b_apl = weights['b_apl']
         w_apl2kc = weights['w_apl_out']
 
-        # if training:
-        #     w_kc2apl = tf.nn.dropout(w_kc2apl, 0.5)
 
-        # apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
-        apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)
+        # apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)  # standard
+        # kc_in = tf.matmul(apl, w_apl2kc) + kc_in
 
-        kc_in = tf.matmul(apl, w_apl2kc) + kc_in
+        # multiplicative APL inhibition
+        apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
+        kc_in = kc_in * tf.nn.sigmoid(tf.matmul(apl, w_apl2kc))
+
         kc_in = _normalize(kc_in, config.kc_norm_pre, training)
         kc = tf.nn.relu(kc_in)
 
