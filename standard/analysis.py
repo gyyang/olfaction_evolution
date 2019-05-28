@@ -193,7 +193,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     #     plt.hist(var_dict[key].flatten())
     #     plt.title(key)
 
-def load_activity(save_path):
+def load_activity(save_path, lesion_kwargs=None):
     '''
     Loads model activity from tensorflow
     :param save_path:
@@ -229,6 +229,9 @@ def load_activity(save_path):
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
         model.load()
+
+        if lesion_kwargs:
+            model.lesion_units(**lesion_kwargs)
 
         # Validation
         glo_out, glo_in, kc_out, logits = sess.run(
