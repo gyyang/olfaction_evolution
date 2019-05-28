@@ -62,7 +62,12 @@ class Model(object):
             units = np.array(units)
 
         # This lesioning will work for both RNN and GRU
-        v = [tmp for tmp in tf.trainable_variables() if tmp.name == name][0]
+        var_lesion = [tmp for tmp in tf.trainable_variables() if tmp.name == name]
+        if var_lesion:
+            v = var_lesion[0]
+        else:
+            print('No units are being lesioned')
+            return
         # Connection weights
         v_val = sess.run(v)
 
