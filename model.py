@@ -679,23 +679,27 @@ class FullModel(Model):
         b_glo = weights['b_glo']
 
         kc_in = tf.matmul(pn, w_glo) + b_glo
-        # kc_in = tf.matmul(pn, w_glo)
         kc = tf.nn.relu(kc_in)
+
+        # kc_in = tf.matmul(pn, w_glo)
+        # kc = tf.nn.relu(kc_in + b_glo)
 
         w_kc2apl = weights['w_apl_in']
         b_apl = weights['b_apl']
         w_apl2kc = weights['w_apl_out']
 
-
+        # sigmoidal APL with subtractive inhibition
         # apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)  # standard
         # kc_in = tf.matmul(apl, w_apl2kc) + kc_in
 
         # multiplicative APL inhibition
         apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
         kc_in = kc_in * tf.nn.sigmoid(tf.matmul(apl, w_apl2kc))
+        # kc_in = kc_in / (1 - tf.matmul(apl, w_apl2kc))
 
         kc_in = _normalize(kc_in, config.kc_norm_pre, training)
         kc = tf.nn.relu(kc_in)
+        # kc = tf.nn.relu(kc_in + b_glo)
 
         if config.kc_dropout:
             kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
