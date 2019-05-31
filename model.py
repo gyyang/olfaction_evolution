@@ -653,7 +653,15 @@ class FullModel(Model):
         b_glo = weights['b_glo']
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            kc_in = tf.matmul(pn, w_glo) + b_glo
+            if 'w_glo_meansub' in dir(config) and config.w_glo_meansub:
+                # w_glo_mean = tf.reduce_mean(w_glo, axis=0, keepdims=True)
+                w_glo_mean = tf.reduce_mean(w_glo)
+                # w_glo_mean = tf.stop_gradient(tf.reduce_mean(w_glo))
+                w_glo_meansubtract = \
+                    w_glo - w_glo_mean * config.w_glo_meansub_coeff
+                kc_in = tf.matmul(pn, w_glo_meansubtract) + b_glo
+            else:
+                kc_in = tf.matmul(pn, w_glo) + b_glo
             kc_in = _normalize(kc_in, config.kc_norm_pre, training)
             if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
                 kc_in = pn
