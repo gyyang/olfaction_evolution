@@ -619,7 +619,7 @@ def vary_w_glo_meansub_coeff(argTest=False):
     """Vary APL."""
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 10
+    config.max_epoch = 5
 
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0.
@@ -628,13 +628,14 @@ def vary_w_glo_meansub_coeff(argTest=False):
     config.train_pn2kc = True
     config.skip_orn2pn = True
     config.w_glo_meansub = True
-    config.w_glo_meansub_coeff = 0.1
     config.kc_bias = 0.5
 
     config.save_every_epoch = True
 
     hp_ranges = OrderedDict()
-    hp_ranges['w_glo_meansub_coeff'] = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+    cs = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+    hp_ranges['w_glo_meansub_coeff'] = cs
+    hp_ranges['kc_bias'] = [-1 + 2*c for c in cs]
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges

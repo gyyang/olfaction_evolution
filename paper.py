@@ -493,6 +493,7 @@ if 'apl' in experiments:
 if 'meansub' in experiments:
     path = './files/meansub'
     if TRAIN:
-        local_train(se.vary_w_glo_meansub_coeff(is_test), path)
+        local_sequential_train(se.vary_w_glo_meansub_coeff(is_test), path)
     if ANALYZE:
-        pass
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(
+            path, x_key='w_glo_meansub_coeff', dynamic_thres=True)
