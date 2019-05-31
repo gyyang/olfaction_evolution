@@ -489,3 +489,10 @@ if 'apl' in experiments:
         analysis_activity.sparseness_activity(
             path, 'kc_out', activity_threshold=0., lesion_kwargs=lk,
             figname='lesion_apl_')
+
+if 'meansub' in experiments:
+    path = './files/meansub'
+    if TRAIN:
+        local_train(se.vary_w_glo_meansub_coeff(is_test), path)
+    if ANALYZE:
+        pass
