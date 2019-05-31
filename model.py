@@ -451,8 +451,8 @@ class FullModel(Model):
                 initializer = _initializer(range, config.initializer_orn2pn)
                 bias_initializer = tf.constant_initializer(0)
             else:
-                initializer = tf.glorot_normal_initializer
-                bias_initializer = tf.glorot_normal_initializer
+                initializer = tf.glorot_uniform_initializer()
+                bias_initializer = tf.zeros_initializer()
 
             w_orn = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32,
