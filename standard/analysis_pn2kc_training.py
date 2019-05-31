@@ -333,7 +333,8 @@ def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False, thres=THRES
     return sparsity
 
 
-def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES):
+def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
+                  epochs=None):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
@@ -343,10 +344,16 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES):
     else:
         dirs = tools._get_alldirs(dir, model=True, sort=True)
 
-    titles = ['Before Training', 'After Training']
-    yrange = [1, 0.5]
+    if epochs is None:
+        epochs = [0, -1]  # analyze the first and the last
+        titles = ['Before Training', 'After Training']
+        yrange = [1, 0.5]
+    else:
+        titles = ['Epoch {:d}'.format(e) for e in epochs]
+        yrange = [0.5]*len(epochs)
+
     for i, d in enumerate(dirs):
-        for j, epoch in enumerate([0, -1]):
+        for j, epoch in enumerate(epochs):
             sparsity = compute_sparsity(d, epoch, dynamic_thres=dynamic_thres,
                                         visualize=visualize, thres=thres)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
