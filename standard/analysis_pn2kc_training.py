@@ -114,7 +114,7 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, thres 
         mean_claws.append(np.mean(sparsity[sparsity != 0]))
         print(mean_claws)
 
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    dirs = tools._get_alldirs(dir, model=False, sort=True)
     for i, d in enumerate(dirs):
         config = tools.load_config(d)
         setattr(config, 'mean_claw', mean_claws[i])
