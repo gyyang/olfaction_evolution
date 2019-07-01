@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import standard.analysis_multihead as analysis_multihead
 import mamlmetatrain
 import matplotlib as mpl
+import oracle.evaluatewithnoise
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -76,33 +77,39 @@ def temp_meta():
 
 def temp():
     config = configs.FullConfig()
-    config.max_epoch = 15
+    config.max_epoch = 25
+    config.data_dir = './datasets/proto/standard'
 
     config.direct_glo = True
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
 
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.save_every_epoch = True
+
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    i = [.6]
-    datasets = ['./datasets/proto/concentration_mask_row_' + str(s) for s in i]
-    hp_ranges['data_dir'] = datasets
-    hp_ranges['pn_norm_pre'] = ['None']
+    hp_ranges['dummy'] = [True]
     return config, hp_ranges
 
 # mamlmetatrain.train(temp_meta()[0])
 #
-# path = './files_temp/temp'
+path = './files_temp/temp'
 # try:
 #     shutil.rmtree(path)
 # except:
 #     pass
 # t(temp(), path)
+oracle.evaluatewithnoise.evaluate_across_epochs(path=path, values=[0, .01, .03, .1],n_rep=1)
+oracle.evaluatewithnoise.plot_acrossmodels(path=path, model_var='epoch')
+# analysis_training.plot_distribution(path, xrange=.5, log=False)
+# analysis_training.plot_distribution(path, xrange=.5, log=True)
+# analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.05, visualize=True)
 
-path = './files/test/0/epoch'
-# analysis_activity.sparseness_activity(path, 'kc_out')
-sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=-1)
-sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-1)
+
+
+# path = './files/test/0/epoch'
 
 # path_ = os.path.join(path, '000000')
 # glo_in, glo_out, kc_out, results = sa.load_activity(path_)

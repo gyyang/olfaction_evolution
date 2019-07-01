@@ -71,7 +71,7 @@ else:
 # TRAIN = False
 # ANALYZE = True
 # is_test = True
-# experiments = ['standard_with_or2orn']
+# experiments = ['vary_kc_claws_new']
 
 if 'standard' in experiments:
     # Reproducing most basic findings
@@ -290,23 +290,22 @@ if 'vary_kc_claws_new' in experiments:
     if TRAIN:
         local_train(se.vary_claw_configs_new(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', loop_key='ORN_NOISE_STD',
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', select_dict={'ORN_NOISE_STD': 0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
-        sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
-                        select_dict={'ORN_NOISE_STD': 0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', select_dict={'ORN_NOISE_STD': 0},
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        # sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
+        #                 select_dict={'ORN_NOISE_STD': 0},
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
 
-        evaluatewithnoise.evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0})
+        evaluatewithnoise.evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0}, values=[0, 0.01, 0.05, 0.1], n_rep=2)
         evaluatewithnoise.plot_acrossmodels(path)
-        evaluatewithnoise.evaluate_acrossmodels(path, select_dict={
-            'ORN_NOISE_STD': 0}, dataset='train')
-        evaluatewithnoise.plot_acrossmodels(path, dataset='train')
+        # evaluatewithnoise.evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0}, dataset='train')
+        # evaluatewithnoise.plot_acrossmodels(path, dataset='train')
 
 if 'vary_kc_claws_dev' in experiments:
     path = './files/vary_kc_claws_epoch15'
