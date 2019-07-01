@@ -153,6 +153,10 @@ class FullConfig(BaseConfig):
         self.pn_norm_post = None
         # If True, skip the ORN --> PN connections
         self.skip_orn2pn = False
+        # dropout for pn
+        self.pn_dropout = False
+        # dropout rate for pns
+        self.pn_dropout_rate = .2
 
 
         # PN --> KC connections

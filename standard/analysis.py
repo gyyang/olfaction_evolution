@@ -202,6 +202,7 @@ def load_activity(save_path, lesion_kwargs=None):
 
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
+    config.label_type = 'sparse'
 
     # Load dataset
     data_dir = rootpath + config.data_dir[1:]  # this is a hack as well

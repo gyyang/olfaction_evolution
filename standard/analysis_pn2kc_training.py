@@ -346,6 +346,7 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
 
+
     if tools._islikemodeldir(dir):
         dirs = [dir]
     else:

@@ -34,16 +34,18 @@ def _get_data(path):
     wglo = tools.load_pickle(d, 'w_glo')[-1]
 
     thres = analysis_pn2kc_training.infer_threshold(wglo)
-    # thres = .03
     print(thres)
     sparsity = np.count_nonzero(wglo > thres, axis=0)
     v1 = sparsity
+    strength_wout1 = np.linalg.norm(wout1, axis=1)
     strength_wout2 = np.linalg.norm(wout2, axis=1)
     v2 = strength_wout2
-    data = np.stack([v1, v2]).T
+    v3 = strength_wout1
+    # data = np.stack([v1, v2]).T
+    data = np.stack([v3, v2]).T
     norm_factor = data.mean(axis=0)
     data_norm = data / norm_factor
-    return v1, v2, data_norm, data
+    return v1, v2, v3, data_norm, data
 
 def _get_groups(data_norm, config):
     labels = KMeans(n_clusters=2, random_state=0).fit_predict(data_norm)
@@ -53,19 +55,16 @@ def _get_groups(data_norm, config):
     print('Group 1 has {:d} neurons'.format(len(group1)))
     return group0, group1
 
-def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, figpath):
-    xlabel = 'PN Input degree'
-    ylabel = 'Conn. to valence'
-
+def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
-    ax.scatter(v1, v2, alpha=0.3, marker='.')
+    ax.scatter(v1, v2, alpha=0.2, marker='.', s=1)
+    ax.set_xticks([0, 7, 15])
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
-    ax.set_xticks([0, 7, 15])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    _easy_save(figpath, 'scatter')
+    _easy_save(figpath, 'scatter_' + xlabel + '_' + ylabel)
 
 def _compute_silouette_score(data, figpath):
     n_clusters = np.arange(2, 10)
@@ -241,22 +240,27 @@ def main1(arg, foldername=None, subdir=None):
     config.data_dir = rootpath + config.data_dir[1:]
     config.save_path = rootpath + config.save_path[1:]
 
-    v1, v2, data_norm, data = _get_data(subpath)
+    v1, v2, v3, data_norm, data = _get_data(subpath)
     group0, group1 = _get_groups(data_norm, config)
 
-    xmin, xmax, ymin, ymax = 0, 50, 0, 3
-    _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, figpath)
-    _compute_silouette_score(data_norm, figpath)
+    # xmin, xmax, ymin, ymax = 0, 15, 0, 3
+    # degree_label = 'PN Input degree'
+    # valence_label = 'Conn. to valence'
+    # class_label = 'Conn. to classif.'
+    # _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=valence_label, figpath=figpath)
+    # _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=class_label, figpath=figpath)
+    # _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label, ylabel=valence_label, figpath=figpath)
+    # _compute_silouette_score(data_norm, figpath)
 
-    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-    Z = _get_density(data, X, Y)
-    Z1 = _get_density(data[group0], X, Y)
-    Z2 = _get_density(data[group1], X, Y)
-
-    _plot_density(Z, xmin, xmax, ymin, ymax, 'density', figpath = figpath)
-    _plot_density(Z1, xmin, xmax, ymin, ymax, 'density_group1', figpath)
-    _plot_density(Z2, xmin, xmax, ymin, ymax,'density_group2', figpath)
-    _plot_density(Z1+Z2, xmin, xmax, ymin, ymax, 'density_group12', figpath)
+    # X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+    # Z = _get_density(data, X, Y)
+    # Z1 = _get_density(data[group0], X, Y)
+    # Z2 = _get_density(data[group1], X, Y)
+    #
+    # _plot_density(Z, xmin, xmax, ymin, ymax, 'density', figpath = figpath)
+    # _plot_density(Z1, xmin, xmax, ymin, ymax, 'density_group1', figpath)
+    # _plot_density(Z2, xmin, xmax, ymin, ymax,'density_group2', figpath)
+    # _plot_density(Z1+Z2, xmin, xmax, ymin, ymax, 'density_group12', figpath)
 
     val_accs = list()
     val_acc2s = list()
@@ -422,4 +426,4 @@ def main():
     _plot_hist('head2')
 
 if __name__ == '__main__':
-    main1('multi_head', foldername='tmp_multihead', subdir='0')
+    main1('multi_head', foldername='multi_head', subdir='000000')

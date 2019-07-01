@@ -95,7 +95,7 @@ def make_vary_or_datasets():
 
 def temp():
     config = configs.input_ProtoConfig()
-    config.N_CLASS = 200
+    config.N_CLASS = 1000
     # config.n_trueclass = 80
     # config.relabel = True
     # config.realistic_orn_mask = True
@@ -115,3 +115,4 @@ if __name__ == '__main__':
     # make_multi_head_dataset()
     # make_vary_or_datasets()
     # temp()
+

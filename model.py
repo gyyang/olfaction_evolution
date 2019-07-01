@@ -617,7 +617,9 @@ class FullModel(Model):
                 orn = x
                 orn = _noise(orn, config.NOISE_MODEL, config.ORN_NOISE_STD)
 
-        orn = _normalize(orn, config.orn_norm, training)
+        if hasattr(config, 'orn_norm'):
+            orn = _normalize(orn, config.orn_norm, training)
+
         if config.orn_dropout:
             # This is interpreted as noise, so it's always on
             orn = tf.layers.dropout(orn, config.orn_dropout_rate, training=True)
@@ -640,7 +642,12 @@ class FullModel(Model):
             else:
                 glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
             glo = tf.nn.relu(glo_in)
+
             glo = _normalize(glo, config.pn_norm_post, training)
+
+        if hasattr(config, 'pn_dropout') and config.pn_dropout:
+            glo = tf.layers.dropout(glo, config.pn_dropout_rate, training=training)
+
         self.glo_in = glo_in
         self.glo_in_pre = glo_in_pre
         self.glo = glo

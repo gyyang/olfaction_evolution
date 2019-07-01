@@ -68,10 +68,12 @@ else:
 
 
 # #peter specific
+
 # TRAIN = False
 # ANALYZE = True
 # is_test = True
 # experiments = ['standard_with_or2orn']
+
 
 if 'standard_without_or2orn' in experiments:
     # Reproducing most basic findings
@@ -116,27 +118,27 @@ if 'standard_with_or2orn' in experiments:
         local_train(se.train_standardnet_with_or2orn(is_test), path)
     if ANALYZE:
         # accuracy, glo score, cosine similarity
-        sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
-        analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
+        # sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
+        # analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
 
         # #weights
-        sa.plot_weights(path, var_name='w_or', sort_axis=0, dir_ix=0)
-        sa.plot_weights(path, var_name='w_combined', dir_ix=0)
-        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
+        # sa.plot_weights(path, var_name='w_or', sort_axis=0, dir_ix=0)
+        # sa.plot_weights(path, var_name='w_combined', dir_ix=0)
+        # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
         sa.plot_weights(path, var_name='w_glo', dir_ix=0)
 
         # #sign constraint
-        sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
-
-        #random analysis
-        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)
-        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-
-        analysis_pn2kc_random.claw_distribution(path, 'random')
-        analysis_pn2kc_random.pair_distribution(path, 'preserve')
+        # sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
+        #
+        # #random analysis
+        # analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)
+        # analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
+        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        #
+        # analysis_pn2kc_random.claw_distribution(path, 'random')
+        # analysis_pn2kc_random.pair_distribution(path, 'preserve')
 
 if 'vary_orn_duplication' in experiments:
     # Vary ORN n duplication under different nKC
@@ -243,10 +245,10 @@ if 'vary_kc_dropout' in experiments:
     if TRAIN:
         local_train(experiments_controls_pn2kc.vary_kc_dropout_configs(is_test), path)
     if ANALYZE:
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout', dynamic_thres=True)
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True)
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        sa.plot_results(path, x_key='kc_dropout', y_key='val_acc')
+        sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc')
 
 if 'vary_pn2kc_noise' in experiments:
     path = './files/vary_pn2kc_noise'
