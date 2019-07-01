@@ -37,7 +37,7 @@ def _islikemodeldir(d):
     except NotADirectoryError:
         return False
     for file in files:
-        if 'model.ckpt' in file:
+        if 'model.ckpt' in file or 'log.pkl' in file:
             return True
     return False
 
@@ -147,7 +147,7 @@ def load_all_results(rootpath, argLast= True):
     Returns:
         res: dictionary of numpy arrays, containing information from all models
     """
-    dirs = [os.path.join(rootpath, n) for n in os.listdir(rootpath)]
+    dirs = get_allmodeldirs(rootpath)
 
     from collections import defaultdict
     res = defaultdict(list)
@@ -168,6 +168,7 @@ def load_all_results(rootpath, argLast= True):
     # TODO: exclude models that didn't finish training
     for key, val in res.items():
         res[key] = np.array(val)
+    res['val_logloss'] = np.log(res['val_loss'])
     return res
 
 
@@ -176,12 +177,13 @@ nicename_dict = {
         'N_PN': 'Number of PNs',
         'N_KC': 'Number of KCs',
         'N_ORN_DUPLICATION': 'ORNs per type',
-        'kc_inputs': 'Number of KC Claws',
+        'kc_inputs': 'PN inputs per KC',
         'glo_score': 'GloScore',
         'or_glo_score': 'OR to ORN GloScore',
         'combined_glo_score': 'OR to PN GloScore',
         'val_acc': 'Accuracy',
-        'val_loss': 'Log Loss',
+        'val_loss': 'Loss',
+        'val_logloss': 'Log Loss',
         'epoch': 'Epoch',
         'kc_dropout': 'KC Dropout Rate',
         'kc_loss_alpha': r'$\alpha$',
@@ -203,6 +205,12 @@ def nicename(name):
     except KeyError:
         return name
 
+
+# colors from https://visme.co/blog/color-combinations/ # 14
+blue = np.array([2,148,165])/255.
+red = np.array([193,64,61])/255.
+gray = np.array([167, 156, 147])/255.
+darkblue = np.array([3, 53, 62])/255.
 
 def _reshape_worn(w_orn, unique_orn, mode='tile'):
     """Reshape w_orn."""

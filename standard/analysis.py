@@ -41,15 +41,17 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
         plt.show()
     # plt.close()
 
-def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, legends= None):
+
+def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
+                  legends=None, exclude_epoch0=False):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
 
-
     log = tools.load_all_results(save_path, argLast=False)
     if select_dict is not None:
         log = dict_methods.filter(log, select_dict)
+
     def _plot_progress(xkey, ykey):
         figsize = (1.5, 1.2)
         rect = [0.3, 0.3, 0.65, 0.5]
@@ -58,12 +60,13 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
 
         ys = log[ykey]
         xs = log[xkey]
-        if linestyles is not None:
-            for x, y, s in zip(xs, ys, linestyles):
-                ax.plot(x, y, alpha= alpha, linestyle=s)
-        else:
-            for x, y in zip(xs, ys):
-                ax.plot(x, y, alpha= alpha)
+
+        lstyles = ['-'] * len(xs) if linestyles is None else linestyles
+
+        for x, y, s in zip(xs, ys, lstyles):
+            if exclude_epoch0:
+                x, y = x[1:], y[1:]
+            ax.plot(x, y, alpha=alpha, linestyle=s)
 
         if legends is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
@@ -89,7 +92,7 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
                 figname += k + '_' + str(v) + '_'
         _easy_save(save_path, figname)
 
-    _plot_progress('epoch', 'val_loss')
+    _plot_progress('epoch', 'val_logloss')
     _plot_progress('epoch', 'val_acc')
     _plot_progress('epoch', 'glo_score')
     try:
@@ -99,16 +102,14 @@ def plot_progress(save_path, linestyles=None, select_dict = None, alpha = 1, leg
         pass
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=False):
+def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
     """
-    #TODO: fix code
-    dirs = [os.path.join(path, n) for n in os.listdir(path)]
-    save_path = dirs[dir_ix]
     # Load network at the end of training
-    model_dir = os.path.join(save_path, 'model.pkl')
+    model_dir = os.path.join(path, 'model.pkl')
+    print('Plotting ' + var_name + ' from ' + model_dir)
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
         w_plot = var_dict[var_name]
@@ -192,7 +193,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=Fal
     #     plt.hist(var_dict[key].flatten())
     #     plt.title(key)
 
-def load_activity(save_path):
+def load_activity(save_path, lesion_kwargs=None):
     '''
     Loads model activity from tensorflow
     :param save_path:
@@ -229,6 +230,9 @@ def load_activity(save_path):
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
         model.load()
+
+        if lesion_kwargs:
+            model.lesion_units(**lesion_kwargs)
 
         # Validation
         glo_out, glo_in, kc_out, logits = sess.run(
@@ -284,7 +288,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                      'initial_pn2kc':[.05, .1, 1],
                      'N_ORN_DUPLICATION':[1,3,10,30,100,300],
                      'n_trueclass':[100, 200, 500, 1000],
-                     'val_loss':[],
+                     # 'val_loss':[],
                      'glo_dimensionality':[5, 50, 200, 1000]}
 
     plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}

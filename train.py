@@ -28,7 +28,7 @@ def make_input(x, y, batch_size):
     return train_iter, next_element
 
 
-def train(config, reload=False):
+def train(config, reload=False, save_everytrainloss=False):
     tf.reset_default_graph()
 
     # Merge model config with config from dataset
@@ -46,7 +46,10 @@ def train(config, reload=False):
     train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
 
     batch_size = config.batch_size
-    n_batch = train_x.shape[0] // batch_size
+    if 'n_batch' in dir(config):
+        n_batch = config.n_batch
+    else:
+        n_batch = train_x.shape[0] // batch_size
 
     if config.model == 'full':
         CurrentModel = FullModel
@@ -207,13 +210,13 @@ def train(config, reload=False):
                     model.save_pickle(ep)
                     model.save(ep)
                 # Train
-                for b in range(n_batch-1):
-                    _ = sess.run(model.train_op)
-
-                    # if b % 10 == 0:
-                    #     w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
-                    #     weights_over_time.append((w_orn, w_glo))
-
+                if save_everytrainloss:
+                    for b in range(n_batch-1):
+                        loss, _ = sess.run([model.loss, model.train_op])
+                        log['train_loss'].append(loss)
+                else:
+                    for b in range(n_batch-1):
+                        _ = sess.run(model.train_op)
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
 

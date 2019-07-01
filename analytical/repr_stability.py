@@ -13,8 +13,8 @@ from sklearn.metrics import pairwise_distances
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
-import model
-from standard.analysis import _easy_save
+# import model
+# from standard.analysis import _easy_save
 
 N_PN = 50
 N_KC = 2500
@@ -351,68 +351,71 @@ def plot_proj_hist_varyclaws():
     _easy_save('analytical', 'hist_pert_proj')
     
 
-Ks = [1, 3, 5, 7, 10, 12, 15, 20, 30, 40]
-# Ks = [40]
-# Ks = [40]
-# n_kc_claws = [7]
-approxs = list()
-ground_truth = list()
-for K in Ks:
-    coding_level = 10
-    n_pts = 500
-    kwargs = {'normalize_x': True}
-    X, Y, Y2 = analyze_perturb(
-                n_kc_claw=K, coding_level=coding_level, n_pts=n_pts, n_rep=10, **kwargs)
-    
-    norm_Y = np.linalg.norm(Y, axis=1)
-    norm_Y2 = np.linalg.norm(Y2, axis=1)
-    norm_dY = np.linalg.norm(Y2-Y, axis=1)
-    
-    cos_theta = (np.sum(Y * Y2, axis=1) / (norm_Y * norm_Y2))
-    cos_theta = cos_theta[(norm_Y * norm_Y2)>0]
-    theta = np.arccos(cos_theta)/np.pi*180
-    
-    norm_ratio = norm_dY/norm_Y
-    norm_ratio = norm_ratio[norm_Y>0]
-    
-    S = norm_Y**2
-    R = norm_dY**2
-    
-    corr = np.var(S)/np.mean(S)**2
-    first_third_term = np.mean(R)/np.mean(S) * (1+corr)
-    
-    
-    second_term = np.mean((R-np.mean(R))*(S-np.mean(S)))/np.mean(S)**2
-    
-    approx = np.sqrt(first_third_term-second_term)
-    
 # =============================================================================
-#     plt.figure(figsize=(3, 1.0))
-#     _ = plt.hist(theta)
-#     plt.xlim([0, 180])
-#     plt.title('K: {:d} Mean Angle: {:0.2f}, norm ratio {:0.3f}'.format(
-#             K, np.mean(theta), norm_ratio.mean()))
+# Ks = [1, 3, 5, 7, 10, 12, 15, 20, 30, 40]
+# # Ks = [40]
+# # Ks = [40]
+# # n_kc_claws = [7]
+# from collections import defaultdict
+# values = defaultdict(list)
+# approxs = list()
+# ground_truth = list()
+# for K in Ks:
+#     coding_level = 10
+#     n_pts = 500
+#     kwargs = {'normalize_x': False}
+#     X, Y, Y2 = analyze_perturb(
+#                 n_kc_claw=K, coding_level=coding_level, n_pts=n_pts, n_rep=10, **kwargs)
+#     
+#     norm_Y = np.linalg.norm(Y, axis=1)
+#     norm_Y2 = np.linalg.norm(Y2, axis=1)
+#     norm_dY = np.linalg.norm(Y2-Y, axis=1)
+#     
+#     cos_theta = (np.sum(Y * Y2, axis=1) / (norm_Y * norm_Y2))
+#     cos_theta = cos_theta[(norm_Y * norm_Y2)>0]
+#     theta = np.arccos(cos_theta)/np.pi*180
+#     
+#     norm_ratio = norm_dY/norm_Y
+#     norm_ratio = norm_ratio[norm_Y>0]
+#     
+#     S = norm_Y**2
+#     R = norm_dY**2
+#     
+#     corr = np.var(S)/np.mean(S)**2
+#     mu_S = np.mean(S)
+#     mu_R = np.mean(R)
+#     first_term = mu_R/mu_S
+#     second_term = first_term * (np.mean(S**2)/mu_S**2)
+#     third_term = -np.mean(S*R)/mu_S**2
+#         
+#     approx = np.sqrt(first_term+second_term+third_term)
+#     
+# # =============================================================================
+# #     plt.figure(figsize=(3, 1.0))
+# #     _ = plt.hist(theta)
+# #     plt.xlim([0, 180])
+# #     plt.title('K: {:d} Mean Angle: {:0.2f}, norm ratio {:0.3f}'.format(
+# #             K, np.mean(theta), norm_ratio.mean()))
+# # =============================================================================
+#     
+#     print('')
+#     print(K)
+#     # print(np.mean(theta)/180*np.pi/np.mean(norm_ratio))
+#     print(np.mean(norm_ratio))
+#     print(np.sqrt(np.mean(norm_ratio**2)))
+#     print(np.mean(norm_dY)/np.mean(norm_Y))
+#     print(np.sqrt(np.mean(norm_dY**2)/np.mean(norm_Y**2)))
+#     
+#     print('Approximation')
+#     # print(corr)
+#     print(approx)
+#     
+#     values['ground_truth'].append(np.mean(norm_ratio))
+#     values['approxs'].append(approx)
+#     values['first_term'].append(first_term)
+#     values['second_term'].append(second_term)
+#     values['third_term'].append(third_term)
 # =============================================================================
-    
-    print('')
-    print(K)
-    # print(np.mean(theta)/180*np.pi/np.mean(norm_ratio))
-    print(np.mean(norm_ratio))
-    print(np.sqrt(np.mean(norm_ratio**2)))
-    print(np.mean(norm_dY)/np.mean(norm_Y))
-    print(np.sqrt(np.mean(norm_dY**2)/np.mean(norm_Y**2)))
-    
-    print('Approximation')
-    # print(corr)
-    print(approx)
-    
-    print('First and Third term')
-    print(first_third_term)
-    print('Second term')
-    print(second_term)
-    
-    ground_truth.append(np.mean(norm_ratio))
-    approxs.append(approx)
     
     
 
@@ -425,7 +428,9 @@ for K in Ks:
 # 
 # norm_Y = np.linalg.norm(Y, axis=1)
 # norm_dY = np.linalg.norm(Y2 - Y, axis=1)
-# 
+# =============================================================================
+
+# =============================================================================
 # plt.figure()
 # plt.scatter(norm_Y, norm_dY)
 # plt.xlabel('Norm Pre-perturb Y')
@@ -445,7 +450,18 @@ for K in Ks:
 # =============================================================================
 
 
-plt.figure()
-plt.plot(Ks, ground_truth, label='ground truth')
-plt.plot(Ks, approxs, label='approximation')
-plt.legend()
+# =============================================================================
+# plt.figure()
+# plt.plot(Ks, values['ground_truth'], label='ground truth')
+# plt.plot(Ks, values['approxs'], label='approximation')
+# plt.legend()
+# 
+# plt.figure()
+# for key in ['first_term', 'second_term', 'third_term']:
+#     plt.plot(Ks, values[key], label=key)
+# plt.legend()
+# =============================================================================
+
+
+# plt.figure()
+# plt.plot(Ks, mu_R/mu_S, 'o-')

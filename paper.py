@@ -28,6 +28,8 @@ import standard.analysis_activity as analysis_activity
 import standard.analysis_multihead as analysis_multihead
 import standard.analysis_metalearn as analysis_metalearn
 import oracle.evaluatewithnoise as evaluatewithnoise
+import analytical.numerical_test as numerical_test
+import analytical.analyze_simulation_results as analyze_simulation_results
 import matplotlib as mpl
 
 parser = argparse.ArgumentParser()
@@ -66,10 +68,12 @@ else:
 
 
 # #peter specific
-TRAIN = True
-ANALYZE = True
-is_test = True
-experiments = ['vary_pn2kc_noise']
+
+# TRAIN = False
+# ANALYZE = True
+# is_test = True
+# experiments = ['standard_with_or2orn']
+
 
 if 'standard_without_or2orn' in experiments:
     # Reproducing most basic findings
@@ -277,8 +281,33 @@ if 'vary_kc_claws_new' in experiments:
     if TRAIN:
         local_train(se.vary_claw_configs_new(is_test), path)
     if ANALYZE:
-        evaluatewithnoise.evaluate_acrossmodels()
-        evaluatewithnoise.plot_acrossmodels()
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', loop_key='ORN_NOISE_STD',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', select_dict={'ORN_NOISE_STD': 0},
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
+                        select_dict={'ORN_NOISE_STD': 0},
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+
+        evaluatewithnoise.evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0})
+        evaluatewithnoise.plot_acrossmodels(path)
+        evaluatewithnoise.evaluate_acrossmodels(path, select_dict={
+            'ORN_NOISE_STD': 0}, dataset='train')
+        evaluatewithnoise.plot_acrossmodels(path, dataset='train')
+
+if 'vary_kc_claws_dev' in experiments:
+    path = './files/vary_kc_claws_epoch15'
+    if TRAIN:
+        local_train(se.vary_claw_configs_dev(is_test), path)
+    if ANALYZE:
+        evaluatewithnoise.evaluate_acrossmodels(
+            path, select_dict={'ORN_NOISE_STD': 0},
+            values=[0], n_rep=1, dataset='val', epoch=1)
+        evaluatewithnoise.plot_acrossmodels(path, dataset='val', epoch=1)
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
@@ -421,3 +450,52 @@ if 'metalearn' in experiments:
         analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
         analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
         analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
+
+if 'vary_n_orn' in experiments:
+    # Train networks with different numbers of ORs
+    path = './files/vary_n_orn2'
+    if TRAIN:
+        import paper_datasets
+        paper_datasets.make_vary_or_datasets()
+        local_sequential_train(se.vary_n_orn(is_test), path)
+    if ANALYZE:
+        pass
+
+if 'frequent_eval' in experiments:
+    path = './files/frequent_eval'
+    if TRAIN:
+        local_train(se.vary_claw_configs_frequentevaluation(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), )
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), )
+
+if 'analytical' in experiments:
+    if TRAIN:
+        numerical_test.get_optimal_K_simulation()
+    if ANALYZE:
+        numerical_test.main_compare()
+        numerical_test.main_plot()
+        analyze_simulation_results.main()
+
+if 'apl' in experiments:
+    path = './files/apl'
+    if TRAIN:
+        local_train(se.vary_apl(is_test), path)
+    if ANALYZE:
+        analysis_activity.sparseness_activity(
+            path, 'kc_out', activity_threshold=0., lesion_kwargs=None)
+        lk = {'name': 'model/apl2kc/kernel:0',
+              'units': 0, 'arg': 'outbound'}
+        analysis_activity.sparseness_activity(
+            path, 'kc_out', activity_threshold=0., lesion_kwargs=lk,
+            figname='lesion_apl_')
+
+if 'meansub' in experiments:
+    path = './files/meansub'
+    if TRAIN:
+        local_sequential_train(se.vary_w_glo_meansub_coeff(is_test), path)
+    if ANALYZE:
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(
+            path, x_key='w_glo_meansub_coeff', dynamic_thres=True)

@@ -114,7 +114,14 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, thres 
         mean_claws.append(np.mean(sparsity[sparsity != 0]))
         print(mean_claws)
 
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    if np.max(mean_claws) < 15:
+        ylim = [1, 15]
+        yticks = [1, 5, 7, 9, 15]
+    else:
+        ylim = [1, int(np.max(mean_claws))+1]
+        yticks = [1, 10, 20, 30]
+
+    dirs = tools._get_alldirs(dir, model=False, sort=True)
     for i, d in enumerate(dirs):
         config = tools.load_config(d)
         setattr(config, 'mean_claw', mean_claws[i])
@@ -124,7 +131,7 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, thres 
     yticks_mean = [0, 3, 7, 15, 20]
     yticks_zero = [0., .5, 1]
     sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key,
-                    ax_args={'ylim':[1, 15],'yticks':[1, 5, 7, 9, 15]},
+                    ax_args={'ylim':ylim,'yticks':yticks},
                     figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
     sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key,
                     ax_args={'ylim': [0, 1], 'yticks': [0, .5, 1]},
@@ -270,18 +277,21 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
     _plot(means, stds, THRES)
 
 
-def plot_distribution(dir, xrange = 1.0, log = False):
-    # TODO(gry): I don't like how this function plots everything from subdirectories of dir
+def plot_distribution(dir, xrange=1.0, log=False):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path, exist_ok=True)
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
+    if tools._islikemodeldir(dir):
+        dirs = [dir]
+    else:
+        dirs = tools._get_alldirs(dir, model=True, sort=True)
+
     titles = ['Before Training', 'After Training']
 
     for i, d in enumerate(dirs):
         print('Analyzing results from: ' + str(d))
         try:
-            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
+            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
         except KeyError:
             wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
         for j in [0, -1]:
@@ -303,35 +313,57 @@ def plot_distribution(dir, xrange = 1.0, log = False):
                 _plot_log_distribution(distribution, save_name, cutoff = cutoff,
                                    title=titles[j], xrange= xrange, yrange=5000)
 
-def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres = THRES):
+
+def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False, thres=THRES):
+    print('Analyzing results from: ' + str(d))
+    try:
+        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
+    except KeyError:
+        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
+    w = wglos[epoch]
+
+    w[np.isnan(w)] = 0
+
+    # dynamically infer threshold after training
+    if dynamic_thres is False:
+        thres = thres
+    elif epoch == 0:
+        thres = 0.01
+    elif dynamic_thres == True:
+        thres = None
+    else:
+        thres = dynamic_thres
+    thres = infer_threshold(w, visualize=visualize, force_thres=thres)
+    print('thres=', str(thres))
+
+    sparsity = np.count_nonzero(w > thres, axis=0)
+    return sparsity
+
+
+def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
+                  epochs=None):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    titles = ['Before Training', 'After Training']
-    yrange = [1, 0.5]
+
+
+    if tools._islikemodeldir(dir):
+        dirs = [dir]
+    else:
+        dirs = tools._get_alldirs(dir, model=True, sort=True)
+
+    if epochs is None:
+        epochs = [0, -1]  # analyze the first and the last
+        titles = ['Before Training', 'After Training']
+        yrange = [1, 0.5]
+    else:
+        titles = ['Epoch {:d}'.format(e) for e in epochs]
+        yrange = [0.5]*len(epochs)
+
     for i, d in enumerate(dirs):
-        print('Analyzing results from: ' + str(d))
-        try:
-            wglo = tools.load_pickle(os.path.join(d,'epoch'), 'w_glo')
-        except KeyError:
-            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
-        wglo = [wglo[0]] + [wglo[-1]]
-        for j, w in enumerate(wglo):
-            w[np.isnan(w)] = 0
-
-            # dynamically infer threshold after training
-            if dynamic_thres is False:
-                thres = thres
-            elif j == 0:
-                thres = 0.01
-            elif dynamic_thres == True:
-                thres = infer_threshold(w, visualize=visualize, force_thres=thres)
-            else:
-                thres = dynamic_thres
-            print('thres=', str(thres))
-
-            sparsity = np.count_nonzero(w > thres, axis=0)
+        for j, epoch in enumerate(epochs):
+            sparsity = compute_sparsity(d, epoch, dynamic_thres=dynamic_thres,
+                                        visualize=visualize, thres=thres)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
             _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])
 
@@ -350,7 +382,7 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     ax.set_xticks(xticks)
     ax.set_yticks(np.linspace(0, yrange, 3))
     plt.ylim([0, yrange])
-    plt.xlim([0, xrange])
+    plt.xlim([-1, xrange])
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
