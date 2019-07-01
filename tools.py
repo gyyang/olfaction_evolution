@@ -38,7 +38,7 @@ def _islikemodeldir(d):
     except NotADirectoryError:
         return False
     for file in files:
-        if 'model.ckpt' in file:
+        if 'model.ckpt' in file or 'log.pkl' in file:
             return True
     return False
 

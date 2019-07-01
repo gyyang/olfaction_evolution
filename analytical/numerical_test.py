@@ -561,14 +561,37 @@ def _plot_compare(values, keys):
 
     
 def _plot_compare_overlay(values, keys):
-    colors = ['red', 'green', 'blue', 'orange']
-    fig = plt.figure(figsize=(4, 3))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    colors = [tools.red, 'green', 'blue', 'orange']
+    fig = plt.figure(figsize=(1.5, 1.2))
+    ax = fig.add_axes([0.3, 0.3, 0.6, 0.5])
     for i, key in enumerate(keys):
-        ax.plot(values['sim']['K'], values['sim'][key], 'o', label=key, color=colors[i], alpha=0.5)
+        ax.plot(values['sim']['K'], values['sim'][key], 'o', label=key,
+                color=colors[i], alpha=0.5, markersize=3)
         ax.plot(values['an']['K'], values['an'][key], color=colors[i])
-    ax.set_xlabel('K')
-    plt.legend()
+    # if keys[0] != 'E[S^2]/mu_S^2_scaled':
+    if False:
+        ax.set_xticklabels('')
+    else:
+        ax.set_xticks([0, 30])
+        ax.set_xlabel('K', labelpad=0)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    if len(keys) > 1:
+        plt.legend()
+    else:
+        title = keys[0]
+        if title == 'E[S^2]/mu_S^2_scaled':
+            title = r'$E[|y|^4]$'
+        elif title == 'mu_R/mu_S_scaled':
+            title = r'$E[|\Delta|^2]$'
+        plt.title(title, fontsize=7, pad=-4)
+    
+# =============================================================================
+#     if 'scaled' in keys[0]:
+#         plt.yticks([0, 1])
+# =============================================================================
     fname = ''.join(keys)
     fname = fname.replace('/', '')
     fname = os.path.join(rootpath, 'figures', 'analytical', fname)

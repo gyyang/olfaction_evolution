@@ -102,16 +102,14 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         pass
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=False):
+def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
     """
-    #TODO: fix code
-    dirs = [os.path.join(path, n) for n in os.listdir(path)]
-    save_path = dirs[dir_ix]
     # Load network at the end of training
-    model_dir = os.path.join(save_path, 'model.pkl')
+    model_dir = os.path.join(path, 'model.pkl')
+    print('Plotting ' + var_name + ' from ' + model_dir)
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
         w_plot = var_dict[var_name]
@@ -198,7 +196,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis = 1, dir_ix = 0, average=Fal
     #     plt.hist(var_dict[key].flatten())
     #     plt.title(key)
 
-def load_activity(save_path):
+def load_activity(save_path, lesion_kwargs=None):
     '''
     Loads model activity from tensorflow
     :param save_path:
@@ -235,6 +233,9 @@ def load_activity(save_path):
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
         model.load()
+
+        if lesion_kwargs:
+            model.lesion_units(**lesion_kwargs)
 
         # Validation
         glo_out, glo_in, kc_out, logits = sess.run(

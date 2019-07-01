@@ -62,7 +62,12 @@ class Model(object):
             units = np.array(units)
 
         # This lesioning will work for both RNN and GRU
-        v = [tmp for tmp in tf.trainable_variables() if tmp.name == name][0]
+        var_lesion = [tmp for tmp in tf.trainable_variables() if tmp.name == name]
+        if var_lesion:
+            v = var_lesion[0]
+        else:
+            print('No units are being lesioned')
+            return
         # Connection weights
         v_val = sess.run(v)
 
@@ -154,10 +159,10 @@ def _normalize(inputs, norm_type, training=True):
     if norm_type is not None:
         if norm_type == 'layer_norm':
             # Apply layer norm before activation function
-            # outputs = tf.contrib.layers.layer_norm(
-            #     inputs, center=True, scale=True)
             outputs = tf.contrib.layers.layer_norm(
-                inputs, center=True, scale=False)
+                inputs, center=True, scale=True)
+            # outputs = tf.contrib.layers.layer_norm(
+            #     inputs, center=True, scale=False)
         elif norm_type == 'batch_norm':
             # Apply layer norm before activation function
             outputs = tf.layers.batch_normalization(
@@ -393,7 +398,10 @@ class FullModel(Model):
     def build_activity(self, x, weights, training, reuse=True):
         orn = self._build_orn_activity(x, weights, training)
         pn = self._build_pn_activity(orn, weights, training)
-        kc = self._build_kc_activity(pn, weights, training)
+        if 'apl' in dir(self.config) and self.config.apl:
+            kc = self._build_kc_activity_withapl(pn, weights, training)
+        else:
+            kc = self._build_kc_activity(pn, weights, training)
         logits, logits2 = self._build_logit_activity(kc, weights, training)
         return logits, logits2
 
@@ -443,8 +451,8 @@ class FullModel(Model):
                 initializer = _initializer(range, config.initializer_orn2pn)
                 bias_initializer = tf.constant_initializer(0)
             else:
-                initializer = tf.glorot_normal_initializer
-                bias_initializer = tf.glorot_normal_initializer
+                initializer = tf.glorot_uniform_initializer()
+                bias_initializer = tf.zeros_initializer()
 
             w_orn = tf.get_variable('kernel', shape=(N_ORN, N_PN),
                                  dtype=tf.float32,
@@ -647,19 +655,21 @@ class FullModel(Model):
         b_glo = weights['b_glo']
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            kc_in = tf.matmul(pn, w_glo) + b_glo
+            if 'w_glo_meansub' in dir(config) and config.w_glo_meansub:
+                # w_glo_mean = tf.reduce_mean(w_glo, axis=0, keepdims=True)
+                w_glo_mean = tf.reduce_mean(w_glo)
+                # w_glo_mean = tf.stop_gradient(tf.reduce_mean(w_glo))
+                w_glo_meansubtract = \
+                    w_glo - w_glo_mean * config.w_glo_meansub_coeff
+                kc_in = tf.matmul(pn, w_glo_meansubtract) + b_glo
+            else:
+                kc_in = tf.matmul(pn, w_glo) + b_glo
             kc_in = _normalize(kc_in, config.kc_norm_pre, training)
             if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
                 kc_in = pn
+
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
-
-            if 'apl' in dir(config) and config.apl:
-                w_kc2apl = weights['w_apl_in']
-                b_apl = weights['b_apl']
-                w_apl2kc = weights['w_apl_out']
-                apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
-                kc = tf.nn.relu(tf.matmul(apl, w_apl2kc) + kc_in)
 
             if config.kc_dropout:
                 kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
@@ -668,6 +678,42 @@ class FullModel(Model):
                 w3 = weights['w_extra_layer']
                 b3 = weights['b_extra_layer']
                 kc = tf.nn.relu(tf.matmul(kc, w3) + b3)
+        self.kc_in = kc_in
+        self.kc = kc
+        return kc
+
+    def _build_kc_activity_withapl(self, pn, weights, training):
+        # KC input before activation function
+        config = self.config
+        w_glo = weights['w_glo']
+        b_glo = weights['b_glo']
+
+        kc_in = tf.matmul(pn, w_glo) + b_glo
+        kc = tf.nn.relu(kc_in)
+
+        # kc_in = tf.matmul(pn, w_glo)
+        # kc = tf.nn.relu(kc_in + b_glo)
+
+        w_kc2apl = weights['w_apl_in']
+        b_apl = weights['b_apl']
+        w_apl2kc = weights['w_apl_out']
+
+        # sigmoidal APL with subtractive inhibition
+        # apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)  # standard
+        # kc_in = tf.matmul(apl, w_apl2kc) + kc_in
+
+        # multiplicative APL inhibition
+        apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
+        kc_in = kc_in * tf.nn.sigmoid(tf.matmul(apl, w_apl2kc))
+        # kc_in = kc_in / (1 - tf.matmul(apl, w_apl2kc))
+
+        kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+        kc = tf.nn.relu(kc_in)
+        # kc = tf.nn.relu(kc_in + b_glo)
+
+        if config.kc_dropout:
+            kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+
         self.kc_in = kc_in
         self.kc = kc
         return kc
