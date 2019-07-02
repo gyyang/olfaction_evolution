@@ -5,7 +5,7 @@ import task
 import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 12
+testing_epochs = 10
 
 def train_standardnet(argTest=False):
     """Standard training setting"""

@@ -1,7 +1,7 @@
 import os
 import json
 import pickle
-
+from copy import deepcopy
 import numpy as np
 from matplotlib import colors
 from sklearn.metrics.pairwise import cosine_similarity
@@ -136,6 +136,45 @@ def varying_config_sequential(experiment, i):
 
     for key in keys:
         setattr(config, key, hp_ranges[key][i])
+    return config
+
+def varying_config_control(experiment, i):
+    """Training each hyper-parameter independently
+
+    Args:
+        experiment: a tuple (config, hp_ranges)
+        i: integer, indexing the specific hyperparameter settings to be used
+
+       unlike varying_config, this function does not iterate through all possible
+       hyper-parameter combinations.
+
+       default: a=0, b=0, c=0
+       hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
+       possible combinations are {'a':0,1},{'b':0,1}, {'c':0,1}
+
+    Returns:
+        config: new configuration
+    """
+    config_, hp_ranges = experiment
+    config = deepcopy(config_)
+
+    # Unravel the input index
+    keys = list(hp_ranges.keys())
+    dims = [len(hp_ranges[k]) for k in keys]
+    n_max = np.sum(dims)
+
+    if i >= n_max:
+        return False
+
+    for j, d in enumerate(dims):
+        if i >= d:
+            i-= d
+        else:
+            break
+
+    key = keys[j]
+    setattr(config, key, hp_ranges[key][i])
+    print('key:{}, value: {}'.format(key, hp_ranges[key][i]))
     return config
 
 
