@@ -69,7 +69,7 @@ else:
 
 #peter specific
 #
-TRAIN = False
+TRAIN = True
 ANALYZE = True
 is_test = True
 experiments = ['kc_claw_controls']
