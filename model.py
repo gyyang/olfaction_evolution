@@ -642,12 +642,7 @@ class FullModel(Model):
             else:
                 glo_in = _normalize(glo_in_pre, config.pn_norm_pre, training)
             glo = tf.nn.relu(glo_in)
-
             glo = _normalize(glo, config.pn_norm_post, training)
-
-        if hasattr(config, 'pn_dropout') and config.pn_dropout:
-            glo = tf.layers.dropout(glo, config.pn_dropout_rate, training=training)
-
         self.glo_in = glo_in
         self.glo_in_pre = glo_in_pre
         self.glo = glo

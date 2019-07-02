@@ -146,8 +146,11 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
 
     max = np.max(abs(w_plot))
     vlim = np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)
-    im = ax.imshow(w_plot, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
+    cmap = tools.get_colormap()
+    # cmap = 'RdBu_r'
+    im = ax.imshow(w_plot, cmap=cmap, vmin=0, vmax=vlim,
                    interpolation='none')
+
 
     if var_name == 'w_orn':
         plt.title('ORN-PN connectivity after training', fontsize=7)
@@ -175,7 +178,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     ax.set_xticks([0, w_plot.shape[1]])
     ax.set_yticks([0, w_plot.shape[0]])
     ax = fig.add_axes(rect_cb)
-    cb = plt.colorbar(im, cax=ax, ticks=[-vlim, vlim])
+    cb = plt.colorbar(im, cax=ax, ticks=[0, vlim])
     cb.outline.set_linewidth(0.5)
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)

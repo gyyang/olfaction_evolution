@@ -1,8 +1,9 @@
 import os
 import json
 import pickle
-
+from copy import deepcopy
 import numpy as np
+from matplotlib import colors
 from sklearn.metrics.pairwise import cosine_similarity
 
 import configs
@@ -135,6 +136,45 @@ def varying_config_sequential(experiment, i):
 
     for key in keys:
         setattr(config, key, hp_ranges[key][i])
+    return config
+
+def varying_config_control(experiment, i):
+    """Training each hyper-parameter independently
+
+    Args:
+        experiment: a tuple (config, hp_ranges)
+        i: integer, indexing the specific hyperparameter settings to be used
+
+       unlike varying_config, this function does not iterate through all possible
+       hyper-parameter combinations.
+
+       default: a=0, b=0, c=0
+       hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
+       possible combinations are {'a':0,1},{'b':0,1}, {'c':0,1}
+
+    Returns:
+        config: new configuration
+    """
+    config_, hp_ranges = experiment
+    config = deepcopy(config_)
+
+    # Unravel the input index
+    keys = list(hp_ranges.keys())
+    dims = [len(hp_ranges[k]) for k in keys]
+    n_max = np.sum(dims)
+
+    if i >= n_max:
+        return False
+
+    for j, d in enumerate(dims):
+        if i >= d:
+            i-= d
+        else:
+            break
+
+    key = keys[j]
+    setattr(config, key, hp_ranges[key][i])
+    print('key:{}, value: {}'.format(key, hp_ranges[key][i]))
     return config
 
 
@@ -329,3 +369,28 @@ def compute_sim_score(w_orn, unique_orn, mode='tile'):
 
     avg_sim_score = np.mean(sim_scores)
     return avg_sim_score, sim_scores
+
+
+def get_colormap():
+    def make_colormap(seq):
+        """Return a LinearSegmentedColormap
+        seq: a sequence of floats and RGB-tuples. The floats should be increasing
+        and in the interval (0,1).
+        """
+
+        seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
+        cdict = {'red': [], 'green': [], 'blue': []}
+        for i, item in enumerate(seq):
+            if isinstance(item, float):
+                r1, g1, b1 = seq[i - 1]
+                r2, g2, b2 = seq[i + 1]
+                cdict['red'].append([item, r1, r2])
+                cdict['green'].append([item, g1, g2])
+                cdict['blue'].append([item, b1, b2])
+        return colors.LinearSegmentedColormap('CustomMap', cdict, N=512)
+
+    c = colors.ColorConverter().to_rgb
+    a = 'tomato'
+    b = 'darkred'
+    cmap = make_colormap([c('white'), c(a), .5, c(a), c(b), .8, c(b)])
+    return cmap

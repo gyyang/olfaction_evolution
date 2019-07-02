@@ -5,7 +5,7 @@ import task
 import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-testing_epochs = 12
+testing_epochs = 10
 
 def train_standardnet(argTest=False):
     """Standard training setting"""
@@ -316,7 +316,7 @@ def vary_kc_activity_fixed(argTest):
     x = [100, 200, 500, 1000, 2000, 5000]
     hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
     if argTest:
-        hp_ranges['kc_dropout_rate'] = [.5]
+        hp_ranges['kc_dropout_rate'] = [0, .5]
         x = [100, 200, 500, 1000]
         hp_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
         config.max_epoch = testing_epochs

@@ -19,7 +19,7 @@ import argparse
 import standard.experiment as se
 import standard.experiment_controls_pn2kc as experiments_controls_pn2kc
 import standard.experiments_receptor as experiments_receptor
-from standard.hyper_parameter_train import local_train, local_sequential_train
+from standard.hyper_parameter_train import local_train, local_sequential_train, local_control_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import standard.analysis_pn2kc_random as analysis_pn2kc_random
@@ -59,20 +59,20 @@ if args.experiment == 'core':
                    'vary_kc',
                    'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
                    'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
-                   'vary_pn2kc_loss', 'vary_kc_dropout', 'vary_pn2kc_initial_value','vary_pn2kc_noise',
-                   'or2orn', 'or2orn_primordial', 'or2orn_duplication', 'or2orn_normalization',
+                   'kc_claw_controls',
+                   'or2orn', 'or2orn_duplication', 'or2orn_normalization',
                    'kcrole', 'kc_generalization',
                    'multi_head', 'metalearn']
 else:
     experiments = args.experiment
 
 
-# #peter specific
-
-# TRAIN = False
-# ANALYZE = True
-# is_test = True
-# experiments = ['standard_with_or2orn']
+#peter specific
+#
+TRAIN = True
+ANALYZE = True
+is_test = True
+experiments = ['kc_claw_controls']
 
 
 if 'standard_without_or2orn' in experiments:
@@ -112,7 +112,6 @@ if 'standard_without_or2orn' in experiments:
         analysis_orn2pn.dimensionality_across_epochs(path, ['Non-negative', 'No constraint'])
 
 if 'standard_with_or2orn' in experiments:
-    # Reproducing most basic findings
     path = './files/standard_net_with_or2orn'
     if TRAIN:
         local_train(se.train_standardnet_with_or2orn(is_test), path)
@@ -240,25 +239,27 @@ if 'train_kc_claws' in experiments:
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
         analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
 
-if 'vary_kc_dropout' in experiments:
-    path = './files/vary_kc_dropout'
+if 'kc_claw_controls' in experiments:
+    path = './files/kc_claw_controls'
     if TRAIN:
-        local_train(experiments_controls_pn2kc.vary_kc_dropout_configs(is_test), path)
+        local_control_train(experiments_controls_pn2kc.vary_kc_dropout_configs(is_test), path)
     if ANALYZE:
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True)
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc')
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True,
+                                                      select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm'})
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', dynamic_thres=True,
+                                                      select_dict={'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='pn_norm_pre', dynamic_thres=True,
+                                                      select_dict={'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
+        # analysis_pn2kc_training.plot_distribution(path)
+        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        # default = {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5}
+        # sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc', ax_args ={'xticks': [0, .2, .4, .6]},
+        #                 select_dict= {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm'})
+        # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',
+        #                 select_dict= {'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5})
+        # sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',
+        #                 select_dict= {'ORN_NOISE_STD':0, 'kc_dropout_rate':0.5})
 
-if 'vary_pn2kc_noise' in experiments:
-    path = './files/vary_pn2kc_noise'
-    if TRAIN:
-        local_train(experiments_controls_pn2kc.vary_pn2kc_noise_configs(is_test), path)
-    if ANALYZE:
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', dynamic_thres=True)
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc')
 
 if 'vary_kc_claws' in experiments:
     path = './files/vary_kc_claws'
@@ -357,18 +358,6 @@ if 'or2orn' in experiments:
         sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=1)
         sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
         sa.plot_weights(path, var_name = 'w_combined', dir_ix=1)
-
-if 'or2orn_primordial' in experiments:
-    path = './files/or2orn_primordial'
-    if TRAIN:
-        local_train(experiments_receptor.primordial(is_test), path)
-    if ANALYZE:
-        sa.plot_weights(path, var_name = 'w_or', dir_ix=0, sort_axis=0)
-        sa.plot_weights(path, var_name = 'w_or', dir_ix=1, sort_axis=0)
-        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=0)
-        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=1)
-        sa.plot_weights(path, var_name = 'w_combined', dir_ix=0, sort_axis=0)
-        sa.plot_weights(path, var_name = 'w_combined', dir_ix=1, sort_axis=0)
 
 if 'vary_or2orn_duplication' in experiments:
     path = './files/or2orn_orn_duplication'

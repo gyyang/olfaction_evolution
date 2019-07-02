@@ -42,7 +42,7 @@ def _get_data(path):
     v2 = strength_wout2
     v3 = strength_wout1
     # data = np.stack([v1, v2]).T
-    data = np.stack([v3, v2]).T
+    data = np.stack([v1, v2]).T
     norm_factor = data.mean(axis=0)
     data_norm = data / norm_factor
     return v1, v2, v3, data_norm, data
@@ -55,11 +55,11 @@ def _get_groups(data_norm, config):
     print('Group 1 has {:d} neurons'.format(len(group1)))
     return group0, group1
 
-def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath):
+def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath, xticks = (0, 7, 15)):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
     ax.scatter(v1, v2, alpha=0.2, marker='.', s=1)
-    ax.set_xticks([0, 7, 15])
+    ax.set_xticks(xticks)
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
     plt.xlabel(xlabel)
@@ -97,9 +97,7 @@ def _get_density(data, X, Y, method='scipy'):
         raise ValueError('Unknown method')
     return Z
 
-def _plot_density(Z, xmin, xmax, ymin, ymax, savename, figpath):
-    xlabel = 'PN Input degree'
-    ylabel = 'Conn. to valence'
+def _plot_density(Z, xmin, xmax, ymin, ymax, xlabel, ylabel, savename, figpath):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
     ax.plot([7, 7], [ymin, ymax], '--', color='gray', linewidth=1)
@@ -243,24 +241,28 @@ def main1(arg, foldername=None, subdir=None):
     v1, v2, v3, data_norm, data = _get_data(subpath)
     group0, group1 = _get_groups(data_norm, config)
 
-    # xmin, xmax, ymin, ymax = 0, 15, 0, 3
-    # degree_label = 'PN Input degree'
-    # valence_label = 'Conn. to valence'
-    # class_label = 'Conn. to classif.'
-    # _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=valence_label, figpath=figpath)
-    # _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=class_label, figpath=figpath)
-    # _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label, ylabel=valence_label, figpath=figpath)
-    # _compute_silouette_score(data_norm, figpath)
+    xmin, xmax, ymin, ymax = 0, 15, 0, 3
+    degree_label = 'Input degree'
+    valence_label = 'Conn. to valence'
+    class_label = 'Conn. to classif.'
+    _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=valence_label, figpath=figpath)
+    _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=class_label, figpath=figpath)
+    _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label, ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
+    _compute_silouette_score(data_norm, figpath)
 
-    # X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-    # Z = _get_density(data, X, Y)
-    # Z1 = _get_density(data[group0], X, Y)
-    # Z2 = _get_density(data[group1], X, Y)
-    #
-    # _plot_density(Z, xmin, xmax, ymin, ymax, 'density', figpath = figpath)
-    # _plot_density(Z1, xmin, xmax, ymin, ymax, 'density_group1', figpath)
-    # _plot_density(Z2, xmin, xmax, ymin, ymax,'density_group2', figpath)
-    # _plot_density(Z1+Z2, xmin, xmax, ymin, ymax, 'density_group12', figpath)
+    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+    Z = _get_density(data, X, Y)
+    Z1 = _get_density(data[group0], X, Y)
+    Z2 = _get_density(data[group1], X, Y)
+
+    _plot_density(Z, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel= valence_label, savename='density', figpath = figpath)
+    _plot_density(Z1, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel= valence_label, savename='density_group1', figpath = figpath)
+    _plot_density(Z2, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel=valence_label, savename='density_group2', figpath=figpath)
+    _plot_density(Z1+Z2, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel=valence_label, savename='density_group12', figpath=figpath)
 
     val_accs = list()
     val_acc2s = list()
@@ -329,7 +331,7 @@ def main():
     norm_factor = data.mean(axis=0)
     data_norm = data / norm_factor
 
-    xlabel = 'PN Input degree'
+    xlabel = 'KC Input degree'
     ylabel = 'Conn. to valence'
     xmin, xmax, ymin, ymax = 0, 50, 0, 3
 
@@ -356,7 +358,7 @@ def main():
     fig = plt.figure(figsize=(1.5, 1.5))
     plt.scatter(v1[group0], v2[group0], alpha=0.02)
     plt.scatter(v1[group1], v2[group1], alpha=0.3)
-    xlabel = 'PN Input degree'
+    xlabel = 'KC Input degree'
     ylabel = 'Conn. to valence'
     xmin, xmax, ymin, ymax = 0, 15, 0, 3
     plt.xlabel(xlabel)

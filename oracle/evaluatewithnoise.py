@@ -248,6 +248,134 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
     return val_loss, val_acc
 
 
+def evaluate_weight_perturb_angle(values, modelname, model_dir, n_rep=1, dataset='val',
+                            perturb_mode='multiplicative', epoch=None,
+                            multidirection=False, perturb_output=True):
+    """Evaluate the performance under weight perturbation.
+
+    Args:
+        values: a list of floats about the strength of perturbations
+        modelname: str, the model name
+        model_dir: str, the model directory
+        n_rep: int, the number of repetition
+        dataset: 'train' or 'val', the dataset for computing loss
+        perturb_mode: 'feature_norm' or 'multiplicative'.
+            If 'feature_norm', uses feature-normalized perturbation
+            If 'multiplicative', uses independent multiplicative perturbation
+        epoch: int or None. If int, analyze the results at specific training epoch
+        multidirection: int or False. if not False, then the perturbation
+            will be along multiple directions, values must be list of (multidirection)-tuple
+
+    Return:
+        losses: a np array of losses, the same size as values
+        accs: np array of accuracies, the same size as values
+    """
+
+    path = model_dir
+    config = tools.load_config(path)
+
+    # TODO: clean up these paths
+    config.data_dir = rootpath + config.data_dir[1:]
+    config.save_path = rootpath + config.save_path[1:]
+
+    tf.reset_default_graph()
+    # Build validation model
+    val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
+    val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
+    val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
+
+    if epoch is not None:
+        val_model.save_path = os.path.join(
+            val_model.save_path, 'epoch', str(epoch).zfill(4))
+
+    # Variables to perturb
+    perturby_var = None
+    if perturb_output:
+        perturb_var = ['model/layer3/kernel:0']
+    else:
+        perturb_var = ['model/layer2/kernel:0']
+
+    tf_config = tf.ConfigProto()
+    tf_config.gpu_options.allow_growth = True
+    with tf.Session(config=tf_config) as sess:
+        sess.run(tf.global_variables_initializer())
+        val_model.load()
+
+        if dataset == 'val':
+            data_x, data_y = val_x, val_y
+        elif dataset == 'train':
+            rnd_ind = np.random.choice(
+                train_x.shape[0], size=(val_x.shape[0],), replace=False)
+            data_x, data_y = train_x[rnd_ind], train_y[rnd_ind]
+        else:
+            raise ValueError('Wrong dataset type')
+
+        print('Perturbing weights:')
+        for v in perturb_var:
+            print(v)
+
+        if perturb_var is None:
+            perturb_var = tf.trainable_variables()
+        else:
+            perturb_var = [v for v in tf.trainable_variables() if
+                           v.name in perturb_var]
+
+        origin_weights = [sess.run(v) for v in perturb_var]
+
+        theta_array = np.zeros((n_rep, len(values)))
+        val_acc = np.zeros((n_rep, len(values)))
+
+        for i_rep, rep in enumerate(range(n_rep)):
+            if perturb_mode == 'feature_norm':
+                if multidirection:
+                    directions_list = [select_random_directions(origin_weights)
+                                       for _ in range(multidirection)]
+                else:
+                    directions = select_random_directions(origin_weights)
+
+            for i_value, value in enumerate(values):
+                if perturb_mode == 'multiplicative':
+                    new_var_val = [w * np.random.uniform(1 - value, 1 + value, size=w.shape)
+                                   for w in origin_weights]
+                elif perturb_mode == 'feature_norm':
+                    if multidirection:
+                        new_var_val = list()
+                        for i_w, w in enumerate(origin_weights):
+                            new_w = 0
+                            for v, d_list in zip(value, directions_list):
+                                new_w += d_list[i_w] * v
+                            new_w += w
+                            new_var_val.append(new_w)
+                    else:
+                        new_var_val = list()
+                        for w, d in zip(origin_weights, directions):
+                            new_var_val.append(w + d * value)
+                else:
+                    raise ValueError()
+
+                pre_kc = sess.run(val_model.kc, {val_x_ph: data_x})
+
+                for j in range(len(perturb_var)):
+                    sess.run(perturb_var[j].assign(new_var_val[j]))
+
+                post_kc = sess.run(val_model.kc, {val_x_ph: data_x})
+
+                thetas = _angle(pre_kc, post_kc)
+                theta = np.mean(thetas)
+
+                theta_array[i_rep, i_value] = theta
+
+    return theta_array, theta_array
+
+def _angle(Y, Y2):
+    norm_Y = np.linalg.norm(Y, axis=1)
+    norm_Y2 = np.linalg.norm(Y2, axis=1)
+
+    cos_theta = (np.sum(Y * Y2, axis=1) / (norm_Y * norm_Y2))
+    cos_theta = cos_theta[(norm_Y * norm_Y2) > 0]
+    theta = np.arccos(cos_theta) / np.pi * 180
+    return theta
+
 def evaluate(name, values, model, model_dir, n_rep=1):
     losses = list()
     accs = list()
@@ -342,6 +470,50 @@ def select_config(config, select_dict):
                 return False
     return True
 
+def evaluate_across_epochs(path, values=None, select_dict=None, dataset='val', mode = 'angle',
+                          file=None, n_rep=1, epoch=None, multidirection=False):
+    """Evaluate models from the same root directory."""
+    name = 'weight_perturb'
+    model_dirs = tools.get_allmodeldirs(path)
+    model_dir = model_dirs[0]
+
+    loss_dict = {}
+    acc_dict = {}
+
+    model_var = 'epoch'
+    models = list()
+    epochs = len(tools.get_allmodeldirs(os.path.join(model_dir,'epoch')))
+
+    if mode == 'angle':
+        f = evaluate_weight_perturb_angle
+    else:
+        f = evaluate_weight_perturb
+
+    for model in range(epochs):
+        losses, accs = f(
+            values, model, model_dir, n_rep=n_rep, perturb_output=False, perturb_mode='multiplicative',
+            dataset=dataset, epoch=model, multidirection=multidirection)
+
+        loss_dict[model] = losses
+        acc_dict[model] = accs
+        models.append(model)
+
+    results = {'loss_dict': loss_dict,
+               'acc_dict': acc_dict,
+               'models': models,
+               'model_var': model_var,
+               'values': values,
+               'name': name}
+
+    if file is None:
+        file = os.path.join(path, name + '_' + model_var + '_' + dataset)
+        if epoch is not None:
+            file = file + 'ep' + str(epoch)
+    else:
+        file = os.path.join(path, file)
+
+    with open(file + '.pkl', 'wb') as f:
+        pickle.dump(results, f)
 
 def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
                           file=None, n_rep=1, epoch=None, multidirection=False):
@@ -363,7 +535,7 @@ def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
         
         model = getattr(config, model_var)
         losses, accs = evaluate_weight_perturb(
-            values, model, model_dir, n_rep=n_rep,
+            values, model, model_dir, n_rep=n_rep, perturb_output=True,
             dataset=dataset, epoch=epoch, multidirection=multidirection)
 
         loss_dict[model] = losses
@@ -388,9 +560,8 @@ def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
         pickle.dump(results, f)
 
 
-def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
+def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epoch=None):
     name = 'weight_perturb'
-    model_var = 'kc_inputs'
 
     if file is None:
         file = os.path.join(path, name + '_' + model_var+ '_' + dataset)
@@ -414,11 +585,11 @@ def plot_acrossmodels(path, dataset='val', file=None, epoch=None):
     
     for ylabel in ['val_acc', 'val_loss']:
         res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
-        fig = plt.figure(figsize=(1.5, 1.5))
-        ax = fig.add_axes((0.3, 0.3, 0.6, 0.55))
+        fig = plt.figure(figsize=(2, 2))
+        ax = fig.add_axes((0.2, 0.2, 0.5, 0.5))
 
         for i in range(len(values)):
-            res_plot = [res_dict[model][i].mean(axis=0) for model in models]
+            res_plot = [res_dict[model][:,i].mean(axis=0) for model in models]
             if ylabel == 'val_logloss':
                 res_plot = np.log(res_plot)  # TODO: this log?
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])

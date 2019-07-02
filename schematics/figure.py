@@ -51,10 +51,10 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
         texts = ['Class ' + i for i in ['A','B','C','D']]
         lim = 5
     elif mode == 'concentration':
-        proto_points = np.array([[2, 4], [4, 3], [3, .2],[1, 1]])
-        proto_points = _normalize(proto_points)
+        proto_points_ = np.array([[1, 4], [4, 3], [3, .5], [2.5, 2.5]])
+        proto_points = _normalize(proto_points_)
         texts = ['Class ' + i for i in ['A','B','C','D']]
-        lim = 2
+        lim = 5
     elif mode == 'relabel':
         proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], [4, 1], [4, 3]])
         ind = [0, 1, 2, 3, 2, 1]
@@ -84,17 +84,6 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
     ax = fig.add_axes([.2, .2, .7, .7])
     plt.sca(ax)
 
-    if include_prototypes:
-        for c,p in zip(colors, proto_points):
-            ax.scatter(p[0], p[1], color=c, s=15, marker= prototype_marker)
-
-    if include_data:
-        for c,p in zip(rand_colors, rand_points):
-            ax.scatter(p[0], p[1], color=c, s=2)
-    
-    for i, (txt,p) in enumerate(zip(texts, proto_points)):
-        ax.annotate(txt, (p[0]-.3, p[1]-.35))
-
     vor = Voronoi(proto_points)
     voronoi_plot_2d(vor,
                     ax=ax,
@@ -103,11 +92,25 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
                     line_colors='k',
                     line_width=1)
 
+    if mode == 'concentration':
+        proto_points = proto_points_
+
+    if include_prototypes:
+        for c,p in zip(colors, proto_points):
+            ax.scatter(p[0], p[1], color=c, s=15, marker= prototype_marker)
+
+    if include_data:
+        for c,p in zip(rand_colors, rand_points):
+            ax.scatter(p[0], p[1], color=c, s=2)
+
+    for i, (txt,p) in enumerate(zip(texts, proto_points)):
+        ax.annotate(txt, (p[0]-.3, p[1]-.35))
+
     plt.axis('square')
     plt.xlim([0, lim])
     plt.ylim([0, lim])
-    plt.xticks([0, lim])
-    plt.yticks([0, lim])
+    plt.xticks([0, lim], ['0', '1'])
+    plt.yticks([0, lim], ['0', '1'])
     plt.xlabel('ORN 1 Activity', labelpad=-5)
     plt.ylabel('ORN 2 Activity', labelpad=-5)
 
@@ -123,7 +126,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
     
 
 if __name__ == '__main__':
-    # plot_task('standard', include_prototypes=False)
-    # plot_task('concentration', include_prototypes=False, include_data=True)
-    # plot_task('relabel')
-    plot_task('metalearn', include_data=True, include_prototypes=True, meta_ix=2)
+    # plot_task('standard', include_prototypes=True)
+    plot_task('concentration', include_prototypes=True, include_data=True)
+    # plot_task('relabel', include_prototypes=True)
+    # plot_task('metalearn', include_data=True, include_prototypes=True, meta_ix=2)
