@@ -17,8 +17,7 @@ import os
 import argparse
 
 import standard.experiment as se
-import standard.experiment_controls_pn2kc as experiments_controls_pn2kc
-import standard.experiments_receptor as experiments_receptor
+import standard.experiment_controls as experiment_controls
 from standard.hyper_parameter_train import local_train, local_sequential_train, local_control_train
 import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
@@ -54,13 +53,11 @@ is_test = args.testing
 # experiments
 if args.experiment == 'core':
     experiments = ['standard_without_or2orn', 'standard_with_or2orn',
-                   'vary_orn_duplication', 'vary_pn',
+                   'vary_pn', 'vary_kc', 'or2orn',
                    'pn_normalization',
-                   'vary_kc',
                    'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
                    'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
-                   'kc_claw_controls',
-                   'or2orn', 'or2orn_duplication', 'or2orn_normalization',
+                   'controls_kc_claw', 'controls_glomeruli', 'controls_receptor',
                    'kcrole', 'kc_generalization',
                    'multi_head', 'metalearn']
 else:
@@ -69,10 +66,10 @@ else:
 
 #peter specific
 #
-TRAIN = True
+TRAIN = False
 ANALYZE = True
 is_test = True
-experiments = ['kc_claw_controls']
+experiments = ['controls_receptor']
 
 
 if 'standard_without_or2orn' in experiments:
@@ -139,17 +136,6 @@ if 'standard_with_or2orn' in experiments:
         # analysis_pn2kc_random.claw_distribution(path, 'random')
         # analysis_pn2kc_random.pair_distribution(path, 'preserve')
 
-if 'vary_orn_duplication' in experiments:
-    # Vary ORN n duplication under different nKC
-    path = './files/vary_orn_duplication'
-    if TRAIN:
-        local_train(se.vary_orn_duplication_configs(is_test), path)
-    if ANALYZE:
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION',
-                                       y_key='glo_score', loop_key='N_KC'),
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION',
-                                       y_key='val_acc', loop_key='N_KC')
-
 if 'vary_pn' in experiments:
     # Vary nPN under different noise levels
     path = './files/vary_pn'
@@ -177,7 +163,6 @@ if 'vary_pn' in experiments:
         # analysis_orn2pn.get_dimensionality(path, 'glo')
         # sa.plot_results(path, x_key='N_PN', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
-
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
     path = './files/vary_kc'
@@ -189,10 +174,6 @@ if 'vary_kc' in experiments:
                         select_dict={'ORN_NOISE_STD': 0})
         sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
                         select_dict={'ORN_NOISE_STD': 0})
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                                       loop_key='ORN_NOISE_STD'),
-        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                                       loop_key='ORN_NOISE_STD')
 
         # # correlation and dimensionality
         # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
@@ -202,29 +183,19 @@ if 'vary_kc' in experiments:
         # analysis_orn2pn.get_dimensionality(path, 'glo')
         # sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
-if 'vary_kc_no_dropout' in experiments:
-    # Vary nKC under different noise levels
-    path = './files/vary_kc_no_dropout'
+if 'or2orn' in experiments:
+    path = './files/or2orn'
     if TRAIN:
-        local_train(se.vary_kc_no_dropout_configs(is_test), path)
+        local_train(se.receptor(is_test), path)
     if ANALYZE:
-        sa.plot_weights(path, sort_axis=1, dir_ix=0, average=True)
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0})
-        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0})
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                                       loop_key='ORN_NOISE_STD'),
-        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                                       loop_key='ORN_NOISE_STD')
-
-        # # correlation and dimensionality
-        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
-        #                 yticks=[0, .1, .2],
-        #                 ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
-        # analysis_orn2pn.get_dimensionality(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
+        sa.plot_progress(path)
+        sa.plot_progress(path, select_dict={'ORN_NOISE_STD': 0.25})
+        sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix= 0)
+        sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix= 1)
+        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=0)
+        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=1)
+        sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
+        sa.plot_weights(path, var_name = 'w_combined', dir_ix=1)
 
 if 'train_kc_claws' in experiments:
     path = './files/train_kc_claws'
@@ -239,26 +210,81 @@ if 'train_kc_claws' in experiments:
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
         analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
 
-if 'kc_claw_controls' in experiments:
-    path = './files/kc_claw_controls'
+if 'controls_glomeruli' in experiments:
+    # Vary ORN n duplication under different nKC
+    path = './files/controls_glomeruli'
     if TRAIN:
-        local_control_train(experiments_controls_pn2kc.kc_claw_controls(is_test), path)
+        local_control_train(experiment_controls.controls_glomeruli(is_test), path)
     if ANALYZE:
+        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10}
+
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5}),
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5}),
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5}),
+        sa.plot_results(path, x_key='kc_dropout_rate', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10}),
+
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
+        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5}),
+        sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10}),
+
+if 'controls_kc_claw' in experiments:
+    path = './files/controls_kc_claw'
+    if TRAIN:
+        local_control_train(experiment_controls.controls_kc_claw(is_test), path)
+    if ANALYZE:
+        default = {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5}
+
         analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True,
-                                                      select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm'})
+                                                      select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm'},
+                                                      ax_args = {'xticks': [0, .2, .4, .6]})
         analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', dynamic_thres=True,
                                                       select_dict={'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
         analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='pn_norm_pre', dynamic_thres=True,
                                                       select_dict={'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
         # analysis_pn2kc_training.plot_distribution(path)
         # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        # default = {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5}
         # sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc', ax_args ={'xticks': [0, .2, .4, .6]},
         #                 select_dict= {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm'})
         # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',
         #                 select_dict= {'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5})
         # sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',
         #                 select_dict= {'ORN_NOISE_STD':0, 'kc_dropout_rate':0.5})
+
+if 'controls_receptor' in experiments:
+    path = './files/controls_receptor'
+    if TRAIN:
+        local_control_train(experiment_controls.controls_receptor(is_test), path)
+    if ANALYZE:
+        default = {'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='or_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
+
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='combined_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
+
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
 
 
 if 'vary_kc_claws' in experiments:
@@ -344,40 +370,6 @@ if 'pn_normalization' in experiments:
         # analysis_activity.distribution_activity(path, 'glo_out')
         # analysis_activity.distribution_activity(path, 'kc_out')
         # analysis_activity.sparseness_activity(path, 'kc_out')
-
-if 'or2orn' in experiments:
-    path = './files/or2orn'
-    if TRAIN:
-        local_train(experiments_receptor.basic(is_test), path)
-    if ANALYZE:
-        sa.plot_progress(path)
-        sa.plot_progress(path, select_dict={'ORN_NOISE_STD': 0.25})
-        sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix= 0)
-        sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix= 1)
-        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=0)
-        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=1)
-        sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
-        sa.plot_weights(path, var_name = 'w_combined', dir_ix=1)
-
-if 'vary_or2orn_duplication' in experiments:
-    path = './files/or2orn_orn_duplication'
-    if TRAIN:
-        local_train(experiments_receptor.vary_receptor_duplication(is_test), path)
-    if ANALYZE:
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc')
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='glo_score')
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='or_glo_score')
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='combined_glo_score')
-
-if 'vary_or2orn_normalization' in experiments:
-    path = './files/or2orn_normalization'
-    if TRAIN:
-        local_train(experiments_receptor.vary_normalization(is_test), path)
-    if ANALYZE:
-        sa.plot_results(path, x_key='or2orn_normalization', y_key='val_acc', loop_key='orn2pn_normalization')
-        sa.plot_results(path, x_key='or2orn_normalization', y_key='glo_score', loop_key='orn2pn_normalization')
-        sa.plot_results(path, x_key='or2orn_normalization', y_key='or_glo_score', loop_key='orn2pn_normalization')
-        sa.plot_results(path, x_key='or2orn_normalization', y_key='combined_glo_score', loop_key='orn2pn_normalization')
         
 if 'multi_head' in experiments:
     path = './files/multi_head'

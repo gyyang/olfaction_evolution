@@ -289,7 +289,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
                      'kc_loss_alpha': [.1, 1, 10, 100],
                      'kc_loss_beta': [.1, 1, 10, 100],
                      'initial_pn2kc':[.05, .1, 1],
-                     'N_ORN_DUPLICATION':[1,3,10,30,100,300],
+                     'N_ORN_DUPLICATION':[1,3,10,30,100],
                      'n_trueclass':[100, 200, 500, 1000],
                      # 'val_loss':[],
                      'glo_dimensionality':[5, 50, 200, 1000]}
@@ -323,6 +323,11 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
     else:
         x_plot = res[x_key]
         y_plot = res[y_key]
+        #get rid of duplicates
+        _, ix = np.unique(x_plot, return_index=True)
+        x_plot=x_plot[ix]
+        y_plot=y_plot[ix]
+
         if x_key in log_plot_dict.keys():
             x_plot = np.log(x_plot)
         if y_key in log_plot_dict.keys():
@@ -348,7 +353,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
 
     if yticks is None and np.max(res[y_key]) <= 1:
         ax.set_yticks([0, 0.5, 1.0])
-        plt.ylim([0, 1])
+        plt.ylim([0, 1.1])
 
     if x_key == 'kc_inputs':
         ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
