@@ -8,7 +8,7 @@ import configs
 
 testing_epochs = 16
 
-def vary_kc_dropout_configs(argTest):
+def kc_claw_controls(argTest):
     '''
     Show that claw count of 7 is independent of dropout
     Results:

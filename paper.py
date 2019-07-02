@@ -242,7 +242,7 @@ if 'train_kc_claws' in experiments:
 if 'kc_claw_controls' in experiments:
     path = './files/kc_claw_controls'
     if TRAIN:
-        local_control_train(experiments_controls_pn2kc.vary_kc_dropout_configs(is_test), path)
+        local_control_train(experiments_controls_pn2kc.kc_claw_controls(is_test), path)
     if ANALYZE:
         analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True,
                                                       select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm'})
