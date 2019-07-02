@@ -1,5 +1,5 @@
-import os
 from collections import OrderedDict
+from collections.__init__ import OrderedDict
 
 import task
 import configs
@@ -47,28 +47,6 @@ def train_standardnet_with_or2orn(argTest=False):
         config.max_epoch = 12
     return config, hp_ranges
 
-def vary_orn_duplication_configs(argTest=False):
-    '''
-    Vary the number of ORN duplicates
-    Results:
-        GloScore should be robust to duplicates
-        Accuracy should increase when there are more copies of ORNs to deal with noise
-    '''
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
-    config.ORN_NOISE_STD = 0.25
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 5, 7, 10, 20]
-
-    if argTest:
-        config.max_epoch = testing_epochs
-        hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 10]
-
-    return config, hp_ranges
 
 def vary_pn_configs(argTest=False):
     '''
@@ -118,31 +96,27 @@ def vary_kc_configs(argTest=False):
         hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
 
-def vary_kc_no_dropout_configs(argTest=False):
-    '''
-    Vary number of KCs while also training ORN2PN.
-    Results:
-        GloScore and Accuracy peaks at >2500 KCs for all noise values
-        GloScore does not depend on noise. Should be lower for higher noise values
-        GloScore depends on nKC. Should be lower for lower nKC
-    '''
+def receptor(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
+
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+    config.ORN_NOISE_STD = .4
+    config.save_every_epoch = True
     config.pn_norm_pre = 'batch_norm'
-    config.kc_dropout = False
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
-    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
+    hp_ranges['dummy'] = [0]
 
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['N_KC'] = [50, 100, 200, 500, 1000, 2500, 10000, 20000]
-        hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
     return config, hp_ranges
-
 
 def vary_claw_configs(argTest=False):
     '''

@@ -95,7 +95,7 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None):
     return thres
 
 
-def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, select_dict = None, thres = THRES):
+def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, select_dict = None, thres = THRES, ax_args=None):
     wglos = tools.load_pickle(dir, 'w_glo')
     xrange = wglos[0].shape[0]
     zero_claws = []
@@ -117,13 +117,6 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, select
     ylim = [1, 15]
     yticks = [1, 5, 7, 9, 15]
 
-    # if np.max(mean_claws) < 15:
-    #     ylim = [1, 15]
-    #     yticks = [1, 5, 7, 9, 15]
-    # else:
-    #     ylim = [1, int(np.max(mean_claws))+1]
-    #     yticks = [1, 10, 20, 30]
-
     dirs = tools._get_alldirs(dir, model=False, sort=True)
     for i, d in enumerate(dirs):
         config = tools.load_config(d)
@@ -133,13 +126,19 @@ def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, select
 
     yticks_mean = [0, 3, 7, 15, 20]
     yticks_zero = [0., .5, 1]
+    ax_args_0 = {'ylim':ylim,'yticks':yticks}
+    ax_args_1 = {'ylim': [0, 1], 'yticks': [0, .5, 1]}
+    if ax_args:
+        ax_args_0.update(ax_args)
+        ax_args_1.update(ax_args)
     sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key,
                     select_dict= select_dict,
-                    ax_args={'ylim':ylim,'yticks':yticks},
+                    ax_args= ax_args_0,
                     figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+
     sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key,
                     select_dict=select_dict,
-                    ax_args={'ylim': [0, 1], 'yticks': [0, .5, 1]},
+                    ax_args= ax_args_1,
                     figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
 
 def image_pn2kc_parameters(dir, dynamic_thres=False):

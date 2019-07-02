@@ -180,3 +180,53 @@ if 'vary_pn2kc_loss' in experiments:
         sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
         sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
 
+if 'vary_kc_no_dropout' in experiments:
+    # Vary nKC under different noise levels
+    path = './files/vary_kc_no_dropout'
+    if TRAIN:
+        local_train(se.vary_kc_no_dropout_configs(is_test), path)
+    if ANALYZE:
+        sa.plot_weights(path, sort_axis=1, dir_ix=0, average=True)
+        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD': 0})
+        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD': 0})
+        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+                                       loop_key='ORN_NOISE_STD'),
+        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+                                       loop_key='ORN_NOISE_STD')
+
+        # # correlation and dimensionality
+        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
+        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
+        #                 yticks=[0, .1, .2],
+        #                 ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
+        # analysis_orn2pn.get_dimensionality(path, 'glo')
+        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
+
+
+def vary_kc_no_dropout_configs(argTest=False):
+    '''
+    Vary number of KCs while also training ORN2PN.
+    Results:
+        GloScore and Accuracy peaks at >2500 KCs for all noise values
+        GloScore does not depend on noise. Should be lower for higher noise values
+        GloScore depends on nKC. Should be lower for lower nKC
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_dropout = False
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
+    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
+
+    if argTest:
+        config.max_epoch = testing_epochs
+        hp_ranges['N_KC'] = [50, 100, 200, 500, 1000, 2500, 10000, 20000]
+        hp_ranges['ORN_NOISE_STD'] = [0, 0.25]
+    return config, hp_ranges
+
