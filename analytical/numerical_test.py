@@ -877,6 +877,52 @@ def get_optimal_K_simulation_participationratio():
         pickle.dump(all_values, open(fname+'.pkl', "wb"))
 
 
+def control_coding_level():
+    def guess_optimal_K(m, s):
+        """Get the optimal K based on latest estimation."""
+        return np.exp(-0.75) * (m ** 0.706)
+
+    m = 50
+    s_values = [10, 20, 30, 40, 50, 60, 70, 80]
+    for s in s_values:
+        # for m in [75]:
+        K_mid = int(guess_optimal_K(m, s))
+        K_sim = np.arange(int(K_mid) - 5, int(K_mid) + 5)
+
+        kwargs = {'x_dist': 'gaussian',
+                  'normalize_x': False,
+                  'w_mode': 'exact',
+                  # 'w_mode': 'bernoulli',
+                  'w_dist': 'gaussian',
+                  'normalize_w': False,
+                  'b_mode': 'percentile',
+                  # 'b_mode': 'gaussian',
+                  'coding_level': s,
+                  'activation': 'relu',
+                  # 'perturb_mode': 'multiplicative',
+                  'perturb_mode': 'additive',
+                  'perturb_dist': 'gaussian',
+                  'n_pts': 500,
+                  'n_rep': 1,
+                  'n_pn': m}
+
+        n_rep = 2
+        all_values = list()
+        for i in range(n_rep):
+            start_time = time.time()
+            values_sim = defaultdict(list)
+            for K in K_sim:
+                res = simulation(K, **kwargs)
+                for key, val in res.items():
+                    values_sim[key].append(val)
+            all_values.append(values_sim)
+            print('Time taken : {:0.2f}s'.format(time.time() - start_time))
+
+        fname = 'control_coding_level_s' + str(s)
+        fname = os.path.join(rootpath, 'files', 'analytical', fname)
+        pickle.dump(all_values, open(fname + '.pkl', "wb"))
+
+
 def compute_optimalloss_onestepgradient():
     import time
     m = 50
@@ -1048,7 +1094,7 @@ def compute_optimalloss_onestepgradient():
 
 if __name__ == '__main__':
     # main_compare(m=50, activation='relu', compute_dimension=False)
-    main_plot(m=50, logK=False, activation='relu')
+    # main_plot(m=50, logK=False, activation='relu')
     # main_compare(perturb='pn2kc')
     # main_plot_perturboutput()
     # main_compare(perturb='input')
@@ -1056,66 +1102,4 @@ if __name__ == '__main__':
     # get_optimal_K_simulation_participationratio()
     # get_optimal_k()
     # compare_dim_plot()
-    
-# =============================================================================
-#     m  = 50
-#     logK = False
-#     activation = 'relu'
-#     
-#     values = list()
-#     for name in ['', '_dim']:       
-#         file = os.path.join(rootpath, 'files', 'analytical', 'sim_m'+str(m))
-#         if activation != 'relu':
-#             file = file + activation
-#         file += name
-#         with open(file+'.pkl', 'rb') as f:
-#             value = pickle.load(f)
-#         
-#         value = {key: np.array(val) for key, val in value.items()}
-#         values.append(value)
-#     
-#     values, values_dim = values
-#         
-#     if m == 50:
-#         xticks = [3, 7, 15, 30]
-#     elif m == 1000:
-#         xticks = [10, 100, 1000]
-#     else:
-#         xticks = []
-#         
-#     if logK:
-#         xplot = np.log(values_dim['K'])
-#     else:
-#         xplot = values_dim['K']
-#     
-#     keys = ['dim', 'E_Cii', 'E_C2ij', 'E_C2ii']
-#     for i, key in enumerate(keys):
-#         plt.figure(figsize=(4, 3))
-#         plt.plot(values_dim['K'], values_dim[key], 'o-', label=key)
-#         plt.legend()
-#         
-#     keys = ['E[S^2]']
-#     for i, key in enumerate(keys):
-#         plt.figure(figsize=(4, 3))
-#         plt.plot(values['K'], values[key], 'o-', label=key)
-#         plt.legend()
-#         
-#     plt.figure()
-#     plt.scatter(values_dim['K']/values_dim['dim'], values_dim['E_C2ij'])
-#         
-#     plt.figure()
-#     plt.scatter(values['E[S^2]']/1e9, np.sqrt(values_dim['E_C2ij']))
-#     
-#     plt.figure()
-#     plt.scatter(values['E[S^2]']/values['mu_S']**2, 1/np.sqrt(values_dim['dim']))
-#     
-#     plt.figure()
-#     plt.plot(values['K'], values['E[S^2]']/values['mu_S']**2)
-# 
-#     plt.figure()
-#     plt.plot(values_dim['K'], 1/np.sqrt(values_dim['dim']))
-#     
-#     plt.figure()
-#     plt.plot(values['K'], values['mu_R']/values['mu_S'])
-# 
-# =============================================================================
+    control_coding_level()
