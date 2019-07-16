@@ -30,10 +30,8 @@ mpl.rcParams['font.family'] = 'arial'
 
 mpl.rcParams['mathtext.fontset'] = 'stix'
 
-def get_optimal_K(filename, m, v_name):
-    fn = filename + str(m)
-
-    with open('../files/analytical/'+fn+'.pkl', "rb") as f:
+def get_optimal_K(filename, v_name):
+    with open(filename, "rb") as f:
         all_values = pickle.load(f)
 
     if v_name in ['dim']:
@@ -76,50 +74,75 @@ def get_sparsity_from_training(path):
 def _load_result(filename, v_name='theta'):
     dirs = os.listdir(os.path.join(rootpath, 'files', 'analytical'))
 
-    ms = [int(d[len(filename):-len('.pkl')]) for d in dirs if filename in d]
-    ms = np.sort(ms)
+    xs = [int(d[len(filename):-len('.pkl')]) for d in dirs if filename in d]
+    xs = np.sort(xs)
     
     optimal_Ks = list()
     conf_ints = list()
     yerr_low = list()
     yerr_high = list()
-    for m in ms:
-        optimal_K, conf_int, K_range = get_optimal_K(filename, m, v_name=v_name)
-        print('m:' + str(m))
+    for value in xs:
+        fn = filename + str(value)
+        filename = '../files/analytical/' + fn + '.pkl'
+
+        optimal_K, conf_int, K_range = get_optimal_K(filename, v_name=v_name)
+        # print('m:' + str(value))
         print('optimal K:' + str(optimal_K))
         print('confidence interval: ' + str(conf_int))
         print('K range: ' + str(K_range))
         print('')
-    
-        optimal_K = np.log(optimal_K)
-        conf_int = np.log(conf_int)
     
         optimal_Ks.append(optimal_K)
         conf_ints.append(conf_int)
         yerr_low.append(optimal_K-conf_int[0])
         yerr_high.append(conf_int[1]-optimal_K)
     
-    x = np.log(ms)
-    y = optimal_Ks
-    
+    return xs, np.array(optimal_Ks)
+
+
+def load_result(filenames, v_name='theta'):
+    optimal_Ks = list()
+    conf_ints = list()
+    yerr_low = list()
+    yerr_high = list()
+    for filename in filenames:
+        optimal_K, conf_int, K_range = get_optimal_K(filename, v_name=v_name)
+        print('Load results from ' + filename)
+        # print('m:' + str(value))
+        print('optimal K:' + str(optimal_K))
+        print('confidence interval: ' + str(conf_int))
+        print('K range: ' + str(K_range))
+        print('')
+
+        optimal_Ks.append(optimal_K)
+        conf_ints.append(conf_int)
+        yerr_low.append(optimal_K - conf_int[0])
+        yerr_high.append(conf_int[1] - optimal_K)
+
+    return np.array(optimal_Ks)
+
+
+def _fit(x, y):
     x_fit = np.linspace(x[0], x[-1], 100)
-    
     # model = Ridge()
     model = LinearRegression()
     model.fit(x[:, np.newaxis], y)
     y_fit = model.predict(x_fit[:, np.newaxis])
-    
-    return x, y, x_fit, y_fit, model
+    return x_fit, y_fit, model
     
 
 def main():
-    x, y, x_fit, y_fit, model = _load_result('all_value_m', v_name='theta')
+    x, y = _load_result('all_value_m', v_name='theta')
+    x, y = np.log(x), np.log(y)
+    x_fit, y_fit, model = _fit(x, y)
     res_perturb = {'log_N': x, 'log_K': y, 'label': 'Weight robustness'}
     res_perturb_fit = {'log_N': x_fit, 'log_K': y_fit, 'model': model,
                        'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
                                np.exp(model.intercept_), model.coef_[0])}
 
-    x, y, x_fit, y_fit, model = _load_result('all_value_withdim_m', v_name='dim')
+    x, y = _load_result('all_value_withdim_m', v_name='dim')
+    x, y = np.log(x), np.log(y)
+    x_fit, y_fit, model = _fit(x, y)
     res_dim = {'log_N': x, 'log_K': y}
     res_dim_fit = {'log_N': x_fit, 'log_K': y_fit, 'model': model,
                    'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
@@ -275,5 +298,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    pass
+    # main()
+
     
