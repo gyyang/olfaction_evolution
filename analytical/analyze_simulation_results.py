@@ -19,7 +19,6 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 import tools
-import standard.analysis_pn2kc_training as analysis_pn2kc_training
 
 
 mpl.rcParams['font.size'] = 7
@@ -30,26 +29,35 @@ mpl.rcParams['font.family'] = 'arial'
 
 mpl.rcParams['mathtext.fontset'] = 'stix'
 
-def get_optimal_K(filename, v_name):
+def load_optimal_K(filename, v_name):
     with open(filename, "rb") as f:
-        all_values = pickle.load(f)
+        # values is a dictionary of lists
+        values = pickle.load(f)
 
-    if v_name in ['dim']:
-        optimal_Ks = [v['K'][np.argmax(v[v_name])] for v in all_values]
-    elif v_name in ['theta']:
-        optimal_Ks = [v['K'][np.argmin(v[v_name])] for v in all_values]
-    else:
-        raise ValueError('Unknown v name')
-    
-    means = [np.mean(np.random.choice(optimal_Ks, size=len(optimal_Ks), replace=True)) for _ in range(1000)]
-    
+    for key, val in values.items():
+        values[key] = np.array(val)
+
+    choose = np.argmax if v_name in ['dim'] else np.argmin
+
+    optimal_Ks = list()
+    for ind in np.unique(values['ind']):  # repetition indices
+        idx = values['ind'] == ind  # idx of current repetition index
+        v_vals = values[v_name][idx]
+        optimal_Ks.append(values['K'][idx][choose(v_vals)])
+
+    means = [np.mean(
+        np.random.choice(optimal_Ks, size=len(optimal_Ks), replace=True)) for _
+             in range(1000)]
+
     optimal_K = np.mean(optimal_Ks)
     conf_int = np.percentile(means, [2.5, 97.5])
-    K_range = all_values[0]['K']
+    K_range = np.unique(values['K'])
     return optimal_K, conf_int, K_range
 
 
 def get_sparsity_from_training(path):
+    import standard.analysis_pn2kc_training as analysis_pn2kc_training
+
     dirs = [os.path.join(path, n) for n in os.listdir(path)]
     sparsitys = list()
     n_ors = list()
@@ -85,7 +93,7 @@ def _load_result(filename, v_name='theta'):
         fn = filename + str(value)
         filename = '../files/analytical/' + fn + '.pkl'
 
-        optimal_K, conf_int, K_range = get_optimal_K(filename, v_name=v_name)
+        optimal_K, conf_int, K_range = load_optimal_K(filename, v_name=v_name)
         # print('m:' + str(value))
         print('optimal K:' + str(optimal_K))
         print('confidence interval: ' + str(conf_int))
@@ -106,7 +114,7 @@ def load_result(filenames, v_name='theta'):
     yerr_low = list()
     yerr_high = list()
     for filename in filenames:
-        optimal_K, conf_int, K_range = get_optimal_K(filename, v_name=v_name)
+        optimal_K, conf_int, K_range = load_optimal_K(filename, v_name=v_name)
         print('Load results from ' + filename)
         # print('m:' + str(value))
         print('optimal K:' + str(optimal_K))
@@ -300,5 +308,40 @@ def main():
 if __name__ == '__main__':
     pass
     # main()
+
+    x_name = 'n_pn'
+    x_vals = [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+    fnames = list()
+    for x_val in x_vals:
+        fname = 'all_value_m' + str(x_val) + '.pkl'
+        fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
+
+    filename = fnames[0]
+    v_name = 'theta'
+
+    with open(filename, "rb") as f:
+        # values is a dictionary of lists
+        values = pickle.load(f)
+
+    for key, val in values.items():
+        values[key] = np.array(val)
+
+    inds = np.unique(values['ind'])  # repetition indices
+
+    choose = np.argmax if v_name in ['dim'] else np.argmin
+
+    optimal_Ks = list()
+    for ind in inds:
+        idx = values['ind'] == ind  # idx of current repetition index
+        v_vals = values[v_name][idx]
+        optimal_Ks.append(values['K'][idx][choose(v_vals)])
+
+    means = [np.mean(
+        np.random.choice(optimal_Ks, size=len(optimal_Ks), replace=True)) for _
+             in range(1000)]
+
+    optimal_K = np.mean(optimal_Ks)
+    conf_int = np.percentile(means, [2.5, 97.5])
+    K_range = np.unique(values['K'])
 
     
