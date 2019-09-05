@@ -69,7 +69,7 @@ else:
 TRAIN = False
 ANALYZE = True
 is_test = True
-experiments = ['controls_receptor']
+experiments = ['multi_head']
 
 
 if 'standard_without_or2orn' in experiments:
@@ -78,35 +78,36 @@ if 'standard_without_or2orn' in experiments:
     if TRAIN:
         local_train(se.train_standardnet(is_test), path)
     if ANALYZE:
-        # accuracy, glo score, cosine similarity
-        sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
-        analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
+        # # accuracy, glo score, cosine similarity
+        # sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
+        # analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
 
         # #weights
-        sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
-        sa.plot_weights(path, var_name='w_glo', dir_ix=0)
+        # sa.plot_weights(os.path.join(path,'000000'), var_name='w_orn', sort_axis=1, dir_ix=0)
+        sa.plot_weights(os.path.join(path,'000001'), var_name='w_orn', sort_axis=1, dir_ix=0)
+        # sa.plot_weights(path, var_name='w_glo', dir_ix=0)
 
-        # #sign constraint
-        sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
-
-        #random analysis
-        analysis_pn2kc_training.plot_distribution(path, xrange=1.5)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        analysis_pn2kc_random.plot_distribution(path)
-        analysis_pn2kc_random.claw_distribution(path, 'random')
-        analysis_pn2kc_random.pair_distribution(path, 'preserve')
-
-        # # correlation
-        analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
-                        ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
-        analysis_orn2pn.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
-
-        analysis_orn2pn.get_dimensionality(path, 'glo')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_dimensionality')
-        analysis_orn2pn.dimensionality_across_epochs(path, ['Non-negative', 'No constraint'])
+        # # #sign constraint
+        # sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
+        #
+        # #random analysis
+        # analysis_pn2kc_training.plot_distribution(path, xrange=1.5)
+        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        # analysis_pn2kc_random.plot_distribution(path)
+        # analysis_pn2kc_random.claw_distribution(path, 'random')
+        # analysis_pn2kc_random.pair_distribution(path, 'preserve')
+        #
+        # # # correlation
+        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
+        #                 ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
+        # analysis_orn2pn.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
+        #
+        # analysis_orn2pn.get_dimensionality(path, 'glo')
+        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_dimensionality')
+        # analysis_orn2pn.dimensionality_across_epochs(path, ['Non-negative', 'No constraint'])
 
 if 'standard_with_or2orn' in experiments:
     path = './files/standard_net_with_or2orn'
@@ -142,18 +143,18 @@ if 'vary_pn' in experiments:
     if TRAIN:
         local_train(se.vary_pn_configs(is_test), path)
     if ANALYZE:
-        sa.plot_weights(path, sort_axis = 1, dir_ix=30, average=True)
-        sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD':0}),
-        sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}
-                        )
-
-        sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}
-                        ),
-        sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0})
+        sa.plot_weights(os.path.join(path,'000005'), sort_axis = 1, dir_ix=8, average=True)
+        # sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        #                 select_dict={'ORN_NOISE_STD':0}),
+        # sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}
+        #                 )
+        #
+        # sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}
+        #                 ),
+        # sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        #                 select_dict={'ORN_NOISE_STD': 0})
 
         # # correlation and dimensionality
         # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
@@ -169,11 +170,11 @@ if 'vary_kc' in experiments:
     if TRAIN:
         local_train(se.vary_kc_configs(is_test), path)
     if ANALYZE:
-        sa.plot_weights(path, sort_axis=1, dir_ix=0, average=True)
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0})
-        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0})
+        sa.plot_weights(os.path.join(path,'000002'), sort_axis=1, dir_ix=0, average=True)
+        # sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        #                 select_dict={'ORN_NOISE_STD': 0})
+        # sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        #                 select_dict={'ORN_NOISE_STD': 0})
 
         # # correlation and dimensionality
         # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
@@ -376,7 +377,8 @@ if 'multi_head' in experiments:
     if TRAIN:
         local_train(se.train_multihead(is_test), path)
     if ANALYZE:
-        analysis_multihead.main1('multi_head')
+        # analysis_multihead.main1('multi_head')
+        sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn', sort_axis=1, dir_ix=0)
 
 if 'vary_kc_activity_fixed' in experiments:
     # Vary KC activity under different number of relabels

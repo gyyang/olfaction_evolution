@@ -101,51 +101,55 @@ path = './files_temp/temp'
 # except:
 #     pass
 # t(temp(), path)
-oracle.evaluatewithnoise.evaluate_across_epochs(path=path, values=[0, .01, .03, .1],n_rep=1)
-oracle.evaluatewithnoise.plot_acrossmodels(path=path, model_var='epoch')
+# oracle.evaluatewithnoise.evaluate_across_epochs(path=path, values=[0, .01, .03, .1],n_rep=1)
+# oracle.evaluatewithnoise.plot_acrossmodels(path=path, model_var='epoch')
 # analysis_training.plot_distribution(path, xrange=.5, log=False)
 # analysis_training.plot_distribution(path, xrange=.5, log=True)
 # analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.05, visualize=True)
 
 
 
-# path = './files/test/0/epoch'
-
-# path_ = os.path.join(path, '000000')
 # glo_in, glo_out, kc_out, results = sa.load_activity(path_)
 # b_orns = tools.load_pickle(path, 'b_glo')
 # plt.hist(glo_in.flatten(), bins=20)
 # plt.show()
 
-# w_orns = tools.load_pickle(path, 'w_orn')
-# w_orn = w_orns[0]
-# w_orn = tools._reshape_worn(w_orn, 50)
-# w_orn = w_orn.mean(axis=0)
-#
-# avg_gs, all_gs = tools.compute_glo_score(w_orn, 50, mode='tile', w_or = None)
-#
-# thres = .8
-# all_gs = np.array(all_gs)
-#
-# gs_sorted =np.sort(all_gs)[::-1]
-# gs_ix = np.argsort(all_gs)[::-1]
-#
-# w_orn_thres = w_orn[:, gs_ix[:60]]
-#
-# w_plot = w_orn_thres
-# ind_max = np.argmax(w_plot, axis=0)
-# ind_sort = np.argsort(ind_max)
-# w_plot = w_plot[:, ind_sort]
-# plt.imshow(w_plot, cmap='RdBu_r', vmin=-1, vmax=1,
-#                    interpolation='none')
-# plt.show()
-#
-# plt.hist(all_gs, bins=50)
-# plt.show()
+def _plot_gloscores(path, ix, cutoff):
+    def _helper(w_plot, str):
+        ind_max = np.argmax(w_plot, axis=0)
+        ind_sort = np.argsort(ind_max)
+        w_plot = w_plot[:, ind_sort]
+        plt.imshow(w_plot, cmap='RdBu_r', vmin=-1, vmax=1,
+                           interpolation='none')
+        sa._easy_save(path, 'cutoff_' + str)
+
+    w_orns = tools.load_pickle(path, 'w_orn')
+    w_orn = w_orns[ix]
+    print(w_orn.shape)
+    w_orn = tools._reshape_worn(w_orn, 50)
+    w_orn = w_orn.mean(axis=0)
+    avg_gs, all_gs = tools.compute_glo_score(w_orn, 50, mode='tile', w_or=None)
+
+    all_gs = np.array(all_gs)
+    gs_ix = np.argsort(all_gs)[::-1]
+
+    w_plot = w_orn[:, gs_ix[:cutoff]]
+    _helper(w_plot, 'top')
+    w_plot = w_orn[:, gs_ix[cutoff:]]
+    _helper(w_plot, 'bottom')
+
+    plt.figure()
+    plt.hist(all_gs, bins=20, range=[0, 1])
+    sa._easy_save(path, 'hist')
+
+# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files\vary_pn'
+# _plot_gloscores(path, 27, 100)
 
 
-# plt.hist(all_gs, bins=20, range=[0,1])
-# sa._easy_save(path, 'hist')
+
+
+
+
 
 # sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix=0)
 # sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
