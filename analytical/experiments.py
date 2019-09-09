@@ -89,7 +89,7 @@ def get_optimal_K(x_name, x_vals, fnames, y_name='theta', n_rep=100, update_para
 
 
 def plot_optimal_K(x_name, x_vals, fnames, fig=None):
-    y = load_result(fnames, v_name='theta')
+    y, _ = load_result(fnames, v_name='theta')
     x, y = np.log(x_vals), np.log(y)
     x_fit, y_fit, model = _fit(x, y)
     res = {'log_N': x, 'log_K': y, 'label': 'Weight robustness'}
@@ -156,106 +156,97 @@ def get_optimal_K_simulation_participationratio():
     get_optimal_K(x_name, x_vals, fnames, n_rep=10, update_params=update_params)
 
 
-def control_coding_level():
-    m = 1000
-    update_params = {'n_pn': m}
-    x_name = 'coding_level'
-    x_vals = [10, 20, 30, 40, 50, 60, 70, 80]
-    fnames = list()
-    for x_val in x_vals:
-        fname = 'control_coding_level_m ' +str(m ) +'s' + str(x_val) + '.pkl'
-        fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
-    get_optimal_K(x_name, x_vals, fnames, n_rep=5, update_params=update_params)
-
-
-def control_coding_level_vary_n_pn(compute=True, coding_levels=None):
-    
+def control_coding_level(compute=True, coding_levels=None):
     if coding_levels is None:
-        coding_levels = [10]
-    
-    fig = plt.figure(figsize=(3.5, 2.))
-    
-    for coding_level in coding_levels:
-        x_name = 'n_pn'
-        x_vals = np.array([50, 75, 100, 150, 200, 300,
-                           400, 500, 600, 700, 800, 900, 1000, 2000])
-    
-        x_vals = np.array([500, 1000, 2000])
-        
-        update_params = {'coding_level': coding_level}
-        fnames = list()
-        for x_val in x_vals:
-            if coding_level == 10:
-            # if False:
-                fname = 'all_value_m' + str(x_val) + '.pkl'
-            else:
-                fname = 'all_value_s' +str(coding_level) +'_m' + str(x_val) + '.pkl'
-            fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
-    
-        if compute:
-            get_optimal_K(x_name, x_vals, fnames, n_rep=30,
-                          update_params=update_params)
-        else:
-            plot_optimal_K(x_name, x_vals, fnames, fig=fig)
-
-
-def control_coding_level_vary_n_pn_new(compute=True, coding_levels=None):
-    if coding_levels is None:
-        coding_levels = [10]
-
-    fig = plt.figure(figsize=(3.5, 2.))
+        coding_levels = np.arange(10, 91, 10)
 
     x_name = 'n_pn'
     x_vals = np.array([50, 75, 100, 150, 200, 300,
                        400, 500, 600, 700, 800, 900, 1000, 2000])
 
-    x_vals = np.array([500, 1000, 2000])
-
-    update_params = {'coding_level': coding_level}
-    fnames = list()
-    for x_val in x_vals:
-        if coding_level == 10:
-            # if False:
-            fname = 'all_value_m' + str(x_val) + '.pkl'
-        else:
-            fname = 'all_value_s' + str(coding_level) + '_m' + str(
-                x_val) + '.pkl'
-        fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
+    # x_vals = np.array([500, 1000, 2000])
+    x_vals = np.array([50, 100, 200, 400, 800, 1600])
 
     if compute:
         y_name = 'theta'
-        n_rep = 30
+        n_rep = 100
 
         params = default_params()
 
-        if update_params is not None:
-            params.update(update_params)
-
-        for x_val, fname in zip(x_vals, fnames):
+        for x_val in x_vals:
             params[x_name] = x_val
 
             K_mid = int(guess_optimal_K(params, y_name))
             min_K = max(1, int(K_mid) - 10)
             K_sim = np.arange(min_K, K_mid + 10)
 
-            all_values = list()
+            values_sim_list = [defaultdict(list) for _ in coding_levels]
             for i in range(n_rep):
                 start_time = time.time()
-                values_sim = defaultdict(list)
+
                 for K in K_sim:
                     if y_name == 'theta':
-                        res_list, coding_levels = simulation_vary_coding_levels(K, **params)
+                        res_list, _ = simulation_vary_coding_levels(
+                            K, coding_levels=coding_levels, **params)
                     else:
-                        res_list, coding_levels = simulation_vary_coding_levels(K, compute_dimension=True, **params)
+                        res_list, _ = simulation_vary_coding_levels(
+                            K, coding_levels=coding_levels,
+                            compute_dimension=True, **params)
 
-                    for key, val in res.items():
-                        values_sim[key].append(val)
-                all_values.append(values_sim)
+                    for j, _ in enumerate(coding_levels):
+                        res = res_list[j]
+                        values_sim = values_sim_list[j]
+
+                        res['ind'] = i
+
+                        for key, val in res.items():
+                            values_sim[key].append(val)
+
                 print('Time taken : {:0.2f}s'.format(time.time() - start_time))
 
-            pickle.dump(all_values, open(fname, "wb"))
+            for j, s in enumerate(coding_levels):
+                values_sim = values_sim_list[j]
+                fname = 'all_value_s' + str(s) + '_m' + str(x_val) + '.pkl'
+                fname = os.path.join(rootpath, 'files', 'analytical', fname)
+                pickle.dump(values_sim, open(fname, "wb"))
+
     else:
-        plot_optimal_K(x_name, x_vals, fnames, fig=fig)
+        x_vals = np.array([800, 1600])
+        opt_ks = list()
+        conf_ints = list()
+        fig = plt.figure(figsize=(3.5, 2.))
+        for s in coding_levels:
+            fnames = list()
+            for x_val in x_vals:
+                fname = 'all_value_s' + str(s) + '_m' + str(x_val) + '.pkl'
+                fname = os.path.join(rootpath, 'files', 'analytical', fname)
+                fnames.append(fname)
+            plot_optimal_K(x_name, x_vals, fnames, fig=fig)
+            
+            y, conf_int = load_result(fnames, v_name='theta')
+            opt_ks.append(y)
+            conf_ints.append(conf_int) 
+        opt_ks, conf_ints = np.array(opt_ks), np.array(conf_ints)
+        
+        f, axes = plt.subplots(len(x_vals), 1, sharex=True, figsize=(3, 3))
+        for i, x_val in enumerate(x_vals):
+            ax = axes[i]
+            ax.plot(coding_levels, opt_ks[:, i])
+            ax.fill_between(coding_levels, conf_ints[:, i, 0], conf_ints[:, i, 1],
+                            alpha=0.2)
+            ax.spines["right"].set_visible(False)
+            ax.spines["top"].set_visible(False)
+            ax.yaxis.set_ticks_position('left')
+            ax.set_ylim(bottom=0)
+            if i == len(x_vals) - 1:
+                ax.set_xlabel('Coding level')
+                ax.set_ylabel('K')
+            ax.text(1, 1, 'N='+str(x_val), ha='right', va='top', transform=ax.transAxes)
+        fname = 'optimal_k_control_coding_level'
+        fname = os.path.join(rootpath, 'figures', 'analytical', fname)
+        plt.savefig(fname + '.pdf', transparent=True)
+        plt.savefig(fname + '.png')   
+
 
 
 if __name__ == '__main__':
@@ -263,6 +254,7 @@ if __name__ == '__main__':
     # get_optimal_k()
     # compare_dim_plot()
     # control_coding_level()
-    # control_coding_level_vary_n_pn(compute=False, coding_levels=[50, 80])
+    start_time = time.time()
+    control_coding_level(compute=False)
+    print('Total time spent: ', time.time() - start_time)
 
-    get_optimal_K_simulation(compute=False)
