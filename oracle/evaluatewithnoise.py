@@ -517,7 +517,18 @@ def evaluate_across_epochs(path, values=None, select_dict=None, dataset='val', m
 
 def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
                           file=None, n_rep=1, epoch=None, multidirection=False):
-    """Evaluate models from the same root directory."""
+    """Evaluate models from the same root directory.
+
+    Args:
+        path: path of models
+        values: list of weight perturbation values
+        select_dict: dictionary of conditions to select models
+        dataset: whether to evaluate on val or train
+        file: file to store results, if None then use default value
+        n_rep: number of repetition
+        epoch: the training epoch to analyze
+        multidirection: whether perturbation is applied to multiple directions
+    """
     name = 'weight_perturb'
 
     model_dirs = tools.get_allmodeldirs(path)
@@ -589,7 +600,8 @@ def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epo
         ax = fig.add_axes((0.2, 0.2, 0.5, 0.5))
 
         for i in range(len(values)):
-            res_plot = [res_dict[model][:,i].mean(axis=0) for model in models]
+#            res_plot = [res_dict[model][:,i].mean(axis=0) for model in models]
+            res_plot = [res_dict[model][i] for model in models]
             if ylabel == 'val_logloss':
                 res_plot = np.log(res_plot)  # TODO: this log?
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
@@ -759,28 +771,15 @@ def plot_twodim_perturb(path, dataset='val', epoch=None, K=None):
     
 
 if __name__ == '__main__':
-    # evaluate_withnoise()
-    # evaluate_plot('orn_dropout_rate')
-    # evaluate_plot('orn_noise_std')
-    # evaluate_plot('alpha')
-    # path = os.path.join(rootpath, 'files', 'kcrole')
-    # evaluate_kcrole(path, 'weight_perturb')
-    # plot_kcrole(path, 'weight_perturb')
-    # evaluate_acrossmodels('weight_perturb')
-    # path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
-    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_dev')
-# =============================================================================
-#     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
-#                           values=[0],
-#                           n_rep=1, dataset='val', epoch=1)
-# =============================================================================
-    # plot_acrossmodels(path, dataset='val', epoch=1)
-    
-    evaluate_onedim_perturb(path, dataset='val', epoch=1)
-    plot_onedim_perturb(path, dataset='val', epoch=1, minzero=True)
-
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    path = '../files/vary_kc_claws_new'
+    # evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0})
+    path = '../files/vary_kc_claws_epoch15'
+    evaluate_acrossmodels(
+            path, select_dict={'ORN_NOISE_STD': 0},
+            values=[0], n_rep=1, dataset='val', epoch=1)
+    plot_acrossmodels(path, dataset='val', epoch=1)
+
 
 
     
