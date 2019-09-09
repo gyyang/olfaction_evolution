@@ -205,6 +205,7 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
 
         val_loss = np.zeros((n_rep, len(values)))
         val_acc = np.zeros((n_rep, len(values)))
+        angle = np.zeros((n_rep, len(values)))
 
         for i_rep, rep in enumerate(range(n_rep)):
             if perturb_mode == 'feature_norm':
@@ -238,136 +239,37 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
                     sess.run(perturb_var[j].assign(new_var_val[j]))
 
                 # Validation
-                val_loss_tmp, val_acc_tmp = sess.run(
-                    [val_model.loss, val_model.acc],
+                val_loss_tmp, val_acc_tmp, kc_tmp = sess.run(
+                    [val_model.loss, val_model.acc, val_model.kc],
                     {val_x_ph: data_x, val_y_ph: data_y})
+
+                # Compute KC angle
+                if i_value == 0:
+                    if value != 0:
+                        raise ValueError(
+                            'First perturbation value should be 0')
+                    kc_original = kc_tmp
+                else:
+                    angle_tmp = _angle(kc_tmp, kc_original)
+                    angle[i_rep, i_value] = np.mean(angle_tmp)
 
                 val_loss[i_rep, i_value] = val_loss_tmp
                 val_acc[i_rep, i_value] = val_acc_tmp
 
-    return val_loss, val_acc
+    results = {'loss': val_loss, 'acc': val_acc, 'angle': angle}
 
+    return results
 
-def evaluate_weight_perturb_angle(values, modelname, model_dir, n_rep=1, dataset='val',
-                            perturb_mode='multiplicative', epoch=None,
-                            multidirection=False, perturb_output=True):
-    """Evaluate the performance under weight perturbation.
-
-    Args:
-        values: a list of floats about the strength of perturbations
-        modelname: str, the model name
-        model_dir: str, the model directory
-        n_rep: int, the number of repetition
-        dataset: 'train' or 'val', the dataset for computing loss
-        perturb_mode: 'feature_norm' or 'multiplicative'.
-            If 'feature_norm', uses feature-normalized perturbation
-            If 'multiplicative', uses independent multiplicative perturbation
-        epoch: int or None. If int, analyze the results at specific training epoch
-        multidirection: int or False. if not False, then the perturbation
-            will be along multiple directions, values must be list of (multidirection)-tuple
-
-    Return:
-        losses: a np array of losses, the same size as values
-        accs: np array of accuracies, the same size as values
-    """
-
-    path = model_dir
-    config = tools.load_config(path)
-
-    # TODO: clean up these paths
-    config.data_dir = rootpath + config.data_dir[1:]
-    config.save_path = rootpath + config.save_path[1:]
-
-    tf.reset_default_graph()
-    # Build validation model
-    val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
-    val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
-    val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
-
-    if epoch is not None:
-        val_model.save_path = os.path.join(
-            val_model.save_path, 'epoch', str(epoch).zfill(4))
-
-    # Variables to perturb
-    perturby_var = None
-    if perturb_output:
-        perturb_var = ['model/layer3/kernel:0']
-    else:
-        perturb_var = ['model/layer2/kernel:0']
-
-    tf_config = tf.ConfigProto()
-    tf_config.gpu_options.allow_growth = True
-    with tf.Session(config=tf_config) as sess:
-        sess.run(tf.global_variables_initializer())
-        val_model.load()
-
-        if dataset == 'val':
-            data_x, data_y = val_x, val_y
-        elif dataset == 'train':
-            rnd_ind = np.random.choice(
-                train_x.shape[0], size=(val_x.shape[0],), replace=False)
-            data_x, data_y = train_x[rnd_ind], train_y[rnd_ind]
-        else:
-            raise ValueError('Wrong dataset type')
-
-        print('Perturbing weights:')
-        for v in perturb_var:
-            print(v)
-
-        if perturb_var is None:
-            perturb_var = tf.trainable_variables()
-        else:
-            perturb_var = [v for v in tf.trainable_variables() if
-                           v.name in perturb_var]
-
-        origin_weights = [sess.run(v) for v in perturb_var]
-
-        theta_array = np.zeros((n_rep, len(values)))
-        val_acc = np.zeros((n_rep, len(values)))
-
-        for i_rep, rep in enumerate(range(n_rep)):
-            if perturb_mode == 'feature_norm':
-                if multidirection:
-                    directions_list = [select_random_directions(origin_weights)
-                                       for _ in range(multidirection)]
-                else:
-                    directions = select_random_directions(origin_weights)
-
-            for i_value, value in enumerate(values):
-                if perturb_mode == 'multiplicative':
-                    new_var_val = [w * np.random.uniform(1 - value, 1 + value, size=w.shape)
-                                   for w in origin_weights]
-                elif perturb_mode == 'feature_norm':
-                    if multidirection:
-                        new_var_val = list()
-                        for i_w, w in enumerate(origin_weights):
-                            new_w = 0
-                            for v, d_list in zip(value, directions_list):
-                                new_w += d_list[i_w] * v
-                            new_w += w
-                            new_var_val.append(new_w)
-                    else:
-                        new_var_val = list()
-                        for w, d in zip(origin_weights, directions):
-                            new_var_val.append(w + d * value)
-                else:
-                    raise ValueError()
-
-                pre_kc = sess.run(val_model.kc, {val_x_ph: data_x})
-
-                for j in range(len(perturb_var)):
-                    sess.run(perturb_var[j].assign(new_var_val[j]))
-
-                post_kc = sess.run(val_model.kc, {val_x_ph: data_x})
-
-                thetas = _angle(pre_kc, post_kc)
-                theta = np.mean(thetas)
-
-                theta_array[i_rep, i_value] = theta
-
-    return theta_array, theta_array
 
 def _angle(Y, Y2):
+    """Compute angle between two sets of vectors.
+
+    Args:
+        Y, Y2: (n_vecs, dim)
+
+    Returns:
+        theta: the angle between the n_vecs pairs of dim-D vectors
+    """
     norm_Y = np.linalg.norm(Y, axis=1)
     norm_Y2 = np.linalg.norm(Y2, axis=1)
 
@@ -409,8 +311,10 @@ def evaluate_kcrole(path, name):
     for model, model_dir in zip(models, model_dirs):
         model_dir = os.path.join(path, model_dir)
         if name == 'weight_perturb':
-            losses, accs = evaluate_weight_perturb(
+            results = evaluate_weight_perturb(
                 values, model, model_dir, n_rep=1)
+            losses = results['loss']
+            accs = results['acc']
         else:
             losses, accs = evaluate(name, values, model, model_dir)
         loss_dict[model] = losses
@@ -485,17 +389,15 @@ def evaluate_across_epochs(path, values=None, select_dict=None, dataset='val', m
     epochs = len(tools.get_allmodeldirs(os.path.join(model_dir,'epoch')))
 
     if mode == 'angle':
-        f = evaluate_weight_perturb_angle
-    else:
-        f = evaluate_weight_perturb
+        raise NotImplementedError('Not implemented yet')
 
     for model in range(epochs):
-        losses, accs = f(
+        results = evaluate_weight_perturb(
             values, model, model_dir, n_rep=n_rep, perturb_output=False, perturb_mode='multiplicative',
             dataset=dataset, epoch=model, multidirection=multidirection)
 
-        loss_dict[model] = losses
-        acc_dict[model] = accs
+        loss_dict[model] = results['loss']
+        acc_dict[model] = results['acc']
         models.append(model)
 
     results = {'loss_dict': loss_dict,
@@ -545,12 +447,12 @@ def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
             continue
         
         model = getattr(config, model_var)
-        losses, accs = evaluate_weight_perturb(
+        results = evaluate_weight_perturb(
             values, model, model_dir, n_rep=n_rep, perturb_output=True,
             dataset=dataset, epoch=epoch, multidirection=multidirection)
 
-        loss_dict[model] = losses
-        acc_dict[model] = accs
+        loss_dict[model] = results['loss']
+        acc_dict[model] = results['acc']
         models.append(model)
 
     results = {'loss_dict': loss_dict,
