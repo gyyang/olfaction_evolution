@@ -127,11 +127,14 @@ def load_result(filenames, v_name='theta'):
         yerr_low.append(optimal_K - conf_int[0])
         yerr_high.append(conf_int[1] - optimal_K)
 
-    return np.array(optimal_Ks)
+    conf_ints = np.array(conf_ints)
+
+    return np.array(optimal_Ks), conf_ints
 
 
 def _fit(x, y):
-    x_fit = np.linspace(x[0], x[-1], 100)
+    # x_fit = np.linspace(x[0], x[-1], 100)
+    x_fit = np.linspace(min(np.log(50),x[0]), max(np.log(1000),x[-1]), 100)
     # model = Ridge()
     model = LinearRegression()
     model.fit(x[:, np.newaxis], y)

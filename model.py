@@ -192,6 +192,8 @@ def _normalize(inputs, norm_type, training=True):
             r_max = 25
             sums = tf.reduce_sum(inputs, axis=1, keepdims=True) + 1e-6
             outputs = r_max * tf.divide(inputs, sums)
+        elif norm_type == 'custom_mean_center':
+            outputs = inputs - 0.5
         else:
             print('Unknown pn_norm type {:s}. Outputs = Inputs'.format(norm_type))
             outputs = inputs
@@ -488,8 +490,8 @@ class FullModel(Model):
                 initializer = _initializer(range, config.initializer_pn2kc)
                 bias_initializer = tf.constant_initializer(config.kc_bias)
             else:
-                initializer = tf.glorot_normal_initializer
-                bias_initializer = tf.glorot_normal_initializer
+                initializer = tf.glorot_normal_initializer()
+                bias_initializer = tf.glorot_normal_initializer()
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
                                  initializer= initializer)

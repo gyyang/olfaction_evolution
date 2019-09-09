@@ -273,9 +273,9 @@ def simulation_vary_coding_levels(K, coding_levels=None,
     res_list = list()
     for coding_level in coding_levels:
         kwargs['coding_level'] = coding_level
-        Y, Y2 = set_coding_level(Y, Y2, **kwargs)
+        Y_new, Y2_new = set_coding_level(Y, Y2, **kwargs)
 
-        res = _simulation(Y, Y2, compute_dimension=compute_dimension)
+        res = _simulation(Y_new, Y2_new, compute_dimension=compute_dimension)
         res['K'] = K
         res['coding_level'] = coding_level
 
