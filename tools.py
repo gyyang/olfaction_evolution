@@ -8,6 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 import configs
 
+
 def save_config(config, save_path, also_save_as_text = True):
     """Save config."""
     config_dict = config.__dict__
@@ -18,6 +19,7 @@ def save_config(config, save_path, also_save_as_text = True):
         with open(os.path.join(save_path, 'config.txt'), "w") as f:
             for k, v in config_dict.items():
                 f.write(str(k) + ' >>> ' + str(v) + '\n\n')
+
 
 def load_config(save_path):
     """Load config."""
