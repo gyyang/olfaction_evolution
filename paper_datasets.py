@@ -41,6 +41,14 @@ def make_concentration_dataset():
     task.save_proto(config, seed=seed, folder_name='concentration')
     print('Done Concentration Dataset')
 
+def make_tmp_dataset():
+    """Make dataset with already normalized odors."""
+    task_config = task.input_ProtoConfig()
+    # task_config.vary_concentration = True
+    task_config.N_CLASS = 1000
+    task.save_proto(config=task_config, seed=0, folder_name='tmp')
+    print('Done Normalized Dataset')
+
 def make_mask_row_dataset():
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
@@ -107,7 +115,8 @@ if __name__ == '__main__':
     # make_relabel_datasets_small()
     # make_relabel_datasets_large()
     # make_concentration_dataset()
-    make_concentration_with_mask_row_dataset()
+    # make_concentration_with_mask_row_dataset()
+    make_tmp_dataset()
     # make_primordial_dataset()
     # make_mask_row_dataset()
     # make_combinatorial_dataset()

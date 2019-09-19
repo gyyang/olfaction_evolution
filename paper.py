@@ -66,10 +66,10 @@ else:
 
 #peter specific
 #
-TRAIN = False
-ANALYZE = True
-is_test = True
-experiments = ['controls_receptor']
+# TRAIN = False
+# ANALYZE = True
+# is_test = True
+# experiments = ['controls_receptor']
 
 
 if 'standard_without_or2orn' in experiments:
@@ -327,7 +327,7 @@ if 'vary_kc_claws_new' in experiments:
         evaluatewithnoise.plot_acrossmodels(path, dataset='train')
 
 if 'vary_kc_claws_dev' in experiments:
-    path = './files/vary_kc_claws_epoch15'
+    path = './files/vary_kc_claws_epoch2_1000class'
     if TRAIN:
         local_train(se.vary_claw_configs_dev(is_test), path)
     if ANALYZE:
@@ -335,6 +335,13 @@ if 'vary_kc_claws_dev' in experiments:
             path, select_dict={'ORN_NOISE_STD': 0},
             values=[0], n_rep=1, dataset='val', epoch=1)
         evaluatewithnoise.plot_acrossmodels(path, dataset='val', epoch=1)
+
+if 'vary_kc_claws_fixedacc' in experiments:
+    path = './files/vary_kc_claws_fixedacc'
+    if TRAIN:
+        local_train(se.vary_claw_configs_fixedacc(is_test), path, save_everytrainloss=True)
+    if ANALYZE:
+        pass
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'

@@ -149,6 +149,14 @@ def junk_code():
     # val_odors.clip(min=0)
     pass
 
+
+def _normalize(x):
+    norm = np.linalg.norm(x, axis=1)
+    x = (x.T / norm).T
+    x[np.isnan(x)] = 0
+    return x
+
+
 def _generate_proto_threshold(
         n_orn,
         n_class,
@@ -320,12 +328,6 @@ def _generate_proto_threshold(
     if vary_concentration:
         print('concentration')
         # normalize prototypes and train/val_odors_forlabels to unit vectors
-        def _normalize(x):
-            norm = np.linalg.norm(x, axis=1)
-            x = (x.T/norm).T
-            x[np.isnan(x)] = 0
-            return x
-
         prototypes = _normalize(prototypes)
         train_odors_forlabels = _normalize(train_odors_forlabels)
         val_odors_forlabels = _normalize(val_odors_forlabels)

@@ -102,6 +102,8 @@ def train(config, reload=False, save_everytrainloss=False):
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
+
+    finish_training = False
     with tf.Session(config=tf_config) as sess:
         # sess.run(tf.global_variables_initializer())
         sess.run(tf.group(tf.global_variables_initializer(), tf.local_variables_initializer()))
@@ -118,9 +120,9 @@ def train(config, reload=False, save_everytrainloss=False):
         if config.model == 'rnn' and config.DIAGONAL_INIT:
             model.set_weights()
 
-
         loss = 0
         acc = 0
+        acc_smooth = 0
         total_time, start_time = 0, time.time()
         weights_over_time = []
         for ep in range(config.max_epoch):
@@ -203,7 +205,7 @@ def train(config, reload=False, save_everytrainloss=False):
                     print('Training reached target accuracy {:0.2f}>{:0.2f}'.format(
                         res['acc'], config.target_acc
                     ))
-                    break
+                    finish_training = True
 
             try:
                 if config.save_every_epoch and ep % config.save_epoch_interval == 0:
@@ -212,8 +214,17 @@ def train(config, reload=False, save_everytrainloss=False):
                 # Train
                 if save_everytrainloss:
                     for b in range(n_batch-1):
-                        loss, _ = sess.run([model.loss, model.train_op])
+                        loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                         log['train_loss'].append(loss)
+
+                        acc_smooth = acc_smooth * 0.9 + acc * 0.1
+                        if config.target_acc is not None and acc_smooth > config.target_acc:
+                            print(
+                                'Training reached target accuracy {:0.2f}>{:0.2f}'.format(
+                                    acc_smooth, config.target_acc
+                                ))
+                            finish_training = True
+                            break
                 else:
                     for b in range(n_batch-1):
                         _ = sess.run(model.train_op)
@@ -222,6 +233,9 @@ def train(config, reload=False, save_everytrainloss=False):
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')
+                finish_training = True
+
+            if finish_training:
                 break
 
         # with open(os.path.join(config.save_path, 'weights_over_time.pickle'), 'wb') as handle:
@@ -231,6 +245,7 @@ def train(config, reload=False, save_everytrainloss=False):
         print('Training finished')
         model.save_pickle()
         model.save()
+
 
 
 if __name__ == '__main__':
