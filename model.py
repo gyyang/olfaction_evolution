@@ -216,7 +216,7 @@ def _glorot_std(n_in, n_out, sparse_degree):
     return np.sqrt(variance)
 
 
-def _initializer(range, arg):
+def _initializer(range, arg, **kwargs):
     """Specify initializer given range and type."""
     if arg == 'constant':
         initializer = tf.constant_initializer(range)
@@ -226,6 +226,14 @@ def _initializer(range, arg):
         initializer = tf.random_normal_initializer(0, range)
     elif arg == 'learned':
         initializer = tf.random_normal_initializer(range, .1)
+    elif arg == 'single_strong':
+        # Only a single connection to each post-synaptic neuron is strong
+        shape = kwargs['shape']
+        w_init = np.ones(shape, dtype=np.float32) * 0.001
+        ind_post = np.arange(shape[1])
+        ind_pre = np.mod(ind_post, shape[0])
+        w_init[ind_pre, ind_post] = 0.5
+        initializer = tf.constant_initializer(w_init)
     else:
         initializer = None
     return initializer
@@ -487,14 +495,15 @@ class FullModel(Model):
                         range = _sparse_range(N_USE)
                 else:
                     range = config.initial_pn2kc
-                initializer = _initializer(range, config.initializer_pn2kc)
+                initializer = _initializer(range, config.initializer_pn2kc,
+                                           shape=(N_USE, N_KC))
                 bias_initializer = tf.constant_initializer(config.kc_bias)
             else:
                 initializer = tf.glorot_normal_initializer()
                 bias_initializer = tf.glorot_normal_initializer()
 
             w2 = tf.get_variable('kernel', shape=(N_USE, N_KC), dtype=tf.float32,
-                                 initializer= initializer)
+                                 initializer=initializer)
 
             if 'equal_kc_bias' in dir(config) and config.equal_kc_bias:
                 b_glo = tf.get_variable('bias', shape=(), dtype=tf.float32,
