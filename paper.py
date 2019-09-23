@@ -343,6 +343,26 @@ if 'vary_kc_claws_fixedacc' in experiments:
     if ANALYZE:
         pass
 
+if 'vary_kc_claws_orn200' in experiments:
+    path = './files/vary_kc_claws_orn200'
+    if TRAIN:
+        local_train(se.vary_claw_configs_orn200(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+
+if 'vary_kc_claws_orn500' in experiments:
+    path = './files/vary_kc_claws_orn500'
+    if TRAIN:
+        local_train(se.vary_claw_configs_orn500(is_test), path)
+    if ANALYZE:
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss',
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
     if TRAIN:
@@ -446,6 +466,14 @@ if 'vary_n_orn' in experiments:
         import paper_datasets
         paper_datasets.make_vary_or_datasets()
         local_sequential_train(se.vary_n_orn(is_test), path)
+    if ANALYZE:
+        pass
+
+if 'longtrain' in experiments:
+    # Reproducing most basic findings
+    path = './files/longtrain'
+    if TRAIN:
+        local_sequential_train(se.vary_n_orn_longtrain(is_test), path)
     if ANALYZE:
         pass
 
