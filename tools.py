@@ -55,6 +55,8 @@ def _get_alldirs(dir, model, sort):
     dirs = os.listdir(dir)
     if model:
         dirs = [d for d in dirs if _islikemodeldir(os.path.join(dir, d))]
+        if _islikemodeldir(dir):  # if root is mode directory, return it
+            return [dir]
     if sort:
         ixs = np.argsort([int(n) for n in dirs])  # sort by epochs
         dirs = [os.path.join(dir, dirs[n]) for n in ixs]
@@ -190,7 +192,7 @@ def load_all_results(rootpath, argLast= True):
         res: dictionary of numpy arrays, containing information from all models
     """
     dirs = get_allmodeldirs(rootpath)
-
+    print(dirs)
     from collections import defaultdict
     res = defaultdict(list)
 
