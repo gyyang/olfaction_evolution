@@ -9,7 +9,7 @@ def basic_train(experiment, save_path):
     train.train(config)
 
 
-def local_train(experiment, save_path, train_arg = None):
+def local_train(experiment, save_path, train_arg=None, **kwargs):
     """Train all models locally."""
     for i in range(0, 1000):
         config = tools.varying_config(experiment, i)
@@ -18,7 +18,7 @@ def local_train(experiment, save_path, train_arg = None):
             config.save_path = os.path.join(save_path, str(i).zfill(6))
 
             if train_arg == None:
-                train.train(config)
+                train.train(config, **kwargs)
             elif train_arg == 'metalearn':
                 mamlmetatrain.train(config)
             else:

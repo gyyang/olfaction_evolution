@@ -8,6 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 import configs
 
+
 def save_config(config, save_path, also_save_as_text = True):
     """Save config."""
     config_dict = config.__dict__
@@ -18,6 +19,7 @@ def save_config(config, save_path, also_save_as_text = True):
         with open(os.path.join(save_path, 'config.txt'), "w") as f:
             for k, v in config_dict.items():
                 f.write(str(k) + ' >>> ' + str(v) + '\n\n')
+
 
 def load_config(save_path):
     """Load config."""
@@ -53,6 +55,8 @@ def _get_alldirs(dir, model, sort):
     dirs = os.listdir(dir)
     if model:
         dirs = [d for d in dirs if _islikemodeldir(os.path.join(dir, d))]
+        if _islikemodeldir(dir):  # if root is mode directory, return it
+            return [dir]
     if sort:
         ixs = np.argsort([int(n) for n in dirs])  # sort by epochs
         dirs = [os.path.join(dir, dirs[n]) for n in ixs]
@@ -188,7 +192,7 @@ def load_all_results(rootpath, argLast= True, ix=None):
         res: dictionary of numpy arrays, containing information from all models
     """
     dirs = get_allmodeldirs(rootpath)
-
+    print(dirs)
     from collections import defaultdict
     res = defaultdict(list)
 

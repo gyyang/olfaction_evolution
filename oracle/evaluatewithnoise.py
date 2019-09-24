@@ -26,7 +26,7 @@ oracle_dir = 'kcrole'
 # TODO: Make sure this works for dataset is different
 # data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
 data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
-train_x, train_y, val_x, val_y = task.load_data('proto', data_dir)
+TRAIN_X, TRAIN_Y, VAL_X, VAL_Y = task.load_data('proto', data_dir)
 
 
 def _evaluate(name, value, model, model_dir, n_rep=1):
@@ -109,7 +109,7 @@ def select_random_directions(weights):
 
 
 def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val',
-                            perturb_mode='feature_norm', epoch=None,
+                            perturb_mode='multiplicative', epoch=None,
                             multidirection=False, perturb_output=True):
     """Evaluate the performance under weight perturbation.
 
@@ -130,6 +130,8 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
         losses: a np array of losses, the same size as values
         accs: np array of accuracies, the same size as values
     """
+    print('Perturbation mode: ' + perturb_mode)
+
     if modelname == 'oracle':
         path = os.path.join(rootpath, 'files', oracle_dir, '000000')
     else:
@@ -140,6 +142,11 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
     # TODO: clean up these paths
     config.data_dir = rootpath + config.data_dir[1:]
     config.save_path = rootpath + config.save_path[1:]
+
+    if config.data_dir != data_dir:
+        train_x, train_y, val_x, val_y = task.load_data('proto', config.data_dir)
+    else:
+        train_x, train_y, val_x, val_y = TRAIN_X, TRAIN_Y, VAL_X, VAL_Y
 
     tf.reset_default_graph()
     # Build validation model
@@ -202,9 +209,16 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
                            v.name in perturb_var]
 
         origin_weights = [sess.run(v) for v in perturb_var]
+        
+        w0 = origin_weights[0]
+        plt.figure()
+        plt.imshow(w0, aspect='auto')
+        plt.figure()
+        plt.hist(w0.flatten())
 
         val_loss = np.zeros((n_rep, len(values)))
         val_acc = np.zeros((n_rep, len(values)))
+        angle = np.zeros((n_rep, len(values)))
 
         for i_rep, rep in enumerate(range(n_rep)):
             if perturb_mode == 'feature_norm':
@@ -218,6 +232,21 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
                 if perturb_mode == 'multiplicative':
                     new_var_val = [w*np.random.uniform(1-value, 1+value, size=w.shape)
                                    for w in origin_weights]
+# =============================================================================
+#                     new_var_val = [w.copy()
+#                                    for w in origin_weights]
+#                     new_var_val = list()
+#                     for w in origin_weights:
+#                         w0 = w.copy()
+#                         np.random.shuffle(w0)
+#                         new_var_val.append(w0)
+#                         plt.figure()
+#                         plt.imshow(w0, aspect='auto')
+#                         plt.figure()
+#                         plt.hist(w0.flatten())
+#                         raise ValueError()
+# =============================================================================
+                        
                 elif perturb_mode == 'feature_norm':
                     if multidirection:
                         new_var_val = list()
@@ -238,136 +267,41 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
                     sess.run(perturb_var[j].assign(new_var_val[j]))
 
                 # Validation
-                val_loss_tmp, val_acc_tmp = sess.run(
-                    [val_model.loss, val_model.acc],
+                val_loss_tmp, val_acc_tmp, kc_tmp = sess.run(
+                    [val_model.loss, val_model.acc, val_model.kc],
                     {val_x_ph: data_x, val_y_ph: data_y})
+
+                print('Perturbation value: ', str(value))
+                print('KC coding level: ', str(np.mean(kc_tmp > 0.)))
+                # Compute KC angle
+                if i_value == 0:
+                    if value != 0:
+                        raise ValueError(
+                            'First perturbation value should be 0')
+                    kc_original = kc_tmp
+                else:
+                    angle_tmp = _angle(kc_tmp, kc_original)
+                    # plt.figure()
+                    # plt.hist(angle_tmp, bins=50)
+                    angle[i_rep, i_value] = np.mean(angle_tmp)
 
                 val_loss[i_rep, i_value] = val_loss_tmp
                 val_acc[i_rep, i_value] = val_acc_tmp
 
-    return val_loss, val_acc
+    results = {'loss': val_loss, 'acc': val_acc, 'angle': angle}
 
+    return results
 
-def evaluate_weight_perturb_angle(values, modelname, model_dir, n_rep=1, dataset='val',
-                            perturb_mode='multiplicative', epoch=None,
-                            multidirection=False, perturb_output=True):
-    """Evaluate the performance under weight perturbation.
-
-    Args:
-        values: a list of floats about the strength of perturbations
-        modelname: str, the model name
-        model_dir: str, the model directory
-        n_rep: int, the number of repetition
-        dataset: 'train' or 'val', the dataset for computing loss
-        perturb_mode: 'feature_norm' or 'multiplicative'.
-            If 'feature_norm', uses feature-normalized perturbation
-            If 'multiplicative', uses independent multiplicative perturbation
-        epoch: int or None. If int, analyze the results at specific training epoch
-        multidirection: int or False. if not False, then the perturbation
-            will be along multiple directions, values must be list of (multidirection)-tuple
-
-    Return:
-        losses: a np array of losses, the same size as values
-        accs: np array of accuracies, the same size as values
-    """
-
-    path = model_dir
-    config = tools.load_config(path)
-
-    # TODO: clean up these paths
-    config.data_dir = rootpath + config.data_dir[1:]
-    config.save_path = rootpath + config.save_path[1:]
-
-    tf.reset_default_graph()
-    # Build validation model
-    val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
-    val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
-    val_model = FullModel(val_x_ph, val_y_ph, config=config, training=False)
-
-    if epoch is not None:
-        val_model.save_path = os.path.join(
-            val_model.save_path, 'epoch', str(epoch).zfill(4))
-
-    # Variables to perturb
-    perturby_var = None
-    if perturb_output:
-        perturb_var = ['model/layer3/kernel:0']
-    else:
-        perturb_var = ['model/layer2/kernel:0']
-
-    tf_config = tf.ConfigProto()
-    tf_config.gpu_options.allow_growth = True
-    with tf.Session(config=tf_config) as sess:
-        sess.run(tf.global_variables_initializer())
-        val_model.load()
-
-        if dataset == 'val':
-            data_x, data_y = val_x, val_y
-        elif dataset == 'train':
-            rnd_ind = np.random.choice(
-                train_x.shape[0], size=(val_x.shape[0],), replace=False)
-            data_x, data_y = train_x[rnd_ind], train_y[rnd_ind]
-        else:
-            raise ValueError('Wrong dataset type')
-
-        print('Perturbing weights:')
-        for v in perturb_var:
-            print(v)
-
-        if perturb_var is None:
-            perturb_var = tf.trainable_variables()
-        else:
-            perturb_var = [v for v in tf.trainable_variables() if
-                           v.name in perturb_var]
-
-        origin_weights = [sess.run(v) for v in perturb_var]
-
-        theta_array = np.zeros((n_rep, len(values)))
-        val_acc = np.zeros((n_rep, len(values)))
-
-        for i_rep, rep in enumerate(range(n_rep)):
-            if perturb_mode == 'feature_norm':
-                if multidirection:
-                    directions_list = [select_random_directions(origin_weights)
-                                       for _ in range(multidirection)]
-                else:
-                    directions = select_random_directions(origin_weights)
-
-            for i_value, value in enumerate(values):
-                if perturb_mode == 'multiplicative':
-                    new_var_val = [w * np.random.uniform(1 - value, 1 + value, size=w.shape)
-                                   for w in origin_weights]
-                elif perturb_mode == 'feature_norm':
-                    if multidirection:
-                        new_var_val = list()
-                        for i_w, w in enumerate(origin_weights):
-                            new_w = 0
-                            for v, d_list in zip(value, directions_list):
-                                new_w += d_list[i_w] * v
-                            new_w += w
-                            new_var_val.append(new_w)
-                    else:
-                        new_var_val = list()
-                        for w, d in zip(origin_weights, directions):
-                            new_var_val.append(w + d * value)
-                else:
-                    raise ValueError()
-
-                pre_kc = sess.run(val_model.kc, {val_x_ph: data_x})
-
-                for j in range(len(perturb_var)):
-                    sess.run(perturb_var[j].assign(new_var_val[j]))
-
-                post_kc = sess.run(val_model.kc, {val_x_ph: data_x})
-
-                thetas = _angle(pre_kc, post_kc)
-                theta = np.mean(thetas)
-
-                theta_array[i_rep, i_value] = theta
-
-    return theta_array, theta_array
 
 def _angle(Y, Y2):
+    """Compute angle between two sets of vectors.
+
+    Args:
+        Y, Y2: (n_vecs, dim)
+
+    Returns:
+        theta: the angle between the n_vecs pairs of dim-D vectors
+    """
     norm_Y = np.linalg.norm(Y, axis=1)
     norm_Y2 = np.linalg.norm(Y2, axis=1)
 
@@ -409,8 +343,10 @@ def evaluate_kcrole(path, name):
     for model, model_dir in zip(models, model_dirs):
         model_dir = os.path.join(path, model_dir)
         if name == 'weight_perturb':
-            losses, accs = evaluate_weight_perturb(
+            results = evaluate_weight_perturb(
                 values, model, model_dir, n_rep=1)
+            losses = results['loss']
+            accs = results['acc']
         else:
             losses, accs = evaluate(name, values, model, model_dir)
         loss_dict[model] = losses
@@ -485,17 +421,15 @@ def evaluate_across_epochs(path, values=None, select_dict=None, dataset='val', m
     epochs = len(tools.get_allmodeldirs(os.path.join(model_dir,'epoch')))
 
     if mode == 'angle':
-        f = evaluate_weight_perturb_angle
-    else:
-        f = evaluate_weight_perturb
+        raise NotImplementedError('Not implemented yet')
 
     for model in range(epochs):
-        losses, accs = f(
+        results = evaluate_weight_perturb(
             values, model, model_dir, n_rep=n_rep, perturb_output=False, perturb_mode='multiplicative',
             dataset=dataset, epoch=model, multidirection=multidirection)
 
-        loss_dict[model] = losses
-        acc_dict[model] = accs
+        loss_dict[model] = results['loss']
+        acc_dict[model] = results['acc']
         models.append(model)
 
     results = {'loss_dict': loss_dict,
@@ -517,13 +451,25 @@ def evaluate_across_epochs(path, values=None, select_dict=None, dataset='val', m
 
 def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
                           file=None, n_rep=1, epoch=None, multidirection=False):
-    """Evaluate models from the same root directory."""
+    """Evaluate models from the same root directory.
+
+    Args:
+        path: path of models
+        values: list of weight perturbation values
+        select_dict: dictionary of conditions to select models
+        dataset: whether to evaluate on val or train
+        file: file to store results, if None then use default value
+        n_rep: number of repetition
+        epoch: the training epoch to analyze
+        multidirection: whether perturbation is applied to multiple directions
+    """
     name = 'weight_perturb'
 
     model_dirs = tools.get_allmodeldirs(path)
 
     loss_dict = {}
     acc_dict = {}
+    angle_dict = {}
 
     models = list()
     model_var = 'kc_inputs'
@@ -534,16 +480,18 @@ def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
             continue
         
         model = getattr(config, model_var)
-        losses, accs = evaluate_weight_perturb(
-            values, model, model_dir, n_rep=n_rep, perturb_output=True,
+        results = evaluate_weight_perturb(
+            values, model, model_dir, n_rep=n_rep, perturb_output=False,
             dataset=dataset, epoch=epoch, multidirection=multidirection)
 
-        loss_dict[model] = losses
-        acc_dict[model] = accs
+        loss_dict[model] = results['loss']
+        acc_dict[model] = results['acc']
+        angle_dict[model] = results['angle']
         models.append(model)
 
     results = {'loss_dict': loss_dict,
                'acc_dict': acc_dict,
+               'angle_dict': angle_dict,
                'models': models,
                'model_var': model_var,
                'values': values,
@@ -574,24 +522,40 @@ def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epo
         results = pickle.load(f)
 
     values = results['values']
-    loss_dict = results['loss_dict']
-    acc_dict = results['acc_dict']
     models = results['models']
 
     if len(values) > 1:
         colors = plt.cm.cool(np.linspace(0, 1, len(values)))
     else:
         colors = [tools.blue]
-    
-    for ylabel in ['val_acc', 'val_loss']:
-        res_dict = acc_dict if ylabel == 'val_acc' else loss_dict
+
+    diff_dict = dict()
+    for ylabel in ['val_acc', 'val_loss', 'angle']:
+        if ylabel == 'val_acc':
+            res_dict = results['acc_dict']
+        elif ylabel == 'val_loss':
+            res_dict = results['loss_dict']
+        elif ylabel == 'angle':
+            res_dict = results['angle_dict']
+        else:
+            raise ValueError('Unknown ylabel', str(ylabel))
+
         fig = plt.figure(figsize=(2, 2))
         ax = fig.add_axes((0.2, 0.2, 0.5, 0.5))
 
         for i in range(len(values)):
-            res_plot = [res_dict[model][:,i].mean(axis=0) for model in models]
+            try:
+                res_plot = [res_dict[model][:,i].mean(axis=0) for model in models]
+            except IndexError:
+                res_plot = [res_dict[model][i] for model in models]
+            res_plot = np.array(res_plot)
             if ylabel == 'val_logloss':
                 res_plot = np.log(res_plot)  # TODO: this log?
+            if i == 0:
+                diff_dict[ylabel] = res_plot
+            if i == len(values) - 1:
+                diff_dict[ylabel] = res_plot - diff_dict[ylabel]  # compute diff
+
             ax.plot(models, res_plot, 'o-', markersize=3, label=values[i], color=colors[i])
         ax.set_xlabel(nicename(model_var))
         ax.set_ylabel(nicename(ylabel))
@@ -627,6 +591,15 @@ def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epo
             
         plt.title(title_txt, fontsize=7)
         _easy_save(path.split('/')[-1], figname)
+
+
+    for ylabel in ['val_acc', 'val_loss']:
+        plt.figure()
+        # plt.scatter(diff_dict['angle'], diff_dict['val_loss'])
+        plt.scatter(diff_dict['angle'][1:], diff_dict[ylabel][1:])  # TODO: TEMP, ignoring first point
+        plt.xlabel('Angle')
+        plt.ylabel('Change in ' + ylabel + ' (perturb - original)')
+        _easy_save(path.split('/')[-1], 'angle_vs_delta'+ylabel)
         
 
 def evaluate_onedim_perturb(path, dataset='val', epoch=None):
@@ -759,28 +732,19 @@ def plot_twodim_perturb(path, dataset='val', epoch=None, K=None):
     
 
 if __name__ == '__main__':
-    # evaluate_withnoise()
-    # evaluate_plot('orn_dropout_rate')
-    # evaluate_plot('orn_noise_std')
-    # evaluate_plot('alpha')
-    # path = os.path.join(rootpath, 'files', 'kcrole')
-    # evaluate_kcrole(path, 'weight_perturb')
-    # plot_kcrole(path, 'weight_perturb')
-    # evaluate_acrossmodels('weight_perturb')
-    # path = os.path.join(rootpath, 'files', 'tmp_perturb_small')
-    path = os.path.join(rootpath, 'files', 'vary_kc_claws_epoch15')
-    # path = os.path.join(rootpath, 'files', 'vary_kc_claws_dev')
-# =============================================================================
-#     evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0},
-#                           values=[0],
-#                           n_rep=1, dataset='val', epoch=1)
-# =============================================================================
-    # plot_acrossmodels(path, dataset='val', epoch=1)
-    
-    evaluate_onedim_perturb(path, dataset='val', epoch=1)
-    plot_onedim_perturb(path, dataset='val', epoch=1, minzero=True)
-
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    path = '../files/vary_kc_claws_new'
+    # evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0})
+    # path = '../files/vary_kc_claws_epoch15'
+    # path = '../files/vary_kc_claws_epoch2'
+    # path = '../files/vary_kc_claws_epoch2_1000class'
+    path = '../files/vary_kc_claws_fixedacc'
+# =============================================================================
+#     evaluate_acrossmodels(
+#             path, select_dict={'ORN_NOISE_STD': 0},
+#             values=[0, 0.5], n_rep=1, dataset='val')
+#     plot_acrossmodels(path, dataset='val')
+# =============================================================================
 
 
     

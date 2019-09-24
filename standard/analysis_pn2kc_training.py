@@ -32,7 +32,10 @@ def _set_colormap(nbins):
     return cm
 
 
-def infer_threshold(x, use_logx=True, visualize=True, force_thres=None):
+
+def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
+                    downsample=True):
+
     """Infers the threshold of a bi-modal distribution.
 
     The log-input will be fit as a mixture of 2 gaussians.
@@ -44,8 +47,22 @@ def infer_threshold(x, use_logx=True, visualize=True, force_thres=None):
     Returns:
         thres: a scalar threshold that separates the two gaussians
     """
+    # TODO: Make this function more robust
+    # Select neurons that receive both strong and weak connections
+    # weak connections should be around median, where strong should be around max
+    x = np.array(x)
+    ratio = np.max(x, axis=0) / np.median(x, axis=0)
+    # heuristic that works well for N=50-500, can plot hist of ratio
+    ind = ratio > 15
 
-    x = np.asarray(x).flatten()
+    x = x[:, ind]  # select expansion layer neurons
+
+    x = x.flatten()
+
+    if downsample:
+        if len(x) > 1e5:
+            x = np.random.choice(x, size=(int(1e5),))
+
     if use_logx:
         x = np.log(x+1e-10)
     x = x[:, np.newaxis]
@@ -53,9 +70,8 @@ def infer_threshold(x, use_logx=True, visualize=True, force_thres=None):
     if force_thres is not None:
         thres_ = np.log(force_thres) if use_logx else force_thres
     else:
-        clf = GaussianMixture(n_components=2)
+        clf = GaussianMixture(n_components=2, means_init=[[-5], [0.]], n_init=5)
         clf.fit(x)
-    
         x_tmp = np.linspace(x.min(), x.max(), 1000)
     
         pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
@@ -322,21 +338,39 @@ def plot_distribution(dir, xrange=1.0, log=False):
                                    title=titles[j], xrange= xrange, yrange=5000, approximate=approximate)
 
 
-def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False, thres=THRES):
+def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
+                     thres=THRES):
     print('Analyzing results from: ' + str(d))
     try:
         wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
     except KeyError:
         wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
     w = wglos[epoch]
+    return _compute_sparsity(w, dynamic_thres, visualize, thres)
 
+
+def compute_sparsity_allepochs(d, dynamic_thres=False, visualize=False,
+                     thres=THRES):
+    print('Analyzing results from: ' + str(d))
+    try:
+        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
+    except KeyError:
+        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
+
+    sparsity_list = list()
+    for i, w in enumerate(wglos):
+        _dynamic_thres = dynamic_thres if i > 0 else 0.1
+        sparsity = _compute_sparsity(w, _dynamic_thres, visualize, thres)
+        sparsity_list.append(sparsity)
+    return sparsity_list
+
+
+def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     w[np.isnan(w)] = 0
 
     # dynamically infer threshold after training
     if dynamic_thres is False:
         thres = thres
-    elif epoch == 0:
-        thres = 0.01
     elif dynamic_thres == True:
         thres = None
     else:
@@ -353,7 +387,6 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
     os.makedirs(path,exist_ok=True)
-
 
     if tools._islikemodeldir(dir):
         dirs = [dir]
@@ -550,6 +583,147 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
 
         plt.savefig(savename + '.png', dpi=500)
         plt.savefig(savename + '.pdf', transparent=True)
+
+
+def plot_sparsity_acrossepochs(path, dynamic_thres=False):
+    import tools
+    config = tools.load_config(path)
+    res = tools.load_all_results(os.path.join(rootpath, 'files', 'longtrain'),
+                                 argLast=False)
+    n_epoch = len(os.listdir(os.path.join(path, 'epoch')))
+    epochs = np.arange(n_epoch)
+
+    sparsity_list = compute_sparsity_allepochs(
+        path, dynamic_thres=True, visualize=False)
+
+    Ks = list()
+    for i, epoch in enumerate(epochs):
+        sparsity = sparsity_list[i]
+        Ks.append(sparsity[sparsity > 0].mean())
+        print(epoch, sparsity[sparsity > 0].mean())
+        print(epoch, len(sparsity[sparsity > 0]))
+
+    Ks = np.array(Ks)
+
+    savename = os.path.join(figpath, 'sparsity_acrossepochs')
+
+    final_K = Ks[-1]
+    Ks[Ks > final_K * 1.5] = np.nan
+
+    fig = plt.figure(figsize=(2, 1.5))
+    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
+    ax.plot(epochs, Ks)
+    plt.xlabel('Epochs')
+    plt.ylabel('K')
+    plt.ylim([0, np.nanmax(Ks) * 1.1])
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    plt.savefig(savename + '.png', dpi=500)
+    plt.savefig(savename + '.pdf', transparent=True)
+
+    # TODO: Temporarily dumped here
+    wglos = tools.load_pickle(os.path.join(path, 'epoch'), 'w_glo')
+    bglos = tools.load_pickle(os.path.join(path, 'epoch'),
+                              'model/layer2/bias:0')
+
+    # =============================================================================
+    # thres = analysis_pn2kc_training.infer_threshold(
+    #         wglos[190], visualize=True, force_thres=None)
+    # =============================================================================
+
+    # =============================================================================
+    # epoch = 190
+    # w = wglos[epoch]
+    # b = bglos[epoch]
+    # use_logx = True
+    # force_thres = np.exp(-2.5)
+    # visualize = True
+    # from scipy.stats import multivariate_normal
+    # from sklearn.mixture import GaussianMixture
+    #
+    # x = np.array(w)
+    # ratio = np.max(x, axis=0) / np.median(x, axis=0)
+    # # heuristic that works well for N=50-500, can plot hist of ratio
+    # ind = ratio > 15
+    # print('Valid units {:d}/{:d}'.format(np.sum(ind), len(ind)))
+    # x = x[:, ind]  # select expansion layer neurons
+    # b = b[ind]
+    #
+    # bs = list()
+    # for epoch in epochs:
+    #     w = wglos[epoch]
+    #     b = bglos[epoch]
+    #
+    #     x = np.array(w)
+    #     ratio = np.max(x, axis=0) / np.median(x, axis=0)
+    #     # heuristic that works well for N=50-500, can plot hist of ratio
+    #     ind = ratio > 15
+    #
+    #     bs.append(b[ind].mean())
+    #
+    # plt.plot(epochs, bs)
+    # =============================================================================
+
+    # =============================================================================
+    # x = x.flatten()
+    # if use_logx:
+    #     x = np.log(x+1e-10)
+    # x = x[:, np.newaxis]
+    #
+    # if force_thres is not None:
+    #     thres_ = np.log(force_thres) if use_logx else force_thres
+    # else:
+    #     clf = GaussianMixture(n_components=2)
+    #     clf.fit(x)
+    #     x_tmp = np.linspace(x.min(), x.max(), 1000)
+    #
+    #     pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
+    #                                    clf.covariances_[0]) * clf.weights_[0]
+    #     pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
+    #                                    clf.covariances_[1]) * clf.weights_[1]
+    #
+    #     if clf.means_[0, 0] < clf.means_[1, 0]:
+    #         diff = pdf1 < pdf2
+    #     else:
+    #         diff = pdf1 > pdf2
+    #
+    #     thres_ = x_tmp[np.where(diff)[0][0]]
+    #
+    # thres = np.exp(thres_) if use_logx else thres_
+    #
+    # if visualize:
+    #     bins = np.linspace(x.min(), x.max(), 100)
+    #     fig = plt.figure(figsize=(5, 5))
+    #     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    #     ax.hist(x[:, 0], bins=bins, density=True)
+    #     if force_thres is None:
+    #         pdf = pdf1 + pdf2
+    #         ax.plot(x_tmp, pdf)
+    #     ax.plot([thres_, thres_], [0, 1])
+    #     plt.ylim([0, 0.4])
+    #
+    #     if use_logx:
+    #         x = np.exp(x)
+    #         thres_ = np.exp(thres_)
+    #         bins = np.linspace(x.min(), x.max(), 100)
+    #         fig = plt.figure(figsize=(3, 3))
+    #         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    #         ax.hist(x[:, 0], bins=bins, density=True)
+    #         ax.plot([thres_, thres_], [0, 1])
+    #         # ax.set_ylim([0, 1])
+    #
+    # sparsity = np.count_nonzero(w > thres, axis=0)
+    # print('K', sparsity[sparsity>0].mean())
+    # =============================================================================
+
+    # =============================================================================
+    # # Analyze activity
+    # from standard.analysis import load_activity
+    # glo_in, glo_out, kc_out, results = load_activity(path)
+    # print('Activity sparsity', np.mean(kc_out[:, ind] > 0.))
+    # =============================================================================
 
 # if __name__ == '__main__':
 #     dir = "../files/train_KC_claws"

@@ -18,7 +18,6 @@ sys.path.append(rootpath)
 
 import tools
 from tools import nicename
-from oracle.evaluatewithnoise import _select_random_directions
 
 N_PN = 50
 N_KC = 2500
@@ -102,11 +101,11 @@ def _get_M(n_pn, n_kc, n_kc_claw, sign_constraint=True,
 
 
 def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
-                    coding_level=None, same_threshold=True, n_pts=10,
+                    n_pts=10,
                     perturb_mode='multiplicative', ff_inh=False, normalize_x=True,
                     x_dist='uniform', w_mode='exact', normalize_w=True,
-                    b_mode='percentile', activation='relu', w_dist='uniform',
-                    perturb_dist='uniform'):
+                    w_dist='uniform',
+                    perturb_dist='uniform', **kwargs):
     if x_dist == 'uniform':
         X = np.random.rand(n_pts, n_pn)
     elif x_dist == 'gaussian':
@@ -124,7 +123,7 @@ def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
     if ff_inh:
         # TODO: think how to weight perturb with ff inh
         M = M - M.sum(axis=0).mean()
-    
+
     Y = np.dot(X, M)
 
     if perturb_mode == 'input':
@@ -135,20 +134,40 @@ def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
                      normalize_w=normalize_w, K=n_kc_claw)
         Y2 = np.dot(X, M2)
     
+    return X, Y, Y2
+
+
+def analyze_perturb(n_kc_claw=N_KC_CLAW, n_rep=1, **kwargs):
+    X, Y, Y2 = list(), list(), list()
+    for i in range(n_rep):
+        X0, Y0, Y20 = _analyze_perturb(n_kc_claw=n_kc_claw, **kwargs)
+        X.append(X0)
+        Y.append(Y0)
+        Y2.append(Y20)
+    
+    X = np.concatenate(X, axis=0)
+    Y = np.concatenate(Y, axis=0)
+    Y2 = np.concatenate(Y2, axis=0)
+    
+    return X, Y, Y2
+
+
+def set_coding_level(Y, Y2, coding_level=None, same_threshold=True,
+                     b_mode='percentile', activation='relu', **kwargs):
     if coding_level is not None:
         if b_mode == 'percentile':
-            b = -np.percentile(Y.flatten(), 100-coding_level)
+            b = -np.percentile(Y.flatten(), 100 - coding_level)
         elif b_mode == 'gaussian':
-            b = -(np.mean(Y) + np.std(Y)*1)
+            b = -(np.mean(Y) + np.std(Y) * 1)
             # b = - (K/2 + np.sqrt(K/4))
             # print(n_kc_claw, np.mean(Y), np.std(Y)**2/K*4)
         else:
             raise NotImplementedError()
         Y = Y + b
         if not same_threshold:
-            b = -np.percentile(Y2.flatten(), 100-coding_level)
+            b = -np.percentile(Y2.flatten(), 100 - coding_level)
         Y2 = Y2 + b
-        
+
         if activation == 'relu':
             Y = relu(Y)
             Y2 = relu(Y2)
@@ -162,61 +181,39 @@ def _analyze_perturb(n_pn=N_PN, n_kc=N_KC, n_kc_claw=N_KC_CLAW,
             pass
         else:
             raise NotImplementedError('Unknown activation')
-    
+
+    return Y, Y2
+
+
+def _simulation(Y, Y2, compute_dimension=False):
     dY = Y2 - Y
-    
-    return X, Y, Y2, dY
-
-
-def analyze_perturb(n_kc_claw=N_KC_CLAW, n_rep=1, **kwargs):
-    X, Y, Y2, dY = list(), list(), list(), list()
-    for i in range(n_rep):
-        X0, Y0, Y20, dY0 = _analyze_perturb(n_kc_claw=n_kc_claw, **kwargs)
-        X.append(X0)
-        Y.append(Y0)
-        Y2.append(Y20)
-        dY.append(dY0)
-    
-    X = np.concatenate(X, axis=0)
-    Y = np.concatenate(Y, axis=0)
-    Y2 = np.concatenate(Y2, axis=0)
-    dY = np.concatenate(dY, axis=0)
-    
-    return X, Y, Y2, dY
-
-
-def simulation(K, compute_dimension=False, **kwargs):
-    print('Simulating K = ' + str(K))
-    X, Y, Y2, dY = analyze_perturb(n_kc_claw=K, **kwargs)
-
     norm_Y = np.linalg.norm(Y, axis=1)
     norm_Y2 = np.linalg.norm(Y2, axis=1)
     norm_dY = np.linalg.norm(dY, axis=1)
-    
+
     cos_theta = (np.sum(Y * Y2, axis=1) / (norm_Y * norm_Y2))
-    cos_theta = cos_theta[(norm_Y * norm_Y2)>0]
-    theta = np.arccos(cos_theta)/np.pi*180
-    
-    norm_ratio = norm_dY/norm_Y
-    norm_ratio = norm_ratio[norm_Y>0]
-    
-    S = norm_Y**2
-    R = norm_dY**2
-    
-    corr = np.var(S)/np.mean(S)**2
+    cos_theta = cos_theta[(norm_Y * norm_Y2) > 0]
+    theta = np.arccos(cos_theta) / np.pi * 180
+
+    norm_ratio = norm_dY / norm_Y
+    norm_ratio = norm_ratio[norm_Y > 0]
+
+    S = norm_Y ** 2
+    R = norm_dY ** 2
+
+    corr = np.var(S) / np.mean(S) ** 2
     mu_S = np.mean(S)
     mu_R = np.mean(R)
-    ES2 = np.mean(S**2)
-    first_term = mu_R/mu_S
-    second_term = first_term * (ES2/mu_S**2)
-    third_term = np.mean(S*R)/mu_S**2
-        
-    approx = np.sqrt(first_term+second_term-third_term)
-    
+    ES2 = np.mean(S ** 2)
+    first_term = mu_R / mu_S
+    second_term = first_term * (ES2 / mu_S ** 2)
+    third_term = np.mean(S * R) / mu_S ** 2
+
+    approx = np.sqrt(first_term + second_term - third_term)
+
     res = dict()
-    res['K'] = K
     res['E[norm_dY/norm_Y]'] = np.mean(norm_ratio)
-    
+
     res['mu_S'] = mu_S
     res['mu_R'] = mu_R
     res['theta'] = np.mean(theta)
@@ -226,34 +223,68 @@ def simulation(K, compute_dimension=False, **kwargs):
     res['E[S^2]mu_R/mu_S^3'] = second_term
     res['E[SR]/mu_S^2'] = third_term
     res['E[S^2]'] = ES2
-    
+
     if compute_dimension:
         Y_centered = Y - Y.mean(axis=0)
         # l, _ = np.linalg.eig(np.dot(Y_centered.T, Y_centered))
         # u, s, vh = np.linalg.svd(Y_centered, full_matrices=False)
         # l = s**2
-        # dim = np.sum(l)**2/np.sum(l**2)        
-        
+        # dim = np.sum(l)**2/np.sum(l**2)
+
         C = np.dot(Y_centered.T, Y_centered) / Y.shape[0]
-        C2 = C**2
-    
-        diag_mask = np.eye(C.shape[0],dtype=bool)
-            
+        C2 = C ** 2
+
+        diag_mask = np.eye(C.shape[0], dtype=bool)
+
         E_C2ij = np.mean(C2[~diag_mask])
         E_C2ii = np.mean(C2[diag_mask])
         E_Cii = np.mean(C[diag_mask])
-        
-        dim = n_kc * E_Cii**2 / (E_C2ii + (n_kc-1) * E_C2ij)
+
+        dim = n_kc * E_Cii ** 2 / (E_C2ii + (n_kc - 1) * E_C2ij)
 
         res['E_Cii'] = E_Cii
         res['E_C2ii'] = E_C2ii
         res['E_C2ij'] = E_C2ij
-        res['dim'] = m * E_Cii**2 / (E_C2ii + (m-1) * E_C2ij)
-        
+        res['dim'] = m * E_Cii ** 2 / (E_C2ii + (m - 1) * E_C2ij)
+
     return res
 
 
+def simulation(K, compute_dimension=False, **kwargs):
+    print('Simulating K = ' + str(K))
+    
+    X, Y, Y2 = analyze_perturb(n_kc_claw=K, **kwargs)
+    Y, Y2 = set_coding_level(Y, Y2, **kwargs)
+
+    res = _simulation(Y, Y2, compute_dimension=compute_dimension)
+    res['K'] = K
+    return res
+
+
+def simulation_vary_coding_levels(K, coding_levels=None,
+                                  compute_dimension=False, **kwargs):
+    print('Simulating K = ' + str(K))
+
+    if coding_levels is None:
+        coding_levels = np.arange(10, 91, 10)
+
+    X, Y, Y2 = analyze_perturb(n_kc_claw=K, **kwargs)
+
+    res_list = list()
+    for coding_level in coding_levels:
+        kwargs['coding_level'] = coding_level
+        Y_new, Y2_new = set_coding_level(Y, Y2, **kwargs)
+
+        res = _simulation(Y_new, Y2_new, compute_dimension=compute_dimension)
+        res['K'] = K
+        res['coding_level'] = coding_level
+
+        res_list.append(res)
+    return res_list, coding_levels
+
+
 def simulation_perturboutput(K, **kwargs):
+    from oracle.evaluatewithnoise import _select_random_directions
     # Get the representation at the expansion layer
     X, Y, Y2, dY = analyze_perturb(n_kc_claw=K, **kwargs)
 
@@ -783,98 +814,7 @@ def main_plot_perturb(perturb):
     plt.legend()
 
 
-def get_optimal_K_simulation():
-    def guess_optimal_K(m):
-        """Get the optimal K based on latest estimation."""
-        return np.exp(-0.75)*(m**0.706)
-    
-    ms = [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-    for m in ms:
-    # for m in [75]:
-        K_mid = int(guess_optimal_K(m))
-        K_sim = np.arange(int(K_mid)-5, int(K_mid)+5)
-        
-        kwargs = {'x_dist': 'gaussian',
-                  'normalize_x': False,
-                  'w_mode': 'exact',
-                  # 'w_mode': 'bernoulli',
-                  'w_dist': 'gaussian',
-                  'normalize_w': False,
-                  'b_mode': 'percentile',
-                  # 'b_mode': 'gaussian',
-                  'coding_level': 10,
-                  'activation': 'relu',
-                  # 'perturb_mode': 'multiplicative',
-                  'perturb_mode': 'additive',
-                  'perturb_dist': 'gaussian',
-                  'n_pts': 500,
-                  'n_rep': 1,
-                  'n_pn': m}
-        
-        n_rep = 100
-        all_values = list()
-        for i in range(n_rep):
-            start_time = time.time()
-            values_sim = defaultdict(list)
-            for K in K_sim:
-                res = simulation(K, **kwargs)
-                for key, val in res.items():
-                    values_sim[key].append(val)
-            all_values.append(values_sim)
-            print('Time taken : {:0.2f}s'.format(time.time() - start_time))
-        
-        fname = 'all_value_m' + str(m)
-        fname = os.path.join(rootpath, 'files', 'analytical', fname)
-        pickle.dump(all_values, open(fname+'.pkl', "wb"))
-        
 
-def get_optimal_K_simulation_participationratio():
-    def guess_optimal_K(m):
-        """Get the optimal K based on latest estimation."""
-        return np.exp(0.568)*(m**0.2)
-    
-    ms = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
-    # ms = [50, 1000]
-    for m in ms:
-    # for m in [75]:
-        K_mid = int(guess_optimal_K(m))
-        min_K = max(1, int(K_mid)-10)
-        K_sim = np.arange(min_K, int(K_mid)+10)
-        
-        kwargs = {'x_dist': 'gaussian',
-                  'normalize_x': False,
-                  'w_mode': 'exact',
-                  # 'w_mode': 'bernoulli',
-                  'w_dist': 'gaussian',
-                  'normalize_w': False,
-                  'b_mode': 'percentile',
-                  # 'b_mode': 'gaussian',
-                  'coding_level': 10,
-                  'activation': 'relu',
-                  # 'perturb_mode': 'multiplicative',
-                  'perturb_mode': 'additive',
-                  'perturb_dist': 'gaussian',
-                  'n_pts': 5000,
-                  'n_rep': 1,
-                  'n_kc': 2500,
-                  'n_pn': m}
-        
-        n_rep = 10
-        all_values = list()
-        for i in range(n_rep):
-            print('m: ' + str(m) + ' rep ' + str(i))
-            start_time = time.time()
-            values_sim = defaultdict(list)
-            for K in K_sim:
-                res = simulation(K, compute_dimension=True, **kwargs)
-                for key, val in res.items():
-                    values_sim[key].append(val)
-            all_values.append(values_sim)
-            print('Time taken : {:0.2f}s'.format(time.time() - start_time))
-        
-        fname = 'all_value_withdim_m' + str(m)
-        fname = os.path.join(rootpath, 'files', 'analytical', fname)
-        pickle.dump(all_values, open(fname+'.pkl', "wb"))
 
 
 def compute_optimalloss_onestepgradient():
@@ -1047,8 +987,9 @@ def compute_optimalloss_onestepgradient():
        
 
 if __name__ == '__main__':
+    pass
     # main_compare(m=50, activation='relu', compute_dimension=False)
-    main_plot(m=50, logK=False, activation='relu')
+    # main_plot(m=50, logK=False, activation='relu')
     # main_compare(perturb='pn2kc')
     # main_plot_perturboutput()
     # main_compare(perturb='input')
@@ -1057,65 +998,4 @@ if __name__ == '__main__':
     # get_optimal_k()
     # compare_dim_plot()
     
-# =============================================================================
-#     m  = 50
-#     logK = False
-#     activation = 'relu'
-#     
-#     values = list()
-#     for name in ['', '_dim']:       
-#         file = os.path.join(rootpath, 'files', 'analytical', 'sim_m'+str(m))
-#         if activation != 'relu':
-#             file = file + activation
-#         file += name
-#         with open(file+'.pkl', 'rb') as f:
-#             value = pickle.load(f)
-#         
-#         value = {key: np.array(val) for key, val in value.items()}
-#         values.append(value)
-#     
-#     values, values_dim = values
-#         
-#     if m == 50:
-#         xticks = [3, 7, 15, 30]
-#     elif m == 1000:
-#         xticks = [10, 100, 1000]
-#     else:
-#         xticks = []
-#         
-#     if logK:
-#         xplot = np.log(values_dim['K'])
-#     else:
-#         xplot = values_dim['K']
-#     
-#     keys = ['dim', 'E_Cii', 'E_C2ij', 'E_C2ii']
-#     for i, key in enumerate(keys):
-#         plt.figure(figsize=(4, 3))
-#         plt.plot(values_dim['K'], values_dim[key], 'o-', label=key)
-#         plt.legend()
-#         
-#     keys = ['E[S^2]']
-#     for i, key in enumerate(keys):
-#         plt.figure(figsize=(4, 3))
-#         plt.plot(values['K'], values[key], 'o-', label=key)
-#         plt.legend()
-#         
-#     plt.figure()
-#     plt.scatter(values_dim['K']/values_dim['dim'], values_dim['E_C2ij'])
-#         
-#     plt.figure()
-#     plt.scatter(values['E[S^2]']/1e9, np.sqrt(values_dim['E_C2ij']))
-#     
-#     plt.figure()
-#     plt.scatter(values['E[S^2]']/values['mu_S']**2, 1/np.sqrt(values_dim['dim']))
-#     
-#     plt.figure()
-#     plt.plot(values['K'], values['E[S^2]']/values['mu_S']**2)
-# 
-#     plt.figure()
-#     plt.plot(values_dim['K'], 1/np.sqrt(values_dim['dim']))
-#     
-#     plt.figure()
-#     plt.plot(values['K'], values['mu_R']/values['mu_S'])
-# 
-# =============================================================================
+    
