@@ -45,7 +45,6 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
     Returns:
         thres: a scalar threshold that separates the two gaussians
     """
-    # TODO: Make this function more robust
     # Select neurons that receive both strong and weak connections
     # weak connections should be around median, where strong should be around max
     x = np.array(x)
@@ -68,7 +67,7 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
     if force_thres is not None:
         thres_ = np.log(force_thres) if use_logx else force_thres
     else:
-        clf = GaussianMixture(n_components=2, means_init=[[-5], [0.]], n_init=5)
+        clf = GaussianMixture(n_components=2, means_init=[[-5], [0.]], n_init=1)
         clf.fit(x)
         x_tmp = np.linspace(x.min(), x.max(), 1000)
     
