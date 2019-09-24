@@ -41,7 +41,6 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
         plt.show()
     # plt.close()
 
-
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
                   legends=None, exclude_epoch0=False):
     """Plot progress through training.
@@ -93,6 +92,9 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         _easy_save(save_path, figname)
 
     _plot_progress('epoch', 'val_logloss')
+    _plot_progress('epoch', 'train_logloss')
+    _plot_progress('epoch', 'val_loss')
+    _plot_progress('epoch', 'train_loss')
     _plot_progress('epoch', 'val_acc')
     _plot_progress('epoch', 'glo_score')
     try:
@@ -274,7 +276,7 @@ def plot_activity(save_path):
 
 def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = None,
                  figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
-                 ax_args={}, plot_args={}, sort = True):
+                 ax_args={}, plot_args={}, sort = True, res = None, string = ''):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -296,7 +298,9 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
 
     plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}
 
-    res = tools.load_all_results(path)
+    if res is None:
+        res = tools.load_all_results(path)
+
     if select_dict is not None:
         res = dict_methods.filter(res, select_dict)
 
@@ -351,7 +355,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
 
-    if yticks is None and np.max(res[y_key]) <= 1:
+    if yticks is None and np.max(res[y_key]) <= 1 and np.min(res[y_key] >= 0):
         ax.set_yticks([0, 0.5, 1.0])
         plt.ylim([0, 1.1])
 
@@ -377,6 +381,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
             else:
                 v = str(v)
             figname += k + '_' + v + '__'
+    figname += string
 
 
     ax.spines["right"].set_visible(False)

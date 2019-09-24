@@ -77,75 +77,69 @@ def temp_meta():
 
 def temp():
     config = configs.FullConfig()
-    config.max_epoch = 25
     config.data_dir = './datasets/proto/standard'
-
-    config.direct_glo = True
-    config.replicate_orn_with_tiling = False
-    config.N_ORN_DUPLICATION = 1
-
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
+    config.max_epoch = 8
+    config.N_ORN_DUPLICATION = 10
     config.save_every_epoch = True
+    # config.direct_glo = True
+    # config.pn_norm_pre = 'batch_norm'  # not necessary, but for standardization
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['dummy'] = [True]
+    hp_ranges['blah'] = [1]
+    return config, hp_ranges
+
+def vary_pn_configs():
+    '''
+    Vary number of PNs while fixing KCs to be 2500
+    Results:
+        GloScore should peak at PN=50, and then drop as PN > 50
+        Accuracy should plateau at PN=50
+        Results should be independent of noise
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 10
+    config.pn_norm_pre = 'batch_norm'
+
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+
+    hp_ranges = OrderedDict()
+    hp_ranges['N_PN'] = [500]
     return config, hp_ranges
 
 # mamlmetatrain.train(temp_meta()[0])
 #
-path = './files_temp/temp'
-# try:
-#     shutil.rmtree(path)
-# except:
-#     pass
-# t(temp(), path)
-oracle.evaluatewithnoise.evaluate_across_epochs(path=path, values=[0, .01, .03, .1],n_rep=1)
-oracle.evaluatewithnoise.plot_acrossmodels(path=path, model_var='epoch')
+path = './files_temp/movie_glo'
+try:
+    shutil.rmtree(path)
+except:
+    pass
+t(temp(), path)
+
+# sa.plot_progress(path, select_dict = {'kc_inputs':[7, 15, 30], 'ORN_NOISE_STD':0},
+#                  legends=['7', '15', '30'])
+
+
+# oracle.evaluatewithnoise.evaluate_across_epochs(path=path, values=[0, .01, .03, .1],n_rep=1)
+# oracle.evaluatewithnoise.plot_acrossmodels(path=path, model_var='epoch')
 # analysis_training.plot_distribution(path, xrange=.5, log=False)
 # analysis_training.plot_distribution(path, xrange=.5, log=True)
 # analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.05, visualize=True)
 
 
 
-# path = './files/test/0/epoch'
-
-# path_ = os.path.join(path, '000000')
 # glo_in, glo_out, kc_out, results = sa.load_activity(path_)
 # b_orns = tools.load_pickle(path, 'b_glo')
 # plt.hist(glo_in.flatten(), bins=20)
 # plt.show()
 
-# w_orns = tools.load_pickle(path, 'w_orn')
-# w_orn = w_orns[0]
-# w_orn = tools._reshape_worn(w_orn, 50)
-# w_orn = w_orn.mean(axis=0)
-#
-# avg_gs, all_gs = tools.compute_glo_score(w_orn, 50, mode='tile', w_or = None)
-#
-# thres = .8
-# all_gs = np.array(all_gs)
-#
-# gs_sorted =np.sort(all_gs)[::-1]
-# gs_ix = np.argsort(all_gs)[::-1]
-#
-# w_orn_thres = w_orn[:, gs_ix[:60]]
-#
-# w_plot = w_orn_thres
-# ind_max = np.argmax(w_plot, axis=0)
-# ind_sort = np.argsort(ind_max)
-# w_plot = w_plot[:, ind_sort]
-# plt.imshow(w_plot, cmap='RdBu_r', vmin=-1, vmax=1,
-#                    interpolation='none')
-# plt.show()
-#
-# plt.hist(all_gs, bins=50)
-# plt.show()
 
 
-# plt.hist(all_gs, bins=20, range=[0,1])
-# sa._easy_save(path, 'hist')
+
+
+
 
 # sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix=0)
 # sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
