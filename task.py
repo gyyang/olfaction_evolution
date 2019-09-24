@@ -549,5 +549,5 @@ if __name__ == '__main__':
 
     import configs
     config = configs.input_ProtoConfig()
-    config.label_type = 'multi_head_sparse'
-    save_proto(config, folder_name='multi_head')
+    config.N_CLASS = 20
+    save_proto(config, folder_name='standard_20')

@@ -182,7 +182,7 @@ def varying_config_control(experiment, i):
     return config
 
 
-def load_all_results(rootpath, argLast= True):
+def load_all_results(rootpath, argLast= True, ix=None):
     """Load results from path.
 
     Args:
@@ -204,6 +204,8 @@ def load_all_results(rootpath, argLast= True):
         for key, val in log.items():
             if argLast:
                 res[key].append(val[-1])  # store last value in log
+            elif ix is not None:
+                res[key].append(val[ix])
             else:
                 res[key].append(val)
         for k in dir(config):
@@ -213,6 +215,7 @@ def load_all_results(rootpath, argLast= True):
     for key, val in res.items():
         res[key] = np.array(val)
     res['val_logloss'] = np.log(res['val_loss'])
+    res['train_logloss'] = np.log(res['train_loss'])
     return res
 
 

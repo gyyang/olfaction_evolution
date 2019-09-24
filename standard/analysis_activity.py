@@ -106,7 +106,7 @@ def distribution_activity(save_path, arg):
             zticks = [0, 10]
         elif arg == 'kc_out':
             data = kc_out.flatten()
-            xlabel = 'Fraction of Active KCs'
+            xlabel = 'KC Activity'
             zticks = [0, 2]
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
