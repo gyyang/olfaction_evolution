@@ -32,7 +32,7 @@ def _set_colormap(nbins):
     return cm
 
 
-def infer_threshold(x, use_logx=True, visualize=False, force_thres=None):
+def infer_threshold(x, use_logx=True, visualize=True, force_thres=None):
     """Infers the threshold of a bi-modal distribution.
 
     The log-input will be fit as a mixture of 2 gaussians.
@@ -314,8 +314,12 @@ def plot_distribution(dir, xrange=1.0, log=False):
                 _plot_distribution(distribution, save_name, cutoff = cutoff,
                                    title=titles[j], xrange= xrange, yrange=5000)
             else:
+                if j == 0:
+                    approximate=False
+                else:
+                    approximate=True
                 _plot_log_distribution(distribution, save_name, cutoff = cutoff,
-                                   title=titles[j], xrange= xrange, yrange=5000)
+                                   title=titles[j], xrange= xrange, yrange=5000, approximate=approximate)
 
 
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False, thres=THRES):
@@ -395,8 +399,31 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
 
-def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0):
-    data = np.log(data)
+def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0, approximate=True):
+    # if visualize:
+    #     bins = np.linspace(x.min(), x.max(), 100)
+    #     fig = plt.figure(figsize=(3, 3))
+    #     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    #     ax.hist(x[:, 0], bins=bins, density=True)
+    #     if force_thres is None:
+    #         pdf = pdf1 + pdf2
+    #         ax.plot(x_tmp, pdf)
+    #     ax.plot([thres_, thres_], [0, 1])
+    #
+    #     if use_logx:
+    #         x = np.exp(x)
+    #         thres_ = np.exp(thres_)
+    #         bins = np.linspace(x.min(), x.max(), 100)
+    #         fig = plt.figure(figsize=(3, 3))
+    #         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    #         ax.hist(x[:, 0], bins=bins, density=True)
+    #         ax.plot([thres_, thres_], [0, 1])
+    #         # ax.set_ylim([0, 1])
+
+
+
+    # y = np.log(data)
+    x = np.log(data + 1e-10)
     cutoff = np.log(cutoff)
     xrange = np.log(xrange)
 
@@ -405,12 +432,15 @@ def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0):
 
     fig = plt.figure(figsize=(2, 1.5))
     ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
-    plt.hist(data, bins=50, density=False)
+    if approximate:
+        plt.hist(x, bins=50, range = [-12, 3], density=True)
+    else:
+        weights = np.ones_like(x) / float(len(x))
+        plt.hist(x, bins=50, range = [-12, 3], weights=weights)
     ax.set_xlabel('PN to KC Weight')
-    ax.set_ylabel('Number of Connections')
+    ax.set_ylabel('Distribution of Connections')
     name = title
     ax.set_title(name)
-
     ax.set_xticks(xticks_log)
     ax.set_xticklabels(xticks)
 
@@ -425,7 +455,25 @@ def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    ax.plot([cutoff, cutoff], [0, plt.ylim()[1]], '--', color='gray')
+    ax.plot([cutoff, cutoff], [0, plt.ylim()[1]], '--', color='gray', linewidth=1)
+
+    if approximate:
+        x = np.asarray(data).flatten()
+        x = np.log(x + 1e-10)
+        x = x[:, np.newaxis]
+        clf = GaussianMixture(n_components=2)
+        clf.fit(x)
+        x_tmp = np.linspace(x.min(), x.max(), 1000)
+
+        pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
+                                           clf.covariances_[0]) * clf.weights_[0]
+        pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
+                                           clf.covariances_[1]) * clf.weights_[1]
+
+        ax.plot(x_tmp, pdf1, linestyle='--', linewidth=1, alpha = 1)
+        ax.plot(x_tmp, pdf2, linestyle='--', linewidth=1, alpha = 1)
+        # ax.plot(x_tmp, pdf1 + pdf2, color='black', linewidth=1, alpha = .5)
+
     plt.savefig(savename + '_log.png', dpi=500)
     plt.savefig(savename + '_log.pdf', transparent=True)
 
@@ -500,8 +548,8 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
         ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
         ax2.plot([cutoff, cutoff], ax2.get_ylim(), '--', color='gray')
 
-    plt.savefig(savename + '.png', dpi=500)
-    plt.savefig(savename + '.pdf', transparent=True)
+        plt.savefig(savename + '.png', dpi=500)
+        plt.savefig(savename + '.pdf', transparent=True)
 
 # if __name__ == '__main__':
 #     dir = "../files/train_KC_claws"

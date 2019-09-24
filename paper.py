@@ -69,7 +69,7 @@ else:
 TRAIN = False
 ANALYZE = True
 is_test = True
-experiments = ['multi_head']
+experiments = ['vary_kc_claws']
 
 
 if 'standard_without_or2orn' in experiments:
@@ -84,8 +84,8 @@ if 'standard_without_or2orn' in experiments:
 
         # #weights
         # sa.plot_weights(os.path.join(path,'000000'), var_name='w_orn', sort_axis=1, dir_ix=0)
-        sa.plot_weights(os.path.join(path,'000001'), var_name='w_orn', sort_axis=1, dir_ix=0)
-        # sa.plot_weights(path, var_name='w_glo', dir_ix=0)
+        # sa.plot_weights(os.path.join(path,'000001'), var_name='w_orn', sort_axis=1, dir_ix=0)
+        # sa.plot_weights(os.path.join(path,'000000'), var_name='w_glo', dir_ix=0)
 
         # # #sign constraint
         # sa.plot_progress(path, legends=['Non-negative', 'No constraint'])
@@ -93,8 +93,8 @@ if 'standard_without_or2orn' in experiments:
         # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
         #
         # #random analysis
-        # analysis_pn2kc_training.plot_distribution(path, xrange=1.5)
-        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
         # analysis_pn2kc_random.plot_distribution(path)
         # analysis_pn2kc_random.claw_distribution(path, 'random')
         # analysis_pn2kc_random.pair_distribution(path, 'preserve')
@@ -143,16 +143,14 @@ if 'vary_pn' in experiments:
     if TRAIN:
         local_train(se.vary_pn_configs(is_test), path)
     if ANALYZE:
-        sa.plot_weights(os.path.join(path,'000005'), sort_axis = 1, dir_ix=8, average=True)
-        # sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 select_dict={'ORN_NOISE_STD':0}),
+        # sa.plot_weights(os.path.join(path,'000005'), sort_axis = 1, dir_ix=8, average=True)
+        sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD':0}),
         # sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}
-        #                 )
-        #
+        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75})
+
         # sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}
-        #                 ),
+        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}),
         # sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
         #                 select_dict={'ORN_NOISE_STD': 0})
 
@@ -166,13 +164,13 @@ if 'vary_pn' in experiments:
 
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
-    path = './files/vary_kc'
+    path = './files/vary_kc`'
     if TRAIN:
         local_train(se.vary_kc_configs(is_test), path)
     if ANALYZE:
-        sa.plot_weights(os.path.join(path,'000002'), sort_axis=1, dir_ix=0, average=True)
-        # sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 select_dict={'ORN_NOISE_STD': 0})
+        # sa.plot_weights(os.path.join(path,'000002'), sort_axis=1, dir_ix=0, average=True)
+        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+                        select_dict={'ORN_NOISE_STD': 0})
         # sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
         #                 select_dict={'ORN_NOISE_STD': 0})
 
@@ -293,39 +291,76 @@ if 'vary_kc_claws' in experiments:
     if TRAIN:
         local_train(se.vary_claw_configs(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        import tools
+        t = [1, 2, 9, 19, 29, 39, 49, 59, 69]
+        for i in t:
+            res = tools.load_all_results(path, argLast=False, ix=i)
+            sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss',
+                            select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i), figsize=(2, 2),
+                            ax_box=(0.27, 0.25, 0.65, 0.65))
+
+        sa.plot_progress(path, select_dict = {'kc_inputs':[7,15,30], 'ORN_NOISE_STD':0}, legends=['7', '15', '30'])
+        # analysis_activity.sparseness_activity(path, 'kc_out')
+        # import tools
+        # for i in range(8):
+        #     res = tools.load_all_results(path, argLast=False, ix=i)
+        #     sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
+        #                     select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i))
+
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
         sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', loop_key='ORN_NOISE_STD',
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        figsize=(2, 2), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        #                 ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', select_dict={'ORN_NOISE_STD': 0},
+                        figsize=(2, 2), ax_box=(0.27, 0.25, 0.65, 0.65),
                         ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', select_dict={'ORN_NOISE_STD': 0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
+
+if 'vary_kc_claws_long' in experiments:
+    path = './files/vary_kc_claws_long'
+    if TRAIN:
+        local_train(se.vary_claw_configs_long(is_test), path)
+    if ANALYZE:
+        sa.plot_progress(path, select_dict = {'kc_inputs':[7,15,30], 'ORN_NOISE_STD':0}, legends=['7', '15', '30'])
 
 if 'vary_kc_claws_new' in experiments:
     path = './files/vary_kc_claws_new'
     if TRAIN:
         local_train(se.vary_claw_configs_new(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', loop_key='ORN_NOISE_STD',
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', select_dict={'ORN_NOISE_STD': 0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
-        sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
-                        select_dict={'ORN_NOISE_STD': 0},
-                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        # sa.plot_progress(path, select_dict = {'kc_inputs':[7, 15, 30], 'ORN_NOISE_STD':0}, legends=['7', '15', '30'])
+        import tools
+        t = [1, 2, 10, 20, 29]
+        for i in t:
+            res = tools.load_all_results(path, argLast=False, ix=i)
+            sa.plot_results(path, x_key='kc_inputs', y_key='val_loss',
+                            select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i))
 
-        evaluatewithnoise.evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0})
-        evaluatewithnoise.plot_acrossmodels(path)
-        evaluatewithnoise.evaluate_acrossmodels(path, select_dict={
-            'ORN_NOISE_STD': 0}, dataset='train')
-        evaluatewithnoise.plot_acrossmodels(path, dataset='train')
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', select_dict={'ORN_NOISE_STD': 0},
+                        figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        ax_args={'ylim':[-3, 0], 'yticks':[-1,0,1,2]})
+
+        # analysis_activity.sparseness_activity(path, 'kc_out')
+
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_loss', select_dict={'ORN_NOISE_STD': 0},
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        # sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
+        #                 select_dict={'ORN_NOISE_STD': 0},
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
+        #
+        # evaluatewithnoise.evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0})
+        # evaluatewithnoise.plot_acrossmodels(path)
+        # evaluatewithnoise.evaluate_acrossmodels(path, select_dict={
+        #     'ORN_NOISE_STD': 0}, dataset='train')
+        # evaluatewithnoise.plot_acrossmodels(path, dataset='train')
 
 if 'vary_kc_claws_dev' in experiments:
     path = './files/vary_kc_claws_epoch15'
