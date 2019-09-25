@@ -166,24 +166,25 @@ def main():
     config.meta_lr = .001
     config.N_CLASS = 5
     config.meta_output_dimension = 5
-    config.meta_batch_size = 16
-    config.meta_num_samples_per_class = 8
+    config.meta_batch_size = 32
+    config.meta_num_samples_per_class = 32
 
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.train_orn2pn = True
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.train_orn2pn = False
+    config.direct_glo = True
+
     config.pn_norm_pre = 'batch_norm'
-    # config.direct_glo = True
+    config.kc_norm_pre = 'batch_norm'
 
-    # config.kc_norm_pre = 'batch_norm'
-    # config.sparse_pn2kc = False
-    # config.train_pn2kc = True
-
+    config.train_kc_bias = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
     config.save_path = './files/metalearn/0'
 
     # config.data_dir = './datasets/proto/multi_head'
     # config.label_type = 'multi_head_one_hot'
-    config.data_dir = './datasets/proto/standard'
+    config.data_dir = './datasets/proto/test'
     config.label_type = 'one_hot'
 
     try:

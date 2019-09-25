@@ -429,6 +429,7 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
+    print(savename)
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
 
