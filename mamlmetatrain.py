@@ -61,7 +61,7 @@ def train(config):
     else:
         num_samples_per_class = config.meta_num_samples_per_class
         dim_output = config.N_CLASS  # TODO: this doesn't have to be
-        num_class = config.meta_labels * dim_output
+        num_class = config.meta_labels_per_class * dim_output
         data_generator = DataGenerator(
             dataset= config.data_dir,
             batch_size=num_samples_per_class * num_class * 2,
@@ -166,15 +166,16 @@ def main():
     config.meta_lr = .001
     config.N_PN = 50
     config.N_CLASS = 5
-    config.meta_labels_per_class = 4
+    config.meta_labels_per_class = 1
     config.meta_batch_size = 16
     config.meta_num_samples_per_class = 16
+    config.initial_pn2kc = .1
 
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.train_orn2pn = False
     config.direct_glo = True
-    config.pn_norm_pre = 'batch_norm'
+    # config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
 
     config.train_kc_bias = True

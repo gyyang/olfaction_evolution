@@ -139,7 +139,7 @@ def vary_pn_configs():
 #
 path = './files/metalearn'
 folder = '0'
-ix = '19750'
+ix = '4500'
 sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
 sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1, dir_ix=0)
 import standard.analysis_pn2kc_training

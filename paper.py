@@ -63,12 +63,12 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-
-#peter specific
-TRAIN = True
-ANALYZE = False
-is_test = True
-experiments = ['metalearn']
+#
+# #peter specific
+# TRAIN = True
+# ANALYZE = False
+# is_test = True
+# experiments = ['metalearn']
 
 
 if 'standard_without_or2orn' in experiments:
