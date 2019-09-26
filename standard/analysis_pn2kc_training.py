@@ -51,12 +51,10 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
     # Select neurons that receive both strong and weak connections
     # weak connections should be around median, where strong should be around max
     x = np.array(x)
-    ratio = np.max(x, axis=0) / np.median(x, axis=0)
+    # ratio = np.max(x, axis=0) / np.median(x, axis=0)
     # heuristic that works well for N=50-500, can plot hist of ratio
-    ind = ratio > 15
-
-    x = x[:, ind]  # select expansion layer neurons
-
+    # ind = ratio > 15
+    # x = x[:, ind]  # select expansion layer neurons
     x = x.flatten()
 
     if downsample:
@@ -394,7 +392,7 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
         dirs = tools._get_alldirs(dir, model=True, sort=True)
 
     if epochs is None:
-        epochs = [0, -1]  # analyze the first and the last
+        epochs = [-1]  # analyze the first and the last
         titles = ['Before Training', 'After Training']
         yrange = [1, 0.5]
     else:
@@ -407,6 +405,7 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
                                         visualize=visualize, thres=thres)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
             _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])
+            print(sparsity.mean())
 
 
 def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):

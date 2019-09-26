@@ -60,8 +60,8 @@ def train(config):
         model = MAML(next_element[0], next_element[1], config)
     else:
         num_samples_per_class = config.meta_num_samples_per_class
-        num_class = config.N_CLASS  # TODO: this doesn't have to be
-        dim_output = config.meta_output_dimension
+        dim_output = config.N_CLASS  # TODO: this doesn't have to be
+        num_class = config.meta_labels * dim_output
         data_generator = DataGenerator(
             dataset= config.data_dir,
             batch_size=num_samples_per_class * num_class * 2,
@@ -72,7 +72,7 @@ def train(config):
         )
         train_x_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
                                                  data_generator.batch_size,
-                                                 config.N_PN))
+                                                 config.N_ORN))
 
         if config.label_type == 'one_hot':
             train_y_ph = tf.placeholder(tf.float32, (config.meta_batch_size,
@@ -164,16 +164,16 @@ def main():
     config = configs.MetaConfig()
     config.metatrain_iterations = 20000
     config.meta_lr = .001
+    config.N_PN = 50
     config.N_CLASS = 5
-    config.meta_output_dimension = 5
-    config.meta_batch_size = 32
-    config.meta_num_samples_per_class = 32
+    config.meta_labels_per_class = 4
+    config.meta_batch_size = 16
+    config.meta_num_samples_per_class = 16
 
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.train_orn2pn = False
     config.direct_glo = True
-
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
 
@@ -185,6 +185,7 @@ def main():
     # config.data_dir = './datasets/proto/multi_head'
     # config.label_type = 'multi_head_one_hot'
     config.data_dir = './datasets/proto/test'
+    # config.data_dir = './datasets/proto/test_norn_200'
     config.label_type = 'one_hot'
 
     try:

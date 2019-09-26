@@ -111,16 +111,15 @@ def vary_pn_configs():
 
 # mamlmetatrain.train(temp_meta()[0])
 #
-path = './files_temp/movie_glo'
-try:
-    shutil.rmtree(path)
-except:
-    pass
-t(temp(), path)
-
+# path = './files_temp/movie_glo'
+# try:
+#     shutil.rmtree(path)
+# except:
+#     pass
+# t(temp(), path)
+#
 # sa.plot_progress(path, select_dict = {'kc_inputs':[7, 15, 30], 'ORN_NOISE_STD':0},
 #                  legends=['7', '15', '30'])
-
 
 # oracle.evaluatewithnoise.evaluate_across_epochs(path=path, values=[0, .01, .03, .1],n_rep=1)
 # oracle.evaluatewithnoise.plot_acrossmodels(path=path, model_var='epoch')
@@ -128,14 +127,24 @@ t(temp(), path)
 # analysis_training.plot_distribution(path, xrange=.5, log=True)
 # analysis_training.plot_sparsity(path, dynamic_thres=False, thres=.05, visualize=True)
 
-
-
 # glo_in, glo_out, kc_out, results = sa.load_activity(path_)
 # b_orns = tools.load_pickle(path, 'b_glo')
 # plt.hist(glo_in.flatten(), bins=20)
 # plt.show()
 
-
+# config = configs.input_ProtoConfig()
+# config.N_CLASS = 1000
+# config.N_ORN = 200
+# task.save_proto(config, seed=0, folder_name='test_norn_200')
+#
+path = './files/metalearn'
+folder = '0'
+ix = '19750'
+sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
+sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1, dir_ix=0)
+import standard.analysis_pn2kc_training
+standard.analysis_pn2kc_training.plot_distribution(path, xrange=1, log=True)
+standard.analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
 
 
 

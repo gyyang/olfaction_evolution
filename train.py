@@ -229,9 +229,9 @@ def train(config, reload=False, save_everytrainloss=False):
                     for b in range(n_batch-1):
                         _ = sess.run(model.train_op)
 
-                        if b % 10 == 0:
-                            w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
-                            weights_over_time.append((w_orn, w_glo))
+                        # if b % 10 == 0:
+                            # w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
+                            # weights_over_time.append((w_orn, w_glo))
 
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
