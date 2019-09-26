@@ -507,6 +507,11 @@ if 'vary_n_orn' in experiments:
     if ANALYZE:
         pass
 
+if 'vary_lr_n_kc' in experiments:
+    for n_pn in [50, 100, 200]:
+        path = './files/vary_lr_n_kc_n_orn' + str(n_pn)
+        local_train(se.vary_lr_n_kc(is_test, n_pn), path)
+
 if 'longtrain' in experiments:
     # Reproducing most basic findings
     path = './files/longtrain'
