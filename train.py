@@ -124,7 +124,7 @@ def train(config, reload=False, save_everytrainloss=False):
         acc = 0
         acc_smooth = 0
         total_time, start_time = 0, time.time()
-        weights_over_time = []
+
         for ep in range(config.max_epoch):
             # Validation
             tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
@@ -211,6 +211,7 @@ def train(config, reload=False, save_everytrainloss=False):
                 if config.save_every_epoch and ep % config.save_epoch_interval == 0:
                     model.save_pickle(ep)
                     model.save(ep)
+
                 # Train
                 if save_everytrainloss:
                     for b in range(n_batch-1):
@@ -229,10 +230,6 @@ def train(config, reload=False, save_everytrainloss=False):
                     for b in range(n_batch-1):
                         _ = sess.run(model.train_op)
 
-                        if b % 10 == 0:
-                            w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
-                            weights_over_time.append((w_orn, w_glo))
-
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
 
@@ -242,10 +239,6 @@ def train(config, reload=False, save_everytrainloss=False):
 
             if finish_training:
                 break
-
-        with open(os.path.join(config.save_path, 'weights_over_time.pickle'), 'wb') as handle:
-            pickle.dump(weights_over_time, handle,
-                        protocol=pickle.HIGHEST_PROTOCOL)
 
         print('Training finished')
         model.save_pickle()
