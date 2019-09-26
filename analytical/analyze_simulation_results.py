@@ -173,11 +173,11 @@ def main():
     ind_show = (n_ors>=50) * (n_ors<500)
     # TODO: The smaller than 500 is just because N=500 didn't finish training
     x, y = n_ors[ind_show], sparsitys[ind_show]
-    print(x, y)
-    y[np.where(x==50)[0][0]] = 6.5
-    y[np.where(x==100)[0][0]] = 13.6
-    y[np.where(x==200)[0][0]] = 16
-    # TODO: TEMPORARY!!
+    # print(x, y)
+    # y[np.where(x==50)[0][0]] = 6.5
+    # y[np.where(x==100)[0][0]] = 13.6
+    # y[np.where(x==200)[0][0]] = 16
+    # # TODO: TEMPORARY!!
     # x, y = np.array([50, 100, 200]), np.array([7, 17, 31])
     
     res_train = {'log_N': np.log(x),
@@ -327,42 +327,5 @@ def main():
 if __name__ == '__main__':
     pass
     main()
-
-# =============================================================================
-#     x_name = 'n_pn'
-#     x_vals = [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-#     fnames = list()
-#     for x_val in x_vals:
-#         fname = 'all_value_m' + str(x_val) + '.pkl'
-#         fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
-# 
-#     filename = fnames[0]
-#     v_name = 'theta'
-# 
-#     with open(filename, "rb") as f:
-#         # values is a dictionary of lists
-#         values = pickle.load(f)
-# 
-#     for key, val in values.items():
-#         values[key] = np.array(val)
-# 
-#     inds = np.unique(values['ind'])  # repetition indices
-# 
-#     choose = np.argmax if v_name in ['dim'] else np.argmin
-# 
-#     optimal_Ks = list()
-#     for ind in inds:
-#         idx = values['ind'] == ind  # idx of current repetition index
-#         v_vals = values[v_name][idx]
-#         optimal_Ks.append(values['K'][idx][choose(v_vals)])
-# 
-#     means = [np.mean(
-#         np.random.choice(optimal_Ks, size=len(optimal_Ks), replace=True)) for _
-#              in range(1000)]
-# 
-#     optimal_K = np.mean(optimal_Ks)
-#     conf_int = np.percentile(means, [2.5, 97.5])
-#     K_range = np.unique(values['K'])
-# =============================================================================
 
     
