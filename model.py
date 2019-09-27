@@ -349,6 +349,8 @@ class FullModel(Model):
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
         self.loss = class_loss
+        if config.kc_loss:
+            self.loss += self.kc_loss
         return class_loss
 
     def accuracy_func(self, logits, logits2, y):
@@ -561,7 +563,6 @@ class FullModel(Model):
 
         if config.kc_loss:
             self.kc_loss = tf.reduce_mean(tf.tanh(config.kc_loss_beta * w_glo)) * config.kc_loss_alpha
-            self.loss += self.kc_loss
 
         if config.extra_layer:
             with tf.variable_scope('layer_extra', reuse=tf.AUTO_REUSE):

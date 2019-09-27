@@ -162,14 +162,14 @@ def main():
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     config = configs.MetaConfig()
-    config.metatrain_iterations = 20000
-    config.meta_lr = .001
-    config.N_PN = 50
+    config.metatrain_iterations = 30000
+    config.meta_lr = .0003
+    config.N_PN = 200
     config.N_CLASS = 5
     config.meta_labels_per_class = 1
     config.meta_batch_size = 16
-    config.meta_num_samples_per_class = 16
-    config.initial_pn2kc = .1
+    config.meta_num_samples_per_class = 8
+    config.meta_print_interval = 500
 
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
@@ -185,8 +185,8 @@ def main():
 
     # config.data_dir = './datasets/proto/multi_head'
     # config.label_type = 'multi_head_one_hot'
-    config.data_dir = './datasets/proto/test'
-    # config.data_dir = './datasets/proto/test_norn_200'
+    # config.data_dir = './datasets/proto/test'
+    config.data_dir = './datasets/proto/test_norn_200'
     config.label_type = 'one_hot'
 
     try:

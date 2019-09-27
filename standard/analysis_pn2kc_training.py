@@ -51,10 +51,10 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
     # Select neurons that receive both strong and weak connections
     # weak connections should be around median, where strong should be around max
     x = np.array(x)
-    # ratio = np.max(x, axis=0) / np.median(x, axis=0)
+    ratio = np.max(x, axis=0) / np.median(x, axis=0)
     # heuristic that works well for N=50-500, can plot hist of ratio
-    # ind = ratio > 15
-    # x = x[:, ind]  # select expansion layer neurons
+    ind = ratio > 15
+    x = x[:, ind]  # select expansion layer neurons
     x = x.flatten()
 
     if downsample:
