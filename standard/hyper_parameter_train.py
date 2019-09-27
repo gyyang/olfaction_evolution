@@ -85,7 +85,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
 
     os.makedirs(sbatchpath, exist_ok=True)
     jobfile = os.path.join(sbatchpath, jobname + '.s')
-    logname = os.path.join('log', jobname)
+    # logname = os.path.join('log', jobname)
 
     with open(jobfile, 'w') as f:
         f.write(
@@ -101,11 +101,12 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
             # + '#SBATCH --job-name={}\n'.format(jobname[0:16])
             # + '#SBATCH --output={}log/{}.o\n'.format(scratchpath, jobname[0:16])
             + '\n'
-            + 'cd {}\n'.format(scratchpath)
-            + 'pwd > {}.log\n'.format(logname)
-            + 'date >> {}.log\n'.format(logname)
-            + 'which python >> {}.log\n'.format(logname)
-            + '{} >> {}.log 2>&1\n'.format(cmd, logname)
+            # + 'cd {}\n'.format(scratchpath)
+            # + 'pwd > {}.log\n'.format(logname)
+            # + 'date >> {}.log\n'.format(logname)
+            # + 'which python >> {}.log\n'.format(logname)
+            # + '{} >> {}.log 2>&1\n'.format(cmd, logname)
+            + cmd + '\n'
             + '\n'
             + 'exit 0;\n'
             )
@@ -116,19 +117,24 @@ import subprocess
 
 def cluster_train(experiment, job_name):
     """Train all models locally."""
+    config = tools.varying_config(experiment, 0)
+    original_data_dir = config.data_dir[2:]  # HACK
     for i in range(0, 1000):
         config = tools.varying_config(experiment, i)
+        # original_data_dir = config.data_dir[2:]  # HACK
         if config:
-            config.save_path = os.path.join(SCRATCHPATH, job_name, str(i).zfill(6))
-            os.makedirs(config.save_path, exist_ok=True)
+            config.save_path = os.path.join(SCRATCHPATH, 'files', job_name, str(i).zfill(6))
             
+	    # TEMPORARY HACK
+            config.data_dir = os.path.join(SCRATCHPATH, original_data_dir)
+            os.makedirs(config.save_path, exist_ok=True)
             tools.save_config(config, config.save_path)
 
-            arg = '''"''' + config.save_path + ''''"'''
+            arg =  '\'' + config.save_path + '\''
 
-            cmd = r'''import train; train.train_from_path(''' + arg + ''')"'''
+            cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
 
-            jobname = 'tmp'
+            jobname = 'tmp'+str(i)
 
             jobfile = write_jobfile(cmd, jobname)
-            # subprocess.call(['sbatch', jobfile])
+            subprocess.call(['sbatch', jobfile])
