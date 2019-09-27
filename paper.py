@@ -163,6 +163,16 @@ if 'vary_pn' in experiments:
         # analysis_orn2pn.get_dimensionality(path, 'glo')
         # sa.plot_results(path, x_key='N_PN', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
+
+from standard.hyper_parameter_train import cluster_train
+if 'cluster_test' in experiments:
+    # Vary nPN under different noise levels
+    path = './files/vary_pn'
+    if TRAIN:
+        # local_train(se.vary_pn_configs(is_test), path)
+        job_name = 'vary_pn'
+        cluster_train(se.vary_pn_configs(False), job_name)
+
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
     path = './files/vary_kc`'

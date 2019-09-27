@@ -28,6 +28,12 @@ def make_input(x, y, batch_size):
     return train_iter, next_element
 
 
+def train_from_path(path):
+    """Train from a path with a config file in it."""
+    config = tools.load_config(path)
+    train(config)
+
+
 def train(config, reload=False, save_everytrainloss=False):
     tf.reset_default_graph()
 
