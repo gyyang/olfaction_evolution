@@ -3,16 +3,26 @@ import train
 import os
 import mamlmetatrain
 
+SBATCHPATH = './sbatch/'
+SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
+
+
 def basic_train(experiment, save_path):
     config = experiment()
     config.save_path = save_path
     train.train(config)
 
 
-def local_train(experiment, save_path, train_arg=None, **kwargs):
+def local_train(experiment, save_path, sequential=False, control=False,
+                train_arg=None, **kwargs):
     """Train all models locally."""
     for i in range(0, 1000):
-        config = tools.varying_config(experiment, i)
+        if sequential:
+            config = tools.varying_config_sequential(experiment, i)
+        elif control:
+            config = tools.varying_config_control(experiment, i)
+        else:
+            config = tools.varying_config(experiment, i)
         if config:
             print('[***] Hyper-parameter: %2d' % i)
             config.save_path = os.path.join(save_path, str(i).zfill(6))
@@ -25,7 +35,7 @@ def local_train(experiment, save_path, train_arg=None, **kwargs):
                 raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
 
 
-def local_sequential_train(experiment, save_path, train_arg = None):
+def obsolete_local_sequential_train(experiment, save_path, train_arg = None):
     """Train all models locally."""
     for i in range(0, 1000):
         config = tools.varying_config_sequential(experiment, i)
@@ -40,7 +50,7 @@ def local_sequential_train(experiment, save_path, train_arg = None):
             else:
                 raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
 
-def local_control_train(experiment, save_path, train_arg = None):
+def obsolete_local_control_train(experiment, save_path, train_arg = None):
     '''
     Train each hyper-parameter separately
     '''
@@ -56,10 +66,6 @@ def local_control_train(experiment, save_path, train_arg = None):
                 mamlmetatrain.train(config)
             else:
                 raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
-
-
-SBATCHPATH = './sbatch/'
-SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
 
 
 def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
@@ -115,17 +121,25 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
 
 import subprocess
 
-def cluster_train(experiment, job_name):
+def cluster_train(experiment, save_path, sequential=False, control=False):
     """Train all models locally."""
+    job_name = save_path.split('/')[-1]  # get end of path as job name
     config = tools.varying_config(experiment, 0)
     original_data_dir = config.data_dir[2:]  # HACK
+
     for i in range(0, 1000):
-        config = tools.varying_config(experiment, i)
-        # original_data_dir = config.data_dir[2:]  # HACK
+        if sequential:
+            config = tools.varying_config_sequential(experiment, i)
+        elif control:
+            config = tools.varying_config_control(experiment, i)
+        else:
+            config = tools.varying_config(experiment, i)
+
         if config:
             config.save_path = os.path.join(SCRATCHPATH, 'files', job_name, str(i).zfill(6))
 
             # TEMPORARY HACK
+            # TODO: Fix bug when data_dir is not always the same
             config.data_dir = os.path.join(SCRATCHPATH, original_data_dir)
             os.makedirs(config.save_path, exist_ok=True)
 
@@ -135,7 +149,5 @@ def cluster_train(experiment, job_name):
 
             cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
 
-            jobname = 'tmp'+str(i)
-
-            jobfile = write_jobfile(cmd, jobname)
+            jobfile = write_jobfile(cmd, job_name + str(i))
             subprocess.call(['sbatch', jobfile])
