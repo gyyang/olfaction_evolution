@@ -121,7 +121,7 @@ def cluster_train(experiment, job_name):
         if config:
             config.save_path = os.path.join(SCRATCHPATH, job_name, str(i).zfill(6))
             os.makedirs(config.save_path, exist_ok=True)
-            
+
             tools.save_config(config, config.save_path)
 
             arg = '''"''' + config.save_path + ''''"'''
