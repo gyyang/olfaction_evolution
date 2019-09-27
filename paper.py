@@ -171,7 +171,7 @@ if 'cluster_test' in experiments:
     if TRAIN:
         # local_train(se.vary_pn_configs(is_test), path)
         job_name = 'vary_pn'
-        cluster_train(se.vary_pn_configs(False), job_name)
+        cluster_train(se.vary_pn_configs(True), job_name)
 
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
