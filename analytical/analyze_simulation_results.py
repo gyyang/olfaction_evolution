@@ -173,18 +173,12 @@ def main():
     ind_show = (n_ors>=50) * (n_ors<500)
     # TODO: The smaller than 500 is just because N=500 didn't finish training
     x, y = n_ors[ind_show], sparsitys[ind_show]
-<<<<<<< HEAD
-    print(x, y)
-    y[np.where(x==100)[0][0]] = 13.6
-    y[np.where(x==200)[0][0]] = 16
-    # TODO: TEMPORARY!!
-=======
+
     # print(x, y)
-    # y[np.where(x==50)[0][0]] = 6.5
     # y[np.where(x==100)[0][0]] = 13.6
     # y[np.where(x==200)[0][0]] = 16
     # # TODO: TEMPORARY!!
->>>>>>> 433887ade6d2100e82bb372c25970c800b913331
+
     # x, y = np.array([50, 100, 200]), np.array([7, 17, 31])
     
     res_train = {'log_N': np.log(x),
