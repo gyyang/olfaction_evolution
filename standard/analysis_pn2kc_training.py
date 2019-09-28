@@ -53,8 +53,8 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
     ratio = np.max(x, axis=0) / np.median(x, axis=0)
     # heuristic that works well for N=50-500, can plot hist of ratio
     ind = ratio > 15
-
-    x = x[:, ind]  # select expansion layer neurons
+    if np.sum(ind) > 0:
+        x = x[:, ind]  # select expansion layer neurons
 
     x = x.flatten()
 
@@ -82,8 +82,12 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
             diff = pdf1 < pdf2
         else:
             diff = pdf1 > pdf2
-    
-        thres_ = x_tmp[np.where(diff)[0][0]]
+
+        try:
+            thres_ = x_tmp[np.where(diff)[0][0]]
+        except IndexError:
+            print('Unable to find proper threshold, revert to default')
+            thres_ = np.log(THRES) if use_logx else THRES
 
     thres = np.exp(thres_) if use_logx else thres_
 
@@ -345,7 +349,8 @@ def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
     except KeyError:
         wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
     w = wglos[epoch]
-    return _compute_sparsity(w, dynamic_thres, visualize, thres)
+    sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
+    return sparsity
 
 
 def compute_sparsity_allepochs(d, dynamic_thres=False, visualize=False,
@@ -359,7 +364,7 @@ def compute_sparsity_allepochs(d, dynamic_thres=False, visualize=False,
     sparsity_list = list()
     for i, w in enumerate(wglos):
         _dynamic_thres = dynamic_thres if i > 0 else 0.1
-        sparsity = _compute_sparsity(w, _dynamic_thres, visualize, thres)
+        sparsity, thres = _compute_sparsity(w, _dynamic_thres, visualize, thres)
         sparsity_list.append(sparsity)
     return sparsity_list
 
@@ -378,7 +383,7 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     print('thres=', str(thres))
 
     sparsity = np.count_nonzero(w > thres, axis=0)
-    return sparsity
+    return sparsity, thres
 
 
 def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,

@@ -30,6 +30,7 @@ def load_config(save_path):
     # config = configs.FullConfig()
     for key, val in config_dict.items():
         setattr(config, key, val)
+
     return config
 
 
