@@ -523,8 +523,9 @@ if 'vary_n_orn' in experiments:
     if ANALYZE:
         pass
 
-if 'vary_lr_n_kc' in experiments:
-    experiment = [e for e in experiments if 'vary_lr_n_kc' in e][0]
+tmp_experiments = [e for e in experiments if 'vary_lr_n_kc' in e]
+if len(tmp_experiments) > 0:
+    experiment = tmp_experiments[0]
     if experiment == 'vary_lr_n_kc':
         n_pns = [50, 100, 200]
     else:
