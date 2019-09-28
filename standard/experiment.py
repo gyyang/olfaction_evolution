@@ -691,7 +691,7 @@ def vary_lr_n_kc(argTest=False, n_pn=50):
     config.sparse_pn2kc = False
     config.train_pn2kc = True
 
-    config.save_every_epoch = True
+    config.save_every_epoch = False
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [1e-3, 5*1e-4, 2*1e-4, 1e-4]

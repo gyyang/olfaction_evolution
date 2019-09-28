@@ -11,6 +11,7 @@ import task
 from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN
 from configs import FullConfig, SingleLayerConfig
 import tools
+from standard.analysis_pn2kc_training import _compute_sparsity
 
 
 def make_input(x, y, batch_size):
@@ -154,6 +155,12 @@ def train(config, reload=False, save_everytrainloss=False):
                     pass
 
                 if config.model == 'full':
+                    if config.train_pn2kc:
+                        w_glo = sess.run(model.w_glo)
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
+                        log['sparsity'].append(sparsity)
+                        log['thres'].append(thres)               
+
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
                         or_glo_score, _ = tools.compute_glo_score(
