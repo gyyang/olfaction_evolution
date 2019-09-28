@@ -524,7 +524,12 @@ if 'vary_n_orn' in experiments:
         pass
 
 if 'vary_lr_n_kc' in experiments:
-    for n_pn in [50, 100, 200]:
+    experiment = [e for e in experiments if 'vary_lr_n_kc' in e][0]
+    if experiment == 'vary_lr_n_kc':
+        n_pns = [50, 100, 200]
+    else:
+        n_pns = [int(experiment[len('vary_lr_n_kc'):])]
+    for n_pn in n_pns:
         path = './files/vary_lr_n_kc_n_orn' + str(n_pn)
         train(se.vary_lr_n_kc(is_test, n_pn), path)
 
