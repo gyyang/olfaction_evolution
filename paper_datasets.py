@@ -96,7 +96,7 @@ def make_multi_head_dataset():
 
 def make_vary_or_datasets():
     task_config = task.input_ProtoConfig()
-    for n_or in [50, 100, 150, 200, 300, 400, 500, 800, 1000]:
+    for n_or in [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]:
         task_config.N_ORN = n_or
         task.save_proto(config=task_config, seed=0, folder_name='orn'+str(n_or))
 
@@ -116,12 +116,12 @@ if __name__ == '__main__':
     # make_relabel_datasets_large()
     # make_concentration_dataset()
     # make_concentration_with_mask_row_dataset()
-    make_tmp_dataset()
+    # make_tmp_dataset()
     # make_primordial_dataset()
     # make_mask_row_dataset()
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
     # make_multi_head_dataset()
-    # make_vary_or_datasets()
+    make_vary_or_datasets()
     # temp()
 
