@@ -211,7 +211,7 @@ def control_coding_level(compute=True, coding_levels=None):
                 pickle.dump(values_sim, open(fname, "wb"))
 
     else:
-        x_vals = np.array([800, 1600])
+        x_vals = np.array([50, 100, 200, 400, 800, 1600])
         opt_ks = list()
         conf_ints = list()
         fig = plt.figure(figsize=(3.5, 2.))
@@ -237,7 +237,7 @@ def control_coding_level(compute=True, coding_levels=None):
             ax.spines["right"].set_visible(False)
             ax.spines["top"].set_visible(False)
             ax.yaxis.set_ticks_position('left')
-            ax.set_ylim(bottom=0)
+            # ax.set_ylim(bottom=0)
             if i == len(x_vals) - 1:
                 ax.set_xlabel('Coding level')
                 ax.set_ylabel('K')
@@ -247,6 +247,12 @@ def control_coding_level(compute=True, coding_levels=None):
         plt.savefig(fname + '.pdf', transparent=True)
         plt.savefig(fname + '.png')   
 
+        # Store summary
+        summary = {'opt_ks': opt_ks, 'coding_levels': coding_levels,
+                   'conf_ints': conf_ints, 'n_orns': x_vals}
+        fname = os.path.join(rootpath, 'files', 'analytical',
+                             'control_coding_level_summary')
+        pickle.dump(summary, open(fname, "wb"))
 
 
 if __name__ == '__main__':
@@ -257,4 +263,6 @@ if __name__ == '__main__':
     start_time = time.time()
     control_coding_level(compute=False)
     print('Total time spent: ', time.time() - start_time)
+
+        
 

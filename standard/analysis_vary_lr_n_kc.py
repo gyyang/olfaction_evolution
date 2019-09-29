@@ -2,6 +2,7 @@
 
 import os
 import sys
+import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -71,6 +72,7 @@ def plot2d(path):
 
 
 def main():
+# if __name__ == '__main__':
     n_orns = [50, 100, 200, 300, 400]
     Ks = list()
     for n_orn in n_orns:
@@ -95,6 +97,7 @@ def main():
     plot_box = True
     plot_data = True
     plot_fit = True
+    plot_angle = False
     
     fig = plt.figure(figsize=(3.5, 2))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -112,21 +115,9 @@ def main():
     if plot_box:
         ax.boxplot(logKs, positions=np.log(n_orns), widths=0.1,
                    flierprops={'markersize': 3})
-
-    x = [ 50, 100, 150, 200, 300, 400]
-    y = [ 7.90428212, 10.8857362,  16.20759494,
-         20.70314843, 27.50305499, 32.03561644]
-    # ax.plot(np.log(x), np.log(y))
-    ax.set_xlabel('Number of ORs (N)')
-    ax.set_ylabel('Optimal K')
-    xticks = np.array([50, 100, 200, 500, 1000])
-    ax.set_xticks(np.log(xticks))
-    ax.set_xticklabels([str(t) for t in xticks])
-    yticks = np.array([3, 10, 30, 100])
-    ax.set_yticks(np.log(yticks))
-    ax.set_yticklabels([str(t) for t in yticks])
     
     if plot_fit:
+        # x, y = np.log(n_orns)[1:], med_logKs[1:]
         x, y = np.log(n_orns), med_logKs
         x_fit = np.linspace(np.log(50), np.log(1000), 3)    
         model = LinearRegression()
@@ -145,6 +136,28 @@ def main():
         ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue)
         ax.text(np.log(50), np.log(6), '[3]', color=tools.darkblue,
                 horizontalalignment='left', verticalalignment='top')
+    
+    if plot_angle:
+        fname = os.path.join(rootpath, 'files', 'analytical',
+                                 'control_coding_level_summary')
+        summary = pickle.load(open(fname, "rb"))
+        # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
+        ax.boxplot(list(np.log(summary['opt_ks'].T)),
+                   positions=np.log(summary['n_orns']),
+                   widths=0.1, flierprops={'markersize': 3})
+        
+    x = [ 50, 100, 150, 200, 300, 400]
+    y = [ 7.90428212, 10.8857362,  16.20759494,
+         20.70314843, 27.50305499, 32.03561644]
+    # ax.plot(np.log(x), np.log(y))
+    ax.set_xlabel('Number of ORs (N)')
+    ax.set_ylabel('Optimal K')
+    xticks = np.array([50, 100, 200, 500, 1000])
+    ax.set_xticks(np.log(xticks))
+    ax.set_xticklabels([str(t) for t in xticks])
+    yticks = np.array([3, 10, 30, 100])
+    ax.set_yticks(np.log(yticks))
+    ax.set_yticklabels([str(t) for t in yticks])
     
     _easy_save('vary_lr_n_kc', 'optimal_k_simulation_all')
 
