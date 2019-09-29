@@ -23,7 +23,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 figpath = os.path.join(rootpath, 'figures')
-THRES = 0.08
+THRES = 0.1
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
@@ -363,7 +363,7 @@ def compute_sparsity_allepochs(d, dynamic_thres=False, visualize=False,
 
     sparsity_list = list()
     for i, w in enumerate(wglos):
-        _dynamic_thres = dynamic_thres if i > 0 else 0.1
+        _dynamic_thres = dynamic_thres if i > 0 else THRES
         sparsity, thres = _compute_sparsity(w, _dynamic_thres, visualize, thres)
         sparsity_list.append(sparsity)
     return sparsity_list
