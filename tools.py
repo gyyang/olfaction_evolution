@@ -242,7 +242,8 @@ nicename_dict = {
         'zero_claw': 'Fraction of KC with No Input',
         'kc_out_sparse_mean': 'Fraction of Active KCs',
         'n_trueclass': 'Odor Prototypes Per Class',
-        'weight_perturb': 'Weight Perturb.'
+        'weight_perturb': 'Weight Perturb.',
+        'lr': 'Learning rate',
         }
 
 

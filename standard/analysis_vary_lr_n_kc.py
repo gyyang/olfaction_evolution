@@ -15,7 +15,6 @@ from standard.analysis import _easy_save
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
-
 """
 Previous results
 [ 50 100 150 200 300 400]
@@ -50,15 +49,20 @@ def plot2d(path):
             else:
                 v = v[:, -1]
         v = np.reshape(v, (len(y_val), len(x_val)))
+
         fig = plt.figure(figsize=(3, 3))
         ax = fig.add_axes([0.3, 0.3, 0.5, 0.5])
         im = ax.imshow(v, origin='lower')
+
+        plt.figure(figsize=(2, 2))
+        plt.imshow(v, origin='lower')
+        plt.colorbar()
         plt.title(nicename(vname))
         plt.xlabel(nicename('N_KC'))
         plt.ylabel(nicename('lr'))
         plt.xticks(np.arange(len(x_val)), [str(t) for t in x_val])
         plt.yticks(np.arange(len(y_val)), ['{:.1e}'.format(t) for t in y_val])
-        
+
         ax = fig.add_axes([0.82, 0.3, 0.04, 0.5])
         cb = plt.colorbar(im, cax=ax)
         cb.outline.set_linewidth(0.5)
@@ -152,6 +156,4 @@ if __name__ == '__main__':
 #     plot2d(path)
 # =============================================================================
     main()
-    
-        
-        
+
