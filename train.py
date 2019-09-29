@@ -159,7 +159,9 @@ def train(config, reload=False, save_everytrainloss=False):
                         w_glo = sess.run(model.w_glo)
                         sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
                         log['sparsity'].append(sparsity)
-                        log['thres'].append(thres)               
+                        log['thres'].append(thres)
+                        sparsity, _ = _compute_sparsity(w_glo, dynamic_thres=False)
+                        log['sparsity_fixthres'].append(sparsity)
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
