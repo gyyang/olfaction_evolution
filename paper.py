@@ -50,8 +50,15 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN = args.train
 ANALYZE = args.analyze
 is_test = args.testing
+use_cluster = args.cluster
 
-if args.cluster:
+# #peter specific
+# TRAIN = True
+# ANALYZE = False
+# is_test = True
+# use_cluster = True
+
+if use_cluster:
     train = cluster_train
 else:
     train = local_train
@@ -65,16 +72,12 @@ if args.experiment == 'core':
                    'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
                    'controls_kc_claw', 'controls_glomeruli', 'controls_receptor',
                    'kcrole', 'kc_generalization',
-                   'multi_head', 'metalearn']
+                   'multi_head', 'metalearn',
+                   'vary_n_orn', 'vary_lr_n_kc']
 else:
     experiments = args.experiment
 
-#
-# #peter specific
-# TRAIN = True
-# ANALYZE = False
-# is_test = True
-# experiments = ['metalearn']
+experiments = ['vary_lr_n_kc1000']
 
 
 if 'standard_without_or2orn' in experiments:

@@ -121,7 +121,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
 
 import subprocess
 
-def cluster_train(experiment, save_path, sequential=False, control=False):
+def cluster_train(experiment, save_path, sequential=False, control=False, path = SCRATCHPATH):
     """Train all models locally."""
     job_name = save_path.split('/')[-1]  # get end of path as job name
     config = tools.varying_config(experiment, 0)
@@ -136,11 +136,11 @@ def cluster_train(experiment, save_path, sequential=False, control=False):
             config = tools.varying_config(experiment, i)
 
         if config:
-            config.save_path = os.path.join(SCRATCHPATH, 'files', job_name, str(i).zfill(6))
+            config.save_path = os.path.join(path, 'files', job_name, str(i).zfill(6))
 
             # TEMPORARY HACK
             # TODO: Fix bug when data_dir is not always the same
-            config.data_dir = os.path.join(SCRATCHPATH, original_data_dir)
+            config.data_dir = os.path.join(path, original_data_dir)
             os.makedirs(config.save_path, exist_ok=True)
 
             tools.save_config(config, config.save_path)
