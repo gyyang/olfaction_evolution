@@ -4,7 +4,7 @@ import os
 import mamlmetatrain
 
 SBATCHPATH = './sbatch/'
-SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
+SCRATCHPATH = 'axsys/scratch/ctn/projects/olfaction_evolution'
 
 
 def basic_train(experiment, save_path):
@@ -116,6 +116,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
             + '\n'
             + 'exit 0;\n'
             )
+        print(jobfile)
     return jobfile
 
 
