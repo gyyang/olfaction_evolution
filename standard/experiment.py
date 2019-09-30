@@ -651,8 +651,6 @@ def metalearn(argTest=False):
 
     if argTest:
         pass
-
-    hp_ranges = OrderedDict()
     return config, hp_ranges
 
 

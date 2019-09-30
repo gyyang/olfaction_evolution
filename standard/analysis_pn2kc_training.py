@@ -398,7 +398,7 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
         dirs = tools._get_alldirs(dir, model=True, sort=True)
 
     if epochs is None:
-        epochs = [0, -1]  # analyze the first and the last
+        epochs = [-1]  # analyze the first and the last
         titles = ['Before Training', 'After Training']
         yrange = [1, 0.5]
     else:
@@ -411,6 +411,7 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
                                         visualize=visualize, thres=thres)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
             _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])
+            print(sparsity.mean())
 
 
 def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
@@ -433,6 +434,7 @@ def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
+    print(savename)
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
 
@@ -592,8 +594,8 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
 def plot_sparsity_acrossepochs(path, dynamic_thres=False):
     import tools
     config = tools.load_config(path)
-    res = tools.load_all_results(os.path.join(rootpath, 'files', 'longtrain'),
-                                 argLast=False)
+    # res = tools.load_all_results(os.path.join(rootpath, 'files', 'longtrain'),
+    #                              argLast=False)
     n_epoch = len(os.listdir(os.path.join(path, 'epoch')))
     epochs = np.arange(n_epoch)
 
@@ -609,7 +611,8 @@ def plot_sparsity_acrossepochs(path, dynamic_thres=False):
 
     Ks = np.array(Ks)
 
-    savename = os.path.join(figpath, 'sparsity_acrossepochs')
+    p, n = os.path.split(path)
+    savename = os.path.join(figpath, 'sparsity_acrossepochs', n)
 
     final_K = Ks[-1]
     Ks[Ks > final_K * 1.5] = np.nan
@@ -626,6 +629,7 @@ def plot_sparsity_acrossepochs(path, dynamic_thres=False):
     ax.yaxis.set_ticks_position('left')
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
+    print(savename)
 
     # TODO: Temporarily dumped here
     wglos = tools.load_pickle(os.path.join(path, 'epoch'), 'w_glo')

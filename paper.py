@@ -69,14 +69,12 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-
-#peter specific
 #
-
-# TRAIN = False
-# ANALYZE = True
+# #peter specific
+# TRAIN = True
+# ANALYZE = False
 # is_test = True
-# experiments = ['controls_receptor']
+# experiments = ['metalearn']
 
 
 if 'standard_without_or2orn' in experiments:
@@ -504,14 +502,14 @@ if 'metalearn' in experiments:
     if TRAIN:
         train(se.metalearn(is_test), path, train_arg='metalearn', sequential=True)
     if ANALYZE:
-        # analysis_pn2kc_training.plot_distribution(path, xrange=1)
-        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
-        # sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=1)
         # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
-        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
-        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
-        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
-        analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
+        sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1, dir_ix=0)
+        # analysis_pn2kc_training.plot_distribution(path, xrange=1)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
 
 if 'vary_n_orn' in experiments:
     # Train networks with different numbers of ORs

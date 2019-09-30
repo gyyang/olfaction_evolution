@@ -160,7 +160,7 @@ class MAML:
             # Define the weights
             self.weights = self.model.build_weights()
             self.update_lr = tf.get_variable('lr', shape=(2), dtype=tf.float32,
-                                             initializer=tf.constant_initializer([.09, .01]))
+                                             initializer=tf.constant_initializer([.01, .01]))
 
             # outputbs[i] and lossesb[i] is the output and loss after i+1 gradient updates
             num_updates = max(self.test_num_updates, self.model.config.meta_num_updates)
