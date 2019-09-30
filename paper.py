@@ -58,7 +58,7 @@ is_test = args.testing
 use_cluster = args.cluster
 cluster_path = args.clusterpath
 
-# #peter specific
+## peter specific
 # TRAIN = True
 # ANALYZE = False
 # is_test = True
