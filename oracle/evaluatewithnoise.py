@@ -21,13 +21,6 @@ from tools import nicename
 
 mpl.rcParams['font.size'] = 7
 
-oracle_dir = 'kcrole'
-# Load dataset
-# TODO: Make sure this works for dataset is different
-# data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
-data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
-TRAIN_X, TRAIN_Y, VAL_X, VAL_Y = task.load_data('proto', data_dir)
-
 
 def _evaluate(name, value, model, model_dir, n_rep=1):
     assert name is not 'weight_perturb'
@@ -732,6 +725,13 @@ def plot_twodim_perturb(path, dataset='val', epoch=None, K=None):
     
 
 if __name__ == '__main__':
+    oracle_dir = 'kcrole'
+    # Load dataset
+    # TODO: Make sure this works for dataset is different
+    # data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
+    data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
+    TRAIN_X, TRAIN_Y, VAL_X, VAL_Y = task.load_data('proto', data_dir)
+
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     path = '../files/vary_kc_claws_new'
     # evaluate_acrossmodels(path, select_dict={'ORN_NOISE_STD': 0})

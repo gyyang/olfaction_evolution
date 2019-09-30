@@ -34,8 +34,12 @@ def load_optimal_K(filename, v_name):
         # values is a dictionary of lists
         values = pickle.load(f)
 
+    # TODO: TEMPORARY HACK to make withdim analysis work    
+    if isinstance(values, list):
+        values = values[0]
+    
     for key, val in values.items():
-        values[key] = np.array(val)
+        values[key] = np.array(val)        
 
     choose = np.argmax if v_name in ['dim'] else np.argmin
 
@@ -81,7 +85,6 @@ def get_sparsity_from_training(path):
 
 def _load_result(filename, v_name='theta'):
     dirs = os.listdir(os.path.join(rootpath, 'files', 'analytical'))
-
     xs = [int(d[len(filename):-len('.pkl')]) for d in dirs if filename in d]
     xs = np.sort(xs)
     
@@ -91,9 +94,9 @@ def _load_result(filename, v_name='theta'):
     yerr_high = list()
     for value in xs:
         fn = filename + str(value)
-        filename = '../files/analytical/' + fn + '.pkl'
+        _filename = '../files/analytical/' + fn + '.pkl'
 
-        optimal_K, conf_int, K_range = load_optimal_K(filename, v_name=v_name)
+        optimal_K, conf_int, K_range = load_optimal_K(_filename, v_name=v_name)
         # print('m:' + str(value))
         print('optimal K:' + str(optimal_K))
         print('confidence interval: ' + str(conf_int))
@@ -143,7 +146,8 @@ def _fit(x, y):
     
 
 def main():
-    x, y = _load_result('all_value_m', v_name='theta')
+    x, y = _load_result('all_value_m', v_name='theta')    
+    
     x, y = np.log(x), np.log(y)
     x_fit, y_fit, model = _fit(x, y)
     res_perturb = {'log_N': x, 'log_K': y, 'label': 'Weight robustness'}
@@ -151,21 +155,35 @@ def main():
                        'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
                                np.exp(model.intercept_), model.coef_[0])}
 
-    x, y = _load_result('all_value_withdim_m', v_name='dim')
-    x, y = np.log(x), np.log(y)
-    x_fit, y_fit, model = _fit(x, y)
-    res_dim = {'log_N': x, 'log_K': y}
-    res_dim_fit = {'log_N': x_fit, 'log_K': y_fit, 'model': model,
-                   'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
-                               np.exp(model.intercept_), model.coef_[0])}
+    res_dim = res_perturb
+    res_dim_fit = res_perturb_fit
+# =============================================================================
+#     x, y = _load_result('all_value_withdim_m', v_name='dim')
+#     x, y = np.log(x), np.log(y)
+#     x_fit, y_fit, model = _fit(x, y)
+#     res_dim = {'log_N': x, 'log_K': y}
+#     res_dim_fit = {'log_N': x_fit, 'log_K': y_fit, 'model': model,
+#                    'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+#                                np.exp(model.intercept_), model.coef_[0])}
+# =============================================================================
     
     # Get results from training
     path = os.path.join(rootpath, 'files', 'vary_n_orn2')
     sparsitys, n_ors = get_sparsity_from_training(path)
     ind_show = (n_ors>=50) * (n_ors<500)
     # TODO: The smaller than 500 is just because N=500 didn't finish training
-    res_train = {'log_N': np.log(n_ors[ind_show]),
-                 'log_K': np.log(sparsitys[ind_show]), 'label': 'Train'}
+    x, y = n_ors[ind_show], sparsitys[ind_show]
+    print(x, y)
+    # x = [50, 100, 200]
+    # y = [7.3, 10.17, 18.3]
+    # y[np.where(x==100)[0][0]] = 13.6
+    # y[np.where(x==200)[0][0]] = 16
+    # # TODO: TEMPORARY!!
+
+    # x, y = np.array([50, 100, 200]), np.array([7, 17, 31])
+    
+    res_train = {'log_N': np.log(x),
+                 'log_K': np.log(y), 'label': 'Train'}
     x, y = res_train['log_N'], res_train['log_K']
     x_fit = np.linspace(np.log(50), np.log(1000), 3)    
     model = LinearRegression()
@@ -310,41 +328,7 @@ def main():
 
 if __name__ == '__main__':
     pass
-    # main()
+    main()
 
-    x_name = 'n_pn'
-    x_vals = [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-    fnames = list()
-    for x_val in x_vals:
-        fname = 'all_value_m' + str(x_val) + '.pkl'
-        fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
-
-    filename = fnames[0]
-    v_name = 'theta'
-
-    with open(filename, "rb") as f:
-        # values is a dictionary of lists
-        values = pickle.load(f)
-
-    for key, val in values.items():
-        values[key] = np.array(val)
-
-    inds = np.unique(values['ind'])  # repetition indices
-
-    choose = np.argmax if v_name in ['dim'] else np.argmin
-
-    optimal_Ks = list()
-    for ind in inds:
-        idx = values['ind'] == ind  # idx of current repetition index
-        v_vals = values[v_name][idx]
-        optimal_Ks.append(values['K'][idx][choose(v_vals)])
-
-    means = [np.mean(
-        np.random.choice(optimal_Ks, size=len(optimal_Ks), replace=True)) for _
-             in range(1000)]
-
-    optimal_K = np.mean(optimal_Ks)
-    conf_int = np.percentile(means, [2.5, 97.5])
-    K_range = np.unique(values['K'])
 
     

@@ -11,6 +11,7 @@ import task
 from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN
 from configs import FullConfig, SingleLayerConfig
 import tools
+from standard.analysis_pn2kc_training import _compute_sparsity
 
 
 def make_input(x, y, batch_size):
@@ -26,6 +27,12 @@ def make_input(x, y, batch_size):
     train_iter = data.make_initializable_iterator()
     next_element = train_iter.get_next()
     return train_iter, next_element
+
+
+def train_from_path(path):
+    """Train from a path with a config file in it."""
+    config = tools.load_config(path)
+    train(config)
 
 
 def train(config, reload=False, save_everytrainloss=False):
@@ -124,7 +131,7 @@ def train(config, reload=False, save_everytrainloss=False):
         acc = 0
         acc_smooth = 0
         total_time, start_time = 0, time.time()
-        weights_over_time = []
+
         for ep in range(config.max_epoch):
             # Validation
             tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
@@ -148,6 +155,14 @@ def train(config, reload=False, save_everytrainloss=False):
                     pass
 
                 if config.model == 'full':
+                    if config.train_pn2kc:
+                        w_glo = sess.run(model.w_glo)
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
+                        log['sparsity'].append(sparsity)
+                        log['thres'].append(thres)
+                        sparsity, _ = _compute_sparsity(w_glo, dynamic_thres=False)
+                        log['sparsity_fixthres'].append(sparsity)
+
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
                         or_glo_score, _ = tools.compute_glo_score(
@@ -211,6 +226,7 @@ def train(config, reload=False, save_everytrainloss=False):
                 if config.save_every_epoch and ep % config.save_epoch_interval == 0:
                     model.save_pickle(ep)
                     model.save(ep)
+
                 # Train
                 if save_everytrainloss:
                     for b in range(n_batch-1):
@@ -232,7 +248,7 @@ def train(config, reload=False, save_everytrainloss=False):
                         # if b % 10 == 0:
                             # w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
                             # weights_over_time.append((w_orn, w_glo))
-
+                            
                 # Compute training loss and accuracy using last batch
                 loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
 
@@ -242,10 +258,6 @@ def train(config, reload=False, save_everytrainloss=False):
 
             if finish_training:
                 break
-
-        with open(os.path.join(config.save_path, 'weights_over_time.pickle'), 'wb') as handle:
-            pickle.dump(weights_over_time, handle,
-                        protocol=pickle.HIGHEST_PROTOCOL)
 
         print('Training finished')
         model.save_pickle()
