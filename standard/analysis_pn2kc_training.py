@@ -588,8 +588,8 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
 def plot_sparsity_acrossepochs(path, dynamic_thres=False):
     import tools
     config = tools.load_config(path)
-    res = tools.load_all_results(os.path.join(rootpath, 'files', 'longtrain'),
-                                 argLast=False)
+    # res = tools.load_all_results(os.path.join(rootpath, 'files', 'longtrain'),
+    #                              argLast=False)
     n_epoch = len(os.listdir(os.path.join(path, 'epoch')))
     epochs = np.arange(n_epoch)
 
@@ -605,7 +605,8 @@ def plot_sparsity_acrossepochs(path, dynamic_thres=False):
 
     Ks = np.array(Ks)
 
-    savename = os.path.join(figpath, 'sparsity_acrossepochs')
+    p, n = os.path.split(path)
+    savename = os.path.join(figpath, 'sparsity_acrossepochs', n)
 
     final_K = Ks[-1]
     Ks[Ks > final_K * 1.5] = np.nan
@@ -622,6 +623,7 @@ def plot_sparsity_acrossepochs(path, dynamic_thres=False):
     ax.yaxis.set_ticks_position('left')
     plt.savefig(savename + '.png', dpi=500)
     plt.savefig(savename + '.pdf', transparent=True)
+    print(savename)
 
     # TODO: Temporarily dumped here
     wglos = tools.load_pickle(os.path.join(path, 'epoch'), 'w_glo')
