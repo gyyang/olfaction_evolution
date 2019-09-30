@@ -71,7 +71,7 @@ def obsolete_local_control_train(experiment, save_path, train_arg = None):
 
 
 def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
-                  nodes=1, ppn=1, gpus=0, mem=1, nhours=1):
+                  nodes=1, ppn=1, gpus=0, mem=16, nhours=2):
     """
     Create a job file.
 
@@ -102,10 +102,11 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
             # + '#SBATCH --nodes={}\n'.format(nodes)
             # + '#SBATCH --ntasks-per-node=1\n'
             # + '#SBATCH --cpus-per-task={}\n'.format(ppn)
-            + '#SBATCH --mem-per-cpu={}GB\n'.format(mem)
+            + '#SBATCH --mem-per-cpu={}gb\n'.format(mem)
             # + '#SBATCH --partition=xwang_gpu\n'
             + '#SBATCH --gres=gpu:1\n'
             + '#SBATCH --time={}:00:00\n'.format(nhours)
+            # + '#SBATCH --mem=128gb\n'
             # + '#SBATCH --job-name={}\n'.format(jobname[0:16])
             # + '#SBATCH --output={}log/{}.o\n'.format(scratchpath, jobname[0:16])
             + '\n'

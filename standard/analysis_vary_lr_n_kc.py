@@ -73,7 +73,10 @@ def plot2d(path):
 
 def main():
 # if __name__ == '__main__':
-    n_orns = [50, 100, 200, 300, 400]
+    acc_threshold = None
+    # acc_threshold = 0.75
+    
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500]
     Ks = list()
     for n_orn in n_orns:
         foldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
@@ -81,7 +84,17 @@ def main():
         res = tools.load_all_results(path, argLast=False)
         res = _get_K(res)
         
-        K = res['K'][:, 3:]  # after a number of epochs
+        K = res['K']
+        if n_orn == 50:
+            K = K[::4, :]  # only take N_KC=2500
+        
+        if acc_threshold:
+            # Examine only points with accuracy above threshold
+            ind_acc = (res['val_acc'] > 0.75).flatten()
+            K = K.flatten()
+            K = K[ind_acc]
+        else:
+            K = K[:, 3:]  # after a number of epochs
 # =============================================================================
 #         if n_orn == 50:
 #             K = K[::4, :]
@@ -117,9 +130,9 @@ def main():
                    flierprops={'markersize': 3})
     
     if plot_fit:
-        # x, y = np.log(n_orns)[1:], med_logKs[1:]
-        x, y = np.log(n_orns), med_logKs
-        x_fit = np.linspace(np.log(50), np.log(1000), 3)    
+        x, y = np.log(n_orns)[3:], med_logKs[3:]
+        # x, y = np.log(n_orns), med_logKs
+        x_fit = np.linspace(np.log(50), np.log(1600), 3)    
         model = LinearRegression()
         model.fit(x[:, np.newaxis], y)
         y_fit = model.predict(x_fit[:, np.newaxis])
@@ -152,14 +165,26 @@ def main():
     # ax.plot(np.log(x), np.log(y))
     ax.set_xlabel('Number of ORs (N)')
     ax.set_ylabel('Optimal K')
-    xticks = np.array([50, 100, 200, 500, 1000])
+    xticks = np.array([50, 100, 200, 400, 1000, 1600])
     ax.set_xticks(np.log(xticks))
     ax.set_xticklabels([str(t) for t in xticks])
     yticks = np.array([3, 10, 30, 100])
     ax.set_yticks(np.log(yticks))
     ax.set_yticklabels([str(t) for t in yticks])
+    ax.set_xlim(np.log([40, 1700]))
     
-    _easy_save('vary_lr_n_kc', 'optimal_k_simulation_all')
+    name = 'opt_k'
+    if plot_scatter:
+        name += '_scatter'
+    if plot_box:
+        name += '_box'
+    if plot_data:
+        name += '_data'
+    if plot_fit:
+        name += '_fit'
+    if plot_angle:
+        name += 'angle'
+    _easy_save('vary_lr_n_kc', name)
 
 
 if __name__ == '__main__':
