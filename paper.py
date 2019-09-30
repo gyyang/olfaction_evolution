@@ -31,12 +31,17 @@ import analytical.numerical_test as numerical_test
 import analytical.analyze_simulation_results as analyze_simulation_results
 import matplotlib as mpl
 
+SCRATCHPATH = 'axsys/scratch/ctn/projects/olfaction_evolution'
+ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
+PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
 parser.add_argument('-t', '--train', help='Training', action='store_true')
 parser.add_argument('-a', '--analyze', help='Analyzing', action='store_false')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
+parser.add_argument('-cp, --clusterpath', help='cluster path', default=SCRATCHPATH)
 parser.add_argument('-c','--cluster', help='Use cluster?', action='store_true')
 args = parser.parse_args()
 
@@ -51,6 +56,7 @@ TRAIN = args.train
 ANALYZE = args.analyze
 is_test = args.testing
 use_cluster = args.cluster
+cluster_path = args.clusterpath
 
 # #peter specific
 # TRAIN = True
@@ -533,7 +539,7 @@ if len(tmp_experiments) > 0:
         n_pns = [int(experiment[len('vary_lr_n_kc'):])]
     for n_pn in n_pns:
         path = './files/vary_lr_n_kc_n_orn' + str(n_pn)
-        train(se.vary_lr_n_kc(is_test, n_pn), path)
+        train(se.vary_lr_n_kc(is_test, n_pn), path, path= cluster_path)
 
 if 'longtrain' in experiments:
     # Reproducing most basic findings

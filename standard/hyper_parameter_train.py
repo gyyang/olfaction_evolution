@@ -5,6 +5,8 @@ import mamlmetatrain
 
 SBATCHPATH = './sbatch/'
 SCRATCHPATH = 'axsys/scratch/ctn/projects/olfaction_evolution'
+ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
+PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 
 
 def basic_train(experiment, save_path):
@@ -122,7 +124,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
 
 import subprocess
 
-def cluster_train(experiment, save_path, sequential=False, control=False, path = SCRATCHPATH):
+def cluster_train(experiment, save_path, sequential=False, control=False, path=SCRATCHPATH):
     """Train all models locally."""
     job_name = save_path.split('/')[-1]  # get end of path as job name
     config = tools.varying_config(experiment, 0)
