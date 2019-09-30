@@ -4,7 +4,7 @@ import os
 import mamlmetatrain
 
 SBATCHPATH = './sbatch/'
-SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
+SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
 
 
 def basic_train(experiment, save_path):
@@ -69,7 +69,7 @@ def obsolete_local_control_train(experiment, save_path, train_arg = None):
 
 
 def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
-                  nodes=1, ppn=1, gpus=0, mem=16, nhours=1):
+                  nodes=1, ppn=1, gpus=0, mem=16, nhours=2):
     """
     Create a job file.
 
@@ -104,6 +104,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
             # + '#SBATCH --partition=xwang_gpu\n'
             + '#SBATCH --gres=gpu:1\n'
             + '#SBATCH --time={}:00:00\n'.format(nhours)
+            # + '#SBATCH --mem=128gb\n'
             # + '#SBATCH --job-name={}\n'.format(jobname[0:16])
             # + '#SBATCH --output={}log/{}.o\n'.format(scratchpath, jobname[0:16])
             + '\n'

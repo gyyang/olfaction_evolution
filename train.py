@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import defaultdict
 import pickle
 import json
@@ -258,6 +259,8 @@ def train(config, reload=False, save_everytrainloss=False):
 
             if finish_training:
                 break
+
+            sys.stdout.flush()            
 
         print('Training finished')
         model.save_pickle()
