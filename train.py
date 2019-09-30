@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import defaultdict
 import pickle
 import json
@@ -109,6 +110,7 @@ def train(config, reload=False, save_everytrainloss=False):
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
+    tf_config.log_device_placement = True
 
     finish_training = False
     with tf.Session(config=tf_config) as sess:
@@ -258,6 +260,8 @@ def train(config, reload=False, save_everytrainloss=False):
 
             if finish_training:
                 break
+
+            sys.stdout.flush()            
 
         print('Training finished')
         model.save_pickle()

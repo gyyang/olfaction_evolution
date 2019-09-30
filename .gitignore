@@ -4,6 +4,7 @@ files/
 datasets/
 figures/
 .DS_Store
+slurm*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
