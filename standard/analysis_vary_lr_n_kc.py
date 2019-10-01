@@ -116,7 +116,7 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'defau
     n_orns = [50, 100, 200, 500]
     Ks = list()
     for n_orn in n_orns:
-        foldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
+        foldername = experiment_folder + str(n_orn)
         path = os.path.join(rootpath, 'files', experiment_folder, foldername)
         res = tools.load_all_results(path, argLast=False)
         res = _get_K(res)
@@ -239,7 +239,7 @@ if __name__ == '__main__':
 #     path = os.path.join(rootpath, 'files', foldername)
 #     plot2d(path)
 # =============================================================================
-    main(experiment_folder='cluster_pn_bn')
+    main(experiment_folder='cluster_no_pn_bn')
     
 
             
