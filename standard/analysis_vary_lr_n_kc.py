@@ -54,11 +54,14 @@ def move_helper():
 def _get_K(res):
     n_model, n_epoch = res['sparsity'].shape
     Ks = np.zeros((n_model, n_epoch))
+    bad_KC = np.zeros((n_model, n_epoch))
     for i in range(n_model):
         for j in range(n_epoch):
             sparsity = res['sparsity'][i, j]
             Ks[i, j] = sparsity[sparsity>0].mean()
+            bad_KC[i,j] = np.sum(sparsity==0)/sparsity.size
     res['K'] = Ks
+    res['bad_KC'] = bad_KC
     return res
 
 
@@ -115,6 +118,7 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'defau
     # n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
     n_orns = [50, 100, 200, 500]
     Ks = list()
+    badKCs = list()
     for n_orn in n_orns:
         foldername = experiment_folder + str(n_orn)
         path = os.path.join(rootpath, 'files', experiment_folder, foldername)
@@ -122,13 +126,16 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'defau
         res = _get_K(res)
         
         K = res['K']
+        badKC = res['bad_KC']
         acc = res['val_acc']
         if n_orn == 50:
             ind = res['N_KC'] == 2500
             K = K[ind, :]  # only take N_KC=2500
+            badKC = badKC[ind, :]
             acc = acc[ind, :]
         if exclude_start:
             K = K[:, exclude_start:]  # after a number of epochs
+            badKC = badKC[:, exclude_start:]
             acc = acc[:, exclude_start:]
         
         if acc_threshold:
@@ -136,6 +143,8 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'defau
             ind_acc = (acc > acc_threshold).flatten()
             K = K.flatten()
             K = K[ind_acc]
+            badKC = badKC.flatten()
+            badKC = badKC[ind_acc]
             
         K = K.flatten()
         # remove extreme values
@@ -143,8 +152,11 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'defau
         K = K[2<K]
         K = K[K<n_orn*0.9]
         Ks.append(K)
-    
-    return n_orns, Ks
+
+        badKC = badKC.flatten()
+        badKCs.append(badKC)
+
+    return n_orns, Ks, badKCs
 
 
 def plot_all_K(n_orns, Ks, plot_scatter=False,
@@ -226,9 +238,46 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
     _easy_save(path, name)
 
 
+def plot_fraction_badKC(n_orns, data, plot_scatter=False, plot_box=True, path='default'):
+    fig = plt.figure(figsize=(3.5, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+
+    medians = np.array([np.median(K) for K in data])
+
+    if plot_scatter:
+        for n_orn, K, median in zip(n_orns, data, medians):
+            ax.scatter(np.log([n_orn] * len(K)), K, alpha=0.01, s=3)
+            ax.plot(np.log(n_orn), median, '+', ms=15, color='black')
+
+    if plot_box:
+        ax.boxplot(data, positions=np.log(n_orns), widths=0.1,
+                   flierprops={'markersize': 3})
+
+    ax.set_xlabel('Number of ORs (N)')
+    ax.set_ylabel('Fraction KCs with no input')
+    xticks = np.array([50, 100, 200, 400, 1000, 1600])
+    ax.set_xticks(np.log(xticks))
+    ax.set_xticklabels([str(t) for t in xticks])
+    yticks = np.array([0, .5, 1])
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([str(t) for t in yticks])
+    ax.set_xlim(np.log([40, 1700]))
+    ax.set_ylim([-.05, 1.05])
+
+    name = 'frac_badKC'
+    if plot_scatter:
+        name += '_scatter'
+    if plot_box:
+        name += '_box'
+    _easy_save(path, name)
+
+
 def main(experiment_folder):
-    n_orns, Ks = get_all_K(experiment_folder=experiment_folder)
-    plot_all_K(n_orns, Ks, plot_box=True, path=experiment_folder)
+    n_orns, Ks, badKCs = get_all_K(experiment_folder=experiment_folder)
+    # plot_all_K(n_orns, Ks, plot_box=True, path=experiment_folder)
+    plot_fraction_badKC(n_orns, badKCs, path=experiment_folder)
     # plot_all_K(n_orns, Ks, plot_angle=True, path=experiment_folder)
 
 
