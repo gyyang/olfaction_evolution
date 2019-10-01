@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 100])
 args = parser.parse_args()
 
-testing_epochs = 16
+testing_epochs = 50
 def temp(argTest=False, n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
@@ -24,7 +24,7 @@ def temp(argTest=False, n_pn=50):
     config.skip_orn2pn = True
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    # config.pn_norm_pre = 'batch_norm'
+    config.pn_norm_pre = 'batch_norm'
 
     config.save_every_epoch = False
 
@@ -41,5 +41,5 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_no_pn_bn' + str(n_pn)
+    path = './files/cluster_pn_bn' + str(n_pn)
     train(temp(is_test, n_pn), path, path= cluster_path)
