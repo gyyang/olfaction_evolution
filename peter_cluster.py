@@ -33,11 +33,11 @@ def vary_lr_n_kc_batchnorm(argTest=False, n_pn=50):
     return config, hp_ranges
 
 
-is_test = False
-train = local_train
+is_test = True
+train = cluster_train
 cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 
-n_pns = [200]
+n_pns = [500]
 for n_pn in n_pns:
     path = './files/vary_lr_n_kc_n_orn' + str(n_pn)
     train(se.vary_lr_n_kc(is_test, n_pn), path, path= cluster_path)
