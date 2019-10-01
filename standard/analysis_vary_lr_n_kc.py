@@ -22,6 +22,35 @@ Previous results
 [ 7.90428212 10.8857362  16.20759494 20.70314843 27.50305499 32.03561644]"""
 
 
+def move_helper():
+    """Temporary function to move new results into old directory."""
+    from shutil import copytree, rmtree
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 1000]
+    for n_orn in n_orns:
+        foldername = 'vary_new_lr_n_kc_n_orn' + str(n_orn)
+        path = os.path.join(rootpath, 'files', foldername)
+        newfoldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
+        newpath = os.path.join(rootpath, 'files', newfoldername)
+        if os.path.exists(path):
+            files = os.listdir(path)
+            
+            for file in files:
+                if file[:2] == '00':
+                    newfile = os.path.join(path, '10' + file[2:])
+                    if os.path.exists(newfile):
+                        rmtree(newfile)
+                    os.rename(os.path.join(path, file), newfile)
+
+            files = os.listdir(path)
+            print(files)
+            for file in files:
+                assert file[:2] == '10'
+                newfile = os.path.join(newpath, file)
+                if os.path.exists(newfile):
+                    rmtree(newfile)
+                copytree(os.path.join(path, file), newfile)
+
+
 def _get_K(res):
     n_model, n_epoch = res['sparsity'].shape
     Ks = np.zeros((n_model, n_epoch))
@@ -71,13 +100,20 @@ def plot2d(path):
         _easy_save(path, vname)
 
 
-def main():
-# if __name__ == '__main__':
-    acc_threshold = 0.5
-    # acc_threshold = 0.75
-    exclude_start = 5
+def get_all_K(acc_threshold = 0.5, exclude_start = 5):
+    """Get all K from training.
+    
+    Args:
+        acc_threshold: threshold for excluding failed networks
+        exclude_start: exclude the beginning number of epochs
+        
+    Returns:
+        n_orns: list of N_ORN values
+        Ks: list of arrays, each array is K from many networks
+    """
     
     n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 1000]
+    # n_orns = [50]
     Ks = list()
     for n_orn in n_orns:
         foldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
@@ -88,8 +124,9 @@ def main():
         K = res['K']
         acc = res['val_acc']
         if n_orn == 50:
-            K = K[::4, :]  # only take N_KC=2500
-            acc = acc[::4, :]
+            ind = res['N_KC'] == 2500
+            K = K[ind, :]  # only take N_KC=2500
+            acc = acc[ind, :]
         if exclude_start:
             K = K[:, exclude_start:]  # after a number of epochs
             acc = acc[:, exclude_start:]
@@ -100,10 +137,6 @@ def main():
             K = K.flatten()
             K = K[ind_acc]
             
-# =============================================================================
-#         if n_orn == 50:
-#             K = K[::4, :]
-# =============================================================================
         K = K.flatten()
         # remove extreme values
         K = K[~np.isnan(K)]
@@ -111,11 +144,12 @@ def main():
         K = K[K<n_orn*0.9]
         Ks.append(K)
     
-    plot_scatter = False
-    plot_box = True
-    plot_data = True
-    plot_fit = True
-    plot_angle = False
+    return n_orns, Ks
+
+
+def plot_all_K(n_orns, Ks, plot_scatter=False,
+               plot_box=False, plot_data=True,
+               plot_fit=True, plot_angle=False):
     
     fig = plt.figure(figsize=(3.5, 2))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -135,8 +169,8 @@ def main():
                    flierprops={'markersize': 3})
     
     if plot_fit:
-        x, y = np.log(n_orns)[3:], med_logKs[3:]
-        # x, y = np.log(n_orns), med_logKs
+        # x, y = np.log(n_orns)[3:], med_logKs[3:]
+        x, y = np.log(n_orns), med_logKs
         x_fit = np.linspace(np.log(50), np.log(1600), 3)    
         model = LinearRegression()
         model.fit(x[:, np.newaxis], y)
@@ -192,6 +226,12 @@ def main():
     _easy_save('vary_lr_n_kc', name)
 
 
+def main():
+    n_orns, Ks = get_all_K()
+    plot_all_K(n_orns, Ks, plot_box=True)
+    plot_all_K(n_orns, Ks, plot_angle=True)
+
+
 if __name__ == '__main__':
 # =============================================================================
 #     foldername = 'vary_lr_n_kc_n_orn300'
@@ -199,4 +239,6 @@ if __name__ == '__main__':
 #     plot2d(path)
 # =============================================================================
     main()
+    
 
+            
