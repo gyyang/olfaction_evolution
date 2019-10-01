@@ -115,21 +115,21 @@ def vary_pn_configs():
 
 # mamlmetatrain.train(temp_meta()[0])
 #
-path = './files_temp/temp'
-try:
-    shutil.rmtree(path)
-except:
-    pass
-t(temp(), path, s=0)
+# path = './files_temp/temp'
+# try:
+#     shutil.rmtree(path)
+# except:
+#     pass
+# t(temp(), path, s=0)
 
 # sa.plot_progress(path)
 
 # oracle.evaluatewithnoise.evaluate_across_epochs(path=path, values=[0, .01, .03, .1],n_rep=1)
 # oracle.evaluatewithnoise.plot_acrossmodels(path=path, model_var='epoch')
 
-analysis_training.plot_distribution(path, xrange=.5, log=False)
-analysis_training.plot_distribution(path, xrange=.5, log=True)
-analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.05, visualize=True, epochs = [-1], xrange=200)
+# analysis_training.plot_distribution(path, xrange=.5, log=False)
+# analysis_training.plot_distribution(path, xrange=.5, log=True)
+# analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.05, visualize=True, epochs = [-1], xrange=200)
 
 # analysis_training.plot_sparsity_acrossepochs(os.path.join(path,'000000'))
 # analysis_training.plot_sparsity_acrossepochs(os.path.join(path,'000001'))
@@ -179,6 +179,5 @@ analysis_training.plot_sparsity(path, dynamic_thres=True, thres=.05, visualize=T
 # analysis_activity.sparseness_activity(path, 'glo_out')
 # analysis_activity.sparseness_activity(path, 'kc_out', activity_threshold=.01)
 # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
-
 
 # sa.plot_weights(path, var_name='model/layer3/kernel:0', dir_ix=0)
