@@ -4,7 +4,7 @@ import os
 import mamlmetatrain
 
 SBATCHPATH = './sbatch/'
-SCRATCHPATH = 'axsys/scratch/ctn/projects/olfaction_evolution'
+SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
 ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
 PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 
