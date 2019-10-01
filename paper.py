@@ -41,7 +41,7 @@ parser.add_argument('-t', '--train', help='Training', action='store_true')
 parser.add_argument('-a', '--analyze', help='Analyzing', action='store_false')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
-parser.add_argument('-cp, --clusterpath', help='cluster path', default=SCRATCHPATH)
+parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCHPATH)
 parser.add_argument('-c','--cluster', help='Use cluster?', action='store_true')
 args = parser.parse_args()
 
@@ -58,11 +58,12 @@ is_test = args.testing
 use_cluster = args.cluster
 cluster_path = args.clusterpath
 
-## peter specific
+# # peter specific
 # TRAIN = True
 # ANALYZE = False
 # is_test = True
 # use_cluster = True
+# experiments = ['vary_lr_n_kc1000']
 
 if use_cluster:
     train = cluster_train
@@ -82,9 +83,6 @@ if args.experiment == 'core':
                    'vary_n_orn', 'vary_lr_n_kc']
 else:
     experiments = args.experiment
-
-experiments = ['vary_lr_n_kc1000']
-
 
 if 'standard_without_or2orn' in experiments:
     # Reproducing most basic findings
