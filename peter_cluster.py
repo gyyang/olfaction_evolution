@@ -11,8 +11,7 @@ parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 100])
 args = parser.parse_args()
 
 testing_epochs = 16
-
-def vary_lr_n_kc_batchnorm(argTest=False, n_pn=50):
+def temp(argTest=False, n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
     config.max_epoch = 100
@@ -36,7 +35,6 @@ def vary_lr_n_kc_batchnorm(argTest=False, n_pn=50):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
-
 is_test = True
 train = cluster_train
 cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
@@ -44,4 +42,4 @@ n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
     path = './files/cluster_no_pn_bn' + str(n_pn)
-    train(se.vary_lr_n_kc(is_test, n_pn), path, path= cluster_path)
+    train(temp(is_test, n_pn), path, path= cluster_path)
