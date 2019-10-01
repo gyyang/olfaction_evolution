@@ -25,7 +25,7 @@ Previous results
 def move_helper():
     """Temporary function to move new results into old directory."""
     from shutil import copytree, rmtree
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 1000]
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
     for n_orn in n_orns:
         foldername = 'vary_new_lr_n_kc_n_orn' + str(n_orn)
         path = os.path.join(rootpath, 'files', foldername)
@@ -112,7 +112,7 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5):
         Ks: list of arrays, each array is K from many networks
     """
     
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 1000]
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
     # n_orns = [50]
     Ks = list()
     for n_orn in n_orns:
@@ -233,8 +233,9 @@ def main():
 
 
 if __name__ == '__main__':
+    move_helper()
 # =============================================================================
-#     foldername = 'vary_lr_n_kc_n_orn300'
+#     foldername = 'vary_lr_n_kc_n_orn1000'
 #     path = os.path.join(rootpath, 'files', foldername)
 #     plot2d(path)
 # =============================================================================
