@@ -800,3 +800,23 @@ def temp(argTest):
     hp_ranges['N_KC'] = [300, 2500, 10000]
     hp_ranges['ORN_NOISE_STD'] = [0, 0.5, 1.0]
     return config, hp_ranges
+
+
+def vary_init_sparse(argTest=False):
+    """Vary if initialization is dense or sparse"""
+    config = configs.FullConfig()
+    config.max_epoch = 30
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+
+    config.data_dir = './datasets/proto/standard'
+    config.save_every_epoch = True
+    hp_ranges = OrderedDict()
+    hp_ranges['initializer_pn2kc'] = ['constant', 'single_strong']
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
