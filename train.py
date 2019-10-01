@@ -162,8 +162,11 @@ def train(config, reload=False, save_everytrainloss=False):
                         sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
                         log['sparsity'].append(sparsity)
                         log['thres'].append(thres)
-                        sparsity, _ = _compute_sparsity(w_glo, dynamic_thres=False)
-                        log['sparsity_fixthres'].append(sparsity)
+                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False)
+                        log['sparsity_fixthres'].append(sparsity_)
+                        print('KCs with 0 K={}'.format(np.sum(sparsity == 0)/sparsity.size))
+                        print('K={}'.format(sparsity.mean()))
+                        print('nonzero K={}'.format(sparsity[sparsity>0].mean()))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
@@ -185,16 +188,17 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['combined_glo_score'].append(combined_glo_score)
 
                     else:
-                        w_orn = sess.run(model.w_orn)
-                        glo_score, _ = tools.compute_glo_score(
-                            w_orn, config.N_ORN, glo_score_mode)
-                        log['glo_score'].append(glo_score)
-                        print('Glo score ' + str(glo_score))
+                        if config.train_orn2pn and not config.direct_glo and not config.skip_orn2pn:
+                            w_orn = sess.run(model.w_orn)
+                            glo_score, _ = tools.compute_glo_score(
+                                w_orn, config.N_ORN, glo_score_mode)
+                            log['glo_score'].append(glo_score)
+                            print('Glo score ' + str(glo_score))
 
-                        sim_score, _ = tools.compute_sim_score(
-                            w_orn, config.N_ORN, glo_score_mode)
-                        log['sim_score'].append(sim_score)
-                        print('Sim score ' + str(sim_score))
+                            sim_score, _ = tools.compute_sim_score(
+                                w_orn, config.N_ORN, glo_score_mode)
+                            log['sim_score'].append(sim_score)
+                            print('Sim score ' + str(sim_score))
 
                         # w_glo = sess.run(model.w_glo)
                         # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)

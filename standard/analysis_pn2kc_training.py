@@ -386,7 +386,7 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
+def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES, xrange = 50,
                   epochs=None):
     save_name = dir.split('/')[-1]
     path = os.path.join(figpath, save_name)
@@ -410,8 +410,8 @@ def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES,
             sparsity = compute_sparsity(d, epoch, dynamic_thres=dynamic_thres,
                                         visualize=visualize, thres=thres)
             save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
-            _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j])
-            print(sparsity.mean())
+            _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j], xrange=xrange)
+            print(sparsity[sparsity>0].mean())
 
 
 def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):

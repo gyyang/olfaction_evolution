@@ -58,17 +58,17 @@ is_test = args.testing
 use_cluster = args.cluster
 cluster_path = args.clusterpath
 
-# # peter specific
-# TRAIN = True
-# ANALYZE = False
-# is_test = True
-# use_cluster = True
-# experiments = ['vary_lr_n_kc1000']
-
 if use_cluster:
     train = cluster_train
 else:
     train = local_train
+
+if cluster_path == 'peter' or cluster_path == 'pw':
+    cluster_path = PETER_SCRATCHPATH
+elif cluster_path == 'robert' or cluster_path == 'gry':
+    cluster_path = ROBERT_SCRATCHPATH
+else:
+    cluster_path = SCRATCHPATH
 
 # experiments
 if args.experiment == 'core':
