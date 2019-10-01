@@ -25,7 +25,8 @@ def temp(argTest=False, n_pn=50):
     config.skip_orn2pn = True
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.pn_norm_pre = 'batch_norm'
+    config.initial_pn2kc = n_pn / 1000 # heuristic
+    # config.pn_norm_pre = 'batch_norm'
 
     config.save_every_epoch = False
 
@@ -42,5 +43,11 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_pn_bn' + str(n_pn)
-    train(temp(is_test, n_pn), path, path= cluster_path)
+    path = './files/cluster_initial_pn2kc' + str(n_pn)
+    cluster_train(temp(is_test, n_pn), path, path= cluster_path)
+
+#local_train
+# n_pns = [500]
+# for n_pn in n_pns:
+#     path = './files/test' + str(n_pn)
+#     local_train(temp(is_test, n_pn), path)
