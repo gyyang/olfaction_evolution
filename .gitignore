@@ -3,6 +3,7 @@
 files/
 datasets/
 figures/
+sbatch/
 .DS_Store
 slurm*
 
