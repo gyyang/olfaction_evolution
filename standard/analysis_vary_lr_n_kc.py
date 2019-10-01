@@ -239,7 +239,7 @@ if __name__ == '__main__':
 #     path = os.path.join(rootpath, 'files', foldername)
 #     plot2d(path)
 # =============================================================================
-    main(experiment_folder='vary_lr_n_kc_batchnorm')
+    main(experiment_folder='cluster_pn_bn')
     
 
             
