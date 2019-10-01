@@ -8,13 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)
+
 import tools
 from tools import nicename
 from standard.analysis import _easy_save
 
-
-rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(rootpath)
 
 """
 Previous results
@@ -73,10 +73,11 @@ def plot2d(path):
 
 def main():
 # if __name__ == '__main__':
-    acc_threshold = None
+    acc_threshold = 0.5
     # acc_threshold = 0.75
+    exclude_start = 5
     
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500]
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 1000]
     Ks = list()
     for n_orn in n_orns:
         foldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
@@ -85,16 +86,20 @@ def main():
         res = _get_K(res)
         
         K = res['K']
+        acc = res['val_acc']
         if n_orn == 50:
             K = K[::4, :]  # only take N_KC=2500
+            acc = acc[::4, :]
+        if exclude_start:
+            K = K[:, exclude_start:]  # after a number of epochs
+            acc = acc[:, exclude_start:]
         
         if acc_threshold:
             # Examine only points with accuracy above threshold
-            ind_acc = (res['val_acc'] > 0.75).flatten()
+            ind_acc = (acc > acc_threshold).flatten()
             K = K.flatten()
             K = K[ind_acc]
-        else:
-            K = K[:, 3:]  # after a number of epochs
+            
 # =============================================================================
 #         if n_orn == 50:
 #             K = K[::4, :]
