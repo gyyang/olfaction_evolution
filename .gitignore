@@ -6,7 +6,6 @@ figures/
 sbatch/
 .DS_Store
 slurm*
-peter_cluster.py
 temp.py
 
 
