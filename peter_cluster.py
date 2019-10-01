@@ -1,10 +1,14 @@
 from collections import OrderedDict
 from collections.__init__ import OrderedDict
 
+import argparse
 import configs
 import standard.experiment as se
 from standard.hyper_parameter_train import local_train, cluster_train
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 100])
+args = parser.parse_args()
 
 testing_epochs = 16
 
@@ -36,8 +40,8 @@ def vary_lr_n_kc_batchnorm(argTest=False, n_pn=50):
 is_test = True
 train = cluster_train
 cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
-
-n_pns = [500]
+n_pns = [int(x) for x in args.pn]
+print(n_pns)
 for n_pn in n_pns:
     path = './files/vary_lr_n_kc_n_orn' + str(n_pn)
     train(se.vary_lr_n_kc(is_test, n_pn), path, path= cluster_path)

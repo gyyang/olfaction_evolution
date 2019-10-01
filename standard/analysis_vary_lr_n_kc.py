@@ -100,7 +100,7 @@ def plot2d(path):
         _easy_save(path, vname)
 
 
-def get_all_K(acc_threshold = 0.5, exclude_start = 5):
+def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'default'):
     """Get all K from training.
     
     Args:
@@ -112,12 +112,12 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5):
         Ks: list of arrays, each array is K from many networks
     """
     
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
-    # n_orns = [50]
+    # n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
+    n_orns = [50, 100, 200, 500]
     Ks = list()
     for n_orn in n_orns:
         foldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
-        path = os.path.join(rootpath, 'files', foldername)
+        path = os.path.join(rootpath, 'files', experiment_folder, foldername)
         res = tools.load_all_results(path, argLast=False)
         res = _get_K(res)
         
@@ -149,7 +149,7 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5):
 
 def plot_all_K(n_orns, Ks, plot_scatter=False,
                plot_box=False, plot_data=True,
-               plot_fit=True, plot_angle=False):
+               plot_fit=True, plot_angle=False, path = 'default'):
     
     fig = plt.figure(figsize=(3.5, 2))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -223,13 +223,13 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         name += '_fit'
     if plot_angle:
         name += 'angle'
-    _easy_save('vary_lr_n_kc', name)
+    _easy_save(path, name)
 
 
-def main():
-    n_orns, Ks = get_all_K()
-    plot_all_K(n_orns, Ks, plot_box=True)
-    plot_all_K(n_orns, Ks, plot_angle=True)
+def main(experiment_folder):
+    n_orns, Ks = get_all_K(experiment_folder=experiment_folder)
+    plot_all_K(n_orns, Ks, plot_box=True, path=experiment_folder)
+    # plot_all_K(n_orns, Ks, plot_angle=True, path=experiment_folder)
 
 
 if __name__ == '__main__':
@@ -239,7 +239,7 @@ if __name__ == '__main__':
 #     path = os.path.join(rootpath, 'files', foldername)
 #     plot2d(path)
 # =============================================================================
-    main()
+    main(experiment_folder='vary_lr_n_kc_batchnorm')
     
 
             
