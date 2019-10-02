@@ -112,7 +112,7 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5):
         Ks: list of arrays, each array is K from many networks
     """
     
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
     # n_orns = [50]
     Ks = list()
     for n_orn in n_orns:
@@ -233,7 +233,7 @@ def main():
 
 
 if __name__ == '__main__':
-    move_helper()
+    # move_helper()
 # =============================================================================
 #     foldername = 'vary_lr_n_kc_n_orn1000'
 #     path = os.path.join(rootpath, 'files', foldername)
