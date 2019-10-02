@@ -25,7 +25,7 @@ def temp(argTest=False, n_pn=50):
     config.skip_orn2pn = True
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.initial_pn2kc = n_pn / 1000 # heuristic
+    config.initial_pn2kc = 10/n_pn # heuristic
     # config.pn_norm_pre = 'batch_norm'
 
     config.save_every_epoch = False
