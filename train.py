@@ -171,8 +171,8 @@ def train(config, reload=False, save_everytrainloss=False):
                         sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False)
                         log['sparsity_fixthres'].append(sparsity_)
                         print('KCs with 0 K={}'.format(np.sum(sparsity == 0)/sparsity.size))
-                        print('K={}'.format(sparsity.mean()))
-                        print('nonzero K={}'.format(sparsity[sparsity>0].mean()))
+                        print('K (all KC) ={}'.format(sparsity.mean()))
+                        print('K (filter out bad KCs) ={}'.format(sparsity[sparsity>0].mean()))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
