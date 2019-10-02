@@ -3,8 +3,11 @@
 files/
 datasets/
 figures/
+sbatch/
 .DS_Store
 slurm*
+temp.py
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

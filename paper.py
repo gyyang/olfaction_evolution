@@ -58,17 +58,17 @@ is_test = args.testing
 use_cluster = args.cluster
 cluster_path = args.clusterpath
 
-# # peter specific
-# TRAIN = True
-# ANALYZE = False
-# is_test = True
-# use_cluster = True
-# experiments = ['vary_lr_n_kc1000']
-
 if use_cluster:
     train = cluster_train
 else:
     train = local_train
+
+if cluster_path == 'peter' or cluster_path == 'pw':
+    cluster_path = PETER_SCRATCHPATH
+elif cluster_path == 'robert' or cluster_path == 'gry':
+    cluster_path = ROBERT_SCRATCHPATH
+else:
+    cluster_path = SCRATCHPATH
 
 # experiments
 if args.experiment == 'core':
@@ -575,6 +575,7 @@ if 'analytical' in experiments:
         analyze_simulation_results.main()
 
 if 'apl' in experiments:
+    # Adding inhibitory APL unit.
     path = './files/apl'
     if TRAIN:
         train(se.vary_apl(is_test), path)
@@ -588,9 +589,18 @@ if 'apl' in experiments:
             figname='lesion_apl_')
 
 if 'meansub' in experiments:
+    # Subtracting mean from activity
     path = './files/meansub'
     if TRAIN:
         train(se.vary_w_glo_meansub_coeff(is_test), path, sequential=True)
     if ANALYZE:
         analysis_pn2kc_training.plot_pn2kc_claw_stats(
             path, x_key='w_glo_meansub_coeff', dynamic_thres=True)
+
+if 'vary_init_sparse' in experiments:
+    # Vary PN2KC initialization to be sparse or dense
+    path = './files/vary_init_sparse'
+    if TRAIN:
+        train(se.vary_init_sparse(is_test), path)
+    if ANALYZE:
+        pass

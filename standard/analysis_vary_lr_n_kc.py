@@ -22,14 +22,46 @@ Previous results
 [ 7.90428212 10.8857362  16.20759494 20.70314843 27.50305499 32.03561644]"""
 
 
+def move_helper():
+    """Temporary function to move new results into old directory."""
+    from shutil import copytree, rmtree
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
+    for n_orn in n_orns:
+        foldername = 'vary_new_lr_n_kc_n_orn' + str(n_orn)
+        path = os.path.join(rootpath, 'files', foldername)
+        newfoldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
+        newpath = os.path.join(rootpath, 'files', newfoldername)
+        if os.path.exists(path):
+            files = os.listdir(path)
+            
+            for file in files:
+                if file[:2] == '00':
+                    newfile = os.path.join(path, '10' + file[2:])
+                    if os.path.exists(newfile):
+                        rmtree(newfile)
+                    os.rename(os.path.join(path, file), newfile)
+
+            files = os.listdir(path)
+            print(files)
+            for file in files:
+                assert file[:2] == '10'
+                newfile = os.path.join(newpath, file)
+                if os.path.exists(newfile):
+                    rmtree(newfile)
+                copytree(os.path.join(path, file), newfile)
+
+
 def _get_K(res):
     n_model, n_epoch = res['sparsity'].shape
     Ks = np.zeros((n_model, n_epoch))
+    bad_KC = np.zeros((n_model, n_epoch))
     for i in range(n_model):
         for j in range(n_epoch):
             sparsity = res['sparsity'][i, j]
             Ks[i, j] = sparsity[sparsity>0].mean()
+            bad_KC[i,j] = np.sum(sparsity==0)/sparsity.size
     res['K'] = Ks
+    res['bad_KC'] = bad_KC
     return res
 
 
@@ -71,27 +103,40 @@ def plot2d(path):
         _easy_save(path, vname)
 
 
-def main():
-# if __name__ == '__main__':
-    acc_threshold = 0.5
-    # acc_threshold = 0.75
-    exclude_start = 5
+def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'default'):
+    """Get all K from training.
     
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 1000]
+    Args:
+        acc_threshold: threshold for excluding failed networks
+        exclude_start: exclude the beginning number of epochs
+        
+    Returns:
+        n_orns: list of N_ORN values
+        Ks: list of arrays, each array is K from many networks
+    """
+    
+    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
+    # n_orns = [50]
+
     Ks = list()
+    badKCs = list()
     for n_orn in n_orns:
-        foldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
-        path = os.path.join(rootpath, 'files', foldername)
+        foldername = experiment_folder + str(n_orn)
+        path = os.path.join(rootpath, 'files', experiment_folder, foldername)
         res = tools.load_all_results(path, argLast=False)
         res = _get_K(res)
         
         K = res['K']
+        badKC = res['bad_KC']
         acc = res['val_acc']
         if n_orn == 50:
-            K = K[::4, :]  # only take N_KC=2500
-            acc = acc[::4, :]
+            ind = res['N_KC'] == 2500
+            K = K[ind, :]  # only take N_KC=2500
+            badKC = badKC[ind, :]
+            acc = acc[ind, :]
         if exclude_start:
             K = K[:, exclude_start:]  # after a number of epochs
+            badKC = badKC[:, exclude_start:]
             acc = acc[:, exclude_start:]
         
         if acc_threshold:
@@ -99,23 +144,25 @@ def main():
             ind_acc = (acc > acc_threshold).flatten()
             K = K.flatten()
             K = K[ind_acc]
+            badKC = badKC.flatten()
+            badKC = badKC[ind_acc]
             
-# =============================================================================
-#         if n_orn == 50:
-#             K = K[::4, :]
-# =============================================================================
         K = K.flatten()
         # remove extreme values
         K = K[~np.isnan(K)]
         K = K[2<K]
         K = K[K<n_orn*0.9]
         Ks.append(K)
-    
-    plot_scatter = False
-    plot_box = True
-    plot_data = True
-    plot_fit = True
-    plot_angle = False
+
+        badKC = badKC.flatten()
+        badKCs.append(badKC)
+
+    return n_orns, Ks, badKCs
+
+
+def plot_all_K(n_orns, Ks, plot_scatter=False,
+               plot_box=False, plot_data=True,
+               plot_fit=True, plot_angle=False, path = 'default'):
     
     fig = plt.figure(figsize=(3.5, 2))
     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
@@ -129,40 +176,57 @@ def main():
         for n_orn, K, med_logK in zip(n_orns, Ks, med_logKs):
             ax.scatter(np.log([n_orn]*len(K)), np.log(K), alpha=0.01, s=3)
             ax.plot(np.log(n_orn), med_logK, '+', ms=15, color='black')
+            
     
+    def _pretty_box(x, positions, ax, color):
+        flierprops = {'markersize': 3, 'markerfacecolor': color,
+                      'markeredgecolor': 'none'}
+        boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
+        medianprops = {'color': color*0.5}
+        whiskerprops = {'color': color}
+        ax.boxplot(x, positions=positions, widths=0.06,
+                   patch_artist=True, medianprops=medianprops,
+                   flierprops=flierprops, boxprops=boxprops, showcaps=False,
+                   whiskerprops=whiskerprops
+                   )
+            
     if plot_box:
-        ax.boxplot(logKs, positions=np.log(n_orns), widths=0.1,
-                   flierprops={'markersize': 3})
-    
+        _pretty_box(logKs, np.log(n_orns), ax, tools.blue)
+        
     if plot_fit:
-        x, y = np.log(n_orns)[3:], med_logKs[3:]
-        # x, y = np.log(n_orns), med_logKs
+        # x, y = np.log(n_orns)[3:], med_logKs[3:]
+        x, y = np.log(n_orns), med_logKs
         x_fit = np.linspace(np.log(50), np.log(1600), 3)    
         model = LinearRegression()
         model.fit(x[:, np.newaxis], y)
         y_fit = model.predict(x_fit[:, np.newaxis])
-        ax.plot(x_fit, y_fit)
+        
+        label = r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+                               np.exp(model.intercept_), model.coef_[0])
+        
+        ax.plot(x_fit, y_fit, color=tools.blue, label=label)
     
     if plot_data:
-        ax.plot(np.log(1000), np.log(100), 'x', color=tools.darkblue)
-        ax.text(np.log(900), np.log(120), '[1]', color=tools.darkblue,
-                horizontalalignment='center', verticalalignment='bottom')
+        ax.plot(np.log(1000), np.log(100), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(120), '[2]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='bottom', zorder=5)
         
-        ax.plot(np.log(1000), np.log(40), 'x', color=tools.darkblue)
-        ax.text(np.log(900), np.log(32), '[2]', color=tools.darkblue,
-                horizontalalignment='center', verticalalignment='top')
-        ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue)
-        ax.text(np.log(50), np.log(6), '[3]', color=tools.darkblue,
-                horizontalalignment='left', verticalalignment='top')
+        ax.plot(np.log(1000), np.log(40), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(32), '[3]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='top', zorder=5)
+        ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(53), np.log(6), '[1]', color=tools.darkblue,
+                horizontalalignment='left', verticalalignment='top', zorder=5)
     
     if plot_angle:
         fname = os.path.join(rootpath, 'files', 'analytical',
                                  'control_coding_level_summary')
         summary = pickle.load(open(fname, "rb"))
         # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
-        ax.boxplot(list(np.log(summary['opt_ks'].T)),
-                   positions=np.log(summary['n_orns']),
-                   widths=0.1, flierprops={'markersize': 3})
+        _pretty_box(list(np.log(summary['opt_ks'].T)),
+                    np.log(summary['n_orns']), ax, tools.red)
+        
+    ax.legend(bbox_to_anchor=(0., 1.05), loc=2, frameon=False)
         
     x = [ 50, 100, 150, 200, 300, 400]
     y = [ 7.90428212, 10.8857362,  16.20759494,
@@ -189,14 +253,62 @@ def main():
         name += '_fit'
     if plot_angle:
         name += 'angle'
-    _easy_save('vary_lr_n_kc', name)
+    _easy_save(path, name)
+
+
+def plot_fraction_badKC(n_orns, data, plot_scatter=False, plot_box=True, path='default'):
+    fig = plt.figure(figsize=(3.5, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+
+    medians = np.array([np.median(K) for K in data])
+
+    if plot_scatter:
+        for n_orn, K, median in zip(n_orns, data, medians):
+            ax.scatter(np.log([n_orn] * len(K)), K, alpha=0.01, s=3)
+            ax.plot(np.log(n_orn), median, '+', ms=15, color='black')
+
+    if plot_box:
+        ax.boxplot(data, positions=np.log(n_orns), widths=0.1,
+                   flierprops={'markersize': 3})
+
+    ax.set_xlabel('Number of ORs (N)')
+    ax.set_ylabel('Fraction KCs with no input')
+    xticks = np.array([50, 100, 200, 400, 1000, 1600])
+    ax.set_xticks(np.log(xticks))
+    ax.set_xticklabels([str(t) for t in xticks])
+    yticks = np.array([0, .5, 1])
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([str(t) for t in yticks])
+    ax.set_xlim(np.log([40, 1700]))
+    ax.set_ylim([-.05, 1.05])
+
+    name = 'frac_badKC'
+    if plot_scatter:
+        name += '_scatter'
+    if plot_box:
+        name += '_box'
+    _easy_save(path, name)
+
+
+def main(experiment_folder):
+    n_orns, Ks, badKCs = get_all_K(experiment_folder=experiment_folder)
+    plot_all_K(n_orns, Ks, plot_box=True, path=experiment_folder)
+    plot_fraction_badKC(n_orns, badKCs, path=experiment_folder)
+    plot_all_K(n_orns, Ks, plot_angle=True, path=experiment_folder)
+
 
 
 if __name__ == '__main__':
+    # move_helper()
 # =============================================================================
-#     foldername = 'vary_lr_n_kc_n_orn300'
+#     foldername = 'vary_lr_n_kc_n_orn1000'
 #     path = os.path.join(rootpath, 'files', foldername)
 #     plot2d(path)
 # =============================================================================
-    main()
+    # foldername = 'cluster_initial_pn2kc_4_pn'
+    foldername = 'vary_lr_n_kc_n_orn'
+    main(experiment_folder=foldername)
 
+            

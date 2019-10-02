@@ -33,7 +33,7 @@ def make_input(x, y, batch_size):
 def train_from_path(path):
     """Train from a path with a config file in it."""
     config = tools.load_config(path)
-    train(config)
+    train(config, reload=True)
 
 
 def train(config, reload=False, save_everytrainloss=False):
@@ -110,7 +110,7 @@ def train(config, reload=False, save_everytrainloss=False):
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
-    tf_config.log_device_placement = True
+    tf_config.log_device_placement = False
 
     finish_training = False
     with tf.Session(config=tf_config) as sess:
@@ -118,10 +118,16 @@ def train(config, reload=False, save_everytrainloss=False):
         sess.run(tf.group(tf.global_variables_initializer(), tf.local_variables_initializer()))
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
+
+        start_epoch = 0
         if reload:
-            model.load()
-            with open(log_name, 'rb') as f:
-                log = pickle.load(f)
+            try:
+                model.load()
+                with open(log_name, 'rb') as f:
+                    log = pickle.load(f)
+                    start_epoch = log['epoch'][-1] + 1
+            except:
+                print('No model file to be reloaded, starting anew')
 
         if 'set_oracle' in dir(config) and config.set_oracle:
             oracle.set_oracle_weights()
@@ -134,7 +140,7 @@ def train(config, reload=False, save_everytrainloss=False):
         acc_smooth = 0
         total_time, start_time = 0, time.time()
 
-        for ep in range(config.max_epoch):
+        for ep in range(start_epoch, config.max_epoch):
             # Validation
             tmp = sess.run(val_fetches, {val_x_ph: val_x, val_y_ph: val_y})
             res = {name:r for name, r in zip(val_fetch_names, tmp)}
@@ -162,8 +168,11 @@ def train(config, reload=False, save_everytrainloss=False):
                         sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
                         log['sparsity'].append(sparsity)
                         log['thres'].append(thres)
-                        sparsity, _ = _compute_sparsity(w_glo, dynamic_thres=False)
-                        log['sparsity_fixthres'].append(sparsity)
+                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False)
+                        log['sparsity_fixthres'].append(sparsity_)
+                        print('KCs with 0 K={}'.format(np.sum(sparsity == 0)/sparsity.size))
+                        print('K (all KC) ={}'.format(sparsity.mean()))
+                        print('K (filter out bad KCs) ={}'.format(sparsity[sparsity>0].mean()))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
@@ -185,16 +194,17 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['combined_glo_score'].append(combined_glo_score)
 
                     else:
-                        w_orn = sess.run(model.w_orn)
-                        glo_score, _ = tools.compute_glo_score(
-                            w_orn, config.N_ORN, glo_score_mode)
-                        log['glo_score'].append(glo_score)
-                        print('Glo score ' + str(glo_score))
+                        if config.train_orn2pn and not config.direct_glo and not config.skip_orn2pn:
+                            w_orn = sess.run(model.w_orn)
+                            glo_score, _ = tools.compute_glo_score(
+                                w_orn, config.N_ORN, glo_score_mode)
+                            log['glo_score'].append(glo_score)
+                            print('Glo score ' + str(glo_score))
 
-                        sim_score, _ = tools.compute_sim_score(
-                            w_orn, config.N_ORN, glo_score_mode)
-                        log['sim_score'].append(sim_score)
-                        print('Sim score ' + str(sim_score))
+                            sim_score, _ = tools.compute_sim_score(
+                                w_orn, config.N_ORN, glo_score_mode)
+                            log['sim_score'].append(sim_score)
+                            print('Sim score ' + str(sim_score))
 
                         # w_glo = sess.run(model.w_glo)
                         # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
