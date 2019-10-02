@@ -294,9 +294,9 @@ def plot_fraction_badKC(n_orns, data, plot_scatter=False, plot_box=True, path='d
 
 def main(experiment_folder):
     n_orns, Ks, badKCs = get_all_K(experiment_folder=experiment_folder)
-    # plot_all_K(n_orns, Ks, plot_box=True, path=experiment_folder)
+    plot_all_K(n_orns, Ks, plot_box=True, path=experiment_folder)
     plot_fraction_badKC(n_orns, badKCs, path=experiment_folder)
-    # plot_all_K(n_orns, Ks, plot_angle=True, path=experiment_folder)
+    plot_all_K(n_orns, Ks, plot_angle=True, path=experiment_folder)
 
 
 
@@ -307,6 +307,8 @@ if __name__ == '__main__':
 #     path = os.path.join(rootpath, 'files', foldername)
 #     plot2d(path)
 # =============================================================================
-    main(experiment_folder='cluster_initial_pn2kc_4_pn')
+    # foldername = 'cluster_initial_pn2kc_4_pn'
+    foldername = 'vary_lr_n_kc_n_orn'
+    main(experiment_folder=foldername)
 
             
