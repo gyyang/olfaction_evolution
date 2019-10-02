@@ -288,7 +288,6 @@ if __name__ == '__main__':
 #     path = os.path.join(rootpath, 'files', foldername)
 #     plot2d(path)
 # =============================================================================
-    main(experiment_folder='cluster_no_pn_bn')
-    
+    main(experiment_folder='cluster_initial_pn2kc_4_pn')
 
             
