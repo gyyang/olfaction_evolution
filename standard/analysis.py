@@ -42,7 +42,7 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
     # plt.close()
 
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
-                  legends=None, exclude_epoch0=False):
+                  legends=None, exclude_epoch0=False, plot_vars=None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -91,6 +91,8 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
                 figname += k + '_' + str(v) + '_'
         _easy_save(save_path, figname)
 
+    if plot_vars is None:
+        plot_vars = ['val_logloss']
     _plot_progress('epoch', 'val_logloss')
     _plot_progress('epoch', 'train_logloss')
     _plot_progress('epoch', 'val_loss')

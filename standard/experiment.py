@@ -829,11 +829,11 @@ def temp(argTest):
 def vary_init_sparse(argTest=False):
     """Vary if initialization is dense or sparse"""
     config = configs.FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
 
-    config.skip_orn2pn = True
+    config.pn_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
 
