@@ -169,7 +169,7 @@ def train(config, reload=False, save_everytrainloss=False):
                         w_glo = sess.run(model.w_glo)
                         
                         # Store distribution of flattened weigths
-                        hist = np.histogram(np.log(w_glo.flatten()), bins=w_bins)
+                        hist, _ = np.histogram(np.log(w_glo.flatten()), bins=w_bins)
                         log['hist'].append(hist)
                         log['kc_w_sum'].append(w_glo.sum(axis=0))
                         
@@ -284,6 +284,8 @@ def train(config, reload=False, save_everytrainloss=False):
 
         print('Training finished')
         if 'save_log_only' in dir(config) and config.save_log_only is True:
+            pass
+        else:
             model.save_pickle()
             model.save()
 

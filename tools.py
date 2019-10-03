@@ -215,8 +215,12 @@ def load_all_results(rootpath, argLast= True, ix=None):
     # TODO: exclude models that didn't finish training
     for key, val in res.items():
         res[key] = np.array(val)
-    res['val_logloss'] = np.log(res['val_loss'])
-    res['train_logloss'] = np.log(res['train_loss'])
+    try:
+        res['val_logloss'] = np.log(res['val_loss'])
+        res['train_logloss'] = np.log(res['train_loss'])
+    except AttributeError:
+        print('''Could not compute log loss.
+              Most likely models have not finished training.''')
     return res
 
 

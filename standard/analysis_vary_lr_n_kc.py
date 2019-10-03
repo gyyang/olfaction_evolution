@@ -313,8 +313,8 @@ if __name__ == '__main__':
     # foldername = 'vary_lr_n_kc_n_orn'
     # main(experiment_folder=foldername)
     
-    path = os.path.join(rootpath, 'files', 'vary_lr_n_kc_n_orn',
-                        'vary_lr_n_kc_n_orn500')
+    path = os.path.join(rootpath, 'files', 'vary_new_lr_n_kc_n_orn',
+                        'vary_new_lr_n_kc_n_orn500')
     res = tools.load_all_results(path, argLast=False)
     res = _get_K(res)
     
