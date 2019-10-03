@@ -115,8 +115,8 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'defau
         Ks: list of arrays, each array is K from many networks
     """
     
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
-    # n_orns = [50]
+    # n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
+    n_orns = [200, 500]
 
     Ks = list()
     badKCs = list()
@@ -194,6 +194,8 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         _pretty_box(logKs, np.log(n_orns), ax, tools.blue)
         
     if plot_fit:
+        print(n_orns)
+        print(np.exp(med_logKs))
         # x, y = np.log(n_orns)[3:], med_logKs[3:]
         x, y = np.log(n_orns), med_logKs
         x_fit = np.linspace(np.log(50), np.log(1600), 3)    
@@ -308,7 +310,18 @@ if __name__ == '__main__':
 #     plot2d(path)
 # =============================================================================
     # foldername = 'cluster_initial_pn2kc_4_pn'
-    foldername = 'vary_lr_n_kc_n_orn'
-    main(experiment_folder=foldername)
-
+    # foldername = 'vary_lr_n_kc_n_orn'
+    # main(experiment_folder=foldername)
+    
+    path = os.path.join(rootpath, 'files', 'vary_lr_n_kc_n_orn',
+                        'vary_lr_n_kc_n_orn500')
+    res = tools.load_all_results(path, argLast=False)
+    res = _get_K(res)
+    
+    acc_ind = res['val_acc'][:, -1] > 0.2
+    _ = plt.plot(res['K'][acc_ind, 10:100].T)
+    
+    plt.scatter(np.log(res['thres'][:, -1]), res['K'][:, -1])
+    plt.xlim([-5, 0])
+    plt.ylim([0, 100])
             
