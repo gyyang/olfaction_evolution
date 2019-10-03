@@ -139,7 +139,7 @@ def train(config, reload=False, save_everytrainloss=False):
         acc = 0
         acc_smooth = 0
         total_time, start_time = 0, time.time()
-        w_bins = np.linspace(-20, 5, 201)
+        w_bins = np.arange(-20, 5, 200)
         log['w_bins'] = w_bins
 
         for ep in range(start_epoch, config.max_epoch):
@@ -169,9 +169,9 @@ def train(config, reload=False, save_everytrainloss=False):
                         w_glo = sess.run(model.w_glo)
                         
                         # Store distribution of flattened weigths
-                        hist, _ = np.histogram(np.log(w_glo.flatten()), bins=w_bins)
+                        hist = np.histogram(np.log(w_glo.flatten()), bins=w_bins)
                         log['hist'].append(hist)
-                        log['kc_total_inputs'].append(w_glo.sum(axis=0))
+                        log['kc_w_sum'].append(w_glo.sum(axis=0))
                         
                         # Store sparsity computed with threshold
                         sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
