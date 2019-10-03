@@ -31,7 +31,7 @@ import analytical.numerical_test as numerical_test
 import analytical.analyze_simulation_results as analyze_simulation_results
 import matplotlib as mpl
 
-SCRATCHPATH = 'axsys/scratch/ctn/projects/olfaction_evolution'
+SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
 ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
 PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 
