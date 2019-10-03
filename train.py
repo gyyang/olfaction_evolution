@@ -139,7 +139,7 @@ def train(config, reload=False, save_everytrainloss=False):
         acc = 0
         acc_smooth = 0
         total_time, start_time = 0, time.time()
-        w_bins = np.arange(-20, 5, 200)
+        w_bins = np.linspace(-20, 5, 201)
         log['w_bins'] = w_bins
 
         for ep in range(start_epoch, config.max_epoch):
