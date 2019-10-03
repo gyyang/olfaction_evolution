@@ -169,7 +169,9 @@ def train(config, reload=False, save_everytrainloss=False):
                         w_glo = sess.run(model.w_glo)
                         
                         # Store distribution of flattened weigths
-                        hist, _ = np.histogram(np.log(w_glo.flatten()), bins=w_bins)
+                        log_hist, _ = np.histogram(np.log(w_glo.flatten()), bins=w_bins)
+                        hist, _ = np.histogram(w_glo.flatten(), bins=w_bins)
+                        log['log_hist'].append(log_hist)
                         log['hist'].append(hist)
                         log['kc_w_sum'].append(w_glo.sum(axis=0))
                         

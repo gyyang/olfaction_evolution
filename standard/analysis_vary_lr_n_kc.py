@@ -103,7 +103,7 @@ def plot2d(path):
         _easy_save(path, vname)
 
 
-def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'default'):
+def get_all_K(acc_threshold = 0.75, exclude_start = 48, experiment_folder = 'default'):
     """Get all K from training.
     
     Args:
@@ -116,7 +116,7 @@ def get_all_K(acc_threshold = 0.5, exclude_start = 5, experiment_folder = 'defau
     """
     
     # n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
-    n_orns = [200, 500]
+    n_orns = [50, 100, 200, 500]
 
     Ks = list()
     badKCs = list()
@@ -298,7 +298,7 @@ def main(experiment_folder):
     n_orns, Ks, badKCs = get_all_K(experiment_folder=experiment_folder)
     plot_all_K(n_orns, Ks, plot_box=True, path=experiment_folder)
     plot_fraction_badKC(n_orns, badKCs, path=experiment_folder)
-    plot_all_K(n_orns, Ks, plot_angle=True, path=experiment_folder)
+    # plot_all_K(n_orns, Ks, plot_angle=True, path=experiment_folder)
 
 
 
@@ -310,18 +310,18 @@ if __name__ == '__main__':
 #     plot2d(path)
 # =============================================================================
     # foldername = 'cluster_initial_pn2kc_4_pn'
-    # foldername = 'vary_lr_n_kc_n_orn'
-    # main(experiment_folder=foldername)
+    foldername = 'cluster_10_pn_untrainable_bias'
+    main(experiment_folder=foldername)
     
-    path = os.path.join(rootpath, 'files', 'vary_new_lr_n_kc_n_orn',
-                        'vary_new_lr_n_kc_n_orn500')
-    res = tools.load_all_results(path, argLast=False)
-    res = _get_K(res)
-    
-    acc_ind = res['val_acc'][:, -1] > 0.2
-    _ = plt.plot(res['K'][acc_ind, 10:100].T)
-    
-    plt.scatter(np.log(res['thres'][:, -1]), res['K'][:, -1])
-    plt.xlim([-5, 0])
-    plt.ylim([0, 100])
+    # path = os.path.join(rootpath, 'files', 'vary_new_lr_n_kc_n_orn',
+    #                     'vary_new_lr_n_kc_n_orn500')
+    # res = tools.load_all_results(path, argLast=False)
+    # res = _get_K(res)
+    #
+    # acc_ind = res['val_acc'][:, -1] > 0.2
+    # _ = plt.plot(res['K'][acc_ind, 10:100].T)
+    #
+    # plt.scatter(np.log(res['thres'][:, -1]), res['K'][:, -1])
+    # plt.xlim([-5, 0])
+    # plt.ylim([0, 100])
             
