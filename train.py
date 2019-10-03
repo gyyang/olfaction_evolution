@@ -139,6 +139,8 @@ def train(config, reload=False, save_everytrainloss=False):
         acc = 0
         acc_smooth = 0
         total_time, start_time = 0, time.time()
+        w_bins = np.linspace(-20, 5, 201)
+        log['w_bins'] = w_bins
 
         for ep in range(start_epoch, config.max_epoch):
             # Validation
@@ -165,6 +167,13 @@ def train(config, reload=False, save_everytrainloss=False):
                 if config.model == 'full':
                     if config.train_pn2kc:
                         w_glo = sess.run(model.w_glo)
+                        
+                        # Store distribution of flattened weigths
+                        hist, _ = np.hist(np.log(w_glo.flatten()), bins=w_bins)
+                        log['hist'].append(hist)
+                        log['kc_total_inputs'].append(w_glo.sum(axis=0))
+                        
+                        # Store sparsity computed with threshold
                         sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
                         log['sparsity'].append(sparsity)
                         log['thres'].append(thres)
