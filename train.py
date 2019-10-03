@@ -283,8 +283,9 @@ def train(config, reload=False, save_everytrainloss=False):
             sys.stdout.flush()            
 
         print('Training finished')
-        model.save_pickle()
-        model.save()
+        if 'save_log_only' in dir(config) and config.save_log_only is True:
+            model.save_pickle()
+            model.save()
 
 
 

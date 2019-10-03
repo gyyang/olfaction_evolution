@@ -739,6 +739,7 @@ def vary_new_lr_n_kc(argTest=False, n_pn=50):
     config.initial_pn2kc = 10./n_pn # heuristic
 
     config.save_every_epoch = False
+    config.save_log_only = True
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4, 5e-5, 2e-5, 1e-5]
