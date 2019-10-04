@@ -351,7 +351,7 @@ class FullModel(Model):
         self.loss = class_loss
         if config.kc_loss:
             self.loss += self.kc_loss
-        return class_loss
+        return self.loss
 
     def accuracy_func(self, logits, logits2, y):
         config = self.config
