@@ -200,7 +200,7 @@ class FullConfig(BaseConfig):
         self.kc_inputs = 7
         # noise onto KCs
         self.kc_noise = False
-        self.kc_noise_std = 0.1
+        self.kc_noise_std = 0.2
 
         # New layer after KC
         self.extra_layer = False
