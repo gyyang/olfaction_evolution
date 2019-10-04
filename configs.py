@@ -198,6 +198,9 @@ class FullConfig(BaseConfig):
         self.skip_pn2kc = False
         # number of inputs onto KCs
         self.kc_inputs = 7
+        # noise onto KCs
+        self.kc_noise = False
+        self.kc_noise_std = 0.1
 
         # New layer after KC
         self.extra_layer = False

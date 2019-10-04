@@ -680,6 +680,9 @@ class FullModel(Model):
             if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
                 kc_in = pn
 
+            if 'kc_noise' in dir(config) and config.kc_noise:
+                kc_in = _noise(kc_in, config.NOISE_MODEL, config.kc_noise)
+
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
 
