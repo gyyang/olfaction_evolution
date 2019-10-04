@@ -26,7 +26,7 @@ def temp(n_pn=50):
     config.train_pn2kc = True
     config.initial_pn2kc = 10/n_pn
     config.train_kc_bias = False
-    config.kc_loss = True
+    config.kc_loss = True #wtf
 
     # config.pn_norm_pre = 'batch_norm'
     # config.save_every_epoch = True
