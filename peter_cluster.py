@@ -58,7 +58,7 @@ n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
     path = './files/cluster_parameterize_K' + str(n_pn)
-    cluster_train(temp(n_pn), path, path= cluster_path)
+    cluster_train(tempK(n_pn), path, path= cluster_path)
 
 ## local_train
 # n_pns = [500]
