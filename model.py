@@ -930,6 +930,107 @@ class RNN(Model):
         print("Model weights saved in path: %s" % save_path)
 
 
+class ParameterizeK(Model):
+    """Simple network where K is parameterized as a single value"""
+
+    def __init__(self, x, y, config=None, training=True):
+        """Make model.
+
+        Args:
+            x: tf placeholder or iterator element (batch_size, N_ORN * N_ORN_DUPLICATION)
+            y: tf placeholder or iterator element (batch_size, N_CLASS)
+            config: configuration class
+            training: bool
+        """
+        if config is None:
+            config = FullConfig
+        self.config = config
+
+        super(ParameterizeK, self).__init__(config.save_path)
+
+        with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
+            self._build(x, y, training)
+
+        if training:
+            optimizer = tf.train.AdamOptimizer(config.lr)
+
+            excludes = list()
+            if not self.config.train_pn2kc:
+                excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              scope='model/layer2/K')
+            var_list = [v for v in tf.trainable_variables() if v not in excludes]
+
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.loss, var_list=var_list)
+            print('Training variables')
+            for v in var_list:
+                print(v)
+        self.saver = tf.train.Saver(max_to_keep=None)
+
+    def _build(self, x, y, training):
+        config = self.config
+        N_PN = config.N_PN
+        N_KC = config.N_KC
+        N_LOGITS = config.N_CLASS
+        # Replicating ORNs through tiling
+        assert x.shape[-1] == config.N_ORN
+        assert config.N_ORN == config.N_PN
+
+        with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+            K = tf.get_variable('K', shape=(), dtype=tf.float32, initializer=tf.constant_initializer(20))
+
+            mask = np.zeros((N_PN, N_KC))
+            for i in np.arange(N_KC):
+                mask[:,i] = np.random.permutation(N_PN)
+            w_mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
+                initializer=tf.constant_initializer(mask), trainable=False)
+
+            w_glo = tf.sigmoid((K-w_mask-0.5))
+            w_glo = w_glo * 2 / K
+            b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+                                    initializer=tf.constant_initializer(config.kc_bias))
+
+        kc = tf.nn.relu(tf.matmul(x, w_glo) + b_glo)
+        if config.kc_dropout:
+            kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+
+        logits = tf.layers.dense(kc, N_LOGITS, name='layer3', reuse=tf.AUTO_REUSE)
+
+        #parameters
+        self.K = K
+        self.w_glo = w_glo
+
+        #activities
+        self.x = x
+        self.kc = kc
+        self.logits = logits
+
+        #losses
+        self.loss = tf.losses.sparse_softmax_cross_entropy(labels=y, logits=logits)
+        pred = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        self.acc = tf.reduce_mean(tf.to_float(tf.equal(pred, y)))
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        save_path = self.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, 'model.pkl')
+
+        sess = tf.get_default_session()
+        var_dict = {v.name: sess.run(v) for v in tf.trainable_variables()}
+        var_dict['w_glo'] = sess.run(self.w_glo)
+        var_dict['K'] = sess.run(self.K)
+        with open(fname, 'wb') as f:
+            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Model weights saved in path: %s" % save_path)
+
 
 class NormalizedMLP(Model):
     """Normalized multi-layer perceptron model.

@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN
+from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN, ParameterizeK
 from configs import FullConfig, SingleLayerConfig
 import tools
 from standard.analysis_pn2kc_training import _compute_sparsity
@@ -72,6 +72,8 @@ def train(config, reload=False, save_everytrainloss=False):
         # CurrentModel = AutoEncoderSimple
     elif config.model == 'rnn':
         CurrentModel = RNN
+    elif config.model == 'K':
+        CurrentModel = ParameterizeK
     else:
         raise ValueError('Unknown model type ' + str(config.model))
 
@@ -218,6 +220,10 @@ def train(config, reload=False, save_everytrainloss=False):
                                 w_orn, config.N_ORN, glo_score_mode)
                             log['sim_score'].append(sim_score)
                             print('Sim score ' + str(sim_score))
+                elif config.model == 'K':
+                    K = sess.run(model.K)
+                    log['K'].append(K)
+                    print('K ={}'.format(K))
 
                         # w_glo = sess.run(model.w_glo)
                         # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
