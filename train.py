@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN
+from model import SingleLayerModel, FullModel, NormalizedMLP, AutoEncoder, AutoEncoderSimple, RNN, ParameterizeK
 from configs import FullConfig, SingleLayerConfig
 import tools
 from standard.analysis_pn2kc_training import _compute_sparsity
@@ -72,6 +72,8 @@ def train(config, reload=False, save_everytrainloss=False):
         # CurrentModel = AutoEncoderSimple
     elif config.model == 'rnn':
         CurrentModel = RNN
+    elif config.model == 'K':
+        CurrentModel = ParameterizeK
     else:
         raise ValueError('Unknown model type ' + str(config.model))
 
@@ -139,7 +141,8 @@ def train(config, reload=False, save_everytrainloss=False):
         acc = 0
         acc_smooth = 0
         total_time, start_time = 0, time.time()
-        w_bins = np.linspace(-20, 5, 201)
+        w_bins = np.linspace(0, 1, 201)
+        w_bins_log = np.linspace(-20, 5, 201)
         log['w_bins'] = w_bins
         lin_bins = np.linspace(0, 1, 1001)
         log['lin_bins'] = lin_bins
@@ -171,7 +174,9 @@ def train(config, reload=False, save_everytrainloss=False):
                         w_glo = sess.run(model.w_glo)
                         
                         # Store distribution of flattened weigths
-                        hist, _ = np.histogram(np.log(w_glo.flatten()), bins=w_bins)
+                        log_hist, _ = np.histogram(np.log(w_glo.flatten()), bins=w_bins_log)
+                        hist, _ = np.histogram(w_glo.flatten(), bins=w_bins)
+                        log['log_hist'].append(log_hist)
                         log['hist'].append(hist)
                         log['kc_w_sum'].append(w_glo.sum(axis=0))
                         hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
@@ -217,6 +222,10 @@ def train(config, reload=False, save_everytrainloss=False):
                                 w_orn, config.N_ORN, glo_score_mode)
                             log['sim_score'].append(sim_score)
                             print('Sim score ' + str(sim_score))
+                elif config.model == 'K':
+                    K = sess.run(model.K)
+                    log['K'].append(K)
+                    print('K ={}'.format(K))
 
                         # w_glo = sess.run(model.w_glo)
                         # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
