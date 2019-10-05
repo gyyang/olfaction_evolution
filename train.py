@@ -144,7 +144,8 @@ def train(config, reload=False, save_everytrainloss=False):
         w_bins = np.linspace(0, 1, 201)
         w_bins_log = np.linspace(-20, 5, 201)
         log['w_bins'] = w_bins
-        log['w_bins_log'] = w_bins_log
+        lin_bins = np.linspace(0, 1, 1001)
+        log['lin_bins'] = lin_bins
 
         for ep in range(start_epoch, config.max_epoch):
             # Validation
@@ -178,7 +179,8 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['log_hist'].append(log_hist)
                         log['hist'].append(hist)
                         log['kc_w_sum'].append(w_glo.sum(axis=0))
-                        
+                        hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
+                        log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
                         sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
                         log['sparsity'].append(sparsity)
