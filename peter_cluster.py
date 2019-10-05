@@ -36,12 +36,28 @@ def temp(n_pn=50):
     hp_ranges['N_KC'] = [2500, 5000, 10000, 20000]
     return config, hp_ranges
 
+def tempK():
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 100
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+    config.model = 'K'
+    config.train_pn2kc = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    hp_ranges['N_KC'] = [2500, 5000, 10000, 20000]
+    return config, hp_ranges
+
+
 train = cluster_train
 cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_10_pn_untrainable_bias_kc_loss' + str(n_pn)
+    path = './files/cluster_parameterize_K' + str(n_pn)
     cluster_train(temp(n_pn), path, path= cluster_path)
 
 ## local_train
