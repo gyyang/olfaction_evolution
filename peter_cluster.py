@@ -36,7 +36,7 @@ def temp(n_pn=50):
     hp_ranges['N_KC'] = [2500, 5000, 10000, 20000]
     return config, hp_ranges
 
-def tempK():
+def tempK(n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
     config.max_epoch = 100
