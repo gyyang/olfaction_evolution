@@ -46,6 +46,7 @@ def tempK(n_pn=50):
     config.model = 'K'
     config.train_pn2kc = True
     config.initial_K = 1
+    config.save_log_only = True
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
