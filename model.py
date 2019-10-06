@@ -978,7 +978,7 @@ class ParameterizeK(Model):
         assert config.N_ORN == config.N_PN
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            factor = np.sqrt(N_PN)
+            factor = N_PN / 2
             K = tf.get_variable('K', shape=(), dtype=tf.float32,
                                 initializer=tf.constant_initializer(config.initial_K *(1/factor)))
 
@@ -988,7 +988,8 @@ class ParameterizeK(Model):
             mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
                                      initializer=tf.constant_initializer(mask), trainable=False)
             w_mask = tf.sigmoid((K * factor - mask - 0.5))
-            w_glo = w_mask * 2 / K
+            w_glo = w_mask * 2 / (K * factor)
+            # w_glo = w_mask
             # w_glo = _noise(w_glo, 'multiplicative', 2/K)
 
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
@@ -999,7 +1000,7 @@ class ParameterizeK(Model):
                                     initializer=tf.zeros_initializer())
             w_logit = tf.abs(w_logit)
 
-        x = _normalize(x, 'batch_norm', training)
+        # x = _normalize(x, 'batch_norm', training)
 
         #control
         # kc = tf.layers.dense(x, N_KC, name='layer2', reuse=tf.AUTO_REUSE)
@@ -1026,6 +1027,7 @@ class ParameterizeK(Model):
         #parameters
         self.K = K * factor
         self.w_glo = w_glo
+        self.b_glo = b_glo
 
         #activities
         self.x = x

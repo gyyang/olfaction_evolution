@@ -224,8 +224,18 @@ def train(config, reload=False, save_everytrainloss=False):
                             print('Sim score ' + str(sim_score))
                 elif config.model == 'K':
                     K = sess.run(model.K)
+                    bias = sess.run(model.b_glo)
+                    kcs = sess.run(model.kc)
+
                     log['K'].append(K)
-                    print('K ={}'.format(K))
+                    print('K ={}'.format(np.round(K,2)))
+                    print('Bias (mean)={}'.format(np.round(bias.mean(),2)))
+                    print('kc activity (mean) = {}'.format(kcs.mean()))
+                    print('kc sparseness (mean) = {}'.format(np.mean(kcs > 0)))
+                    # import matplotlib.pyplot as plt
+                    # plt.imshow(w_glo[:,:30], vmin=0, vmax=2)
+                    # plt.colorbar()
+                    # plt.show()
 
                         # w_glo = sess.run(model.w_glo)
                         # glo_score_w_glo, _ = tools.compute_glo_score(w_glo)
