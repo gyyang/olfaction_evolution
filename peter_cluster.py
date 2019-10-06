@@ -45,6 +45,7 @@ def tempK():
     config.data_dir = './datasets/proto/orn'+str(n_pn)
     config.model = 'K'
     config.train_pn2kc = True
+    config.initial_K = 1
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
