@@ -8,7 +8,7 @@ import standard.experiment as se
 from standard.hyper_parameter_train import local_train, cluster_train
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 100, 200, 500])
+parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 75, 100, 125, 150])
 args = parser.parse_args()
 
 def temp(n_pn=50):
@@ -39,18 +39,20 @@ def temp(n_pn=50):
 def tempK(n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 100
+    config.max_epoch = 50
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
     config.model = 'K'
     config.train_pn2kc = True
-    config.initial_K = 1
     config.save_log_only = True
+    config.kc_dropout_rate = .2
+    config.kc_dropout = True
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
-    hp_ranges['N_KC'] = [2500, 5000, 10000, 20000]
+    hp_ranges['N_KC'] = [2500, 5000, 10000]
+    hp_ranges['initial_K'] = [1, n_pn/2]
     return config, hp_ranges
 
 
