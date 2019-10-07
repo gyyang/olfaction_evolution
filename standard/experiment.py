@@ -770,8 +770,8 @@ def vary_pn2kc_init(argTest=False, n_pn=50):
     config.save_log_only = True
 
     hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [1e-3, 5*1e-4, 2*1e-4, 1e-4]
-    hp_ranges['initial_pn2kc'] = np.array([2., 4., 6., 8., 10.])/n_pn
+    hp_ranges['lr'] = [1e-3, 5*1e-4, 2*1e-4, 1e-4, 5*1e-5]
+    hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
