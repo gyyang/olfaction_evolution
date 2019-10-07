@@ -536,7 +536,8 @@ class FullModel(Model):
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
             if config.kc_prune_threshold:
-                w_glo = tf.nn.relu(w_glo - config.kc_prune_threshold)
+                thres = tf.cast(w_glo > config.kc_prune_threshold, tf.float32)
+                w_glo = tf.multiply(w_glo, thres)
 
         if 'apl' in dir(config) and config.apl:
             if config.skip_pn2kc:

@@ -381,7 +381,7 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     else:
         thres = dynamic_thres
     thres = infer_threshold(w, visualize=visualize, force_thres=thres)
-    # print('thres=', str(thres))
+    print('thres=', str(thres))
 
     sparsity = np.count_nonzero(w > thres, axis=0)
     return sparsity, thres
