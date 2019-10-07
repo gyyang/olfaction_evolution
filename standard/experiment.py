@@ -1,6 +1,8 @@
 from collections import OrderedDict
 from collections.__init__ import OrderedDict
 
+import numpy as np
+
 import task
 import configs
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -749,6 +751,32 @@ def vary_new_lr_n_kc(argTest=False, n_pn=50):
     return config, hp_ranges
 
 
+def vary_pn2kc_init(argTest=False, n_pn=50):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 500
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0.
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.N_KC = 5000
+
+    config.save_every_epoch = False
+    config.save_log_only = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [1e-3, 5*1e-4, 2*1e-4, 1e-4, 5*1e-5]
+    hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def vary_n_orn_longtrain(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
@@ -842,6 +870,31 @@ def vary_init_sparse(argTest=False):
     config.data_dir = './datasets/proto/standard'
     config.save_every_epoch = True
     hp_ranges = OrderedDict()
+    hp_ranges['initializer_pn2kc'] = ['constant', 'single_strong']
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
+def vary_init_sparse_lr(argTest=False, n_pn=50):
+    """Vary if initialization is dense or sparse"""
+    config = configs.FullConfig()
+    config.max_epoch = 100
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn' + str(n_pn)
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+
+    config.pn_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.initial_pn2kc = 10./config.N_PN
+
+    config.save_every_epoch = False
+    config.save_log_only = False
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [1e-3, 5 * 1e-4, 2 * 1e-4, 1e-4]
     hp_ranges['initializer_pn2kc'] = ['constant', 'single_strong']
     if argTest:
         config.max_epoch = testing_epochs

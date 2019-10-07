@@ -1,5 +1,6 @@
 import os
 import sys
+import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -591,147 +592,103 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
         plt.savefig(savename + '.pdf', transparent=True)
 
 
-def plot_sparsity_acrossepochs(path, dynamic_thres=False):
-    import tools
-    config = tools.load_config(path)
-    # res = tools.load_all_results(os.path.join(rootpath, 'files', 'longtrain'),
-    #                              argLast=False)
-    n_epoch = len(os.listdir(os.path.join(path, 'epoch')))
-    epochs = np.arange(n_epoch)
+def plot_all_K(n_orns, Ks, plot_scatter=False,
+               plot_box=False, plot_data=True,
+               plot_fit=True, plot_angle=False, path='default'):
+    from sklearn.linear_model import LinearRegression
 
-    sparsity_list = compute_sparsity_allepochs(
-        path, dynamic_thres=True, visualize=False)
-
-    Ks = list()
-    for i, epoch in enumerate(epochs):
-        sparsity = sparsity_list[i]
-        Ks.append(sparsity[sparsity > 0].mean())
-        print(epoch, sparsity[sparsity > 0].mean())
-        print(epoch, len(sparsity[sparsity > 0]))
-
-    Ks = np.array(Ks)
-
-    p, n = os.path.split(path)
-    savename = os.path.join(figpath, 'sparsity_acrossepochs', n)
-
-    final_K = Ks[-1]
-    Ks[Ks > final_K * 1.5] = np.nan
-
-    fig = plt.figure(figsize=(2, 1.5))
-    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
-    ax.plot(epochs, Ks)
-    plt.xlabel('Epochs')
-    plt.ylabel('K')
-    plt.ylim([0, np.nanmax(Ks) * 1.1])
+    fig = plt.figure(figsize=(3.5, 2))
+    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    plt.savefig(savename + '.png', dpi=500)
-    plt.savefig(savename + '.pdf', transparent=True)
-    print(savename)
-
-    # TODO: Temporarily dumped here
-    wglos = tools.load_pickle(os.path.join(path, 'epoch'), 'w_glo')
-    bglos = tools.load_pickle(os.path.join(path, 'epoch'),
-                              'model/layer2/bias:0')
-
-    # =============================================================================
-    # thres = analysis_pn2kc_training.infer_threshold(
-    #         wglos[190], visualize=True, force_thres=None)
-    # =============================================================================
-
-    # =============================================================================
-    # epoch = 190
-    # w = wglos[epoch]
-    # b = bglos[epoch]
-    # use_logx = True
-    # force_thres = np.exp(-2.5)
-    # visualize = True
-    # from scipy.stats import multivariate_normal
-    # from sklearn.mixture import GaussianMixture
-    #
-    # x = np.array(w)
-    # ratio = np.max(x, axis=0) / np.median(x, axis=0)
-    # # heuristic that works well for N=50-500, can plot hist of ratio
-    # ind = ratio > 15
-    # print('Valid units {:d}/{:d}'.format(np.sum(ind), len(ind)))
-    # x = x[:, ind]  # select expansion layer neurons
-    # b = b[ind]
-    #
-    # bs = list()
-    # for epoch in epochs:
-    #     w = wglos[epoch]
-    #     b = bglos[epoch]
-    #
-    #     x = np.array(w)
-    #     ratio = np.max(x, axis=0) / np.median(x, axis=0)
-    #     # heuristic that works well for N=50-500, can plot hist of ratio
-    #     ind = ratio > 15
-    #
-    #     bs.append(b[ind].mean())
-    #
-    # plt.plot(epochs, bs)
-    # =============================================================================
-
-    # =============================================================================
-    # x = x.flatten()
-    # if use_logx:
-    #     x = np.log(x+1e-10)
-    # x = x[:, np.newaxis]
-    #
-    # if force_thres is not None:
-    #     thres_ = np.log(force_thres) if use_logx else force_thres
-    # else:
-    #     clf = GaussianMixture(n_components=2)
-    #     clf.fit(x)
-    #     x_tmp = np.linspace(x.min(), x.max(), 1000)
-    #
-    #     pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
-    #                                    clf.covariances_[0]) * clf.weights_[0]
-    #     pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
-    #                                    clf.covariances_[1]) * clf.weights_[1]
-    #
-    #     if clf.means_[0, 0] < clf.means_[1, 0]:
-    #         diff = pdf1 < pdf2
-    #     else:
-    #         diff = pdf1 > pdf2
-    #
-    #     thres_ = x_tmp[np.where(diff)[0][0]]
-    #
-    # thres = np.exp(thres_) if use_logx else thres_
-    #
-    # if visualize:
-    #     bins = np.linspace(x.min(), x.max(), 100)
-    #     fig = plt.figure(figsize=(5, 5))
-    #     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    #     ax.hist(x[:, 0], bins=bins, density=True)
-    #     if force_thres is None:
-    #         pdf = pdf1 + pdf2
-    #         ax.plot(x_tmp, pdf)
-    #     ax.plot([thres_, thres_], [0, 1])
-    #     plt.ylim([0, 0.4])
-    #
-    #     if use_logx:
-    #         x = np.exp(x)
-    #         thres_ = np.exp(thres_)
-    #         bins = np.linspace(x.min(), x.max(), 100)
-    #         fig = plt.figure(figsize=(3, 3))
-    #         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    #         ax.hist(x[:, 0], bins=bins, density=True)
-    #         ax.plot([thres_, thres_], [0, 1])
-    #         # ax.set_ylim([0, 1])
-    #
-    # sparsity = np.count_nonzero(w > thres, axis=0)
-    # print('K', sparsity[sparsity>0].mean())
-    # =============================================================================
-
-    # =============================================================================
-    # # Analyze activity
-    # from standard.analysis import load_activity
-    # glo_in, glo_out, kc_out, results = load_activity(path)
-    # print('Activity sparsity', np.mean(kc_out[:, ind] > 0.))
-    # =============================================================================
+    
+    logKs = [np.log(K) for K in Ks]
+    med_logKs = np.array([np.median(np.log(K)) for K in Ks])
+    
+    if plot_scatter:
+        for n_orn, K, med_logK in zip(n_orns, Ks, med_logKs):
+            ax.scatter(np.log([n_orn]*len(K)), np.log(K), alpha=0.01, s=3)
+            ax.plot(np.log(n_orn), med_logK, '+', ms=15, color='black')
+            
+    
+    def _pretty_box(x, positions, ax, color):
+        flierprops = {'markersize': 3, 'markerfacecolor': color,
+                      'markeredgecolor': 'none'}
+        boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
+        medianprops = {'color': color*0.5}
+        whiskerprops = {'color': color}
+        ax.boxplot(x, positions=positions, widths=0.06,
+                   patch_artist=True, medianprops=medianprops,
+                   flierprops=flierprops, boxprops=boxprops, showcaps=False,
+                   whiskerprops=whiskerprops
+                   )
+            
+    if plot_box:
+        _pretty_box(logKs, np.log(n_orns), ax, tools.blue)
+        
+    if plot_fit:
+        print(n_orns)
+        print(np.exp(med_logKs))
+        # x, y = np.log(n_orns)[3:], med_logKs[3:]
+        x, y = np.log(n_orns), med_logKs
+        x_fit = np.linspace(np.log(25), np.log(1600), 3)    
+        model = LinearRegression()
+        model.fit(x[:, np.newaxis], y)
+        y_fit = model.predict(x_fit[:, np.newaxis])
+        
+        label = r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+                               np.exp(model.intercept_), model.coef_[0])
+        
+        ax.plot(x_fit, y_fit, color=tools.blue, label=label)
+    
+    if plot_data:
+        ax.plot(np.log(1000), np.log(100), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(120), '[2]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='bottom', zorder=5)
+        
+        ax.plot(np.log(1000), np.log(40), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(32), '[3]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='top', zorder=5)
+        ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(53), np.log(6), '[1]', color=tools.darkblue,
+                horizontalalignment='left', verticalalignment='top', zorder=5)
+    
+    if plot_angle:
+        fname = os.path.join(rootpath, 'files', 'analytical',
+                                 'control_coding_level_summary')
+        summary = pickle.load(open(fname, "rb"))
+        # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
+        _pretty_box(list(np.log(summary['opt_ks'].T)),
+                    np.log(summary['n_orns']), ax, tools.red)
+        
+    ax.legend(bbox_to_anchor=(0., 1.05), loc=2, frameon=False)
+        
+    x = [ 50, 100, 150, 200, 300, 400]
+    y = [ 7.90428212, 10.8857362,  16.20759494,
+         20.70314843, 27.50305499, 32.03561644]
+    # ax.plot(np.log(x), np.log(y))
+    ax.set_xlabel('Number of ORs (N)')
+    ax.set_ylabel('Optimal K')
+    xticks = np.array([25, 50, 100, 200, 400, 1000, 1600])
+    ax.set_xticks(np.log(xticks))
+    ax.set_xticklabels([str(t) for t in xticks])
+    yticks = np.array([3, 10, 30, 100])
+    ax.set_yticks(np.log(yticks))
+    ax.set_yticklabels([str(t) for t in yticks])
+    ax.set_xlim(np.log([20, 1700]))
+    
+    name = 'opt_k'
+    if plot_scatter:
+        name += '_scatter'
+    if plot_box:
+        name += '_box'
+    if plot_data:
+        name += '_data'
+    if plot_fit:
+        name += '_fit'
+    if plot_angle:
+        name += 'angle'
+    _easy_save(path, name)
 
 # if __name__ == '__main__':
 #     dir = "../files/train_KC_claws"

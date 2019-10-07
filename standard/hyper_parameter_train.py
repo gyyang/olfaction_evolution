@@ -37,41 +37,8 @@ def local_train(experiment, save_path, sequential=False, control=False,
                 raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
 
 
-def obsolete_local_sequential_train(experiment, save_path, train_arg = None):
-    """Train all models locally."""
-    for i in range(0, 1000):
-        config = tools.varying_config_sequential(experiment, i)
-        if config:
-            print('[***] Hyper-parameter: %2d' % i)
-            config.save_path = os.path.join(save_path, str(i).zfill(6))
-
-            if train_arg == None:
-                train.train(config)
-            elif train_arg == 'metalearn':
-                mamlmetatrain.train(config)
-            else:
-                raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
-
-def obsolete_local_control_train(experiment, save_path, train_arg = None):
-    '''
-    Train each hyper-parameter separately
-    '''
-    for i in range(0, 1000):
-        config = tools.varying_config_control(experiment, i)
-        if config:
-            print('[***] Hyper-parameter: %2d' % i)
-            config.save_path = os.path.join(save_path, str(i).zfill(6))
-
-            if train_arg == None:
-                train.train(config)
-            elif train_arg == 'metalearn':
-                mamlmetatrain.train(config)
-            else:
-                raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
-
-
 def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
-                  nodes=1, ppn=1, gpus=0, mem=16, nhours=2):
+                  nodes=1, ppn=1, gpus=0, mem=16, nhours=3):
     """
     Create a job file.
 
