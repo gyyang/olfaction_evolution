@@ -201,6 +201,9 @@ class FullConfig(BaseConfig):
         # noise onto KCs
         self.kc_noise = False
         self.kc_noise_std = 0.2
+        # activity loss on kcs
+        self.activity_loss = 0
+        self.activity_loss_alpha = 1
 
         # New layer after KC
         self.extra_layer = False

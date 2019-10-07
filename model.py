@@ -351,6 +351,8 @@ class FullModel(Model):
         self.loss = class_loss
         if config.kc_loss:
             self.loss += self.kc_loss
+        if config.activity_loss:
+            self.loss += self.activity_loss
         return self.loss
 
     def accuracy_func(self, logits, logits2, y):
@@ -677,6 +679,10 @@ class FullModel(Model):
             else:
                 kc_in = tf.matmul(pn, w_glo) + b_glo
             kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+
+            if 'activity_loss' in dir(config) and config.activity_loss:
+                self.activity_loss = tf.reduce_mean(kc_in) * config.activity_loss_alpha
+
             if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
                 kc_in = pn
 
