@@ -794,7 +794,7 @@ class FullModel(Model):
         sess.run(b_out.assign(b_oracle))
 
 
-def _signed_dense(x, n0, n1, training):
+def _signed_dense(x, n0, n1, training, norm='batch_norm'):
     w1 = tf.get_variable('kernel', shape=(n0, n1), dtype=tf.float32)
     b_orn = tf.get_variable('bias', shape=(n1,), dtype=tf.float32,
                             initializer=tf.zeros_initializer())
@@ -802,7 +802,7 @@ def _signed_dense(x, n0, n1, training):
     w_orn = tf.abs(w1)
     # w_orn = w1
     glo_in_pre = tf.matmul(x, w_orn) + b_orn
-    glo_in = _normalize(glo_in_pre, 'batch_norm', training)
+    glo_in = _normalize(glo_in_pre, norm, training)
     # glo_in = _normalize(glo_in_pre, None, training)
     glo = tf.nn.relu(glo_in)
     return glo
@@ -978,28 +978,68 @@ class ParameterizeK(Model):
         assert config.N_ORN == config.N_PN
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            K = tf.get_variable('K', shape=(), dtype=tf.float32, initializer=tf.constant_initializer(20))
+            # factor = N_PN/5
+            # K = tf.get_variable('K', shape=(), dtype=tf.float32,
+            #                     initializer=tf.constant_initializer(config.initial_K *(1/factor)))
+            #
+            # mask = np.zeros((N_PN, N_KC))
+            # for i in np.arange(N_KC):
+            #     mask[:,i] = np.random.permutation(N_PN)
+            # mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
+            #                          initializer=tf.constant_initializer(mask), trainable=False)
+            # w_mask = tf.sigmoid((K * factor - mask - 0.5))
+            # w_glo = w_mask * 2 / (K * factor)
+            # b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+            #                         initializer=tf.constant_initializer(config.kc_bias), trainable=False)
 
-            mask = np.zeros((N_PN, N_KC))
-            for i in np.arange(N_KC):
-                mask[:,i] = np.random.permutation(N_PN)
-            w_mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
-                initializer=tf.constant_initializer(mask), trainable=False)
-
-            w_glo = tf.sigmoid((K-w_mask-0.5))
-            w_glo = w_glo * 2 / K
+            factor = 1
+            range = _sparse_range(config.kc_inputs)
+            bias_initializer = tf.constant_initializer(config.kc_bias)
+            K = tf.get_variable('K', shape=(), dtype=tf.float32, initializer = tf.constant_initializer(range),
+                                trainable=True)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(config.kc_bias))
+                                    initializer=bias_initializer)
 
+            w_mask = get_sparse_mask(N_PN, N_KC, config.kc_inputs)
+            w_mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
+                initializer=tf.constant_initializer(w_mask), trainable=False)
+            w_glo = tf.multiply(K, w_mask)
+            w_glo = tf.abs(w_glo)
+
+        with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
+            w_logit = tf.get_variable('kernel', shape=(N_KC, N_LOGITS), dtype=tf.float32)
+            b_logit = tf.get_variable('bias', shape=(N_LOGITS,), dtype=tf.float32,
+                                    initializer=tf.zeros_initializer())
+            w_logit = tf.abs(w_logit)
+
+        # x = _normalize(x, 'batch_norm', training)
+
+        #control
+        # kc = tf.layers.dense(x, N_KC, name='layer2', reuse=tf.AUTO_REUSE)
+
+        #control1
+        # mask = get_sparse_mask(N_PN, N_KC, config.kc_inputs)
+        # w_mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
+        # initializer=tf.constant_initializer(mask), trainable=False)
+        # range = _sparse_range(config.kc_inputs)
+        # initializer = _initializer(range, config.initializer_pn2kc, shape=(N_PN, N_KC))
+        # w2 = tf.get_variable('kernel', shape=(N_PN, N_KC), dtype=tf.float32,
+        #                      initializer=initializer)
+        # w_glo = tf.multiply(w2,w_mask)
+        # kc = tf.nn.relu(tf.matmul(x, w_glo) + b_glo)
+
+        #experiment
         kc = tf.nn.relu(tf.matmul(x, w_glo) + b_glo)
         if config.kc_dropout:
             kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+        logits = tf.matmul(kc, w_logit) + b_logit
 
-        logits = tf.layers.dense(kc, N_LOGITS, name='layer3', reuse=tf.AUTO_REUSE)
+        # logits = tf.layers.dense(kc, N_LOGITS, name='layer3', reuse=tf.AUTO_REUSE)
 
         #parameters
-        self.K = K
+        self.K = K * factor
         self.w_glo = w_glo
+        self.b_glo = b_glo
 
         #activities
         self.x = x
