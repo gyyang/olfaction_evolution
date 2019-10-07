@@ -978,7 +978,7 @@ class ParameterizeK(Model):
         assert config.N_ORN == config.N_PN
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            factor = N_PN / 2
+            factor = N_PN/5
             K = tf.get_variable('K', shape=(), dtype=tf.float32,
                                 initializer=tf.constant_initializer(config.initial_K *(1/factor)))
 
@@ -993,7 +993,7 @@ class ParameterizeK(Model):
             # w_glo = _noise(w_glo, 'multiplicative', 2/K)
 
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(config.kc_bias))
+                                    initializer=tf.constant_initializer(config.kc_bias), trainable=False)
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
             w_logit = tf.get_variable('kernel', shape=(N_KC, N_LOGITS), dtype=tf.float32)
             b_logit = tf.get_variable('bias', shape=(N_LOGITS,), dtype=tf.float32,
