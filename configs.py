@@ -204,6 +204,8 @@ class FullConfig(BaseConfig):
         # activity loss on kcs
         self.activity_loss = 0
         self.activity_loss_alpha = 1
+        self.kc_prune_weak_weights = False
+        self.kc_prune_threshold = 0.02
 
         # New layer after KC
         self.extra_layer = False
