@@ -357,7 +357,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
 
-    if yticks is None and np.max(res[y_key]) <= 1 and np.min(res[y_key] >= 0):
+    if yticks is None:
         ax.set_yticks([0, 0.5, 1.0])
         plt.ylim([0, 1.1])
 
