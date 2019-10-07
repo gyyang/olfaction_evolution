@@ -25,7 +25,7 @@ def temp(n_pn=50):
     config.kc_dropout_rate = .2
     config.direct_glo = True
     config.save_log_only = True
-    config.initializer_pn2kc = 10/n_pn
+    config.model = 'K'
 
     # config.pn_norm_pre = 'batch_norm'
 

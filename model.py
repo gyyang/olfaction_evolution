@@ -978,22 +978,34 @@ class ParameterizeK(Model):
         assert config.N_ORN == config.N_PN
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            factor = N_PN/5
-            K = tf.get_variable('K', shape=(), dtype=tf.float32,
-                                initializer=tf.constant_initializer(config.initial_K *(1/factor)))
+            # factor = N_PN/5
+            # K = tf.get_variable('K', shape=(), dtype=tf.float32,
+            #                     initializer=tf.constant_initializer(config.initial_K *(1/factor)))
+            #
+            # mask = np.zeros((N_PN, N_KC))
+            # for i in np.arange(N_KC):
+            #     mask[:,i] = np.random.permutation(N_PN)
+            # mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
+            #                          initializer=tf.constant_initializer(mask), trainable=False)
+            # w_mask = tf.sigmoid((K * factor - mask - 0.5))
+            # w_glo = w_mask * 2 / (K * factor)
+            # b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
+            #                         initializer=tf.constant_initializer(config.kc_bias), trainable=False)
 
-            mask = np.zeros((N_PN, N_KC))
-            for i in np.arange(N_KC):
-                mask[:,i] = np.random.permutation(N_PN)
-            mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
-                                     initializer=tf.constant_initializer(mask), trainable=False)
-            w_mask = tf.sigmoid((K * factor - mask - 0.5))
-            w_glo = w_mask * 2 / (K * factor)
-            # w_glo = w_mask
-            # w_glo = _noise(w_glo, 'multiplicative', 2/K)
-
+            factor = 1
+            range = _sparse_range(config.kc_inputs)
+            bias_initializer = tf.constant_initializer(config.kc_bias)
+            K = tf.get_variable('K', shape=(), dtype=tf.float32, initializer = tf.constant_initializer(range),
+                                trainable=True)
             b_glo = tf.get_variable('bias', shape=(N_KC,), dtype=tf.float32,
-                                    initializer=tf.constant_initializer(config.kc_bias), trainable=False)
+                                    initializer=bias_initializer)
+
+            w_mask = get_sparse_mask(N_PN, N_KC, config.kc_inputs)
+            w_mask = tf.get_variable('mask', shape=(N_PN, N_KC), dtype=tf.float32,
+                initializer=tf.constant_initializer(w_mask), trainable=False)
+            w_glo = tf.multiply(K, w_mask)
+            w_glo = tf.abs(w_glo)
+
         with tf.variable_scope('layer3', reuse=tf.AUTO_REUSE):
             w_logit = tf.get_variable('kernel', shape=(N_KC, N_LOGITS), dtype=tf.float32)
             b_logit = tf.get_variable('bias', shape=(N_LOGITS,), dtype=tf.float32,
