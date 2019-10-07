@@ -883,8 +883,6 @@ def vary_init_sparse_lr(argTest=False, n_pn=50):
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn' + str(n_pn)
-    config = configs.FullConfig()
-    config.max_epoch = 100
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
 
