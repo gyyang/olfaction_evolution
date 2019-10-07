@@ -20,7 +20,6 @@ def temp(n_pn=50):
     config.data_dir = './datasets/proto/orn'+str(n_pn)
 
     config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
     config.N_ORN_DUPLICATION = 1
     config.kc_dropout = True
