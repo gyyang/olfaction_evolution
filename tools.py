@@ -183,7 +183,8 @@ def varying_config_control(experiment, i):
     return config
 
 
-def load_all_results(rootpath, argLast= True, ix=None):
+def load_all_results(rootpath, argLast=True, ix=None,
+                     exclude_early_models=True):
     """Load results from path.
 
     Args:
@@ -202,6 +203,9 @@ def load_all_results(rootpath, argLast= True, ix=None):
         with open(log_name, 'rb') as f:
             log = pickle.load(f)
         config = load_config(d)
+        if exclude_early_models and len(log['val_acc']) < config.max_epoch:
+            continue
+        
         for key, val in log.items():
             if argLast:
                 res[key].append(val[-1])  # store last value in log
@@ -212,7 +216,7 @@ def load_all_results(rootpath, argLast= True, ix=None):
         for k in dir(config):
             if k[0] != '_':
                 res[k].append(getattr(config, k))
-    # TODO: exclude models that didn't finish training
+
     for key, val in res.items():
         res[key] = np.array(val)
     try:

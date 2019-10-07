@@ -146,6 +146,7 @@ def train(config, reload=False, save_everytrainloss=False):
         log['w_bins'] = w_bins
         lin_bins = np.linspace(0, 1, 1001)
         log['lin_bins'] = lin_bins
+        activity_bins = np.linspace(0, 1, 201)
 
         for ep in range(start_epoch, config.max_epoch):
             # Validation
@@ -172,7 +173,17 @@ def train(config, reload=False, save_everytrainloss=False):
                 if config.model == 'full':
                     if config.train_pn2kc:
                         w_glo = sess.run(model.w_glo)
-                        
+                        kcs = sess.run(val_model.kc, {val_x_ph: val_x, val_y_ph: val_y})
+
+                        coding_level = kcs.mean()
+                        coding_level_per_kc = kcs.mean(axis=0)
+                        coding_level_per_odor = kcs.mean(axis=1)
+                        log['coding_level'].append(coding_level)
+                        hist, _ = np.histogram(coding_level_per_kc, bins=activity_bins)
+                        log['coding_level_per_kc'].append(hist)
+                        hist, _ = np.histogram(coding_level_per_odor, bins=activity_bins)
+                        log['coding_level_per_odor'].append(hist)
+
                         # Store distribution of flattened weigths
                         log_hist, _ = np.histogram(np.log(w_glo.flatten()), bins=w_bins_log)
                         hist, _ = np.histogram(w_glo.flatten(), bins=w_bins)
