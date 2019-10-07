@@ -61,7 +61,7 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_parameterize_K_vary_initial_K' + str(n_pn)
+    path = './files/cluster_parameterize_K_vary_initial_K_fixed_bias' + str(n_pn)
     cluster_train(tempK(n_pn), path, path= cluster_path)
 
 ## local_train
