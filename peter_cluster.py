@@ -31,7 +31,7 @@ def temp(n_pn=50):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_inputs'] = [1, 3, 5, 7, 9, 12, 15, 20, 25, 30]
+    hp_ranges['kc_inputs'] = [1, 3, 5, 7, 9, 12, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100]
     return config, hp_ranges
 
 def tempK(n_pn=50):
