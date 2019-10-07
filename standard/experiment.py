@@ -874,3 +874,30 @@ def vary_init_sparse(argTest=False):
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
+
+
+def vary_init_sparse_lr(argTest=False, n_pn=50):
+    """Vary if initialization is dense or sparse"""
+    config = configs.FullConfig()
+    config.max_epoch = 100
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn' + str(n_pn)
+    config = configs.FullConfig()
+    config.max_epoch = 100
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+
+    config.pn_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.initial_pn2kc = 10./config.N_PN
+
+    config.save_every_epoch = False
+    config.save_log_only = False
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [1e-3, 5 * 1e-4, 2 * 1e-4, 1e-4]
+    hp_ranges['initializer_pn2kc'] = ['constant', 'single_strong']
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
