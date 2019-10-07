@@ -62,7 +62,7 @@ n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
     path = './files/cluster_fast_convergence_no_bn' + str(n_pn)
-    cluster_train(tempK(n_pn), path, path= cluster_path)
+    cluster_train(temp(n_pn), path, path= cluster_path)
 
 ## local_train
 # n_pns = [500]
