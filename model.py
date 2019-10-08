@@ -544,7 +544,7 @@ class FullModel(Model):
             if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
-            if config.kc_prune_threshold:
+            if config.kc_prune_weak_weights and config.kc_prune_threshold:
                 thres = tf.cast(w_glo > config.kc_prune_threshold, tf.float32)
                 w_glo = tf.multiply(w_glo, thres)
 
