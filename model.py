@@ -6,6 +6,7 @@ import pickle
 import numpy as np
 import tensorflow as tf
 from configs import FullConfig, SingleLayerConfig
+import scipy.stats as st
 
 class Model(object):
     """Abstract Model class."""
@@ -351,8 +352,6 @@ class FullModel(Model):
         self.loss = class_loss
         if config.kc_loss:
             self.loss += self.kc_loss
-        if config.activity_loss:
-            self.loss += self.activity_loss
         return self.loss
 
     def accuracy_func(self, logits, logits2, y):
@@ -535,7 +534,7 @@ class FullModel(Model):
             if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
-            if config.kc_prune_threshold:
+            if config.kc_prune_weak_weights:
                 thres = tf.cast(w_glo > config.kc_prune_threshold, tf.float32)
                 w_glo = tf.multiply(w_glo, thres)
 
@@ -690,11 +689,22 @@ class FullModel(Model):
             if 'kc_noise' in dir(config) and config.kc_noise:
                 kc_in = _noise(kc_in, config.NOISE_MODEL, config.kc_noise)
 
+            if config.coding_level is not None:
+                ## THIS IS EQUIVALENT
+                zscore = st.norm.ppf(config.coding_level)
+                kc_in = tf.layers.batch_normalization(kc_in, center=True, scale=True,
+                                                   beta_initializer=tf.constant_initializer(zscore),
+                                                   gamma_initializer=tf.ones_initializer(),
+                                                   training=True, trainable=False)
+                ## THIS IS EQUIVALENT
+                # mean, var = tf.nn.moments(kc_in, axes=[0], keep_dims=True) #every KC responds to odors 20% of time
+                # std = tf.sqrt(var + 1e-9)
+                # kc_in = (kc_in - mean) / std
+                # kc_in += zscore
+
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
 
-            if 'activity_loss' in dir(config) and config.activity_loss:
-                self.activity_loss = tf.reduce_mean(kc) * config.activity_loss_alpha
 
             if config.kc_dropout:
                 kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
