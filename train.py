@@ -108,6 +108,9 @@ def train(config, reload=False, save_everytrainloss=False):
     except AttributeError:
         pass
 
+    if config.model == 'full' and config.train_pn2kc:
+        val_fetch_names.append('kc')
+
     val_fetches = [getattr(val_model, f) for f in val_fetch_names]
 
     tf_config = tf.ConfigProto()
@@ -139,11 +142,13 @@ def train(config, reload=False, save_everytrainloss=False):
 
         loss = 0
         acc = 0
+        lr = config.lr
         acc_smooth = 0
         total_time, start_time = 0, time.time()
         w_bins = np.linspace(0, 1, 201)
         w_bins_log = np.linspace(-20, 5, 201)
         log['w_bins'] = w_bins
+        log['w_bins_log'] = w_bins_log
         lin_bins = np.linspace(0, 1, 1001)
         log['lin_bins'] = lin_bins
         activity_bins = np.linspace(0, 1, 201)
@@ -158,11 +163,14 @@ def train(config, reload=False, save_everytrainloss=False):
                 print('Epoch {:d}'.format(ep))
                 print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, res['loss']))
                 print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, res['acc']))
-
+                print('Learning rate {:0.3E}'.format(lr))
                 log['epoch'].append(ep)
                 log['train_loss'].append(loss)
                 log['train_acc'].append(acc)
+                log['lr_now'].append(lr)
                 for key, value in res.items():
+                    if key in ['kc']:
+                        continue
                     log['val_' + key].append(value)
 
                 try:
@@ -174,8 +182,8 @@ def train(config, reload=False, save_everytrainloss=False):
                     if config.train_pn2kc:
                         w_glo = sess.run(model.w_glo)
                         w_glo[w_glo<1e-9] = 1e-9 #finite range for log
-                        kcs = sess.run(val_model.kc, {val_x_ph: val_x, val_y_ph: val_y})
-
+                        kcs = res['kc']
+                        
                         coding_level = (kcs > 0).mean()
                         coding_level_per_kc = kcs.mean(axis=0)
                         coding_level_per_odor = kcs.mean(axis=1)
@@ -199,11 +207,15 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['thres'].append(thres)
                         sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.04)
                         log['sparsity_fixthres'].append(sparsity_)
+                        K = sparsity[sparsity>0].mean()
+                        bad_KC = np.sum(sparsity == 0)/sparsity.size
+                        log['K'].append(K)
+                        log['bad_KC'].append(bad_KC)
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))
-                        print('Bad KCs ={}'.format(np.sum(sparsity == 0)/sparsity.size))
+                        print('Bad KCs ={}'.format(bad_KC))
                         print('K (with bad KCs) ={}'.format(sparsity.mean()))
-                        print('K (no bad KCs) ={}'.format(sparsity[sparsity>0].mean()))
+                        print('K (no bad KCs) ={}'.format(K))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
@@ -307,7 +319,7 @@ def train(config, reload=False, save_everytrainloss=False):
                             # weights_over_time.append((w_orn, w_glo))
                             
                 # Compute training loss and accuracy using last batch
-                loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')
