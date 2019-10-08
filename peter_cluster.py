@@ -52,6 +52,31 @@ def temp_prune(n_pn=50):
     hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
     return config, hp_ranges
 
+def temp_coding(n_pn=50):
+    config = configs.FullConfig()
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn' + str(n_pn)
+
+    config.max_epoch = 100
+    config.direct_glo = True
+
+    config.kc_dropout = True
+    config.kc_dropout_rate = 0.2
+
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+    config.initial_pn2kc = 4/n_pn
+
+    config.kc_prune_weak_weights = False
+    config.kc_prune_threshold = .1
+
+    config.coding_level = .2
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    return config, hp_ranges
+
 def tempK(n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()

@@ -6,6 +6,7 @@ import pickle
 import numpy as np
 import tensorflow as tf
 from configs import FullConfig, SingleLayerConfig
+import scipy.stats as st
 
 class Model(object):
     """Abstract Model class."""
@@ -689,23 +690,17 @@ class FullModel(Model):
                 kc_in = _noise(kc_in, config.NOISE_MODEL, config.kc_noise)
 
             if config.coding_level is not None:
-                import scipy.stats as st
+                ## THIS IS EQUIVALENT
                 zscore = st.norm.ppf(config.coding_level)
-
-                mean, var = tf.nn.moments(kc_in, axes=[0], keep_dims=True)
-                # mean = tf.reduce_mean(kc_in, axis=1, keep_dims=True)
-                std = tf.sqrt(var + 1e-9)
-                kc_in = (kc_in - mean) / std #zero mean and unit variance
-                kc_in += zscore
-
-                # kc_in = tf.layers.batch_normalization(kc_in, center=True, scale=True,
-                #                                    beta_initializer=tf.constant_initializer(zscore),
-                #                                    gamma_initializer=tf.ones_initializer(),
-                #                                    training=True, trainable=False)
-
-                # if config.coding_level is not None:
-                #     mean, var = tf.nn.moments(kc, axes=[1])
-                #     std = tf.sqrt(var)
+                kc_in = tf.layers.batch_normalization(kc_in, center=True, scale=True,
+                                                   beta_initializer=tf.constant_initializer(zscore),
+                                                   gamma_initializer=tf.ones_initializer(),
+                                                   training=True, trainable=False)
+                ## THIS IS EQUIVALENT
+                # mean, var = tf.nn.moments(kc_in, axes=[0], keep_dims=True) #every KC responds to odors 20% of time
+                # std = tf.sqrt(var + 1e-9)
+                # kc_in = (kc_in - mean) / std
+                # kc_in += zscore
 
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
