@@ -201,8 +201,7 @@ class FullConfig(BaseConfig):
         # noise onto KCs
         self.kc_noise = False
         self.kc_noise_std = 0.2
-        # coding level loss on kcs
-        self.coding_loss = False
+        # coding level on kcs
         self.coding_level = None
         self.coding_level_loss_alpha = 1
 
