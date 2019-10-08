@@ -351,8 +351,8 @@ class FullModel(Model):
         self.loss = class_loss
         if config.kc_loss:
             self.loss += self.kc_loss
-        if config.activity_loss:
-            self.loss += self.activity_loss
+        if config.coding_loss:
+            self.loss += self.coding_loss
         return self.loss
 
     def accuracy_func(self, logits, logits2, y):
@@ -535,7 +535,7 @@ class FullModel(Model):
             if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
-            if config.kc_prune_threshold:
+            if config.kc_prune_weak_weights:
                 thres = tf.cast(w_glo > config.kc_prune_threshold, tf.float32)
                 w_glo = tf.multiply(w_glo, thres)
 
@@ -693,8 +693,8 @@ class FullModel(Model):
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
 
-            if 'activity_loss' in dir(config) and config.activity_loss:
-                self.activity_loss = tf.reduce_mean(kc) * config.activity_loss_alpha
+            if 'coding_loss' in dir(config) and config.coding_loss:
+                self.coding_loss = tf.math.square(tf.reduce_mean(tf.tanh(kc)) - config.coding_level) * config.coding_level_loss_alpha
 
             if config.kc_dropout:
                 kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
