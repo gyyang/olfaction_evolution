@@ -167,7 +167,7 @@ def train(config, reload=False, save_everytrainloss=False):
                 log['epoch'].append(ep)
                 log['train_loss'].append(loss)
                 log['train_acc'].append(acc)
-                log['lr'].append(lr)
+                log['lr_now'].append(lr)
                 for key, value in res.items():
                     if key in ['kc']:
                         continue
