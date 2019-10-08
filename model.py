@@ -280,7 +280,16 @@ class FullModel(Model):
         if meta_learn == False:
             self._build(x, y, training)
             if training:
-                optimizer = tf.train.AdamOptimizer(self.config.lr)
+                global_step = tf.Variable(0, trainable=False)
+                learning_rate = tf.train.exponential_decay(
+                    self.config.lr,
+                    global_step,
+                    self.config.decay_steps,
+                    self.config.decay_rate, staircase=True)
+                self.lr = learning_rate
+
+                optimizer = tf.train.AdamOptimizer(learning_rate)
+                # optimizer = tf.train.AdamOptimizer(self.config.lr)
                 # optimizer = tf.train.AdagradOptimizer(self.config.lr)
                 # optimizer = tf.train.GradientDescentOptimizer(self.config.lr)
                 # optimizer = tf.train.RMSPropOptimizer(self.config.lr)
@@ -307,7 +316,7 @@ class FullModel(Model):
                     gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
                     self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
                     self.var_names = [v.name for g, v in gvs if g is not None]
-                    self.train_op = optimizer.apply_gradients(gvs)
+                    self.train_op = optimizer.apply_gradients(gvs, global_step=global_step)
                 print('Training variables')
                 for v in var_list:
                     print(v)

@@ -139,6 +139,7 @@ def train(config, reload=False, save_everytrainloss=False):
 
         loss = 0
         acc = 0
+        lr = config.lr
         acc_smooth = 0
         total_time, start_time = 0, time.time()
         w_bins = np.linspace(0, 1, 201)
@@ -158,10 +159,11 @@ def train(config, reload=False, save_everytrainloss=False):
                 print('Epoch {:d}'.format(ep))
                 print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, res['loss']))
                 print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, res['acc']))
-
+                print('Learing rate {:0.3E}'.format(lr))
                 log['epoch'].append(ep)
                 log['train_loss'].append(loss)
                 log['train_acc'].append(acc)
+                log['lr'].append(lr)
                 for key, value in res.items():
                     log['val_' + key].append(value)
 
@@ -199,11 +201,15 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['thres'].append(thres)
                         sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.04)
                         log['sparsity_fixthres'].append(sparsity_)
+                        K = sparsity[sparsity>0].mean()
+                        bad_KC = np.sum(sparsity == 0)/sparsity.size
+                        log['K'].append(K)
+                        log['bad_KC'].append(bad_KC)
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))
-                        print('Bad KCs ={}'.format(np.sum(sparsity == 0)/sparsity.size))
+                        print('Bad KCs ={}'.format(bad_KC))
                         print('K (with bad KCs) ={}'.format(sparsity.mean()))
-                        print('K (no bad KCs) ={}'.format(sparsity[sparsity>0].mean()))
+                        print('K (no bad KCs) ={}'.format(K))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
@@ -307,7 +313,7 @@ def train(config, reload=False, save_everytrainloss=False):
                             # weights_over_time.append((w_orn, w_glo))
                             
                 # Compute training loss and accuracy using last batch
-                loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')
