@@ -108,6 +108,9 @@ def train(config, reload=False, save_everytrainloss=False):
     except AttributeError:
         pass
 
+    if config.model == 'full' and config.train_pn2kc:
+        val_fetch_names.append('kc')
+
     val_fetches = [getattr(val_model, f) for f in val_fetch_names]
 
     tf_config = tf.ConfigProto()
@@ -145,6 +148,7 @@ def train(config, reload=False, save_everytrainloss=False):
         w_bins = np.linspace(0, 1, 201)
         w_bins_log = np.linspace(-20, 5, 201)
         log['w_bins'] = w_bins
+        log['w_bins_log'] = w_bins_log
         lin_bins = np.linspace(0, 1, 1001)
         log['lin_bins'] = lin_bins
         activity_bins = np.linspace(0, 1, 201)
@@ -165,6 +169,8 @@ def train(config, reload=False, save_everytrainloss=False):
                 log['train_acc'].append(acc)
                 log['lr'].append(lr)
                 for key, value in res.items():
+                    if key in ['kc']:
+                        continue
                     log['val_' + key].append(value)
 
                 try:
@@ -176,7 +182,7 @@ def train(config, reload=False, save_everytrainloss=False):
                     if config.train_pn2kc:
                         w_glo = sess.run(model.w_glo)
                         w_glo[w_glo==0] = 1e-9
-                        kcs = sess.run(val_model.kc, {val_x_ph: val_x, val_y_ph: val_y})
+                        kcs = res['kc']
 
                         coding_level = (kcs > 0).mean()
                         coding_level_per_kc = kcs.mean(axis=0)
