@@ -173,6 +173,7 @@ def train(config, reload=False, save_everytrainloss=False):
                 if config.model == 'full':
                     if config.train_pn2kc:
                         w_glo = sess.run(model.w_glo)
+                        w_glo[w_glo==0] = 1e-9
                         kcs = sess.run(val_model.kc, {val_x_ph: val_x, val_y_ph: val_y})
 
                         coding_level = (kcs > 0).mean()
@@ -193,10 +194,10 @@ def train(config, reload=False, save_everytrainloss=False):
                         hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
                         log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
-                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.04)
                         log['sparsity'].append(sparsity)
                         log['thres'].append(thres)
-                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False)
+                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.04)
                         log['sparsity_fixthres'].append(sparsity_)
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))

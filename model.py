@@ -535,6 +535,10 @@ class FullModel(Model):
             if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
+            if config.kc_prune_threshold:
+                thres = tf.cast(w_glo > config.kc_prune_threshold, tf.float32)
+                w_glo = tf.multiply(w_glo, thres)
+
         if 'apl' in dir(config) and config.apl:
             if config.skip_pn2kc:
                 raise ValueError('apl can not be used when no KC.')
@@ -680,9 +684,6 @@ class FullModel(Model):
                 kc_in = tf.matmul(pn, w_glo) + b_glo
             kc_in = _normalize(kc_in, config.kc_norm_pre, training)
 
-            if 'activity_loss' in dir(config) and config.activity_loss:
-                self.activity_loss = tf.reduce_mean(kc_in) * config.activity_loss_alpha
-
             if 'skip_pn2kc' in dir(config) and config.skip_pn2kc:
                 kc_in = pn
 
@@ -691,6 +692,9 @@ class FullModel(Model):
 
             kc = tf.nn.relu(kc_in)
             kc = _normalize(kc, config.kc_norm_post, training)
+
+            if 'activity_loss' in dir(config) and config.activity_loss:
+                self.activity_loss = tf.reduce_mean(kc) * config.activity_loss_alpha
 
             if config.kc_dropout:
                 kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
