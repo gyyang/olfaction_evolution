@@ -173,9 +173,10 @@ def train(config, reload=False, save_everytrainloss=False):
                 if config.model == 'full':
                     if config.train_pn2kc:
                         w_glo = sess.run(model.w_glo)
+                        w_glo[w_glo==0] = 1e-9
                         kcs = sess.run(val_model.kc, {val_x_ph: val_x, val_y_ph: val_y})
 
-                        coding_level = kcs.mean()
+                        coding_level = (kcs > 0).mean()
                         coding_level_per_kc = kcs.mean(axis=0)
                         coding_level_per_odor = kcs.mean(axis=1)
                         log['coding_level'].append(coding_level)
@@ -193,14 +194,16 @@ def train(config, reload=False, save_everytrainloss=False):
                         hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
                         log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
-                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True)
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.04)
                         log['sparsity'].append(sparsity)
                         log['thres'].append(thres)
-                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False)
+                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.04)
                         log['sparsity_fixthres'].append(sparsity_)
-                        print('KCs with 0 K={}'.format(np.sum(sparsity == 0)/sparsity.size))
-                        print('K (all KC) ={}'.format(sparsity.mean()))
-                        print('K (filter out bad KCs) ={}'.format(sparsity[sparsity>0].mean()))
+
+                        print('KC coding level={}'.format(np.round(coding_level,2)))
+                        print('Bad KCs ={}'.format(np.sum(sparsity == 0)/sparsity.size))
+                        print('K (with bad KCs) ={}'.format(sparsity.mean()))
+                        print('K (no bad KCs) ={}'.format(sparsity[sparsity>0].mean()))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
