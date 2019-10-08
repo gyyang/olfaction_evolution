@@ -163,7 +163,7 @@ def train(config, reload=False, save_everytrainloss=False):
                 print('Epoch {:d}'.format(ep))
                 print('Train/Validation loss {:0.2f}/{:0.2f}'.format(loss, res['loss']))
                 print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(acc, res['acc']))
-                print('Learing rate {:0.3E}'.format(lr))
+                print('Learning rate {:0.3E}'.format(lr))
                 log['epoch'].append(ep)
                 log['train_loss'].append(loss)
                 log['train_acc'].append(acc)
