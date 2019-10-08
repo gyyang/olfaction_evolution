@@ -202,10 +202,10 @@ def train(config, reload=False, save_everytrainloss=False):
                         hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
                         log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
-                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.04)
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
                         log['sparsity'].append(sparsity)
                         log['thres'].append(thres)
-                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.04)
+                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.1)
                         log['sparsity_fixthres'].append(sparsity_)
                         K = sparsity[sparsity>0].mean()
                         bad_KC = np.sum(sparsity == 0)/sparsity.size
@@ -214,7 +214,7 @@ def train(config, reload=False, save_everytrainloss=False):
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))
                         print('Bad KCs ={}'.format(bad_KC))
-                        print('K (with bad KCs) ={}'.format(sparsity.mean()))
+                        print('K (with bad KCs) ={}'.format(sparsity_.mean()))
                         print('K (no bad KCs) ={}'.format(K))
 
                     if config.receptor_layer:
