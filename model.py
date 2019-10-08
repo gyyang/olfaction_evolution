@@ -281,7 +281,16 @@ class FullModel(Model):
         if meta_learn == False:
             self._build(x, y, training)
             if training:
-                optimizer = tf.train.AdamOptimizer(self.config.lr)
+                global_step = tf.Variable(0, trainable=False)
+                learning_rate = tf.train.exponential_decay(
+                    self.config.lr,
+                    global_step,
+                    self.config.decay_steps,
+                    self.config.decay_rate, staircase=True)
+                self.lr = learning_rate
+
+                optimizer = tf.train.AdamOptimizer(learning_rate)
+                # optimizer = tf.train.AdamOptimizer(self.config.lr)
                 # optimizer = tf.train.AdagradOptimizer(self.config.lr)
                 # optimizer = tf.train.GradientDescentOptimizer(self.config.lr)
                 # optimizer = tf.train.RMSPropOptimizer(self.config.lr)
@@ -308,7 +317,7 @@ class FullModel(Model):
                     gvs = optimizer.compute_gradients(self.loss, var_list=var_list)
                     self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
                     self.var_names = [v.name for g, v in gvs if g is not None]
-                    self.train_op = optimizer.apply_gradients(gvs)
+                    self.train_op = optimizer.apply_gradients(gvs, global_step=global_step)
                 print('Training variables')
                 for v in var_list:
                     print(v)
@@ -534,7 +543,7 @@ class FullModel(Model):
             if config.mean_subtract_pn2kc:
                 w_glo -= tf.reduce_mean(w_glo, axis=0)
 
-            if config.kc_prune_weak_weights:
+            if config.kc_prune_weak_weights and config.kc_prune_threshold:
                 thres = tf.cast(w_glo > config.kc_prune_threshold, tf.float32)
                 w_glo = tf.multiply(w_glo, thres)
 
@@ -602,18 +611,19 @@ class FullModel(Model):
                 b_output = tf.get_variable(
                     'bias', shape=(n_logits,), dtype=tf.float32,
                     initializer=tf.zeros_initializer())
+
                 self.weights['b_output'] = b_output
 
         if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
             with tf.variable_scope('layer3_2', reuse=tf.AUTO_REUSE):
-                w_output = tf.get_variable(
+                w_output2 = tf.get_variable(
                     'kernel', shape=(config.N_KC, config.n_class_valence),
                     dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
-                b_output = tf.get_variable(
+                b_output2 = tf.get_variable(
                     'bias', shape=(config.n_class_valence,), dtype=tf.float32,
                     initializer=tf.zeros_initializer())
-                self.weights['w_output_head2'] = w_output
-                self.weights['b_output_head2'] = b_output
+                self.weights['w_output_head2'] = w_output2
+                self.weights['b_output_head2'] = b_output2
 
     def _build_orn_activity(self, x, weights, training):
         config = self.config

@@ -539,14 +539,13 @@ if len(tmp_experiments) > 0:
         path = './files/vary_lr_n_kc_n_orn' + str(n_pn)
         train(se.vary_lr_n_kc(is_test, n_pn), path, path= cluster_path)
 
-# TODO: Temporarily adding a new experiment
-tmp_experiments = [e for e in experiments if 'vary_new_lr_n_kc' in e]
+tmp_experiments = [e for e in experiments if 'vary_prune_pn2kc_init' in e]
 if len(tmp_experiments) > 0:
     experiment = tmp_experiments[0]
-    n_pns = [int(experiment[len('vary_new_lr_n_kc'):])]
+    n_pns = [int(experiment[len('vary_prune_pn2kc_init'):])]
     for n_pn in n_pns:
-        path = './files/vary_new_lr_n_kc_n_orn' + str(n_pn)
-        train(se.vary_new_lr_n_kc(is_test, n_pn), path, path= cluster_path)
+        path = './files/vary_prune_pn2kc_init' + str(n_pn)
+        train(se.vary_prune_pn2kc_init(is_test, n_pn), path, path=cluster_path)
 
 tmp_experiments = [e for e in experiments if 'vary_pn2kc_init' in e]
 if len(tmp_experiments) > 0:
@@ -555,6 +554,15 @@ if len(tmp_experiments) > 0:
     for n_pn in n_pns:
         path = './files/vary_pn2kc_init' + str(n_pn)
         train(se.vary_pn2kc_init(is_test, n_pn), path, path= cluster_path)
+
+tmp_experiments = [e for e in experiments if 'vary_pn2kc_init' in e]
+if len(tmp_experiments) > 0:
+    experiment = tmp_experiments[0]
+    n_pns = [int(experiment[len('vary_pn2kc_init'):])]
+    for n_pn in n_pns:
+        path = './files/vary_pn2kc_init' + str(n_pn)
+        train(se.vary_pn2kc_init(is_test, n_pn), path, path= cluster_path)
+
 
 tmp_experiments = [e for e in experiments if 'vary_init_sparse_lr' in e]
 if len(tmp_experiments) > 0:
