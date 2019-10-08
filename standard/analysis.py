@@ -242,8 +242,8 @@ def load_activity(save_path, lesion_kwargs=None):
             model.lesion_units(**lesion_kwargs)
 
         # Validation
-        glo_out, glo_in, kc_out, logits = sess.run(
-            [model.glo, model.glo_in, model.kc, model.logits],
+        glo_out, glo_in, kc_in, kc_out, logits = sess.run(
+            [model.glo, model.glo_in, model.kc_in, model.kc, model.logits],
             {val_x_ph: val_x, val_y_ph: val_y})
         results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
 
@@ -258,10 +258,10 @@ def load_activity(save_path, lesion_kwargs=None):
     # plt.subplot(1,2,2)
     # plt.imshow(logits[:to_show,:])
     # plt.show()
-    return glo_in, glo_out, kc_out, results
+    return glo_in, glo_out, kc_in, kc_out, results
 
 def plot_activity(save_path):
-    glo_in, glo_out, kc_out, results = load_activity(save_path)
+    glo_in, glo_out, kc_in, kc_out, results = load_activity(save_path)
     save_name = save_path.split('/')[-1]
     plt.figure()
     plt.hist(glo_out.flatten(), bins=100)
