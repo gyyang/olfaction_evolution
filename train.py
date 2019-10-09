@@ -181,9 +181,9 @@ def train(config, reload=False, save_everytrainloss=False):
                 if config.model == 'full':
                     if config.train_pn2kc:
                         w_glo = sess.run(model.w_glo)
-                        w_glo[w_glo==0] = 1e-9
+                        w_glo[w_glo<1e-9] = 1e-9 #finite range for log
                         kcs = res['kc']
-
+                        
                         coding_level = (kcs > 0).mean()
                         coding_level_per_kc = kcs.mean(axis=0)
                         coding_level_per_odor = kcs.mean(axis=1)
