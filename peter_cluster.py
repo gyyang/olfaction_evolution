@@ -44,8 +44,8 @@ def temp_prune(n_pn=50):
     config.train_pn2kc = True
     config.sparse_pn2kc = False
     config.kc_prune_weak_weights = True
-    config.kc_prune_threshold = .1
-    config.initial_pn2kc = 6 / n_pn
+    config.kc_prune_threshold = 5 /n_pn
+    config.initial_pn2kc = 8 / n_pn
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -65,10 +65,10 @@ def temp_coding(n_pn=50):
 
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    config.initial_pn2kc = 4/n_pn
+    config.initial_pn2kc = 8/n_pn
 
-    config.kc_prune_weak_weights = False
-    config.kc_prune_threshold = .1
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 5/n_pn
 
     config.coding_level = .2
 
@@ -102,7 +102,7 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_coding' + str(n_pn)
+    path = './files/cluster_coding_20_prune' + str(n_pn)
     cluster_train(temp_coding(n_pn), path, path= cluster_path)
 
 ## local_train
