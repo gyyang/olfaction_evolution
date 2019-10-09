@@ -780,7 +780,7 @@ def vary_pn2kc_init(argTest=False, n_pn=50):
 def vary_prune_pn2kc_init(argTest=False, n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 100
+    config.max_epoch = 50
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
@@ -790,17 +790,21 @@ def vary_prune_pn2kc_init(argTest=False, n_pn=50):
     config.skip_orn2pn = True
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.N_KC = 5000
+    # config.N_KC = 5000
+    
+    config.initial_pn2kc = 10./n_pn
 
     config.kc_prune_weak_weights = True
-    config.kc_prune_threshold = 0.02
+    # config.kc_prune_threshold = 0.02
 
     config.save_every_epoch = False
     config.save_log_only = True
 
     hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [1e-3, 5*1e-4, 2*1e-4, 1e-4, 5*1e-5]
-    hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
+    hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
+    hp_ranges['N_KC'] = [2500, 5000]
+    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
+    # hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
