@@ -548,6 +548,11 @@ class FullModel(Model):
                 thres = tf.cast(w_glo > config.kc_prune_threshold, tf.float32)
                 w_glo = tf.multiply(w_glo, thres)
 
+            if config.pn2kc_noise:
+                w_glo = tf.multiply(
+                    w_glo, tf.random_uniform((N_USE, N_KC),
+                    1-config.pn2kc_noise_value, 1+config.pn2kc_noise_value))
+
         if 'apl' in dir(config) and config.apl:
             if config.skip_pn2kc:
                 raise ValueError('apl can not be used when no KC.')
