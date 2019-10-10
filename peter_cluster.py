@@ -90,7 +90,7 @@ def temp_separate_lr(n_pn=50):
     config.coding_level = None
 
     config.separate_optimizer = True
-    config.separate_lr = 0.001
+    config.separate_lr = 1e-4
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -122,7 +122,7 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_separate_lr' + str(n_pn)
+    path = './files/cluster_separate_lr_1e-4' + str(n_pn)
     cluster_train(temp_separate_lr(n_pn), path, path= cluster_path)
 
 # local_train
