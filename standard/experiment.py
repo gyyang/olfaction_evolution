@@ -802,7 +802,8 @@ def vary_prune_pn2kc_init(argTest=False, n_pn=50):
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
-    hp_ranges['N_KC'] = [2500, 5000]
+    # hp_ranges['N_KC'] = [2500, 5000, 10000, 20000]
+    hp_ranges['N_KC'] = [10000, 20000]
     hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
     # hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
     if argTest:
