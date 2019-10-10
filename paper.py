@@ -544,7 +544,7 @@ if len(tmp_experiments) > 0:
     experiment = tmp_experiments[0]
     n_pns = [int(experiment[len('vary_prune_pn2kc_init'):])]
     for n_pn in n_pns:
-        path = './files/vary_prune_pn2kc_init' + str(n_pn)
+        path = './files/new_vary_prune_pn2kc_init' + str(n_pn)
         train(se.vary_prune_pn2kc_init(is_test, n_pn), path, path=cluster_path)
 
 tmp_experiments = [e for e in experiments if 'vary_pn2kc_init' in e]
