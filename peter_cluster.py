@@ -86,11 +86,15 @@ def temp_separate_lr(n_pn=50):
 
     config.train_pn2kc = True
     config.sparse_pn2kc = False
-    config.initial_pn2kc = 6/n_pn
     config.coding_level = None
 
     config.separate_optimizer = True
-    config.separate_lr = 1e-4
+    config.separate_lr = 1e-3
+    config.save_log_only = True
+
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 4 /n_pn
+    config.initial_pn2kc = 6 / n_pn
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
@@ -122,7 +126,7 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_separate_lr_1e-4' + str(n_pn)
+    path = './files/cluster_separate_lr_1e-3_prune_' + str(n_pn)
     cluster_train(temp_separate_lr(n_pn), path, path= cluster_path)
 
 # local_train
