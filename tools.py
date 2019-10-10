@@ -214,7 +214,9 @@ def load_all_results(rootpath, argLast=True, ix=None,
             else:
                 res[key].append(val)
         for k in dir(config):
-            if k[0] != '_':
+            if k == 'coding_level':  # name conflict with log entry
+                res['coding_level_set'].append(config.coding_level)
+            elif k[0] != '_':
                 res[k].append(getattr(config, k))
 
     for key, val in res.items():

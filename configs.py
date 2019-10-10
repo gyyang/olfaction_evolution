@@ -200,6 +200,9 @@ class FullConfig(BaseConfig):
         self.skip_pn2kc = False
         # number of inputs onto KCs
         self.kc_inputs = 7
+        # multiplicative noise on PN to KC connectivity
+        self.pn2kc_noise = False
+        self.pn2kc_noise_value = 0.2
         # noise onto KCs
         self.kc_noise = False
         self.kc_noise_std = 0.2
