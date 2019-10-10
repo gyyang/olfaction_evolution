@@ -290,7 +290,13 @@ class FullModel(Model):
                 self.lr = learning_rate
 
                 optimizer = tf.train.AdamOptimizer(learning_rate)
-                # optimizer = tf.train.AdamOptimizer(self.config.lr)
+
+                if self.config.separate_optimizer:
+                    lr = self.config.separate_lr
+                    optimizer = tf.train.AdamOptimizer(lr)
+
+
+# optimizer = tf.train.AdamOptimizer(self.config.lr)
                 # optimizer = tf.train.AdagradOptimizer(self.config.lr)
                 # optimizer = tf.train.GradientDescentOptimizer(self.config.lr)
                 # optimizer = tf.train.RMSPropOptimizer(self.config.lr)
@@ -308,6 +314,13 @@ class FullModel(Model):
                 if not self.config.train_kc_bias:
                     excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                                   scope= 'model/layer2/bias:0')
+
+                if self.config.separate_optimizer:
+                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                                  scope='model/layer3/')
+                    separate_var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                                  scope='model/layer3/')
+
                 var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
                 update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -318,6 +331,16 @@ class FullModel(Model):
                     self.gradient_norm = [tf.norm(g) for g, v in gvs if g is not None]
                     self.var_names = [v.name for g, v in gvs if g is not None]
                     self.train_op = optimizer.apply_gradients(gvs, global_step=global_step)
+
+                    if self.config.separate_optimizer:
+                        gvs_ = optimizer.compute_gradients(self.loss, var_list=separate_var_list)
+                        self.train_op1 = optimizer.apply_gradients(gvs_, global_step=global_step)
+                        self.var_names += [v.name for g, v in gvs_ if g is not None]
+                        self.gradient_norm += [tf.norm(g) for g, v in gvs_ if g is not None]
+                        print('Separately Training Variables')
+                        for v in separate_var_list:
+                            print(v)
+
                 print('Training variables')
                 for v in var_list:
                     print(v)
@@ -616,18 +639,19 @@ class FullModel(Model):
                 b_output = tf.get_variable(
                     'bias', shape=(n_logits,), dtype=tf.float32,
                     initializer=tf.zeros_initializer())
+
                 self.weights['b_output'] = b_output
 
         if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
             with tf.variable_scope('layer3_2', reuse=tf.AUTO_REUSE):
-                w_output = tf.get_variable(
+                w_output2 = tf.get_variable(
                     'kernel', shape=(config.N_KC, config.n_class_valence),
                     dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
-                b_output = tf.get_variable(
+                b_output2 = tf.get_variable(
                     'bias', shape=(config.n_class_valence,), dtype=tf.float32,
                     initializer=tf.zeros_initializer())
-                self.weights['w_output_head2'] = w_output
-                self.weights['b_output_head2'] = b_output
+                self.weights['w_output_head2'] = w_output2
+                self.weights['b_output_head2'] = b_output2
 
     def _build_orn_activity(self, x, weights, training):
         config = self.config
