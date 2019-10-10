@@ -616,18 +616,19 @@ class FullModel(Model):
                 b_output = tf.get_variable(
                     'bias', shape=(n_logits,), dtype=tf.float32,
                     initializer=tf.zeros_initializer())
+
                 self.weights['b_output'] = b_output
 
         if config.label_type == 'multi_head_sparse' or config.label_type == 'multi_head_one_hot':
             with tf.variable_scope('layer3_2', reuse=tf.AUTO_REUSE):
-                w_output = tf.get_variable(
+                w_output2 = tf.get_variable(
                     'kernel', shape=(config.N_KC, config.n_class_valence),
                     dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
-                b_output = tf.get_variable(
+                b_output2 = tf.get_variable(
                     'bias', shape=(config.n_class_valence,), dtype=tf.float32,
                     initializer=tf.zeros_initializer())
-                self.weights['w_output_head2'] = w_output
-                self.weights['b_output_head2'] = b_output
+                self.weights['w_output_head2'] = w_output2
+                self.weights['b_output_head2'] = b_output2
 
     def _build_orn_activity(self, x, weights, training):
         config = self.config
