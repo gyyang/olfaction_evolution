@@ -299,7 +299,10 @@ def train(config, reload=False, save_everytrainloss=False):
                 # Train
                 if save_everytrainloss:
                     for b in range(n_batch-1):
-                        loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                        if config.separate_optimizer:
+                            loss, acc, _, _ = sess.run([model.loss, model.acc, model.train_op, model.train_op1])
+                        else:
+                            loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                         log['train_loss'].append(loss)
 
                         acc_smooth = acc_smooth * 0.9 + acc * 0.1
@@ -348,9 +351,12 @@ if __name__ == '__main__':
     elif experiment == 'robert':
         config = FullConfig()
         config.dataset = 'proto'
-        config.data_dir = './datasets/proto/_50_generalization_onehot'
+        config.data_dir = './datasets/proto/standard'
         config.model = 'full'
         config.save_path = './files/peter'
+        config.separate_optimizer = True
+        config.train_pn2kc = True
+        config.sparse_pn2kc = False
     else:
         raise NotImplementedError
 

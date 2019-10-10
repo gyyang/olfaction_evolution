@@ -213,6 +213,10 @@ class FullConfig(BaseConfig):
         self.kc_prune_weak_weights = False
         self.kc_prune_threshold = 0.02
 
+        #separate optimizer
+        self.separate_optimizer = False
+        self.separate_lr = 0.001
+
         # New layer after KC
         self.extra_layer = False
         self.extra_layer_neurons = 200
