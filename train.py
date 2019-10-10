@@ -202,13 +202,16 @@ def train(config, reload=False, save_everytrainloss=False):
                         hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
                         log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
-                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
-                        log['sparsity'].append(sparsity)
-                        log['thres'].append(thres)
-                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.1)
-                        log['sparsity_fixthres'].append(sparsity_)
+
+                        # sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
+                        # log['sparsity'].append(sparsity)
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False, thres= config.kc_prune_threshold)
                         K = sparsity[sparsity>0].mean()
                         bad_KC = np.sum(sparsity == 0)/sparsity.size
+
+                        log['sparsity'].append(sparsity)
+                        log['sparsity_fixthres'].append(sparsity)
+                        log['thres'].append(thres)
                         log['K'].append(K)
                         log['bad_KC'].append(bad_KC)
 
@@ -299,7 +302,10 @@ def train(config, reload=False, save_everytrainloss=False):
                 # Train
                 if save_everytrainloss:
                     for b in range(n_batch-1):
-                        loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                        if config.separate_optimizer:
+                            loss, acc, _, _ = sess.run([model.loss, model.acc, model.train_op, model.train_op1])
+                        else:
+                            loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
                         log['train_loss'].append(loss)
 
                         acc_smooth = acc_smooth * 0.9 + acc * 0.1
@@ -312,14 +318,20 @@ def train(config, reload=False, save_everytrainloss=False):
                             break
                 else:
                     for b in range(n_batch-1):
-                        _ = sess.run(model.train_op)
+                        if config.separate_optimizer:
+                            _, _ = sess.run([model.train_op, model.train_op1])
+                        else:
+                            _ = sess.run(model.train_op)
 
                         # if b % 10 == 0:
                             # w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
                             # weights_over_time.append((w_orn, w_glo))
                             
                 # Compute training loss and accuracy using last batch
-                loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
+                if config.separate_optimizer:
+                    loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
+                else:
+                    loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')
@@ -348,9 +360,12 @@ if __name__ == '__main__':
     elif experiment == 'robert':
         config = FullConfig()
         config.dataset = 'proto'
-        config.data_dir = './datasets/proto/_50_generalization_onehot'
+        config.data_dir = './datasets/proto/standard'
         config.model = 'full'
         config.save_path = './files/peter'
+        config.separate_optimizer = True
+        config.train_pn2kc = True
+        config.sparse_pn2kc = False
     else:
         raise NotImplementedError
 
