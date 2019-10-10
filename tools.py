@@ -203,14 +203,20 @@ def load_all_results(rootpath, argLast=True, ix=None,
         with open(log_name, 'rb') as f:
             log = pickle.load(f)
         config = load_config(d)
-        if exclude_early_models and len(log['val_acc']) < config.max_epoch:
+        
+        n_actual_epoch = len(log['val_acc'])
+        
+        if exclude_early_models and n_actual_epoch < config.max_epoch:
             continue
         
         for key, val in log.items():
-            if argLast:
-                res[key].append(val[-1])  # store last value in log
-            elif ix is not None:
-                res[key].append(val[ix])
+            if len(val) == n_actual_epoch:
+                if argLast:
+                    res[key].append(val[-1])  # store last value in log
+                elif ix is not None:
+                    res[key].append(val[ix])
+                else:
+                    res[key].append(val)
             else:
                 res[key].append(val)
         for k in dir(config):
