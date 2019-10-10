@@ -202,13 +202,15 @@ def train(config, reload=False, save_everytrainloss=False):
                         hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
                         log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
-                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
-                        log['sparsity'].append(sparsity)
-                        log['thres'].append(thres)
-                        sparsity_, _ = _compute_sparsity(w_glo, dynamic_thres=False, thres=.1)
-                        log['sparsity_fixthres'].append(sparsity_)
+                        # sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
+                        # log['sparsity'].append(sparsity)
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False, thres= config.kc_prune_threshold)
                         K = sparsity[sparsity>0].mean()
                         bad_KC = np.sum(sparsity == 0)/sparsity.size
+
+                        log['sparsity'].append(sparsity)
+                        log['sparsity_fixthres'].append(sparsity)
+                        log['thres'].append(thres)
                         log['K'].append(K)
                         log['bad_KC'].append(bad_KC)
 
