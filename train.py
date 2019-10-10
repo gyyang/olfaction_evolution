@@ -214,7 +214,7 @@ def train(config, reload=False, save_everytrainloss=False):
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))
                         print('Bad KCs ={}'.format(bad_KC))
-                        print('K (with bad KCs) ={}'.format(sparsity_.mean()))
+                        print('K (with bad KCs) ={}'.format(sparsity.mean()))
                         print('K (no bad KCs) ={}'.format(K))
 
                     if config.receptor_layer:
@@ -315,14 +315,20 @@ def train(config, reload=False, save_everytrainloss=False):
                             break
                 else:
                     for b in range(n_batch-1):
-                        _ = sess.run(model.train_op)
+                        if config.separate_optimizer:
+                            _, _ = sess.run([model.train_op, model.train_op1])
+                        else:
+                            _ = sess.run(model.train_op)
 
                         # if b % 10 == 0:
                             # w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
                             # weights_over_time.append((w_orn, w_glo))
                             
                 # Compute training loss and accuracy using last batch
-                loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
+                if config.separate_optimizer:
+                    loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
+                else:
+                    loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')

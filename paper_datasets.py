@@ -111,7 +111,7 @@ def temp():
     print('Done test dataset')
 
 if __name__ == '__main__':
-    make_standard_dataset()
+    # make_standard_dataset()
     # make_relabel_datasets_small()
     # make_relabel_datasets_large()
     # make_concentration_dataset()
@@ -122,6 +122,6 @@ if __name__ == '__main__':
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
     # make_multi_head_dataset()
-    # make_vary_or_datasets()
+    make_vary_or_datasets()
     # temp()
 
