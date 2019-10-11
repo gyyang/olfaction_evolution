@@ -26,19 +26,18 @@ def temp(n_pn=50):
     config.sparse_pn2kc = False
     config.coding_level = None
 
-    config.separate_optimizer = True
+    config.separate_optimizer = False
     config.separate_lr = 1e-3
-    config.save_log_only = False
+    config.save_log_only = True
 
     config.kc_prune_weak_weights = True
     config.initial_pn2kc = 6 / n_pn
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [1e-3, 1e-4, 1e-5]
-    hp_ranges['separate_lr'] = [1e-3, 1e-4, 1e-5]
+    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4]
     hp_ranges['kc_prune_threshold'] = [1/n_pn, 4/n_pn]
-    hp_ranges['N_KC'] = [2500, 10000]
+    hp_ranges['N_KC'] = [2500, 5000, 10000]
     return config, hp_ranges
 
 def temp_vary_K(n_pn=50):
