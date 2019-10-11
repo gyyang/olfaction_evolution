@@ -61,6 +61,7 @@ def analyze_single_net(n_orn=200, foldername='vary_prune_pn2kc_init'):
         for i in range(n_net):
             for j in range(n_epoch):
                 bad_KC[i, j] = np.mean(res['kc_w_sum'][i, j] <1e-9)
+        res['bad_KC'] = bad_KC
         
         net_excludesecondpeak = list()
         peaks = list()
@@ -82,7 +83,7 @@ def analyze_single_net(n_orn=200, foldername='vary_prune_pn2kc_init'):
     
     res['net_excludelowinit'] = res['initial_pn2kc']>res['initial_pn2kc'].min()
     res['net_excludebadkc'] = res['bad_KC'][:, -1]<0.1
-    res['net_excludelowacc'] = res['val_acc'][:, -1] > 0.4
+    res['net_excludelowacc'] = res['val_acc'][:, -1] > 0.7
     
     return res
 
@@ -177,9 +178,8 @@ def analyze_all_nets(foldername = 'vary_prune_pn2kc_init'):
 
     res_all = dict()
     for n_orn, file in zip(n_orns, files):
-        path = os.path.join(rootpath, 'files', foldername, file)
-        assert os.path.exists(path)
-    
+        # path = os.path.join(rootpath, 'files', foldername, file)
+        # assert os.path.exists(path)
         res = analyze_single_net(n_orn, foldername)        
         res_all[n_orn] = res
     return n_orns, res_all
@@ -198,8 +198,7 @@ def plot_all_nets(n_orns, res_all):
     epoch_plots = list()
     for n_orn in n_orns:
         res = res_all[n_orn]
-        net_plot = (res['net_excludebadkc'] * res['net_excludelowacc'] *
-                    res['net_excludesecondpeak'])
+        net_plot = (res['net_excludebadkc'] * res['net_excludelowacc'] * res['net_excludesecondpeak'])
         lr = res['lr'][net_plot]
         K = res['K'][net_plot]
         N_KC = res['N_KC'][net_plot]
@@ -207,7 +206,8 @@ def plot_all_nets(n_orns, res_all):
         net_maxlr = lr == np.max(lr)
         
         mean_val_acc = val_acc[net_maxlr].mean(axis=0)
-        epoch_plot = np.argmax(mean_val_acc)
+        # epoch_plot = np.argmax(mean_val_acc)
+        epoch_plot = 49
         
         plt.figure()
         _ = plt.plot(val_acc[net_maxlr][:, 1:].T)
@@ -230,11 +230,12 @@ if __name__ == '__main__':
     # foldername = 'vary_pn2kc_init'
     # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
+    foldername = 'cluster_simple'
     
     # res = analyze_single_net(n_orn=100, foldername='vary_prune_pn2kc_init')
     # plot_single_net(res)
     
-    n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_pn2kc_init')
+    n_orns, res_all = analyze_all_nets(foldername = foldername)
     plot_all_nets(n_orns, res_all)
 
 
