@@ -20,7 +20,7 @@ def temp(n_pn=50):
     config.direct_glo = True
 
     config.kc_dropout = True
-    config.kc_dropout_rate = 0.2
+    config.kc_dropout_rate = 0.5
 
     config.train_pn2kc = True
     config.sparse_pn2kc = False
@@ -80,23 +80,22 @@ def tempK(n_pn=50):
     hp_ranges['initial_K'] = [n_pn, n_pn/2, n_pn/4]
     return config, hp_ranges
 
-
-# train = cluster_train
-# cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
-# n_pns = [int(x) for x in args.pn]
-# print(n_pns)
-# for n_pn in n_pns:
-#     path = './files/cluster_big' + str(n_pn)
-#     cluster_train(temp(n_pn), path, path= cluster_path)
-
-# local_train
-n_pns = [50]
+train = cluster_train
+cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+n_pns = [int(x) for x in args.pn]
+print(n_pns)
 for n_pn in n_pns:
-    path = './files/test' + str(n_pn)
+    path = './files/cluster_simple' + str(n_pn)
+    cluster_train(temp(n_pn), path, path= cluster_path)
 
-    try:
-        import shutil
-        shutil.rmtree(path)
-    except:
-        pass
-    local_train(temp(n_pn), path)
+## local_train
+#n_pns = [50]
+#for n_pn in n_pns:
+#    path = './files/test' + str(n_pn)
+
+#    try:
+#        import shutil
+#        shutil.rmtree(path)
+#    except:
+#        pass
+#    local_train(temp(n_pn), path)
