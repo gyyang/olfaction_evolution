@@ -88,14 +88,14 @@ for n_pn in n_pns:
     path = './files/cluster_simple' + str(n_pn)
     cluster_train(temp(n_pn), path, path= cluster_path)
 
-# local_train
-n_pns = [50]
-for n_pn in n_pns:
-    path = './files/test' + str(n_pn)
+## local_train
+#n_pns = [50]
+#for n_pn in n_pns:
+#    path = './files/test' + str(n_pn)
 
-    try:
-        import shutil
-        shutil.rmtree(path)
-    except:
-        pass
-    local_train(temp(n_pn), path)
+#    try:
+#        import shutil
+#        shutil.rmtree(path)
+#    except:
+#        pass
+#    local_train(temp(n_pn), path)
