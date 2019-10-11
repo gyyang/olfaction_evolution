@@ -9,7 +9,6 @@ from standard.hyper_parameter_train import local_train, cluster_train
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50])
->>>>>>> 0453593ddafb86222694bc3e3b8ec61c37cc1326
 args = parser.parse_args()
 
 def temp(n_pn=50):
