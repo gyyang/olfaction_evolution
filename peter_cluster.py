@@ -36,7 +36,7 @@ def temp(n_pn=50):
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [1e-3, 1e-4, 1e-5]
     hp_ranges['separate_lr'] = [1e-3, 1e-4, 1e-5]
-    hp_ranges['kc_prune_threshold'] = [1/pn, 4/n_pn]
+    hp_ranges['kc_prune_threshold'] = [1/n_pn, 4/n_pn]
     hp_ranges['N_KC'] = [2500, 10000]
     return config, hp_ranges
 
