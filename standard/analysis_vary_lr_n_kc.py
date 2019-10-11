@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import argrelextrema
 import matplotlib as mpl
+from scipy.signal import savgol_filter
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
@@ -31,12 +32,14 @@ Previous results
 def move_helper():
     """Temporary function to move new results into old directory."""
     from shutil import copytree, rmtree
-    n_orns = [50, 75, 100, 150, 200, 300, 400, 500, 800, 1000]
+    n_orns = [25, 50, 75, 100, 125, 150, 175, 200, 300, 400, 500, 800, 1000]
     for n_orn in n_orns:
-        foldername = 'vary_new_lr_n_kc_n_orn' + str(n_orn)
-        path = os.path.join(rootpath, 'files', foldername)
-        newfoldername = 'vary_lr_n_kc_n_orn' + str(n_orn)
-        newpath = os.path.join(rootpath, 'files', newfoldername)
+        foldername = 'new_vary_prune_pn2kc_init' + str(n_orn)
+        path = os.path.join(rootpath, 'files', 'vary_prune_pn2kc_init',
+                            foldername)
+        newfoldername = 'vary_prune_pn2kc_init' + str(n_orn)
+        newpath = os.path.join(rootpath, 'files', 'vary_prune_pn2kc_init',
+                               newfoldername)
         if os.path.exists(path):
             files = os.listdir(path)
             
@@ -58,7 +61,7 @@ def move_helper():
 
 
 def _get_K(res):
-    n_model, n_epoch = res['sparsity'].shape
+    n_model, n_epoch = res['sparsity'].shape[:2]
     Ks = np.zeros((n_model, n_epoch))
     bad_KC = np.zeros((n_model, n_epoch))
     for i in range(n_model):
@@ -294,8 +297,6 @@ def _get_consensus_K(path, plot=False):
   
     
 def temp():
-    from scipy.signal import savgol_filter
-
     plot = True
     foldername = 'vary_new_lr_n_kc_n_orn'
     path = os.path.join(rootpath, 'files', foldername)
@@ -437,30 +438,30 @@ def temp():
 # =============================================================================
     
 if __name__ == '__main__':
-    # move_helper()
+    move_helper()
 # =============================================================================
-#     foldername = 'vary_lr_n_kc_n_orn1000'
-#     path = os.path.join(rootpath, 'files', foldername)
-#     plot2d(path)
+#     n_orn = 200
+#     foldername = 'vary_new_lr_n_kc_n_orn'
+#     # foldername = 'vary_init_sparse_lr'
+#     path = os.path.join(rootpath, 'files', foldername, foldername+str(n_orn))
+# 
+#     res = tools.load_all_results(path, argLast=False)
+#     res = _get_K(res)   # TODO: something wrong with this
+#     res['density'] = res['lin_hist'] / res['lin_hist'].sum(axis=-1, keepdims=True)
+#     res['cum_density'] = np.cumsum(res['density'], axis=-1)
+#     res['density_sm'] = savgol_filter(res['density'], 51, 3, axis=-1)
+#     bins = (res['lin_bins'][0][:-1] + res['lin_bins'][0][1:])/2
+#     n_orn = res['N_ORN'][0]
 # =============================================================================
-    # foldername = 'cluster_initial_pn2kc_4_pn'
-
-    # foldername = 'cluster_10_pn_untrainable_bias'
-    # main(experiment_folder=foldername)
     
-    n_orns = [25, 50, 75, 100, 150, 200, 400]
-    Ks = [[7.4], [11.2], [14.5], [17.6], [22.6], [27.6], [38.5]]
-    plot_all_K(n_orns, Ks, plot_scatter=True)
-    
-    # path = os.path.join(rootpath, 'files', 'vary_new_lr_n_kc_n_orn',
-    #                     'vary_new_lr_n_kc_n_orn500')
-    # res = tools.load_all_results(path, argLast=False)
-    # res = _get_K(res)
-    #
-    # acc_ind = res['val_acc'][:, -1] > 0.2
-    # _ = plt.plot(res['K'][acc_ind, 10:100].T)
-    #
-    # plt.scatter(np.log(res['thres'][:, -1]), res['K'][:, -1])
-    # plt.xlim([-5, 0])
-    # plt.ylim([0, 100])
-            
+# =============================================================================
+#     net_excludebadkc = res['bad_KC'][:, -1]<0.1
+#     net_n_kc = res['N_KC'] == 5000
+#     net_plot = net_excludebadkc * net_n_kc
+# 
+#     plt.figure()
+#     _ = plt.plot(res['K'][net_excludebadkc, 3:].T)
+#     
+#     plt.figure()
+#     _ = plt.plot(res['K'][net_plot, 3:].T)
+# =============================================================================
