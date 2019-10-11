@@ -8,7 +8,7 @@ import standard.experiment as se
 from standard.hyper_parameter_train import local_train, cluster_train
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 75, 100, 125, 150, 200])
+parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 75, 100, 125, 150, 175, 200])
 args = parser.parse_args()
 
 def temp(n_pn=50):
