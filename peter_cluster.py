@@ -8,7 +8,11 @@ import standard.experiment as se
 from standard.hyper_parameter_train import local_train, cluster_train
 
 parser = argparse.ArgumentParser()
+<<<<<<< HEAD
 parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 75, 100, 125, 150, 175, 200])
+=======
+parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50])
+>>>>>>> 0453593ddafb86222694bc3e3b8ec61c37cc1326
 args = parser.parse_args()
 
 def temp(n_pn=50):
@@ -81,6 +85,7 @@ def tempK(n_pn=50):
     return config, hp_ranges
 
 
+<<<<<<< HEAD
 train = cluster_train
 cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
@@ -88,15 +93,24 @@ print(n_pns)
 for n_pn in n_pns:
     path = './files/cluster_simple' + str(n_pn)
     cluster_train(temp(n_pn), path, path= cluster_path)
+=======
+# train = cluster_train
+# cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+# n_pns = [int(x) for x in args.pn]
+# print(n_pns)
+# for n_pn in n_pns:
+#     path = './files/cluster_big' + str(n_pn)
+#     cluster_train(temp(n_pn), path, path= cluster_path)
+>>>>>>> 0453593ddafb86222694bc3e3b8ec61c37cc1326
 
 # local_train
-# n_pns = [50]
-# for n_pn in n_pns:
-#     path = './files/test' + str(n_pn)
-#
-#     try:
-#         import shutil
-#         shutil.rmtree(path)
-#     except:
-#         pass
-#     local_train(temp(n_pn), path)
+n_pns = [50]
+for n_pn in n_pns:
+    path = './files/test' + str(n_pn)
+
+    try:
+        import shutil
+        shutil.rmtree(path)
+    except:
+        pass
+    local_train(temp(n_pn), path)
