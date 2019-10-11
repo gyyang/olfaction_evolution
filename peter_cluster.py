@@ -8,7 +8,7 @@ import standard.experiment as se
 from standard.hyper_parameter_train import local_train, cluster_train
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50, 75, 100, 125, 150])
+parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50])
 args = parser.parse_args()
 
 def temp(n_pn=50):
@@ -35,10 +35,10 @@ def temp(n_pn=50):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
-    hp_ranges['separate_lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
-    hp_ranges['kc_prune_threshold'] = [1/n_pn, 2/n_pn, 4/n_pn]
-    hp_ranges['N_KC'] = [2500, 5000, 10000, 20000]
+    hp_ranges['lr'] = [1e-3, 1e-4, 1e-5]
+    hp_ranges['separate_lr'] = [1e-3, 1e-4, 1e-5]
+    hp_ranges['kc_prune_threshold'] = [1/n_pn, 4/n_pn]
+    hp_ranges['N_KC'] = [2500, 10000]
     return config, hp_ranges
 
 def temp_vary_K(n_pn=50):
@@ -82,22 +82,22 @@ def tempK(n_pn=50):
     return config, hp_ranges
 
 
-train = cluster_train
-cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
-n_pns = [int(x) for x in args.pn]
-print(n_pns)
-for n_pn in n_pns:
-    path = './files/cluster_big' + str(n_pn)
-    cluster_train(temp(n_pn), path, path= cluster_path)
+# train = cluster_train
+# cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+# n_pns = [int(x) for x in args.pn]
+# print(n_pns)
+# for n_pn in n_pns:
+#     path = './files/cluster_big' + str(n_pn)
+#     cluster_train(temp(n_pn), path, path= cluster_path)
 
 # local_train
-# n_pns = [50]
-# for n_pn in n_pns:
-#     path = './files/test' + str(n_pn)
-#
-#     try:
-#         import shutil
-#         shutil.rmtree(path)
-#     except:
-#         pass
-#     local_train(temp(n_pn), path)
+n_pns = [50]
+for n_pn in n_pns:
+    path = './files/test' + str(n_pn)
+
+    try:
+        import shutil
+        shutil.rmtree(path)
+    except:
+        pass
+    local_train(temp(n_pn), path)

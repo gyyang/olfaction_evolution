@@ -217,7 +217,7 @@ def train(config, reload=False, save_everytrainloss=False):
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))
                         print('Bad KCs ={}'.format(bad_KC))
-                        print('K (with bad KCs) ={}'.format(sparsity_.mean()))
+                        print('K (with bad KCs) ={}'.format(sparsity.mean()))
                         print('K (no bad KCs) ={}'.format(K))
 
                     if config.receptor_layer:
