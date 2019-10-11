@@ -293,7 +293,7 @@ class FullModel(Model):
 
                 if self.config.separate_optimizer:
                     lr = self.config.separate_lr
-                    optimizer = tf.train.AdamOptimizer(lr)
+                    optimizer1 = tf.train.AdamOptimizer(lr)
 
 
 # optimizer = tf.train.AdamOptimizer(self.config.lr)
@@ -333,8 +333,8 @@ class FullModel(Model):
                     self.train_op = optimizer.apply_gradients(gvs, global_step=global_step)
 
                     if self.config.separate_optimizer:
-                        gvs_ = optimizer.compute_gradients(self.loss, var_list=separate_var_list)
-                        self.train_op1 = optimizer.apply_gradients(gvs_, global_step=global_step)
+                        gvs_ = optimizer1.compute_gradients(self.loss, var_list=separate_var_list)
+                        self.train_op1 = optimizer1.apply_gradients(gvs_, global_step=global_step)
                         self.var_names += [v.name for g, v in gvs_ if g is not None]
                         self.gradient_norm += [tf.norm(g) for g, v in gvs_ if g is not None]
                         print('Separately Training Variables')
