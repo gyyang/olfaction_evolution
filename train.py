@@ -203,14 +203,18 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
 
-                        # sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
-                        # log['sparsity'].append(sparsity)
-                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False, thres= config.kc_prune_threshold)
-                        K = sparsity[sparsity>0].mean()
-                        bad_KC = np.sum(sparsity == 0)/sparsity.size
+                        sparsity_inferred, thres_inferred = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
+                        K_inferred = sparsity_inferred.mean()
+                        bad_KC_inferred = np.sum(sparsity_inferred == 0) / sparsity_inferred.size
+                        log['sparsity_inferred'].append(sparsity_inferred)
+                        log['thres_inferred'].append(thres_inferred)
+                        log['K_inferred'].append(K_inferred)
+                        log['bad_KC_inferred'].append(bad_KC_inferred)
 
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False, thres= config.kc_prune_threshold)
+                        K = sparsity.mean()
+                        bad_KC = np.sum(sparsity == 0)/sparsity.size
                         log['sparsity'].append(sparsity)
-                        log['sparsity_fixthres'].append(sparsity)
                         log['thres'].append(thres)
                         log['K'].append(K)
                         log['bad_KC'].append(bad_KC)
