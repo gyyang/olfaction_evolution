@@ -109,14 +109,31 @@ def temp_(n_pn=50):
     hp_ranges['kc_prune_weak_weights'] = [True, False]
     return config, hp_ranges
 
+def temp_glomeruli(n_pn=50):
+    config = configs.FullConfig()
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn' + str(n_pn)
+
+    config.max_epoch = 15
+    config.pn_norm_pre = 'batch_norm'
+
+    config.train_pn2kc = False
+    config.sparse_pn2kc = True
+
+    config.save_log_only = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    return config, hp_ranges
 
 train = cluster_train
 cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/temp_' + str(n_pn)
-    cluster_train(temp_(n_pn), path, path= cluster_path)
+    path = './files/temp_glo' + str(n_pn)
+    cluster_train(temp_glomeruli(n_pn), path, path= cluster_path)
 
 ## local_train
 #n_pns = [50]
