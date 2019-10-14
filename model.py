@@ -493,6 +493,10 @@ class FullModel(Model):
                     range = _sparse_range(config.N_ORN_DUPLICATION)
                 else:
                     range = _sparse_range(N_ORN)
+
+                if config.initial_orn2pn != 0:
+                    range = config.initial_orn2pn
+                print(config.initializer_orn2pn)
                 initializer = _initializer(range, config.initializer_orn2pn)
                 bias_initializer = tf.constant_initializer(0)
             else:
@@ -507,6 +511,11 @@ class FullModel(Model):
                                     initializer= bias_initializer)
             if config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
+
+            if config.pn_prune_weak_weights and config.pn_prune_threshold:
+                thres = tf.cast(w_orn > config.pn_prune_threshold, tf.float32)
+                w_orn = tf.multiply(w_orn, thres)
+
         self.weights['w_orn'] = w_orn
         self.weights['b_orn'] = b_orn
         self.w_orn = w_orn

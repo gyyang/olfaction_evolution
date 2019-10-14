@@ -161,6 +161,10 @@ class FullConfig(BaseConfig):
         # dropout rate for pns
         self.pn_dropout_rate = .2
 
+        self.pn_prune_weak_weights = False
+        self.pn_prune_threshold = .05
+        self.initial_orn2pn = 0
+
 
         # PN --> KC connections
 
