@@ -26,7 +26,7 @@ def temp(n_pn=50):
     config.sparse_pn2kc = False
     config.coding_level = None
 
-    config.separate_optimizer = False
+    config.separate_optimizer = True
     config.separate_lr = 1e-3
     config.save_log_only = True
 
@@ -35,9 +35,10 @@ def temp(n_pn=50):
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4]
-    hp_ranges['kc_prune_threshold'] = [1/n_pn, 2/n_pn, 4/n_pn]
-    hp_ranges['N_KC'] = [2500, 5000, 10000]
+    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    hp_ranges['separate_lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    hp_ranges['kc_prune_threshold'] = [4/n_pn]
+    hp_ranges['N_KC'] = [2500]
     return config, hp_ranges
 
 def temp_vary_K(n_pn=50):
@@ -85,7 +86,7 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_simple' + str(n_pn)
+    path = './files/cluster_separate_lr' + str(n_pn)
     cluster_train(temp(n_pn), path, path= cluster_path)
 
 ## local_train
