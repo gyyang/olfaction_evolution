@@ -204,7 +204,7 @@ def train(config, reload=False, save_everytrainloss=False):
                         # Store sparsity computed with threshold
 
                         sparsity_inferred, thres_inferred = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
-                        K_inferred = sparsity_inferred.mean()
+                        K_inferred = sparsity_inferred[sparsity_inferred > 0 ].mean()
                         bad_KC_inferred = np.sum(sparsity_inferred == 0) / sparsity_inferred.size
                         log['sparsity_inferred'].append(sparsity_inferred)
                         log['thres_inferred'].append(thres_inferred)
@@ -212,7 +212,7 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['bad_KC_inferred'].append(bad_KC_inferred)
 
                         sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False, thres= config.kc_prune_threshold)
-                        K = sparsity.mean()
+                        K = sparsity[sparsity > 0].mean()
                         bad_KC = np.sum(sparsity == 0)/sparsity.size
                         log['sparsity'].append(sparsity)
                         log['thres'].append(thres)
@@ -220,9 +220,8 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['bad_KC'].append(bad_KC)
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))
-                        print('Bad KCs ={}'.format(bad_KC))
-                        print('K (with bad KCs) ={}'.format(sparsity.mean()))
-                        print('K (no bad KCs) ={}'.format(K))
+                        print('Bad KCs (fixed, inferred) ={}, {}'.format(bad_KC, bad_KC_inferred))
+                        print('K (fixed, inferred) ={}, {}'.format(K, K_inferred))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)

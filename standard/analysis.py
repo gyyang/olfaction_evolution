@@ -42,7 +42,7 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
     # plt.close()
 
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
-                  legends=None, exclude_epoch0=False, plot_vars=None):
+                  legends=None, exclude_epoch0=False, plot_vars=None, ylim = None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -85,6 +85,9 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
             ax.yaxis.set_ticks([0, 0.5, 1.0])
         ax.set_xlim([-1, log[xkey][0,-1]])
 
+        if ylim is not None:
+            ax.set_ylim(ylim)
+
         figname = '_' + ykey
         if select_dict:
             for k, v in select_dict.items():
@@ -92,18 +95,10 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         _easy_save(save_path, figname)
 
     if plot_vars is None:
-        plot_vars = ['val_logloss']
-    _plot_progress('epoch', 'val_logloss')
-    _plot_progress('epoch', 'train_logloss')
-    _plot_progress('epoch', 'val_loss')
-    _plot_progress('epoch', 'train_loss')
-    _plot_progress('epoch', 'val_acc')
-    _plot_progress('epoch', 'glo_score')
-    try:
-        _plot_progress('epoch', 'or_glo_score')
-        _plot_progress('epoch', 'combined_glo_score')
-    except:
-        pass
+        plot_vars = ['val_logloss', 'train_logloss','val_loss','train_loss','val_acc','glo_score']
+
+    for plot_var in plot_vars:
+        _plot_progress('epoch', plot_var)
 
 
 def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
