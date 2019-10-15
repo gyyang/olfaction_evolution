@@ -57,9 +57,7 @@ def temp_(n_pn=50):
 
     config.save_log_only = True
 
-    config.initial_pn2kc
-
-    config.initial_pn2kc = 8 / n_pn
+    config.initial_pn2kc = 6 / n_pn
     config.kc_prune_threshold = 5 / n_pn
 
     # Ranges of hyperparameters to loop over
