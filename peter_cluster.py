@@ -19,6 +19,8 @@ def temp(n_pn=50):
     config.max_epoch = 50
     config.direct_glo = True
 
+    config.lr = 3e-3
+
     config.kc_dropout = True
     config.kc_dropout_rate = 0.5
 
@@ -28,11 +30,12 @@ def temp(n_pn=50):
 
     config.save_log_only = True
 
-    config.initial_pn2kc = 5 / n_pn
+    config.initial_pn2kc = 8 / n_pn
+    config.pn_prune_threshold = 5 / n_pn
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_loss'] = [True, False]
+    hp_ranges['pn_prune_weak_weights'] = [True, False]
 
     return config, hp_ranges
 
@@ -131,7 +134,7 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/temp_kc_loss' + str(n_pn)
+    path = './files/cluster_pn2kc_prune_or_not_prune' + str(n_pn)
     cluster_train(temp(n_pn), path, path= cluster_path)
 
 ## local_train
