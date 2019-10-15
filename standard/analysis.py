@@ -42,7 +42,7 @@ def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
     # plt.close()
 
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
-                  legends=None, exclude_epoch0=False, plot_vars=None, ylim = None):
+                  legends=None, epoch_range=None, plot_vars=None, ylim = None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -63,8 +63,8 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         lstyles = ['-'] * len(xs) if linestyles is None else linestyles
 
         for x, y, s in zip(xs, ys, lstyles):
-            if exclude_epoch0:
-                x, y = x[1:], y[1:]
+            if epoch_range:
+                x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
             ax.plot(x, y, alpha=alpha, linestyle=s)
 
         if legends is not None:
@@ -83,7 +83,12 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         if ykey in ['val_acc', 'glo_score', 'or_glo_score', 'combined_glo_score']:
             ax.set_ylim([0, 1.05])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
-        ax.set_xlim([-1, log[xkey][0,-1]])
+
+        if epoch_range:
+            ax.set_xlim([epoch_range[0], epoch_range[1]])
+        else:
+            ax.set_xlim([-1, log[xkey][0,-1]])
+
 
         if ylim is not None:
             ax.set_ylim(ylim)

@@ -192,7 +192,7 @@ class FullConfig(BaseConfig):
         # alpha = loss strength.
         self.kc_loss_alpha = 1
         # beta = when to apply loss. higher the value, the smaller the weight in which loss will be applied
-        self.kc_loss_beta = 10
+        self.kc_loss_beta = 5
         # KC normalization before non_linearity
         self.kc_norm_pre = None
         # KC normalization after non_linearity
