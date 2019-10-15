@@ -127,7 +127,7 @@ def temp_glomeruli(n_pn=50):
 
 # mamlmetatrain.train(temp_meta()[0])
 #
-path = './files/temp_glo_prune50'
+path = './files_temp/cluster_pn2kc_prune_or_not_prune50'
 # try:
 #     shutil.rmtree(path)
 # except:
@@ -138,12 +138,12 @@ path = './files/temp_glo_prune50'
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.5, 1.05], epoch_range=[1,100])
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'train_logloss'], epoch_range=[1,100])
 
-# sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20])
-# sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.5, 1.05])
-# sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'train_logloss'])
+sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20])
+sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.5, 1.05])
+sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'train_logloss'])
 
-# sa.plot_progress(path, plot_vars= ['val_logloss', 'train_logloss', 'glo_score'])
-sa.plot_progress(path, legends=['prune','none'], plot_vars= ['val_logloss', 'train_logloss', 'glo_score'])
+# sa.plot_progress(path, plot_vars= ['val_logloss', 'train_logloss', 'glo_score'], legends=[3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5])
+# sa.plot_progress(path, legends=['prune','none'], plot_vars= ['val_logloss', 'train_logloss', 'glo_score'])
 
 
 # analysis_training.plot_distribution(path, xrange=.5, log=False)

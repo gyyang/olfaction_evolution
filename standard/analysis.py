@@ -52,7 +52,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         log = dict_methods.filter(log, select_dict)
 
     def _plot_progress(xkey, ykey):
-        figsize = (1.5, 1.2)
+        figsize = (3, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect)
@@ -61,15 +61,17 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         xs = log[xkey]
 
         lstyles = ['-'] * len(xs) if linestyles is None else linestyles
+        from matplotlib import cm
+        colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
 
-        for x, y, s in zip(xs, ys, lstyles):
+        for x, y, s, c in zip(xs, ys, lstyles, colors):
             if epoch_range:
                 x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
-            ax.plot(x, y, alpha=alpha, linestyle=s)
+            ax.plot(x, y, alpha=alpha, linestyle=s, color = c, linewidth=2)
 
         if legends is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
-            ax.legend(legends, fontsize=7, frameon=False)
+            ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))

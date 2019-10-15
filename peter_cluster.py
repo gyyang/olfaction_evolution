@@ -31,11 +31,11 @@ def temp(n_pn=50):
     config.save_log_only = True
 
     config.initial_pn2kc = 8 / n_pn
-    config.pn_prune_threshold = 5 / n_pn
+    config.kc_prune_threshold = 5 / n_pn
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['pn_prune_weak_weights'] = [True, False]
+    hp_ranges['kc_prune_weak_weights'] = [True, False]
 
     return config, hp_ranges
 
