@@ -49,21 +49,28 @@ def simple_plot(xkey, ykey, filter_dict=None):
     # if filter_dict is not None:
     #   plt.legend('{} = {}'.format(filter_dict.key[0],filter_dict.value[0]))
 
-def marginal_plot(xkey, ykey, vary_key, select_dict=None):
-    plt.figure(figsize=(3,2))
-    for i in np.unique(res[vary_key]):
-        temp = filter(res, {vary_key:i})
-        if select_dict:
-            temp = filter(temp, select_dict)
-        x = temp[xkey]
-        y = temp[ykey][:,-1]
+def marginal_plot(xkey, ykey, vary_key = None, select_dict=None, ax_args={}):
+    fig = plt.figure(figsize=(3,2))
+    ax_box = (0.25, 0.2, 0.65, 0.65)
+    ax = fig.add_axes(ax_box, **ax_args)
 
-        plt.plot(np.log(x), y, '*')
+    if vary_key:
+        for i in np.unique(res[vary_key]):
+            temp = filter(res, {vary_key:i})
+            if select_dict:
+                temp = filter(temp, select_dict)
+            x = temp[xkey]
+            y = temp[ykey][:,-1]
+            plt.plot(np.log(x), y, '*')
+        plt.legend(np.unique(res[vary_key]))
+    else:
+        print(res[xkey])
+        plt.plot(np.log(res[xkey]), res[ykey][:,-1], '*')
+
     x = np.unique(res[xkey])
     plt.xticks(np.log(x),x)
     plt.xlabel(xkey)
     plt.ylabel(ykey)
-    plt.legend(np.unique(res[vary_key]))
     plt.title(vary_key)
 
     figname = '_' + ykey + '_vs_' + xkey
@@ -78,7 +85,6 @@ def marginal_plot(xkey, ykey, vary_key, select_dict=None):
                 v = str(v)
             figname += k + '_' + v + '__'
 
-    ax = plt.gca()
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
@@ -86,7 +92,7 @@ def marginal_plot(xkey, ykey, vary_key, select_dict=None):
     sa._easy_save(d, figname)
 
 # d = os.path.join(os.getcwd(), 'files', 'cluster_simple', 'cluster_simple50')
-d = os.path.join(os.getcwd(), 'files_temp', 'cluster_big50')
+d = os.path.join(os.getcwd(), 'files_temp', 'cluster_initial_pn2kc_value50')
 files = glob.glob(d)
 print(len(files))
 res = defaultdict(list)
@@ -94,29 +100,27 @@ for f in files:
     temp = tools.load_all_results(f, argLast = False)
     chain_defaultdicts(res, temp)
 
-
-peak_inds = np.zeros_like(res['kc_prune_threshold']).astype(np.bool)
-for i, thres in enumerate(res['kc_prune_threshold']):
-    x = np.where(res['lin_bins'][0,:-1] > res['kc_prune_threshold'][i])[0][0]
-    peak = np.argmax(res['lin_hist'][i, -1, (x-10):])
-    if thres == 0.08 and res['N_KC'][i] == 2500:
-        print('wtf')
-    if peak > 20:
-        peak_inds[i] = True
-    else:
-        peak_inds[i] = False
-
-acc_ind = res['train_acc'][:,-1] > .4
-badkc_ind = res['bad_KC'][:,-1] < .2
-ind = badkc_ind * acc_ind * peak_inds
-
-for k, v in res.items():
-    res[k] = v[ind]
+# peak_inds = np.zeros_like(res['kc_prune_threshold']).astype(np.bool)
+# for i, thres in enumerate(res['kc_prune_threshold']):
+#     x = np.where(res['lin_bins'][0,:-1] > res['kc_prune_threshold'][i])[0][0]
+#     peak = np.argmax(res['lin_hist'][i, -1, (x-10):])
+#     if peak > 20:
+#         peak_inds[i] = True
+#     else:
+#         peak_inds[i] = False
+#
+# acc_ind = res['train_acc'][:,-1] > .4
+# badkc_ind = res['bad_KC'][:,-1] < .2
+# ind = badkc_ind * acc_ind * peak_inds
+#
+# for k, v in res.items():
+#     res[k] = v[ind]
 
 _get_K(res)
-marginal_plot('lr', 'K', 'kc_prune_threshold', {'N_KC':2500, 'kc_dropout_rate':0.6})
-marginal_plot('lr', 'K', 'N_KC', {'kc_prune_threshold':0.1, 'kc_dropout_rate':0.6})
-marginal_plot('lr', 'K', 'kc_dropout_rate', {'kc_prune_threshold':0.1, 'N_KC':2500})
+# marginal_plot('lr', 'K', 'kc_prune_threshold', {'N_KC':2500, 'kc_dropout_rate':0.6}, ax_args={'ylim':[5, 25]})
+# marginal_plot('lr', 'K', 'N_KC', {'kc_prune_threshold':0.02, 'kc_dropout_rate':0.6}, ax_args={'ylim':[5, 25]})
+# marginal_plot('lr', 'K', 'kc_dropout_rate', {'kc_prune_threshold':0.02, 'N_KC':2500}, ax_args={'ylim':[5, 25]})
+marginal_plot('initial_pn2kc', 'K')
 
 # plt.figure(figsize=(3,2))
 # x = filter(res, {'kc_prune_threshold':0.08, 'N_KC':2500})
