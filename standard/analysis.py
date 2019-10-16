@@ -82,7 +82,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
         # ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
-        if ykey in ['val_acc', 'glo_score', 'or_glo_score', 'combined_glo_score']:
+        if ykey in ['glo_score', 'or_glo_score', 'combined_glo_score']:
             ax.set_ylim([0, 1.05])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
 
@@ -281,7 +281,7 @@ def plot_activity(save_path):
     plt.show()
 
 
-def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = None,
+def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
                  figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
                  ax_args={}, plot_args={}, sort = True, res = None, string = ''):
     """Plot results for varying parameters experiments.
@@ -361,10 +361,6 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
 
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
-
-    if yticks is None:
-        ax.set_yticks([0, 0.5, 1.0])
-        plt.ylim([0, 1.1])
 
     if x_key == 'kc_inputs':
         ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')

@@ -135,7 +135,7 @@ path = './files_temp/cluster_pn2kc_prune_or_not_prune_lr_1e-3_50'
 # t(temp_glomeruli(), path, s=0)
 
 sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20], epoch_range=[0,100])
-sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.5, 1.05], epoch_range=[0,100])
+sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.7, .9], epoch_range=[0,100])
 sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'train_logloss'], epoch_range=[0,100])
 
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20])

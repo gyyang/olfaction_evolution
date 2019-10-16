@@ -30,12 +30,14 @@ def temp(n_pn=50):
 
     config.save_log_only = True
 
-    config.initial_pn2kc = 8 / n_pn
+    config.initial_pn2kc = 6 / n_pn
     config.kc_prune_threshold = 5 / n_pn
+    config.kc_prune_weak_weights = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['kc_prune_weak_weights'] = [True, False]
+    hp_ranges['kc_prune_threshold'] = [2/n_pn]
+    hp_ranges['initial_pn2kc'] = [2.5/n_pn, 5/n_pn, 10/n_pn]
     return config, hp_ranges
 
 def temp_(n_pn=50):
@@ -97,8 +99,8 @@ cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_big' + str(n_pn)
-    cluster_train(temp_(n_pn), path, path= cluster_path)
+    path = './files/cluster_initial_pn2kc_value' + str(n_pn)
+    cluster_train(temp(n_pn), path, path= cluster_path)
 
 ## local_train
 #n_pns = [50]
