@@ -99,6 +99,9 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         if select_dict:
             for k, v in select_dict.items():
                 figname += k + '_' + str(v) + '_'
+
+        if epoch_range:
+            figname += '_epoch_range_' + str(epoch_range[1])
         _easy_save(save_path, figname)
 
     if plot_vars is None:

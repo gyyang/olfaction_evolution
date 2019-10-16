@@ -59,6 +59,7 @@ def temp_(n_pn=50):
 
     config.initial_pn2kc = 6 / n_pn
     config.kc_prune_threshold = 5 / n_pn
+    config.kc_prune_weak_weights = True
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()

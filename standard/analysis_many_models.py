@@ -228,9 +228,9 @@ def plot_all_nets(n_orns, res_all):
 
 if __name__ == '__main__':
     # foldername = 'vary_pn2kc_init'
-    foldername = 'vary_prune_pn2kc_init'
+    # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
-    # foldername = 'cluster_simple'
+    foldername = 'cluster_simple'
     
     # res = analyze_single_net(n_orn=100, foldername='vary_prune_pn2kc_init')
     # plot_single_net(res)
