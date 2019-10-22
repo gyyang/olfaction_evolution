@@ -94,9 +94,9 @@ def temp_glomeruli(n_pn=50):
     hp_ranges['pn_prune_weak_weights'] = [True, False]
     return config, hp_ranges
 
-def rnn():
+def rnn(n_pn=50):
     config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
+    config.data_dir = './datasets/proto/orn' + str(n_pn)
     config.max_epoch = 50
     config.model = 'rnn'
 
@@ -123,7 +123,7 @@ n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
     path = './files/cluster_rnn' + str(n_pn)
-    cluster_train(rnn(), save_path=path, sequential=True, path= cluster_path)
+    cluster_train(rnn(n_pn), save_path=path, sequential=True, path= cluster_path)
 
 ## local_train
 #n_pns = [50]
