@@ -95,13 +95,15 @@ def plot_single_net(res):
                 res['net_excludesecondpeak'])
     # net_plot = np.array([True]*res['K'].shape[0])
     # Plot by different learning rate
-    epoch_start = 3
+    epoch_start = 2
     epoch_end = -1
     x_plot = np.arange(res['K'].shape[1])
     K_plot = res['K'][net_plot, :]
     coding_level_plot = res['coding_level'][net_plot, :]
     n_kc_plot = res['N_KC'][net_plot]
     acc_plot = res['val_acc'][net_plot, :]
+    trainloss_plot = res['train_loss'][net_plot, :]
+    valloss_plot = res['val_logloss'][net_plot, :]
     logK_plot = np.log(K_plot)
     lr = res['lr'][net_plot]
     show_label = [True] + [lr[i] != lr[i-1] for i in range(1, len(lr))]
@@ -109,8 +111,8 @@ def plot_single_net(res):
     lr_color /= lr_color.max()
     
     cmap = mpl.cm.get_cmap('cool')
-    for var_plot, ylabel in zip([K_plot, coding_level_plot, acc_plot],
-                                ['K', 'Activity density', 'Acc']):
+    for var_plot, ylabel in zip([K_plot, coding_level_plot, acc_plot, valloss_plot, trainloss_plot],
+                                ['K', 'Activity density', 'Acc', 'Log Loss', 'Log Train Loss']):
         
         plt.figure()
         for i in range(len(lr)):
@@ -205,18 +207,23 @@ def plot_all_nets(n_orns, res_all):
         N_KC = res['N_KC'][net_plot]
         val_acc = res['val_acc'][net_plot]
         net_maxlr = lr == np.max(lr)
+        # net_maxlr = lr == np.min(lr)
+        # print(np.min(lr))
         
         mean_val_acc = val_acc[net_maxlr].mean(axis=0)
-        epoch_plot = np.argmax(mean_val_acc)
+        # epoch_plot = np.argmax(mean_val_acc)
+        epoch_plot = 5
         
-        plt.figure()
-        _ = plt.plot(val_acc[net_maxlr][:, 1:].T)
-        plt.title('N={:d}, LR={:0.1E}'.format(n_orn, np.max(lr)))
+# =============================================================================
+#         plt.figure()
+#         _ = plt.plot(val_acc[net_maxlr][:, 1:].T)
+#         plt.title('N={:d}, LR={:0.1E}'.format(n_orn, np.max(lr)))
+# =============================================================================
             
         epoch_plots.append(epoch_plot)
         Ks.append(K[net_maxlr, epoch_plot])
-        print('N={:d}'.format(n_orn))
-        print('Epoch used {:d}'.format(epoch_plot))
+        # print('N={:d}'.format(n_orn))
+        # print('Epoch used {:d}'.format(epoch_plot))
         
     new_Ks = np.array([K for K in Ks if len(K)>0])
     new_n_orns = np.array([n for n, K in zip(n_orns, Ks) if len(K)>0])
@@ -231,11 +238,11 @@ if __name__ == '__main__':
     # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
     
-    # res = analyze_single_net(n_orn=100, foldername='vary_prune_pn2kc_init')
-    # plot_single_net(res)
+    res = analyze_single_net(n_orn=50, foldername='vary_prune_pn2kc_init')
+    plot_single_net(res)
     
-    n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_pn2kc_init')
-    plot_all_nets(n_orns, res_all)
+    # n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_pn2kc_init')
+    # plot_all_nets(n_orns, res_all)
 
 
     
