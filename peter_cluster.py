@@ -94,13 +94,36 @@ def temp_glomeruli(n_pn=50):
     hp_ranges['pn_prune_weak_weights'] = [True, False]
     return config, hp_ranges
 
+def rnn():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 50
+    config.model = 'rnn'
+
+    config.NEURONS = 2500
+    config.WEIGHT_LOSS = False
+    config.WEIGHT_ALPHA = 0
+    config.BATCH_NORM = False
+    config.DIAGONAL_INIT = True
+
+    config.dropout = True
+    config.dropout_rate = .5
+    config.save_every_epoch = True
+    config.save_epoch_interval = 1
+
+    hp_ranges = OrderedDict()
+    hp_ranges['TIME_STEPS'] = [1, 2, 3]
+    hp_ranges['replicate_orn_with_tiling'] = [False, True, True]
+    hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
+    return config, hp_ranges
+
 train = cluster_train
 cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
-    path = './files/cluster_initial_pn2kc_value' + str(n_pn)
-    cluster_train(temp(n_pn), path, path= cluster_path)
+    path = './files/cluster_rnn' + str(n_pn)
+    cluster_train(rnn(), save_path=path, sequential=True, path= cluster_path)
 
 ## local_train
 #n_pns = [50]

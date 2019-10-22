@@ -92,7 +92,7 @@ def marginal_plot(xkey, ykey, vary_key = None, select_dict=None, ax_args={}):
     sa._easy_save(d, figname)
 
 # d = os.path.join(os.getcwd(), 'files', 'cluster_simple', 'cluster_simple50')
-d = os.path.join(os.getcwd(), 'files_temp', 'cluster_initial_pn2kc_value50')
+d = os.path.join(os.getcwd(), 'files_temp', 'cluster_big50')
 files = glob.glob(d)
 print(len(files))
 res = defaultdict(list)
@@ -100,48 +100,57 @@ for f in files:
     temp = tools.load_all_results(f, argLast = False)
     chain_defaultdicts(res, temp)
 
-# peak_inds = np.zeros_like(res['kc_prune_threshold']).astype(np.bool)
-# for i, thres in enumerate(res['kc_prune_threshold']):
-#     x = np.where(res['lin_bins'][0,:-1] > res['kc_prune_threshold'][i])[0][0]
-#     peak = np.argmax(res['lin_hist'][i, -1, (x-10):])
-#     if peak > 20:
-#         peak_inds[i] = True
-#     else:
-#         peak_inds[i] = False
-#
-# acc_ind = res['train_acc'][:,-1] > .4
-# badkc_ind = res['bad_KC'][:,-1] < .2
+peak_inds = np.zeros_like(res['kc_prune_threshold']).astype(np.bool)
+for i, thres in enumerate(res['kc_prune_threshold']):
+    x = np.where(res['lin_bins'][0,:-1] > res['kc_prune_threshold'][i])[0][0]
+    peak = np.argmax(res['lin_hist'][i, -1, (x-10):])
+    if peak > 20:
+        peak_inds[i] = True
+    else:
+        peak_inds[i] = False
+
+acc_ind = res['train_acc'][:,-1] > .4
+badkc_ind = res['bad_KC'][:,-1] < .2
+ind = badkc_ind * acc_ind
 # ind = badkc_ind * acc_ind * peak_inds
-#
-# for k, v in res.items():
-#     res[k] = v[ind]
+
+for k, v in res.items():
+    res[k] = v[ind]
 
 _get_K(res)
 # marginal_plot('lr', 'K', 'kc_prune_threshold', {'N_KC':2500, 'kc_dropout_rate':0.6}, ax_args={'ylim':[5, 25]})
 # marginal_plot('lr', 'K', 'N_KC', {'kc_prune_threshold':0.02, 'kc_dropout_rate':0.6}, ax_args={'ylim':[5, 25]})
 # marginal_plot('lr', 'K', 'kc_dropout_rate', {'kc_prune_threshold':0.02, 'N_KC':2500}, ax_args={'ylim':[5, 25]})
-marginal_plot('initial_pn2kc', 'K')
+# marginal_plot('initial_pn2kc', 'K', ax_args={'ylim':[5, 25]})
 
-# plt.figure(figsize=(3,2))
-# x = filter(res, {'kc_prune_threshold':0.08, 'N_KC':2500})
-# plt.plot(x['lin_bins'][0,:-1],x['lin_hist'][:,-1].T)
-# plt.ylim([0, 300])
-# plt.legend(x['lr'])
-# ax = plt.gca()
-# ax.spines["right"].set_visible(False)
-# ax.spines["top"].set_visible(False)
-# ax.xaxis.set_ticks_position('bottom')
-# ax.yaxis.set_ticks_position('left')
-# sa._easy_save(d, 'pn2kc_weight_distribution')
-#
-# plt.figure(figsize=(3,2))
-# x = filter(x, {'N_KC':2500, 'kc_prune_threshold':0.08})
-# plt.plot(x['val_logloss'].T)
-# plt.legend(np.unique(x['separate_lr']))
-# plt.legend(x['lr'])
-# ax = plt.gca()
-# ax.spines["right"].set_visible(False)
-# ax.spines["top"].set_visible(False)
-# ax.xaxis.set_ticks_position('bottom')
-# ax.yaxis.set_ticks_position('left')
-# sa._easy_save(d, 'training_speed')
+fig = plt.figure(figsize=(3,2))
+ax_box = (0.25, 0.2, 0.65, 0.65)
+ax = fig.add_axes(ax_box)
+x = filter(res, {'kc_prune_threshold':0.1, 'N_KC':2500, 'kc_dropout_rate':0.6})
+plt.plot(x['lin_bins'][0,:-1],x['lin_hist'][:,-1].T, alpha = 0.75)
+plt.ylim([0, 500])
+plt.legend(x['lr'])
+plt.xlabel('PN-KC Weight Distribution')
+plt.ylabel('val_logloss')
+ax = plt.gca()
+ax.spines["right"].set_visible(False)
+ax.spines["top"].set_visible(False)
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+sa._easy_save(d, 'pn2kc_weight_distribution')
+
+fig = plt.figure(figsize=(3,2))
+ax_box = (0.25, 0.2, 0.65, 0.65)
+ax = fig.add_axes(ax_box)
+# x = filter(x, {'N_KC':2500, 'kc_prune_threshold':0.1})
+plt.plot(x['val_logloss'].T, alpha = 0.75)
+plt.legend(np.unique(x['separate_lr']))
+plt.legend(x['lr'])
+plt.xlabel('Epoch')
+plt.ylabel('val_logloss')
+ax = plt.gca()
+ax.spines["right"].set_visible(False)
+ax.spines["top"].set_visible(False)
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+sa._easy_save(d, 'training_speed')
