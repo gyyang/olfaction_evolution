@@ -108,7 +108,7 @@ def rnn(n_pn=50):
 
     config.dropout = True
     config.dropout_rate = .5
-    config.save_every_epoch = True
+    config.save_every_epoch = False
     config.save_epoch_interval = 1
 
     hp_ranges = OrderedDict()
