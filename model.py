@@ -826,6 +826,7 @@ class FullModel(Model):
         save_path = self.save_path
         if epoch is not None:
             save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+            print(save_path)
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         fname = os.path.join(save_path, 'model.pkl')
@@ -982,7 +983,7 @@ class RNN(Model):
         """
         save_path = self.save_path
         if epoch is not None:
-            save_path = os.path.join(save_path, 'epoch', str(epoch))
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         fname = os.path.join(save_path, 'model.pkl')

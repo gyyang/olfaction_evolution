@@ -332,9 +332,11 @@ def train(config, reload=False, save_everytrainloss=False):
                             
                 # Compute training loss and accuracy using last batch
                 if config.separate_optimizer:
-                    loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
+                    # loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
+                    loss, acc, _, _ = sess.run([model.loss, model.acc, model.train_op, model.train_op1])
                 else:
-                    loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
+                    # loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
+                    loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')
