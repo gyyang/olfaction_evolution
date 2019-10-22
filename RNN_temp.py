@@ -96,6 +96,7 @@ def load_activity(save_path):
     import tensorflow as tf
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
+    config.data_dir = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\datasets\proto\orn50'
     train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
 
     tf.reset_default_graph()
@@ -129,7 +130,7 @@ def rnn_sparsity(w_glo, dir_ix, path):
     training_ix = 1
     yrange = [0.5, 0.5]
     force_thres = 0.05
-    thres = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False, force_thres=force_thres)
+    thres = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
     print('thres=', str(thres))
     claw_count = np.count_nonzero(w_glo>thres,axis=0)
 
@@ -164,12 +165,12 @@ def plot_activity(rnn_outputs, dir_ix, path):
     sa._easy_save(path, fig_name, pdf=True)
 
 
-path = './files/RNN_'
+path = './files_temp/cluster_rnn50'
 # st(rnn(), path, s=0, e=100)
 
 var_name = 'w_rnn'
 dirs = [os.path.join(path, n) for n in os.listdir(path)]
-dir_ix = 2
+dir_ix = 1
 save_path = dirs[dir_ix]
 config = tools.load_config(save_path)
 rnn_outputs = load_activity(save_path)
@@ -277,15 +278,15 @@ def analyze_t_greater(w_rnn, time_steps):
         w_glo_subsample = w_glo[:, 1000:1020]
         _easy_weights(w_glo_subsample, y_label='T=1', x_label='T=2', dir_ix=dir_ix, save_path=path)
 
-# N_OR = 50
-# N_ORN = 500
-#
-# if dir_ix == 0:
-#     analyze_t0(w_rnn)
-# else:
-#     analyze_t_greater(w_rnn, config.TIME_STEPS)
-#
-#
+N_OR = 50
+N_ORN = 500
+
+if dir_ix == 0:
+    analyze_t0(w_rnn)
+else:
+    analyze_t_greater(w_rnn, config.TIME_STEPS)
+
+
 # if config.TIME_STEPS == 1:
 #     ixs = [np.arange(w_rnn.shape[0])]
 #     pn_ixs = [np.arange(N_OR)]

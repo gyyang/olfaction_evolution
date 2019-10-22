@@ -110,13 +110,18 @@ def rnn(n_pn=50):
     config.dropout_rate = .5
     config.save_every_epoch = False
 
+    config.initial_rnn_weight = .1
     config.prune_threshold = .02
-    config.prune_weak_weights = True
+    config.prune_weak_weights = False
 
     hp_ranges = OrderedDict()
     hp_ranges['TIME_STEPS'] = [1, 2, 3]
     hp_ranges['replicate_orn_with_tiling'] = [False, True, True]
     hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
+
+    # hp_ranges['TIME_STEPS'] = [3]
+    # hp_ranges['replicate_orn_with_tiling'] = [True]
+    # hp_ranges['N_ORN_DUPLICATION'] = [10]
     return config, hp_ranges
 
 train = cluster_train
@@ -126,8 +131,7 @@ print(n_pns)
 for n_pn in n_pns:
     path = './files/cluster_rnn_prune' + str(n_pn)
     cluster_train(rnn(n_pn), save_path=path, sequential=True, path= cluster_path)
-
-# local_train
+#
 # n_pns = [50]
 # for n_pn in n_pns:
 #    path = './files/test' + str(n_pn)

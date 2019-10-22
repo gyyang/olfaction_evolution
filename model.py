@@ -926,7 +926,7 @@ class RNN(Model):
         rnn_outputs.append(rnn_output)
         with tf.variable_scope('layer_rnn', reuse=tf.AUTO_REUSE):
             # TODO: do not want ORNs to connect to each other, nor for them to have a bias
-            initializer = _initializer(_sparse_range(config.N_ORN), arg='constant')
+            initializer = _initializer(config.initial_rnn_weight, arg='constant')
             w_rnn = tf.get_variable('kernel', shape=(NEURONS, NEURONS), dtype=tf.float32, initializer=initializer)
             w_rnn = tf.abs(w_rnn)
             b_rnn = tf.get_variable('bias', shape=NEURONS, dtype=tf.float32, initializer=tf.constant_initializer(-1))
