@@ -47,16 +47,18 @@ def temp_meta():
     '''
     config = configs.MetaConfig()
     config.meta_lr = .001
-    config.N_CLASS = 5
+    config.N_CLASS = 10
     config.save_every_epoch = True
     config.meta_labels_per_class = 1
-    config.meta_batch_size = 16
-    config.meta_num_samples_per_class = 16
+    config.meta_batch_size = 32
+    config.meta_num_samples_per_class = 32
     config.meta_print_interval = 500
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
-    config.train_kc_bias = True
+
+    config.output_max_lr = 0.2
+    config.train_kc_bias = False
 
     config.metatrain_iterations = 30000
     config.pn_norm_pre = 'batch_norm'
@@ -67,7 +69,7 @@ def temp_meta():
     config.pn_prune_threshold = 0.01
     config.kc_prune_weak_weights = False
 
-    config.data_dir = './datasets/proto/standard'
+    config.data_dir = './datasets/proto/test'
     config.save_path = './files_temp/meta/0'
 
     hp_ranges = OrderedDict()

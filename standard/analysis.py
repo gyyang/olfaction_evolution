@@ -111,7 +111,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         _plot_progress('epoch', plot_var)
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
+def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, vlim = None):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
@@ -154,10 +154,11 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     ax = fig.add_axes(rect)
 
     max = np.max(abs(w_plot))
-    vlim = np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)
+    if not vlim:
+        vlim = [0, np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)]
     cmap = tools.get_colormap()
     # cmap = 'RdBu_r'
-    im = ax.imshow(w_plot, cmap=cmap, vmin=0, vmax=vlim,
+    im = ax.imshow(w_plot, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
                    interpolation='none')
 
 
@@ -187,7 +188,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     ax.set_xticks([0, w_plot.shape[1]])
     ax.set_yticks([0, w_plot.shape[0]])
     ax = fig.add_axes(rect_cb)
-    cb = plt.colorbar(im, cax=ax, ticks=[0, vlim])
+    cb = plt.colorbar(im, cax=ax, ticks=[vlim[0], vlim[1]])
     cb.outline.set_linewidth(0.5)
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
