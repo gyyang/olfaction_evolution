@@ -74,8 +74,8 @@ def expand_res(res, epoch_focus=-1):
         res['net_excludesecondpeak'] = np.array(net_excludesecondpeak)
         res['peaks'] = np.array(peaks)
     
-    print('Learning rate')
-    print(res['lr'])
+    print('Learning rate range')
+    print(np.unique(res['lr']))
     
     res['net_excludelowinit'] = res['initial_pn2kc']>res['initial_pn2kc'].min()
     res['net_excludebadkc'] = res['bad_KC'][:, epoch_focus]<0.1
@@ -216,6 +216,7 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
     """
     Ks = list()
     epoch_plots = list()
+    lr_useds = list()
     for n_orn in n_orns:
         res = res_all[n_orn]
         res = expand_res(res)
@@ -245,7 +246,10 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
         print('Epoch used', str(epoch_plot))
         print('Acc', val_acc[net_lr_used][:, epoch_plot])
         print('N_KC', N_KC[net_lr_used])
-        print('K', K[net_lr_used])
+        print('K', K[net_lr_used, epoch_plot])
+        
+        plt.figure()
+        plt.plot(mean_val_acc[2:])
         
 # =============================================================================
 #         plt.figure()
@@ -255,6 +259,7 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
             
         epoch_plots.append(epoch_plot)
         Ks.append(K[net_lr_used, epoch_plot])
+        lr_useds.append(lr_used)
         # print('N={:d}'.format(n_orn))
         # print('Epoch used {:d}'.format(epoch_plot))
         

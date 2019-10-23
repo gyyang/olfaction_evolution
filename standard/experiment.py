@@ -811,6 +811,51 @@ def vary_prune_pn2kc_init(argTest=False, n_pn=50):
     return config, hp_ranges
 
 
+def vary_prune_lr(argTest=False, n_pn=50):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 30
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0.
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.N_KC = min(n_pn**2, 20000)
+    
+    config.initial_pn2kc = 10./n_pn
+
+    config.kc_prune_weak_weights = True
+
+    config.save_every_epoch = False
+    config.save_log_only = True
+
+    hp_ranges = OrderedDict()
+    lr_range_dict = {
+            25: (0.005, 0.01),
+            50: (0.002, 0.005),
+            75: (0.002, 0.005),
+            100: (0.001, 0.002),
+            150: (0.0005, 0.001),
+            200: (0.0005, 0.001),
+            400: (0.0005, 0.001)
+            }
+    
+    try:
+        lr_range = lr_range_dict[n_pn]
+    except KeyError:
+        lr_range = (2e-4, 5e-3)
+        
+    hp_ranges['lr'] = np.logspace(np.log10(lr_range[0]), np.log10(lr_range[1]), 10)
+    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def vary_n_orn_longtrain(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
