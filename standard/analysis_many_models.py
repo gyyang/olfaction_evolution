@@ -165,11 +165,11 @@ def plot_single_net(res, excludebadkc=True, excludelowacc=True,
     
     for i_plot in [0, -1]:
         plt.figure()
-        plt.plot(res['bins'], res['density'][net_plot, -1][i_plot])
+        plt.plot(res['bins'], res['density'][net_plot, 3][i_plot])
         plt.ylim([0, 0.003])
         plt.title('LR {:0.1E}'.format(lr[i_plot]))
     
-    epoch_plot = 49
+    epoch_plot = -1
     
     thres_plot = res['thres'][net_plot, epoch_plot]
     K_plot = res['K'][net_plot, epoch_plot]
@@ -226,6 +226,7 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
         K = res['K'][net_plot]
         N_KC = res['N_KC'][net_plot]
         val_acc = res['val_acc'][net_plot]
+        kc_prune_threshold = res['kc_prune_threshold'][net_plot]
         if lr_criterion == 'max':
             lr_used = np.max(lr)
         elif lr_criterion == 'min':
@@ -240,16 +241,19 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
             epoch_plot = np.argmax(mean_val_acc)
         else:
             epoch_plot = epoch_name
-            
+        
+        print('')
         print('N_ORN ', str(n_orn))
-        print('LR used', str(lr_used))
+        print('LR used', str(lr_used), ' out of ', np.unique(res['lr']))
         print('Epoch used', str(epoch_plot))
         print('Acc', val_acc[net_lr_used][:, epoch_plot])
         print('N_KC', N_KC[net_lr_used])
         print('K', K[net_lr_used, epoch_plot])
+        print('Prune threshold', kc_prune_threshold[net_lr_used], ' out of ',
+              np.unique(res['kc_prune_threshold']))
         
-        plt.figure()
-        plt.plot(mean_val_acc[2:])
+        # plt.figure()
+        # plt.plot(mean_val_acc[2:])
         
 # =============================================================================
 #         plt.figure()
@@ -268,7 +272,7 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
     plot_all_K(new_n_orns, new_Ks, plot_box=True)
     plt.title(str(lr_criterion)+' LR, ' + str(epoch_name) + ' Epoch')
     
-    # plot_all_K(new_n_orns, new_Ks, plot_angle=True)
+    plot_all_K(new_n_orns, new_Ks, plot_angle=True)
 
 
 if __name__ == '__main__':
@@ -276,11 +280,11 @@ if __name__ == '__main__':
     # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
     
-    # res = analyze_single_net(n_orn=25, foldername='vary_prune_pn2kc_init')
-    # plot_single_net(res)
+    res = analyze_single_net(n_orn=50, foldername='vary_prune_lr')
+    plot_single_net(res)
     
-    # n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_pn2kc_init')
-    plot_all_nets(n_orns, res_all, epoch_name=10)
+    # n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_lr')
+    # plot_all_nets(n_orns, res_all, epoch_name=10)
 
 
     

@@ -824,7 +824,7 @@ def vary_prune_lr(argTest=False, n_pn=50):
     config.skip_orn2pn = True
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.N_KC = min(n_pn**2, 20000)
+    config.N_KC = min(n_pn**2, 40000)
     
     config.initial_pn2kc = 10./n_pn
 
@@ -850,7 +850,7 @@ def vary_prune_lr(argTest=False, n_pn=50):
         lr_range = (2e-4, 5e-3)
         
     hp_ranges['lr'] = np.logspace(np.log10(lr_range[0]), np.log10(lr_range[1]), 10)
-    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
+    hp_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2., 5.])/n_pn
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
