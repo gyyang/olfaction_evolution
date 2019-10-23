@@ -572,6 +572,14 @@ if len(tmp_experiments) > 0:
         path = './files/vary_init_sparse_lr' + str(n_pn)
         train(se.vary_init_sparse_lr(is_test, n_pn), path, path=cluster_path)
 
+tmp_experiments = [e for e in experiments if 'vary_prune_lr' in e]
+if len(tmp_experiments) > 0:
+    experiment = tmp_experiments[0]
+    n_pns = [int(experiment[len('vary_prune_lr'):])]
+    for n_pn in n_pns:
+        path = './files/vary_prune_lr' + str(n_pn)
+        train(se.vary_prune_lr(is_test, n_pn), path, path=cluster_path)
+
 if 'longtrain' in experiments:
     # Reproducing most basic findings
     path = './files/longtrain'
