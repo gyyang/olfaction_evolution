@@ -840,14 +840,14 @@ def vary_prune_lr(argTest=False, n_pn=50):
             75: (0.002, 0.005),
             100: (0.001, 0.002),
             150: (0.0005, 0.001),
-            200: (0.0005, 0.001),
-            400: (0.0005, 0.001)
+            200: (0.0002, 0.0005),
+            400: (0.0002, 0.0005)
             }
     
     try:
         lr_range = lr_range_dict[n_pn]
     except KeyError:
-        lr_range = (2e-4, 5e-3)
+        lr_range = (1e-4, 5e-3)
         
     hp_ranges['lr'] = np.logspace(np.log10(lr_range[0]), np.log10(lr_range[1]), 10)
     hp_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2., 5.])/n_pn

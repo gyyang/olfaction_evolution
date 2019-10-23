@@ -115,21 +115,15 @@ def analyze_all_nets(foldername = 'vary_prune_pn2kc_init'):
     return n_orns, res_all
 
 
-def plot_single_net(res, excludebadkc=True, excludelowacc=True,
-                    excludesecondpeak=True): 
+def plot_single_net(res): 
     res = expand_res(res)
     
     plt.figure()
     _ = plt.plot(res['K'][:, 3:].T)
     
-    net_plot = np.ones(len(res['lr'])) == 1
-    if excludebadkc:
-        net_plot *= res['net_excludebadkc']
-    if excludelowacc:
-        net_plot *= res['net_excludelowacc']
-    if excludesecondpeak:
-        net_plot *= res['net_excludesecondpeak']
-
+    net_plot = (res['net_excludebadkc'] * res['net_excludelowacc'] *
+                res['net_excludesecondpeak'] * res['net_useclosestnkc'])
+    
     # net_plot = np.array([True]*res['K'].shape[0])
     # Plot by different learning rate
     epoch_start = 2
@@ -222,6 +216,8 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
         res = expand_res(res)
         net_plot = (res['net_excludebadkc'] * res['net_excludelowacc'] *
                     res['net_excludesecondpeak'] * res['net_useclosestnkc'])
+        net_plot = (res['net_excludebadkc'] * res['net_excludelowacc'] *
+                    res['net_useclosestnkc'])
         lr = res['lr'][net_plot]
         K = res['K'][net_plot]
         N_KC = res['N_KC'][net_plot]
@@ -280,7 +276,7 @@ if __name__ == '__main__':
     # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
     
-    res = analyze_single_net(n_orn=50, foldername='vary_prune_lr')
+    res = analyze_single_net(n_orn=200, foldername='vary_prune_lr')
     plot_single_net(res)
     
     # n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_lr')
