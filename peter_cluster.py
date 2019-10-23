@@ -97,8 +97,9 @@ def temp_glomeruli(n_pn=50):
 def rnn(n_pn=50):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/orn' + str(n_pn)
-    config.max_epoch = 50
+    config.max_epoch = 8
     config.model = 'rnn'
+    config.lr= 1e-3
 
     config.NEURONS = 2500
     config.WEIGHT_LOSS = False
@@ -111,33 +112,33 @@ def rnn(n_pn=50):
     config.save_every_epoch = False
 
     config.initial_rnn_weight = .1
-    config.prune_threshold = .02
+    config.prune_threshold = .01
     config.prune_weak_weights = True
 
     hp_ranges = OrderedDict()
-    hp_ranges['TIME_STEPS'] = [1, 2, 3]
-    hp_ranges['replicate_orn_with_tiling'] = [False, True, True]
-    hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
+    # hp_ranges['TIME_STEPS'] = [1, 2, 3]
+    # hp_ranges['replicate_orn_with_tiling'] = [False, True, True]
+    # hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
 
-    # hp_ranges['TIME_STEPS'] = [3]
-    # hp_ranges['replicate_orn_with_tiling'] = [True]
-    # hp_ranges['N_ORN_DUPLICATION'] = [10]
+    hp_ranges['TIME_STEPS'] = [2]
+    hp_ranges['replicate_orn_with_tiling'] = [True]
+    hp_ranges['N_ORN_DUPLICATION'] = [5]
     return config, hp_ranges
 
-train = cluster_train
-cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
-n_pns = [int(x) for x in args.pn]
-print(n_pns)
-for n_pn in n_pns:
-    path = './files/cluster_rnn_prune_real' + str(n_pn)
-    cluster_train(rnn(n_pn), save_path=path, sequential=True, path= cluster_path)
-#
-# n_pns = [50]
+# train = cluster_train
+# cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+# n_pns = [int(x) for x in args.pn]
+# print(n_pns)
 # for n_pn in n_pns:
-#    path = './files/test' + str(n_pn)
-#    try:
-#        import shutil
-#        shutil.rmtree(path)
-#    except:
-#        pass
-#    local_train(rnn(n_pn), sequential=True, save_path=path)
+#     path = './files/cluster_rnn_prune_real' + str(n_pn)
+#     cluster_train(rnn(n_pn), save_path=path, sequential=True, path= cluster_path)
+#
+n_pns = [50]
+for n_pn in n_pns:
+   path = './files/test' + str(n_pn)
+   try:
+       import shutil
+       shutil.rmtree(path)
+   except:
+       pass
+   local_train(rnn(n_pn), sequential=True, save_path=path)

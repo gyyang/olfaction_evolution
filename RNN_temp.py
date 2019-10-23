@@ -165,12 +165,14 @@ def plot_activity(rnn_outputs, dir_ix, path):
     sa._easy_save(path, fig_name, pdf=True)
 
 
-path = './files_temp/cluster_rnn50'
+path = './files/test50'
 # st(rnn(), path, s=0, e=100)
+
+sa.plot_progress(path, plot_vars=['val_acc', 'val_logloss'], legends=['0','1','2'])
 
 var_name = 'w_rnn'
 dirs = [os.path.join(path, n) for n in os.listdir(path)]
-dir_ix = 1
+dir_ix = 0
 save_path = dirs[dir_ix]
 config = tools.load_config(save_path)
 rnn_outputs = load_activity(save_path)
@@ -282,7 +284,8 @@ N_OR = 50
 N_ORN = 500
 
 if dir_ix == 0:
-    analyze_t0(w_rnn)
+    # analyze_t0(w_rnn)
+    analyze_t_greater(w_rnn, config.TIME_STEPS)
 else:
     analyze_t_greater(w_rnn, config.TIME_STEPS)
 

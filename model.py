@@ -496,7 +496,6 @@ class FullModel(Model):
 
                 if config.initial_orn2pn != 0:
                     range = config.initial_orn2pn
-                print(config.initializer_orn2pn)
                 initializer = _initializer(range, config.initializer_orn2pn)
                 bias_initializer = tf.constant_initializer(0)
             else:

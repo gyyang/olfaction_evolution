@@ -49,26 +49,26 @@ def temp_meta():
     config.meta_lr = .001
     config.N_CLASS = 5
     config.save_every_epoch = True
-    config.meta_output_dimension = 5
-    config.meta_batch_size = 32
-    config.meta_num_samples_per_class = 32
-    config.meta_print_interval = 250
+    config.meta_labels_per_class = 1
+    config.meta_batch_size = 16
+    config.meta_num_samples_per_class = 16
+    config.meta_print_interval = 500
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.train_kc_bias = True
 
-    config.metatrain_iterations = 20000
+    config.metatrain_iterations = 30000
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
 
-    config.sign_constraint_pn2kc = False
-    config.sign_constraint_orn2pn = False
+    config.pn_prune_threshold = 0.01
+    config.kc_prune_weak_weights = False
 
-    config.data_dir = './datasets/proto/test'
-    config.save_path = './files/test/0'
+    config.data_dir = './datasets/proto/standard'
+    config.save_path = './files_temp/meta/0'
 
     hp_ranges = OrderedDict()
     hp_ranges['dummy'] = [True]
@@ -125,18 +125,33 @@ def temp_glomeruli(n_pn=50):
     hp_ranges['lr'] = [1e-3]
     return config, hp_ranges
 
-# mamlmetatrain.train(temp_meta()[0])
+path = './files_temp/meta'
+try:
+    shutil.rmtree(path)
+except:
+    pass
+mamlmetatrain.train(temp_meta()[0])
+
+# folder = '0'
+# ix = '7000'
+# sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
+# sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1, dir_ix=0)
+# import standard.analysis_pn2kc_training
+# standard.analysis_pn2kc_training.plot_distribution(path, xrange=1, log=True)
+# standard.analysis_pn2kc_training.plot_distribution(path, xrange=1)
+# standard.analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.01, epochs=[-1])
+
 #
-path = './files_temp/cluster_pn2kc_prune_or_not_prune_lr_1e-3_50'
+# path = './files_temp/cluster_pn2kc_prune_or_not_prune_lr_1e-3_50'
 # try:
 #     shutil.rmtree(path)
 # except:
 #     pass
 # t(temp_glomeruli(), path, s=0)
 
-sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20], epoch_range=[0,100])
-sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.7, .9], epoch_range=[0,100])
-sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'train_logloss'], epoch_range=[0,100])
+# sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20], epoch_range=[0,100])
+# sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.7, .9], epoch_range=[0,100])
+# sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'train_logloss'], epoch_range=[0,100])
 
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20])
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.5, 1.05])
@@ -195,16 +210,6 @@ sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'tra
 # config.N_CLASS = 1000
 # config.N_ORN = 200
 # task.save_proto(config, seed=0, folder_name='test_norn_200')
-#
-# path = './files/metalearn'
-# folder = '0'
-# ix = '7000'
-# sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
-# sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1, dir_ix=0)
-# import standard.analysis_pn2kc_training
-# standard.analysis_pn2kc_training.plot_distribution(path, xrange=1, log=True)
-# standard.analysis_pn2kc_training.plot_distribution(path, xrange=1)
-# standard.analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.01, epochs=[-1])
 
 
 # sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix=0)
