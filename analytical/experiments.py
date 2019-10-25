@@ -88,8 +88,8 @@ def get_optimal_K(x_name, x_vals, fnames, y_name='theta', n_rep=100, update_para
         pickle.dump(values_sim, open(fname, "wb"))
 
 
-def plot_optimal_K(x_name, x_vals, fnames, fig=None):
-    y, _ = load_result(fnames, v_name='theta')
+def plot_optimal_K(x_name, x_vals, fnames, v_name='theta', fig=None):
+    y, _ = load_result(fnames, v_name=v_name)
     x, y = np.log(x_vals), np.log(y)
     x_fit, y_fit, model = _fit(x, y)
     res = {'log_N': x, 'log_K': y, 'label': 'Weight robustness'}
@@ -145,15 +145,19 @@ def get_optimal_K_simulation(compute=False):
         plot_optimal_K(x_name, x_vals, fnames)
 
 
-def get_optimal_K_simulation_participationratio():
+def get_optimal_K_simulation_participationratio(compute=False):
     x_name = 'n_pn'
-    x_vals = [50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000]
+    x_vals = [50, 75, 100]
     update_params = {'n_pts': 5000}
     fnames = list()
     for x_val in x_vals:
         fname = 'all_value_withdim_m' + str(x_val) + '.pkl'
         fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
-    get_optimal_K(x_name, x_vals, fnames, n_rep=10, update_params=update_params)
+    if compute:
+        get_optimal_K(x_name, x_vals, fnames, y_name='dim', n_rep=2,
+                      update_params=update_params)
+    else:
+        plot_optimal_K(x_name, x_vals, fnames, v_name='dim')
 
 
 def control_coding_level(compute=True, coding_levels=None):
@@ -252,16 +256,16 @@ def control_coding_level(compute=True, coding_levels=None):
                    'conf_ints': conf_ints, 'n_orns': x_vals}
         fname = os.path.join(rootpath, 'files', 'analytical',
                              'control_coding_level_summary')
-        pickle.dump(summary, open(fname, "wb"))
+        # pickle.dump(summary, open(fname, "wb"))
 
 
 if __name__ == '__main__':
-    # get_optimal_K_simulation_participationratio()
+    get_optimal_K_simulation_participationratio(compute=False)
     # get_optimal_k()
     # compare_dim_plot()
     # control_coding_level()
     start_time = time.time()
-    control_coding_level(compute=False)
+    # control_coding_level(compute=False)
     print('Total time spent: ', time.time() - start_time)
 
         
