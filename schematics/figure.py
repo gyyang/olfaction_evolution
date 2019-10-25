@@ -12,7 +12,7 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 from schematics.plotVoronoi import voronoi_plot_2d
-from standard.analysis import _easy_save
+from tools import save_fig
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -121,7 +121,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
-    _easy_save('schematics', '_' + mode + '_task' + name_str)
+    save_fig('schematics', '_' + mode + '_task' + name_str)
     # plt.savefig('task.pdf',transparent=True)
     
 

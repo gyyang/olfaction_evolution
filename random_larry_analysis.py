@@ -12,7 +12,7 @@ def _plot_gloscores(path, ix, cutoff, shuffle=False):
         w_plot = w_plot[:, ind_sort]
         plt.imshow(w_plot, cmap='RdBu_r', vmin=-1, vmax=1,
                            interpolation='none')
-        sa._easy_save(path, 'cutoff_' + str)
+        tools.save_fig(path, 'cutoff_' + str)
 
     w_orns = tools.load_pickle(path, 'w_orn')
     w_orn = w_orns[ix]
@@ -55,7 +55,7 @@ def _plot_gloscores(path, ix, cutoff, shuffle=False):
     plt.figure()
     weights = np.ones_like(all_gs) / float(len(all_gs))
     plt.hist(all_gs, bins=20, range=[0, 1], weights= weights)
-    sa._easy_save(path, arg)
+    tools.save_fig(path, arg)
     return ix_good, ix_bad
 
 def _lesion_multiglomerular_pn(path, ix, units):
@@ -119,7 +119,7 @@ def _orthogonality(path, ix, arg):
     plt.colorbar()
 
     txt = '_orthogonality_' if arg == 'ortho' else '_correlation_'
-    sa._easy_save(path, txt + str(ix))
+    tools.save_fig(path, txt + str(ix))
 
 # path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files\standard_net'
 # _orthogonality(path, 0, arg='ortho')
@@ -188,6 +188,6 @@ def _distance_preserve(x_arg, y_arg):
     plt.scatter(xs,ys, s= .5, alpha = .5)
     plt.xlim(xlim)
     plt.ylim(ylim)
-    sa._easy_save(save_path, '_' +x_arg + '_' + y_arg)
+    tools.save_fig(save_path, '_' +x_arg + '_' + y_arg)
 
 # _distance_preserve('input','kc_out')

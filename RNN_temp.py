@@ -113,7 +113,7 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extr
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
     plt.axis('tight')
-    sa._easy_save(save_path, '__' + str(dir_ix) + '_' + y_label + '_' + x_label + '_' + extra_str, dpi=400)
+    tools.save_fig(save_path, '__' + str(dir_ix) + '_' + y_label + '_' + x_label + '_' + extra_str, dpi=400)
 
 def load_activity(save_path):
     import tensorflow as tf
@@ -184,7 +184,7 @@ def plot_activity(rnn_outputs, dir_ix, path):
     ax.yaxis.set_ticks_position('left')
 
     fig_name = '_activity_' + str(dir_ix)
-    sa._easy_save(path, fig_name, pdf=True)
+    tools.save_fig(path, fig_name, pdf=True)
 
 
 path = './files/RNN'

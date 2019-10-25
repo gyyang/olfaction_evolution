@@ -7,8 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import tools
 from tools import nicename
-from standard.analysis import _easy_save
-import standard.analysis as sa
+from tools import save_fig
 from scipy.stats import rankdata
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import kurtosis
@@ -118,6 +117,7 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
 
 
 def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, select_dict = None, thres = THRES, ax_args=None):
+    import standard.analysis as sa
     wglos = tools.load_pickle(dir, 'w_glo')
     xrange = wglos[0].shape[0]
     zero_claws = []
@@ -214,7 +214,7 @@ def image_pn2kc_parameters(dir, dynamic_thres=False):
         plt.tick_params(axis='both', which='major', labelsize=7)
         cb.ax.tick_params('both',length=0)
         plt.axis('tight')
-        _easy_save(path, '_' + nicename(zkey), pdf=False)
+        save_fig(path, '_' + nicename(zkey), pdf=False)
 
 
     wglos = tools.load_pickle(dir, 'w_glo')
@@ -280,7 +280,7 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
 
-        _easy_save(path, str='_weights_per_kc', pdf=True)
+        save_fig(path, str='_weights_per_kc', pdf=True)
 
     if loopkey is None:
         legend = ['Trained, no loss', 'Trained, with loss', 'Fixed']
@@ -713,7 +713,7 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         name += '_fit'
     if plot_angle:
         name += '_angle'
-    _easy_save(path, name)
+    save_fig(path, name)
 
 # if __name__ == '__main__':
 #     dir = "../files/train_KC_claws"

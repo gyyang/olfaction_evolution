@@ -21,7 +21,7 @@ sys.path.append(rootpath)
 
 import tools
 from tools import nicename
-from standard.analysis import _easy_save
+from tools import save_fig
 from standard.analysis_pn2kc_training import plot_all_K
 
 

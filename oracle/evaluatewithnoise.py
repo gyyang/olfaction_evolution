@@ -16,7 +16,7 @@ import configs
 import task
 from model import FullModel
 import tools
-from standard.analysis import _easy_save
+from tools import save_fig
 from tools import nicename
 
 mpl.rcParams['font.size'] = 7
@@ -389,7 +389,7 @@ def plot_kcrole(path, name):
             ax.set_yticks([-2, -1, 0, 1, 2, 3, 4])
             plt.ylim([-2, 4])
         figname = ylabel + '_' + name
-        _easy_save('kc_role', figname)
+        save_fig('kc_role', figname)
 
 
 def select_config(config, select_dict):
@@ -583,7 +583,7 @@ def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epo
             figname = figname + 'ep' + str(epoch)
             
         plt.title(title_txt, fontsize=7)
-        _easy_save(path.split('/')[-1], figname)
+        save_fig(path.split('/')[-1], figname)
 
 
     for ylabel in ['val_acc', 'val_loss']:
@@ -592,7 +592,7 @@ def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epo
         plt.scatter(diff_dict['angle'][1:], diff_dict[ylabel][1:])  # TODO: TEMP, ignoring first point
         plt.xlabel('Angle')
         plt.ylabel('Change in ' + ylabel + ' (perturb - original)')
-        _easy_save(path.split('/')[-1], 'angle_vs_delta'+ylabel)
+        save_fig(path.split('/')[-1], 'angle_vs_delta'+ylabel)
         
 
 def evaluate_onedim_perturb(path, dataset='val', epoch=None):
@@ -634,7 +634,7 @@ def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
         title_txt += ' epoch ' + str(epoch)
         figname += 'ep'+str(epoch)
     plt.title(title_txt)
-    _easy_save(path.split('/')[-1], figname)
+    save_fig(path.split('/')[-1], figname)
     
     
     for ylabel in ['val_acc', 'val_loss']:
@@ -670,7 +670,7 @@ def plot_onedim_perturb(path, dataset='val', epoch=None, minzero=False):
             title_txt += 'Epoch ' + str(epoch)
             figname += 'ep'+str(epoch)
         plt.title(title_txt, fontsize=7)        
-        _easy_save(path.split('/')[-1], figname)
+        save_fig(path.split('/')[-1], figname)
 
 
 def evaluate_twodim_perturb(path, dataset='val', epoch=None, K=None):

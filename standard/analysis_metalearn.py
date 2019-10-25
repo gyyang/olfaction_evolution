@@ -10,7 +10,7 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix, xlim = 25):
-    from standard.analysis import _easy_save
+    from tools import save_fig
     def _helper_plot(ax, data, color, label):
         ax.plot(np.arange(len(data)), data, color=color, label=label)
         # ax.tick_params(axis='y', labelcolor=color)
@@ -59,4 +59,4 @@ def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix, xlim = 25):
 
     # mat = mat.replace('/', '_')
     # mat = mat.replace(':0', '')
-    _easy_save(path, '_{}_change_vs_lr_{}'.format('weight', dir_ix), pdf=True)
+    save_fig(path, '_{}_change_vs_lr_{}'.format('weight', dir_ix), pdf=True)

@@ -14,7 +14,7 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 # import model
-# from standard.analysis import _easy_save
+# from tools import save_fig
 
 N_PN = 50
 N_KC = 2500
@@ -188,7 +188,7 @@ def analyze_pairwise_distance():
     plt.figure()
     plt.plot(n_kc_claws, relative_distortions, 'o-')
     plt.xticks([1, 3, 7, 10, 20, 30])
-    # _easy_save('analytical', 'relative_distortion')
+    # save_fig('analytical', 'relative_distortion')
 
 
 def _get_proj(n_kc_claw, n_pts=500, n_proj=500, coding_level=100, **kwargs):
@@ -268,7 +268,7 @@ def vary_kc_claw():
         # ax.set_xticks([1, 3, 7, 10, 20, 30])
         ax.set_xlabel('Number of KC claws')
         ax.set_ylabel(key)
-        # _easy_save('analytical', value_name+'perturb_'+perturb_mode)
+        # save_fig('analytical', value_name+'perturb_'+perturb_mode)
     
     
 def plot_proj_hist():
@@ -348,7 +348,7 @@ def plot_proj_hist_varyclaws():
     plt.xlim(-3, 3)
     plt.title('Distribution of randomly projected perturbation')
     plt.legend()
-    _easy_save('analytical', 'hist_pert_proj')
+    save_fig('analytical', 'hist_pert_proj')
     
 
 # =============================================================================

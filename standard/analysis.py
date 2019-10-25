@@ -26,20 +26,6 @@ mpl.rcParams['font.family'] = 'arial'
 figpath = os.path.join(rootpath, 'figures')
 # figpath = r'C:\Users\Peter\Dropbox\olfaction_evolution\manuscript\plots'
 
-def _easy_save(save_path, str='', dpi=300, pdf=True, show=False):
-    save_name = os.path.split(save_path)[-1]
-    path = os.path.join(figpath, save_name)
-    os.makedirs(path, exist_ok=True)
-    figname = os.path.join(path, save_name + str)
-    plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
-    print('Figure saved at: ' + figname)
-
-    if pdf:
-        plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
-        # plt.savefig(os.path.join(figname + '.svg'), transparent=True, format='svg')
-    if show:
-        plt.show()
-    # plt.close()
 
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
                   legends=None, exclude_epoch0=False, plot_vars=None):
@@ -89,7 +75,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         if select_dict:
             for k, v in select_dict.items():
                 figname += k + '_' + str(v) + '_'
-        _easy_save(save_path, figname)
+        save_fig(save_path, figname)
 
     if plot_vars is None:
         plot_vars = ['val_logloss']
@@ -189,7 +175,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     plt.axis('tight')
     var_name = var_name.replace('/','_')
     var_name = var_name.replace(':','_')
-    _easy_save(path, '_' + var_name + '_' + str(dir_ix))
+    save_fig(path, '_' + var_name + '_' + str(dir_ix))
 
 
     # Plot distribution of various connections
@@ -390,7 +376,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    _easy_save(path, figname)
+    save_fig(path, figname)
 
 
 if __name__ == '__main__':
