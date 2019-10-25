@@ -34,12 +34,12 @@ def _normalize(x):
 def plot_task(mode='standard', include_prototypes=False, include_data = True, prototype_marker = '^', meta_ix = 0):
     colors = ['c','y','m','g']
     
-    # =============================================================================
-    # colors = [np.array([81, 81, 96])/255.,
-    #           np.array([104, 130, 158])/255.,
-    #           np.array([174, 189, 56	])/255.,
-    #           np.array([89, 130, 52])/255.]
-    # =============================================================================
+# =============================================================================
+#     colors = [np.array([81, 81, 96])/255.,
+#               np.array([104, 130, 158])/255.,
+#               np.array([174, 189, 56	])/255.,
+#               np.array([89, 130, 52])/255.]
+# =============================================================================
     colors = [np.array([55, 94, 151])/255.,  # blue
               np.array([251, 101, 66])/255.,  # orange
               np.array([255, 187, 0])/255.,  # red
@@ -126,7 +126,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
     
 
 if __name__ == '__main__':
-    # plot_task('standard', include_prototypes=True)
-    plot_task('concentration', include_prototypes=True, include_data=True)
+    plot_task('standard', include_prototypes=True)
+    # plot_task('concentration', include_prototypes=True, include_data=True)
     # plot_task('relabel', include_prototypes=True)
     # plot_task('metalearn', include_data=True, include_prototypes=True, meta_ix=2)
