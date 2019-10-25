@@ -186,6 +186,7 @@ def set_coding_level(Y, Y2, coding_level=None, same_threshold=True,
 
 
 def _simulation(Y, Y2, compute_dimension=False):
+    n_kc = Y.shape[1]
     dY = Y2 - Y
     norm_Y = np.linalg.norm(Y, axis=1)
     norm_Y2 = np.linalg.norm(Y2, axis=1)
@@ -245,7 +246,7 @@ def _simulation(Y, Y2, compute_dimension=False):
         res['E_Cii'] = E_Cii
         res['E_C2ii'] = E_C2ii
         res['E_C2ij'] = E_C2ij
-        res['dim'] = m * E_Cii ** 2 / (E_C2ii + (m - 1) * E_C2ij)
+        res['dim'] = dim
 
     return res
 
