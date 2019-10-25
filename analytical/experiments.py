@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
-from analytical.numerical_test import simulation, simulation_vary_coding_levels
+# import analytical.numerical_test as numerical_test
+import analytical.numerical_test_torch as numerical_test
 import tools
 from analytical.analyze_simulation_results import load_result, _fit
 
@@ -35,6 +36,39 @@ def default_params():
               'n_rep': 1,
               'n_pn': 50}
     return params
+
+
+def simulation(K, compute_dimension=False, **kwargs):
+    print('Simulating K = ' + str(K))
+
+    X, Y, Y2 = numerical_test.analyze_perturb(n_kc_claw=K, **kwargs)
+    Y, Y2 = numerical_test.set_coding_level(Y, Y2, **kwargs)
+    res = numerical_test._simulation(Y, Y2, compute_dimension=compute_dimension)
+
+    res['K'] = K
+    return res
+
+
+def simulation_vary_coding_levels(K, coding_levels=None,
+                                  compute_dimension=False, **kwargs):
+    print('Simulating K = ' + str(K))
+
+    if coding_levels is None:
+        coding_levels = np.arange(10, 91, 10)
+
+    X, Y, Y2 = numerical_test.analyze_perturb(n_kc_claw=K, **kwargs)
+
+    res_list = list()
+    for coding_level in coding_levels:
+        kwargs['coding_level'] = coding_level
+        Y_new, Y2_new = numerical_test.set_coding_level(Y, Y2, **kwargs)
+
+        res = numerical_test._simulation(Y_new, Y2_new, compute_dimension=compute_dimension)
+        res['K'] = K
+        res['coding_level'] = coding_level
+
+        res_list.append(res)
+    return res_list, coding_levels
 
 
 def guess_optimal_K(params, y_name):
@@ -260,11 +294,11 @@ def control_coding_level(compute=True, coding_levels=None):
 
 
 if __name__ == '__main__':
-    get_optimal_K_simulation_participationratio(compute=False)
+    start_time = time.time()
+    get_optimal_K_simulation_participationratio(compute=True)
     # get_optimal_k()
     # compare_dim_plot()
     # control_coding_level()
-    start_time = time.time()
     # control_coding_level(compute=False)
     print('Total time spent: ', time.time() - start_time)
 
