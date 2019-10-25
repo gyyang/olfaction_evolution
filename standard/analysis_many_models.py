@@ -91,23 +91,26 @@ def expand_res(res, epoch_focus=-1):
 
 
 def analyze_single_net(n_orn=200, foldername='vary_prune_pn2kc_init'):
-    # n_orn = 200
-    path = os.path.join(rootpath, 'files', foldername, foldername+str(n_orn))
+    # Find common prefix
+    base = os.path.join(rootpath, 'files', foldername)
+    prefix = os.path.commonprefix(os.listdir(base))
+    path = os.path.join(base, prefix+str(n_orn))
     res = tools.load_all_results(path, argLast=False, ix=slice(0, 50))
 
     return res
 
 
 def analyze_all_nets(foldername = 'vary_prune_pn2kc_init'):
-    path = os.path.join(rootpath, 'files', foldername)
-    files = os.listdir(path)
-    files = [f for f in files if f[:len(foldername)]==foldername]
-    n_orns = [int(f[len(foldername):]) for f in files]
+    base = os.path.join(rootpath, 'files', foldername)
+    prefix = os.path.commonprefix(os.listdir(base))
+    files = os.listdir(base)
+    files = [f for f in files if f[:len(prefix)]==prefix]
+    n_orns = [int(f[len(prefix):]) for f in files]
     n_orns = np.sort(n_orns)
 
     res_all = dict()
     for n_orn, file in zip(n_orns, files):
-        path = os.path.join(rootpath, 'files', foldername, file)
+        path = os.path.join(base, file)
         assert os.path.exists(path)
     
         res = analyze_single_net(n_orn, foldername)        
@@ -130,6 +133,7 @@ def plot_single_net(res):
     epoch_end = -1
     x_plot = np.arange(res['K'].shape[1])
     K_plot = res['K'][net_plot, :]
+    kc_prune_threshold_plot = res['kc_prune_threshold'][net_plot]
     coding_level_plot = res['coding_level'][net_plot, :]
     n_kc_plot = res['N_KC'][net_plot]
     acc_plot = res['val_acc'][net_plot, :]
@@ -159,9 +163,10 @@ def plot_single_net(res):
     
     for i_plot in [0, -1]:
         plt.figure()
-        plt.plot(res['bins'], res['density'][net_plot, 3][i_plot])
+        plt.plot(res['bins'], res['density'][net_plot, 10][i_plot])
         plt.ylim([0, 0.003])
-        plt.title('LR {:0.1E}'.format(lr[i_plot]))
+        plt.title('LR {:0.1E} Prune Thrs {:0.1E}'.format(
+                lr[i_plot], kc_prune_threshold_plot[i_plot]))
     
     epoch_plot = -1
     
@@ -212,12 +217,14 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
     epoch_plots = list()
     lr_useds = list()
     for n_orn in n_orns:
+        if n_orn >= 800:
+            continue
+
         res = res_all[n_orn]
         res = expand_res(res)
         net_plot = (res['net_excludebadkc'] * res['net_excludelowacc'] *
                     res['net_excludesecondpeak'] * res['net_useclosestnkc'])
-        net_plot = (res['net_excludebadkc'] * res['net_excludelowacc'] *
-                    res['net_useclosestnkc'])
+
         lr = res['lr'][net_plot]
         K = res['K'][net_plot]
         N_KC = res['N_KC'][net_plot]
@@ -265,10 +272,11 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
         
     new_Ks = np.array([K for K in Ks if len(K)>0])
     new_n_orns = np.array([n for n, K in zip(n_orns, Ks) if len(K)>0])
-    plot_all_K(new_n_orns, new_Ks, plot_box=True)
+    plot_all_K(new_n_orns, new_Ks, plot_box=True, path='manymodel')
     plt.title(str(lr_criterion)+' LR, ' + str(epoch_name) + ' Epoch')
     
-    plot_all_K(new_n_orns, new_Ks, plot_angle=True)
+    plot_all_K(new_n_orns, new_Ks, plot_box=True, plot_angle=True, plot_dim=False,
+               path='manymodel')
 
 
 if __name__ == '__main__':
@@ -276,11 +284,11 @@ if __name__ == '__main__':
     # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
     
-    res = analyze_single_net(n_orn=200, foldername='vary_prune_lr')
-    plot_single_net(res)
+    # res = analyze_single_net(n_orn=200, foldername='vary_prune_lr_old')
+    # plot_single_net(res)
     
     # n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_lr')
-    # plot_all_nets(n_orns, res_all, epoch_name=10)
+    plot_all_nets(n_orns, res_all, epoch_name=10)
 
 
     
