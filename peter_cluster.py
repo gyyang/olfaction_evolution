@@ -129,7 +129,7 @@ n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:
     path = './files/cluster_simple_no_prune' + str(n_pn)
-    cluster_train(rnn(n_pn), save_path=path, sequential=False, path= cluster_path)
+    cluster_train(temp(n_pn), save_path=path, sequential=False, path= cluster_path)
 #
 # n_pns = [50]
 # for n_pn in n_pns:
