@@ -65,9 +65,10 @@ def temp_meta():
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
+    config.initial_pn2kc = 0.05
 
     config.pn_prune_threshold = 0.01
-    config.kc_prune_weak_weights = False
+    config.kc_prune_weak_weights = True
 
     config.data_dir = './datasets/proto/test'
     config.save_path = './files_temp/meta/0'
