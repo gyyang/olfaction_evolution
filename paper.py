@@ -527,6 +527,14 @@ if 'vary_n_orn' in experiments:
         train(se.vary_n_orn(is_test), path, sequential=True)
     if ANALYZE:
         pass
+    
+if 'vary_lr_standard' in experiments:
+    # Train networks with different values of LR for standard network
+    path = './files/vary_lr_standard'
+    if TRAIN:
+        train(se.vary_lr_standard(is_test), path, path=cluster_path)
+    if ANALYZE:
+        pass
 
 tmp_experiments = [e for e in experiments if 'vary_lr_n_kc' in e]
 if len(tmp_experiments) > 0:

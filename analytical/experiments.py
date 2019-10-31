@@ -181,14 +181,14 @@ def get_optimal_K_simulation(compute=False):
 
 def get_optimal_K_simulation_participationratio(compute=False):
     x_name = 'n_pn'
-    x_vals = [50, 75, 100]
+    x_vals = [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
     update_params = {'n_pts': 5000}
     fnames = list()
     for x_val in x_vals:
         fname = 'all_value_withdim_m' + str(x_val) + '.pkl'
         fnames += [os.path.join(rootpath, 'files', 'analytical', fname)]
     if compute:
-        get_optimal_K(x_name, x_vals, fnames, y_name='dim', n_rep=2,
+        get_optimal_K(x_name, x_vals, fnames, y_name='dim', n_rep=10,
                       update_params=update_params)
     else:
         plot_optimal_K(x_name, x_vals, fnames, v_name='dim')
