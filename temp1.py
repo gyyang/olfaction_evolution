@@ -34,17 +34,22 @@ def _get_K(res):
     res['bad_KC'] = bad_KC
 
 
-def simple_plot(xkey, ykey, filter_dict=None):
+def simple_plot(xkey, ykey, filter_dict=None, ax_args={}):
     if filter_dict is not None:
         temp = filter(res, filter_dict=filter_dict)
+    else:
+        temp = copy.copy(res)
 
     x = temp[xkey]
     y = temp[ykey][:, -1]
-    plt.figure()
+    fig = plt.figure(figsize = (3, 2))
+    ax_box = (0.25, 0.2, 0.65, 0.65)
+    ax = fig.add_axes(ax_box, **ax_args)
     plt.plot(np.log(x), y, '*')
     plt.xticks(np.log(x), x)
     plt.xlabel(xkey)
     plt.ylabel(ykey)
+    sa._easy_save(d, figname)
 
     # if filter_dict is not None:
     #   plt.legend('{} = {}'.format(filter_dict.key[0],filter_dict.value[0]))
@@ -92,7 +97,7 @@ def marginal_plot(xkey, ykey, vary_key = None, select_dict=None, ax_args={}):
     sa._easy_save(d, figname)
 
 # d = os.path.join(os.getcwd(), 'files', 'cluster_simple', 'cluster_simple50')
-d = os.path.join(os.getcwd(), 'files_temp', 'cluster_big50')
+d = os.path.join(os.getcwd(), 'files_temp', 'cluster_simple_no_prune50')
 files = glob.glob(d)
 print(len(files))
 res = defaultdict(list)
@@ -122,11 +127,13 @@ _get_K(res)
 # marginal_plot('lr', 'K', 'N_KC', {'kc_prune_threshold':0.02, 'kc_dropout_rate':0.6}, ax_args={'ylim':[5, 25]})
 # marginal_plot('lr', 'K', 'kc_dropout_rate', {'kc_prune_threshold':0.02, 'N_KC':2500}, ax_args={'ylim':[5, 25]})
 # marginal_plot('initial_pn2kc', 'K', ax_args={'ylim':[5, 25]})
+# marginal_plot('lr', 'val_logloss', ax_args={'ylim':[5, 25]})
+marginal_plot('lr', 'val_logloss')
 
 fig = plt.figure(figsize=(3,2))
 ax_box = (0.25, 0.2, 0.65, 0.65)
 ax = fig.add_axes(ax_box)
-x = filter(res, {'kc_prune_threshold':0.1, 'N_KC':2500, 'kc_dropout_rate':0.6})
+x = filter(res, {'N_KC':2500, 'kc_dropout_rate':0.5})
 plt.plot(x['lin_bins'][0,:-1],x['lin_hist'][:,-1].T, alpha = 0.75)
 plt.ylim([0, 500])
 plt.legend(x['lr'])

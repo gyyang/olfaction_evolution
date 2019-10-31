@@ -16,7 +16,7 @@ def temp(n_pn=50):
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn' + str(n_pn)
 
-    config.max_epoch = 50
+    config.max_epoch = 100
     config.direct_glo = True
 
     config.lr = 3e-3
