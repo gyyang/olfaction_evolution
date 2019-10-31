@@ -272,10 +272,11 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
         
     new_Ks = np.array([K for K in Ks if len(K)>0])
     new_n_orns = np.array([n for n, K in zip(n_orns, Ks) if len(K)>0])
-    plot_all_K(new_n_orns, new_Ks, plot_box=True, path='manymodel')
+    plot_all_K(new_n_orns, new_Ks, plot_box=True,
+               plot_dim=True, path='manymodel')
     plt.title(str(lr_criterion)+' LR, ' + str(epoch_name) + ' Epoch')
     
-    plot_all_K(new_n_orns, new_Ks, plot_box=True, plot_angle=True, plot_dim=False,
+    plot_all_K(new_n_orns, new_Ks, plot_box=True, plot_angle=True,
                path='manymodel')
 
 
@@ -284,11 +285,11 @@ if __name__ == '__main__':
     # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
     
-    # res = analyze_single_net(n_orn=200, foldername='vary_prune_lr_old')
-    # plot_single_net(res)
+    res = analyze_single_net(n_orn=50, foldername='vary_prune_lr')
+    plot_single_net(res)
     
     # n_orns, res_all = analyze_all_nets(foldername = 'vary_prune_lr')
-    plot_all_nets(n_orns, res_all, epoch_name=10)
+    # plot_all_nets(n_orns, res_all, epoch_name=10)
 
 
     

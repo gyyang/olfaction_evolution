@@ -663,11 +663,11 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         x, y = _load_result('all_value_withdim_m', v_name='dim')
         print(x, y)
         x, y = np.log(x), np.log(y)
-        plt.scatter(x, y)
+        plt.scatter(x, y, c=tools.gray, s=5)
         x_fit, y_fit, model = _fit(x, y)
         label = r'Max Dimension $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
                                np.exp(model.intercept_), model.coef_[0])
-        ax.plot(x_fit, y_fit, color='green', label=label)
+        ax.plot(x_fit, y_fit, color=tools.gray, label=label)
     
     if plot_angle:
         fname = os.path.join(rootpath, 'files', 'analytical',

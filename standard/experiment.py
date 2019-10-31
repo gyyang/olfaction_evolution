@@ -677,6 +677,31 @@ def vary_n_orn(argTest=False):
     return config, hp_ranges
 
 
+def vary_lr_standard(argTest=False, n_pn=50):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 100
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0.
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    # config.initial_pn2kc = 10./n_pn
+
+    config.save_every_epoch = False
+    config.save_log_only = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
+    if argTest:
+        config.max_epoch = testing_epochs
+    return config, hp_ranges
+
+
 def vary_lr_n_kc(argTest=False, n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
@@ -692,6 +717,7 @@ def vary_lr_n_kc(argTest=False, n_pn=50):
     config.train_pn2kc = True
 
     config.save_every_epoch = False
+    config.save_log_only = True
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
@@ -699,6 +725,7 @@ def vary_lr_n_kc(argTest=False, n_pn=50):
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
+
 
 def vary_lr_n_kc_batchnorm(argTest=False, n_pn=50):
     """Standard training setting"""
