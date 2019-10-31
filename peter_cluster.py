@@ -123,20 +123,20 @@ def rnn(n_pn=50):
     hp_ranges['N_ORN_DUPLICATION'] = [5]
     return config, hp_ranges
 
-# train = cluster_train
-# cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
-# n_pns = [int(x) for x in args.pn]
-# print(n_pns)
-# for n_pn in n_pns:
-#     path = './files/cluster_rnn_prune_real' + str(n_pn)
-#     cluster_train(rnn(n_pn), save_path=path, sequential=True, path= cluster_path)
-#
-n_pns = [50]
+train = cluster_train
+cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+n_pns = [int(x) for x in args.pn]
+print(n_pns)
 for n_pn in n_pns:
-   path = './files/test' + str(n_pn)
-   try:
-       import shutil
-       shutil.rmtree(path)
-   except:
-       pass
-   local_train(rnn(n_pn), sequential=True, save_path=path)
+    path = './files/cluster_simple_no_prune' + str(n_pn)
+    cluster_train(rnn(n_pn), save_path=path, sequential=True, path= cluster_path)
+#
+# n_pns = [50]
+# for n_pn in n_pns:
+#    path = './files/test' + str(n_pn)
+#    try:
+#        import shutil
+#        shutil.rmtree(path)
+#    except:
+#        pass
+#    local_train(rnn(n_pn), sequential=True, save_path=path)
