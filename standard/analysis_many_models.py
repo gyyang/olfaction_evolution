@@ -56,6 +56,7 @@ def expand_res(res, epoch_focus=-1):
         for i in range(n_net):
             for j in range(n_epoch):
                 bad_KC[i, j] = np.mean(res['kc_w_sum'][i, j] <1e-9)
+
         res['bad_KC'] = bad_KC  # rewrite the one computed during training
         
         net_excludesecondpeak = list()
@@ -204,6 +205,7 @@ def plot_single_net(res):
     plt.ylabel('Val acc')
 
 
+
 def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
     """Plot results from all networks.
     
@@ -284,6 +286,7 @@ if __name__ == '__main__':
     # foldername = 'vary_pn2kc_init'
     # foldername = 'vary_prune_pn2kc_init'
     # foldername = 'vary_init_sparse_lr'
+    foldername = 'cluster_simple'
     
     res = analyze_single_net(n_orn=50, foldername='vary_prune_lr')
     plot_single_net(res)

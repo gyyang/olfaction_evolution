@@ -161,6 +161,10 @@ class FullConfig(BaseConfig):
         # dropout rate for pns
         self.pn_dropout_rate = .2
 
+        self.pn_prune_weak_weights = False
+        self.pn_prune_threshold = .05
+        self.initial_orn2pn = 0
+
 
         # PN --> KC connections
 
@@ -188,7 +192,7 @@ class FullConfig(BaseConfig):
         # alpha = loss strength.
         self.kc_loss_alpha = 1
         # beta = when to apply loss. higher the value, the smaller the weight in which loss will be applied
-        self.kc_loss_beta = 10
+        self.kc_loss_beta = 5
         # KC normalization before non_linearity
         self.kc_norm_pre = None
         # KC normalization after non_linearity
@@ -241,8 +245,8 @@ class MetaConfig(FullConfig):
         self.meta_n_dataset = 1000 * 32
         # number of classes
         self.N_CLASS = 4
-        # output dimension. N_CLASS must be a multiple of output dimension
-        self.meta_output_dimension = 4
+        # number of labels per class
+        self.meta_labels_per_class = 1
         # number of metatraining iterations
         self.metatrain_iterations = 100000
         # number of tasks sampled per meta-update (outer batch size)
@@ -263,3 +267,5 @@ class MetaConfig(FullConfig):
         self.label_type = 'one_hot'
         # saving / printing epoch interval
         self.meta_print_interval = 250
+        # maximum learning rate for the KC-output layer
+        self.output_max_lr = 0.2

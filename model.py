@@ -493,6 +493,9 @@ class FullModel(Model):
                     range = _sparse_range(config.N_ORN_DUPLICATION)
                 else:
                     range = _sparse_range(N_ORN)
+
+                if config.initial_orn2pn != 0:
+                    range = config.initial_orn2pn
                 initializer = _initializer(range, config.initializer_orn2pn)
                 bias_initializer = tf.constant_initializer(0)
             else:
@@ -507,6 +510,11 @@ class FullModel(Model):
                                     initializer= bias_initializer)
             if config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
+
+            if config.pn_prune_weak_weights and config.pn_prune_threshold:
+                thres = tf.cast(w_orn > config.pn_prune_threshold, tf.float32)
+                w_orn = tf.multiply(w_orn, thres)
+
         self.weights['w_orn'] = w_orn
         self.weights['b_orn'] = b_orn
         self.w_orn = w_orn
@@ -817,6 +825,7 @@ class FullModel(Model):
         save_path = self.save_path
         if epoch is not None:
             save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+            print(save_path)
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         fname = os.path.join(save_path, 'model.pkl')
@@ -916,10 +925,15 @@ class RNN(Model):
         rnn_outputs.append(rnn_output)
         with tf.variable_scope('layer_rnn', reuse=tf.AUTO_REUSE):
             # TODO: do not want ORNs to connect to each other, nor for them to have a bias
-            initializer = _initializer(_sparse_range(config.N_ORN), arg='constant')
+            initializer = _initializer(config.initial_rnn_weight, arg='constant')
             w_rnn = tf.get_variable('kernel', shape=(NEURONS, NEURONS), dtype=tf.float32, initializer=initializer)
             w_rnn = tf.abs(w_rnn)
             b_rnn = tf.get_variable('bias', shape=NEURONS, dtype=tf.float32, initializer=tf.constant_initializer(-1))
+
+            if config.prune_weak_weights and config.prune_threshold:
+                thres = tf.cast(w_rnn > config.prune_threshold, tf.float32)
+                w_rnn = tf.multiply(w_rnn, thres)
+
             for t in range(TIME_STEPS):
                 rnn_output = tf.matmul(rnn_output, w_rnn) + b_rnn
                 rnn_output = tf.nn.relu(rnn_output)
@@ -973,7 +987,7 @@ class RNN(Model):
         """
         save_path = self.save_path
         if epoch is not None:
-            save_path = os.path.join(save_path, 'epoch', str(epoch))
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         fname = os.path.join(save_path, 'model.pkl')

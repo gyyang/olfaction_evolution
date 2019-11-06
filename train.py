@@ -204,22 +204,25 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['lin_hist'].append(hist)
                         # Store sparsity computed with threshold
 
-                        # sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
-                        # log['sparsity'].append(sparsity)
-                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False, thres= config.kc_prune_threshold)
-                        K = sparsity[sparsity>0].mean()
-                        bad_KC = np.sum(sparsity == 0)/sparsity.size
+                        sparsity_inferred, thres_inferred = _compute_sparsity(w_glo, dynamic_thres=True, thres=.1)
+                        K_inferred = sparsity_inferred[sparsity_inferred > 0 ].mean()
+                        bad_KC_inferred = np.sum(sparsity_inferred == 0) / sparsity_inferred.size
+                        log['sparsity_inferred'].append(sparsity_inferred)
+                        log['thres_inferred'].append(thres_inferred)
+                        log['K_inferred'].append(K_inferred)
+                        log['bad_KC_inferred'].append(bad_KC_inferred)
 
+                        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False, thres= config.kc_prune_threshold)
+                        K = sparsity[sparsity > 0].mean()
+                        bad_KC = np.sum(sparsity == 0)/sparsity.size
                         log['sparsity'].append(sparsity)
-                        log['sparsity_fixthres'].append(sparsity)
                         log['thres'].append(thres)
                         log['K'].append(K)
                         log['bad_KC'].append(bad_KC)
 
                         print('KC coding level={}'.format(np.round(coding_level,2)))
-                        print('Bad KCs ={}'.format(bad_KC))
-                        print('K (with bad KCs) ={}'.format(sparsity.mean()))
-                        print('K (no bad KCs) ={}'.format(K))
+                        print('Bad KCs (fixed, inferred) ={}, {}'.format(bad_KC, bad_KC_inferred))
+                        print('K (fixed, inferred) ={}, {}'.format(K, K_inferred))
 
                     if config.receptor_layer:
                         w_or = sess.run(model.w_or)
@@ -331,9 +334,11 @@ def train(config, reload=False, save_everytrainloss=False):
 
                 # Compute training loss and accuracy using last batch
                 if config.separate_optimizer:
-                    loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
+                    # loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
+                    loss, acc, _, _ = sess.run([model.loss, model.acc, model.train_op, model.train_op1])
                 else:
-                    loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
+                    # loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
+                    loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')
