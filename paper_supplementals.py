@@ -36,9 +36,12 @@ parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCH
 parser.add_argument('-c', '--cluster', help='Use cluster?', action='store_true')
 args = parser.parse_args()
 
+args.cluster_path = 'pw'
+args.cluster = True
+
 print(args.__dict__)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
-TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
+TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.cluster_path
 
 if use_cluster:
     train = cluster_train

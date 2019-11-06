@@ -44,7 +44,7 @@ mpl.rcParams['font.family'] = 'arial'
 
 print(args.__dict__)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
-TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
+TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.cluster_path
 
 if use_cluster:
     train = cluster_train
