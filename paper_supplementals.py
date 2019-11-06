@@ -36,8 +36,10 @@ parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCH
 parser.add_argument('-c', '--cluster', help='Use cluster?', action='store_true')
 args = parser.parse_args()
 
-args.cluster_path = 'pw'
-args.cluster = True
+# args.cluster_path = 'pw'
+# args.cluster = True
+# args.experiment = ['controls_glomeruli']
+# args.train = True
 
 print(args.__dict__)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
@@ -78,7 +80,7 @@ if 'controls_glomeruli' in experiments:
     # Vary ORN n duplication under different nKC
     path = './files/controls_glomeruli'
     if TRAIN:
-        local_train(experiment_controls.controls_glomeruli(is_test), path, control=True)
+        train(experiment_controls.controls_glomeruli(is_test), path, control=True)
     if ANALYZE:
         default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10}
 
