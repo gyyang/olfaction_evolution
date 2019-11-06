@@ -36,7 +36,7 @@ def _get_data(path):
     wglo = tools.load_pickle(d, 'w_glo')[-1]
 
     thres = analysis_pn2kc_training.infer_threshold(wglo)
-    print(thres)
+    print('Inferred threshold', thres)
     sparsity = np.count_nonzero(wglo > thres, axis=0)
     v1 = sparsity
     strength_wout1 = np.linalg.norm(wout1, axis=1)
@@ -52,8 +52,11 @@ def _get_data(path):
 
 def _get_groups(data_norm, config):
     labels = KMeans(n_clusters=2, random_state=0).fit_predict(data_norm)
+    # Make sure group0 has more neurons
     group0 = np.arange(config.N_KC)[labels == 1]
     group1 = np.arange(config.N_KC)[labels == 0]
+    if len(group0) < len(group1):
+        group0, group1 = group1, group0
     print('Group 0 has {:d} neurons'.format(len(group0)))
     print('Group 1 has {:d} neurons'.format(len(group1)))
     return group0, group1
@@ -227,75 +230,6 @@ def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
     save_fig(figpath, savename)
 
 
-def main1(arg, foldername=None, subdir=None):
-    if arg == 'metatrain':
-        if foldername is None:
-            foldername = 'metatrain'
-        if subdir is None:
-            subdir = '0'
-        ylim_head1 = .5
-        ylim_head2 = .5
-    else:
-        if foldername is None:
-            foldername = 'multi_head'
-        if subdir is None:
-            subdir = '000000'
-        ylim_head1 = 0
-        ylim_head2 = .9
-
-    path = os.path.join(rootpath, 'files', foldername)
-    figpath = os.path.join(rootpath, 'figures', foldername)
-
-    subpath = os.path.join(path, subdir)
-    config = tools.load_config(subpath)
-    config.data_dir = rootpath + config.data_dir[1:]
-    config.save_path = rootpath + config.save_path[1:]
-
-    v1, v2, v3, data_norm, data = _get_data(subpath)
-    group0, group1 = _get_groups(data_norm, config)
-
-    xmin, xmax, ymin, ymax = 0, 15, 0, 3
-    degree_label = 'Input degree'
-    valence_label = 'Conn. to valence'
-    class_label = 'Conn. to classif.'
-    _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label,
-                  ylabel=valence_label, figpath=figpath)
-    _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label,
-                  ylabel=class_label, figpath=figpath)
-    _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label,
-                  ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
-    _compute_silouette_score(data_norm, figpath)
-
-    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-    Z = _get_density(data, X, Y)
-    Z1 = _get_density(data[group0], X, Y)
-    Z2 = _get_density(data[group1], X, Y)
-
-    _plot_density(Z, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel= valence_label,
-                  savename='density', figpath = figpath)
-    _plot_density(Z1, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel= valence_label,
-                  savename='density_group1', figpath = figpath)
-    _plot_density(Z2, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel=valence_label,
-                  savename='density_group2', figpath=figpath)
-    _plot_density(Z1+Z2, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel=valence_label,
-                  savename='density_group12', figpath=figpath)
-
-    val_accs = list()
-    val_acc2s = list()
-    for units in [None, group0, group1]:
-        if arg == 'metatrain':
-            acc, acc2 = meta_lesion_analysis(config, units)
-        elif arg == 'multi_head':
-            acc, acc2 = lesion_analysis(config, units)
-        val_accs.append(acc)
-        val_acc2s.append(acc2)
-
-    _plot_hist('head1', ylim_head1, ylim_head2, val_accs, figpath)
-    _plot_hist('head2', ylim_head1, ylim_head2, val_acc2s, figpath)
 
 
 def main():
@@ -448,4 +382,91 @@ def main():
     _plot_hist('head2')
 
 if __name__ == '__main__':
-    main1('multi_head', foldername='multi_head', subdir='000000')
+    # main1('multi_head', foldername='multi_head', subdir='000000')
+    arg = 'multi_head'
+    foldername='multi_head'
+    # foldername='tmp_multi_head'
+    subdir='000005'
+    # subdir='000001'
+# def main1(arg, foldername=None, subdir=None):
+    
+    if arg == 'metatrain':
+        if foldername is None:
+            foldername = 'metatrain'
+        if subdir is None:
+            subdir = '0'
+        ylim_head1 = .5
+        ylim_head2 = .5
+    else:
+        if foldername is None:
+            foldername = 'multi_head'
+        if subdir is None:
+            subdir = '000000'
+        ylim_head1 = 0
+        ylim_head2 = .8
+
+    path = os.path.join(rootpath, 'files', foldername)
+    figpath = os.path.join(rootpath, 'figures', foldername)
+    
+    res = tools.load_all_results(path)
+
+    subpath = os.path.join(path, subdir)
+    # subpath = path
+    config = tools.load_config(subpath)
+    print('Learning rate', config.lr)
+    print('PN norm', config.pn_norm_pre)
+    try:
+        # dirty hack
+        config.data_dir = rootpath + config.data_dir.split('olfaction_evolution')[1]
+        config.save_path = rootpath + config.save_path.split('olfaction_evolution')[1]
+    except IndexError:
+        config.data_dir = rootpath + config.data_dir[1:]
+        config.save_path = rootpath + config.save_path[1:]
+
+    v1, v2, v3, data_norm, data = _get_data(subpath)
+    group0, group1 = _get_groups(data_norm, config)
+
+    xmin, xmax, ymin, ymax = 0, 15, 0, 3
+    degree_label = 'Input degree'
+    valence_label = 'Conn. to valence'
+    class_label = 'Conn. to classif.'
+# =============================================================================
+#     _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label,
+#                   ylabel=valence_label, figpath=figpath)
+#     _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label,
+#                   ylabel=class_label, figpath=figpath)
+# =============================================================================
+    _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label,
+                  ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
+    _compute_silouette_score(data_norm, figpath)
+
+    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+    Z = _get_density(data, X, Y)
+    Z1 = _get_density(data[group0], X, Y)
+    Z2 = _get_density(data[group1], X, Y)
+
+    _plot_density(Z, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel= valence_label,
+                  savename='density', figpath = figpath)
+    _plot_density(Z1, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel= valence_label,
+                  savename='density_group1', figpath = figpath)
+    _plot_density(Z2, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel=valence_label,
+                  savename='density_group2', figpath=figpath)
+    _plot_density(Z1+Z2, xmin, xmax, ymin, ymax,
+                  xlabel=degree_label, ylabel=valence_label,
+                  savename='density_group12', figpath=figpath)
+
+    val_accs = list()
+    val_acc2s = list()
+    for units in [None, group0, group1]:
+        if arg == 'metatrain':
+            acc, acc2 = meta_lesion_analysis(config, units)
+        elif arg == 'multi_head':
+            acc, acc2 = lesion_analysis(config, units)
+        val_accs.append(acc)
+        val_acc2s.append(acc2)
+
+    _plot_hist('head1', ylim_head1, ylim_head2, val_accs, figpath)
+    _plot_hist('head2', ylim_head1, ylim_head2, val_acc2s, figpath)
