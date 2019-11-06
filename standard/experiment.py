@@ -536,18 +536,16 @@ def train_multihead(argTest=False):
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
-    config.save_log_only = True
     config.save_every_epoch = False
     # config.initial_pn2kc = .1
     # config.train_kc_bias = False
     # config.kc_loss = False
 
-    config.pn_norm_pre = 'batch_norm'
     config.data_dir = './datasets/proto/multi_head'
-    # config.save_every_epoch = True
 
     hp_ranges = OrderedDict()
-    hp_ranges['dummy_var'] = [True]
+    hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
     if argTest:
         config.max_epoch = testing_epochs
 
