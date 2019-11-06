@@ -42,13 +42,9 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
-print(args)
+print(args.__dict__)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
-TRAIN = args.train
-ANALYZE = args.analyze
-is_test = args.testing
-use_cluster = args.cluster
-cluster_path = args.clusterpath
+TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 if use_cluster:
     train = cluster_train
@@ -234,32 +230,6 @@ if 'train_kc_claws' in experiments:
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
         analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
-
-if 'controls_glomeruli' in experiments:
-    # Vary ORN n duplication under different nKC
-    path = './files/controls_glomeruli'
-    if TRAIN:
-        local_train(experiment_controls.controls_glomeruli(is_test), path, control=True)
-    if ANALYZE:
-        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10}
-
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5}),
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5}),
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5}),
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10}),
-
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5}),
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10}),
 
 if 'controls_kc_claw' in experiments:
     path = './files/controls_kc_claw'
