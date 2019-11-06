@@ -546,6 +546,7 @@ def train_multihead(argTest=False):
     hp_ranges = OrderedDict()
     hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
     hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
+    hp_ranges['dummy'] = [0, 1, 2]
     if argTest:
         config.max_epoch = testing_epochs
 
