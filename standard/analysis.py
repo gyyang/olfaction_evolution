@@ -155,16 +155,16 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, 
         ax.set_ylabel('From ORNs', labelpad=-5)
     elif var_name == 'w_or':
         plt.title('OR-ORN expression array after training', fontsize=7)
-        ax.set_xlabel('ORN', labelpad=-5)
-        ax.set_ylabel('Unique OR', labelpad=-5)
+        ax.set_xlabel('To ORNs', labelpad=-5)
+        ax.set_ylabel('From ORs', labelpad=-5)
     elif var_name == 'w_glo':
         plt.title('PN-KC connectivity after training', fontsize=7)
-        ax.set_xlabel('KC', labelpad=-5)
-        ax.set_ylabel('PN', labelpad=-5)
+        ax.set_xlabel('To KCs', labelpad=-5)
+        ax.set_ylabel('from PNs', labelpad=-5)
     elif var_name == 'w_combined':
         plt.title('OR-PN combined connectivity', fontsize=7)
-        ax.set_xlabel('PN', labelpad=-5)
-        ax.set_ylabel('OR', labelpad=-5)
+        ax.set_xlabel('To PNs', labelpad=-5)
+        ax.set_ylabel('From ORs', labelpad=-5)
     else:
         print('unknown variable name for weight matrix: {}'.format(var_name))
 
