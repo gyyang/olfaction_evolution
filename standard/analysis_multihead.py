@@ -25,10 +25,12 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
+
 def _get_data(path):
     # TODO: clean up these paths
     # d = os.path.join(path, '000000', 'epoch')
-    d = os.path.join(path, 'epoch')
+    # d = os.path.join(path, 'epoch')
+    d = path
     wout1 = tools.load_pickle(d, 'model/layer3/kernel:0')[-1]
     wout2 = tools.load_pickle(d, 'model/layer3_2/kernel:0')[-1]
     wglo = tools.load_pickle(d, 'w_glo')[-1]
@@ -47,6 +49,7 @@ def _get_data(path):
     data_norm = data / norm_factor
     return v1, v2, v3, data_norm, data
 
+
 def _get_groups(data_norm, config):
     labels = KMeans(n_clusters=2, random_state=0).fit_predict(data_norm)
     group0 = np.arange(config.N_KC)[labels == 1]
@@ -55,7 +58,9 @@ def _get_groups(data_norm, config):
     print('Group 1 has {:d} neurons'.format(len(group1)))
     return group0, group1
 
-def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath, xticks = (0, 7, 15)):
+
+def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath,
+                  xticks = (0, 7, 15)):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
     ax.scatter(v1, v2, alpha=0.2, marker='.', s=1)
@@ -65,6 +70,7 @@ def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath, xtick
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     save_fig(figpath, 'scatter_' + xlabel + '_' + ylabel)
+
 
 def _compute_silouette_score(data, figpath):
     n_clusters = np.arange(2, 10)
@@ -79,6 +85,7 @@ def _compute_silouette_score(data, figpath):
     plt.xlabel('Number of clusters')
     plt.ylabel('Silouette score')
     save_fig(figpath, 'silhouette score')
+
 
 def _get_density(data, X, Y, method='scipy'):
     """Get density of data.
@@ -97,6 +104,7 @@ def _get_density(data, X, Y, method='scipy'):
         raise ValueError('Unknown method')
     return Z
 
+
 def _plot_density(Z, xmin, xmax, ymin, ymax, xlabel, ylabel, savename, figpath):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
@@ -109,6 +117,7 @@ def _plot_density(Z, xmin, xmax, ymin, ymax, xlabel, ylabel, savename, figpath):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     save_fig(figpath, savename)
+
 
 def lesion_analysis(config, units=None):
     tf.reset_default_graph()
@@ -138,6 +147,7 @@ def lesion_analysis(config, units=None):
             [val_model.loss, val_model.acc, val_model.acc2],
             {val_x_ph: val_x, val_y_ph: val_y})
         return val_acc, val_acc2
+
 
 def meta_lesion_analysis(config, units=None):
     import mamldataset
@@ -178,8 +188,10 @@ def meta_lesion_analysis(config, units=None):
             val_model.lesion_units('model/layer2/kernel:0', units, arg='inbound')
 
         val_x, val_y = data_generator.generate('val')
-        val_acc, val_acc2 = sess.run(val_model.total_acc3, {train_x_ph: val_x, train_y_ph: val_y})
+        val_acc, val_acc2 = sess.run(
+                val_model.total_acc3, {train_x_ph: val_x, train_y_ph: val_y})
         return val_acc, val_acc2
+
 
 def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
     if name == 'head1':
@@ -214,6 +226,7 @@ def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
     ax.set_yticks(ylim)
     save_fig(figpath, savename)
 
+
 def main1(arg, foldername=None, subdir=None):
     if arg == 'metatrain':
         if foldername is None:
@@ -245,9 +258,12 @@ def main1(arg, foldername=None, subdir=None):
     degree_label = 'Input degree'
     valence_label = 'Conn. to valence'
     class_label = 'Conn. to classif.'
-    _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=valence_label, figpath=figpath)
-    _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label, ylabel=class_label, figpath=figpath)
-    _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label, ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
+    _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label,
+                  ylabel=valence_label, figpath=figpath)
+    _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label,
+                  ylabel=class_label, figpath=figpath)
+    _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label,
+                  ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
     _compute_silouette_score(data_norm, figpath)
 
     X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
@@ -256,13 +272,17 @@ def main1(arg, foldername=None, subdir=None):
     Z2 = _get_density(data[group1], X, Y)
 
     _plot_density(Z, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel= valence_label, savename='density', figpath = figpath)
+                  xlabel=degree_label, ylabel= valence_label,
+                  savename='density', figpath = figpath)
     _plot_density(Z1, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel= valence_label, savename='density_group1', figpath = figpath)
+                  xlabel=degree_label, ylabel= valence_label,
+                  savename='density_group1', figpath = figpath)
     _plot_density(Z2, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel=valence_label, savename='density_group2', figpath=figpath)
+                  xlabel=degree_label, ylabel=valence_label,
+                  savename='density_group2', figpath=figpath)
     _plot_density(Z1+Z2, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel=valence_label, savename='density_group12', figpath=figpath)
+                  xlabel=degree_label, ylabel=valence_label,
+                  savename='density_group12', figpath=figpath)
 
     val_accs = list()
     val_acc2s = list()
