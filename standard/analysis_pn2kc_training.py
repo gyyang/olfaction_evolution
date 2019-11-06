@@ -7,8 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import tools
 from tools import nicename
-from standard.analysis import _easy_save
-import standard.analysis as sa
+from tools import save_fig
 from scipy.stats import rankdata
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import kurtosis
@@ -23,6 +22,8 @@ mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
+mpl.rcParams['mathtext.fontset'] = 'stix'
+
 figpath = os.path.join(rootpath, 'figures')
 THRES = 0.1
 
@@ -116,6 +117,7 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
 
 
 def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, select_dict = None, thres = THRES, ax_args=None):
+    import standard.analysis as sa
     wglos = tools.load_pickle(dir, 'w_glo')
     xrange = wglos[0].shape[0]
     zero_claws = []
@@ -212,7 +214,7 @@ def image_pn2kc_parameters(dir, dynamic_thres=False):
         plt.tick_params(axis='both', which='major', labelsize=7)
         cb.ax.tick_params('both',length=0)
         plt.axis('tight')
-        _easy_save(path, '_' + nicename(zkey), pdf=False)
+        save_fig(path, '_' + nicename(zkey), pdf=False)
 
 
     wglos = tools.load_pickle(dir, 'w_glo')
@@ -278,7 +280,7 @@ def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
 
-        _easy_save(path, str='_weights_per_kc', pdf=True)
+        save_fig(path, str='_weights_per_kc', pdf=True)
 
     if loopkey is None:
         legend = ['Trained, no loss', 'Trained, with loss', 'Fixed']
@@ -594,7 +596,9 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
 
 def plot_all_K(n_orns, Ks, plot_scatter=False,
                plot_box=False, plot_data=True,
-               plot_fit=True, plot_angle=False, path='default'):
+               plot_fit=True, plot_angle=False,
+               plot_dim=False,
+               path='default'):
     from sklearn.linear_model import LinearRegression
 
     fig = plt.figure(figsize=(3.5, 2))
@@ -622,23 +626,24 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
                    flierprops=flierprops, boxprops=boxprops, showcaps=False,
                    whiskerprops=whiskerprops
                    )
-            
+
+    def _fit(x, y):
+        x_fit = np.linspace(min(np.log(25), x[0]), max(np.log(1600), x[-1]), 3)
+        # model = Ridge()
+        model = LinearRegression()
+        model.fit(x[:, np.newaxis], y)
+        y_fit = model.predict(x_fit[:, np.newaxis])
+        return x_fit, y_fit, model
+
     if plot_box:
         _pretty_box(logKs, np.log(n_orns), ax, tools.blue)
         
     if plot_fit:
         print(n_orns)
         print(np.exp(med_logKs))
-        # x, y = np.log(n_orns)[3:], med_logKs[3:]
-        x, y = np.log(n_orns), med_logKs
-        x_fit = np.linspace(np.log(25), np.log(1600), 3)    
-        model = LinearRegression()
-        model.fit(x[:, np.newaxis], y)
-        y_fit = model.predict(x_fit[:, np.newaxis])
-        
-        label = r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+        x_fit, y_fit, model = _fit(np.log(n_orns), med_logKs)
+        label = r'Train $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
                                np.exp(model.intercept_), model.coef_[0])
-        
         ax.plot(x_fit, y_fit, color=tools.blue, label=label)
     
     if plot_data:
@@ -652,6 +657,17 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue, zorder=5)
         ax.text(np.log(53), np.log(6), '[1]', color=tools.darkblue,
                 horizontalalignment='left', verticalalignment='top', zorder=5)
+
+    if plot_dim:
+        from analytical.analyze_simulation_results import _load_result
+        x, y = _load_result('all_value_withdim_m', v_name='dim')
+        print(x, y)
+        x, y = np.log(x), np.log(y)
+        plt.scatter(x, y, c=tools.gray, s=5)
+        x_fit, y_fit, model = _fit(x, y)
+        label = r'Max Dimension $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+                               np.exp(model.intercept_), model.coef_[0])
+        ax.plot(x_fit, y_fit, color=tools.gray, label=label)
     
     if plot_angle:
         fname = os.path.join(rootpath, 'files', 'analytical',
@@ -660,6 +676,15 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
         _pretty_box(list(np.log(summary['opt_ks'].T)),
                     np.log(summary['n_orns']), ax, tools.red)
+        
+    if plot_angle and plot_fit:
+        # x, y = np.log(n_orns)[3:], med_logKs[3:]
+        x = np.log(summary['n_orns'])
+        y = np.median(np.log(summary['opt_ks']), axis=0)
+        x_fit, y_fit, model = _fit(x, y)
+        label = r'Robust weights $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+                               np.exp(model.intercept_), model.coef_[0])
+        ax.plot(x_fit, y_fit, color=tools.red, label=label)
         
     ax.legend(bbox_to_anchor=(0., 1.05), loc=2, frameon=False)
         
@@ -687,8 +712,8 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
     if plot_fit:
         name += '_fit'
     if plot_angle:
-        name += 'angle'
-    _easy_save(path, name)
+        name += '_angle'
+    save_fig(path, name)
 
 # if __name__ == '__main__':
 #     dir = "../files/train_KC_claws"

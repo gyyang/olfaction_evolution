@@ -3,10 +3,36 @@ import json
 import pickle
 from copy import deepcopy
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 from matplotlib import colors
 from sklearn.metrics.pairwise import cosine_similarity
 
 import configs
+
+rootpath = os.path.dirname(os.path.abspath(__file__))
+FIGPATH = os.path.join(rootpath, 'figures')
+
+mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
+
+
+def save_fig(save_path, str='', dpi=300, pdf=True, show=False):
+    save_name = os.path.split(save_path)[-1]
+    path = os.path.join(FIGPATH, save_name)
+    os.makedirs(path, exist_ok=True)
+    figname = os.path.join(path, save_name + str)
+    plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
+    print('Figure saved at: ' + figname)
+
+    if pdf:
+        plt.savefig(os.path.join(figname + '.pdf'), transparent=True)
+        # plt.savefig(os.path.join(figname + '.svg'), transparent=True, format='svg')
+    if show:
+        plt.show()
+    # plt.close()
 
 
 def save_config(config, save_path, also_save_as_text = True):
@@ -276,6 +302,7 @@ blue = np.array([2,148,165])/255.
 red = np.array([193,64,61])/255.
 gray = np.array([167, 156, 147])/255.
 darkblue = np.array([3, 53, 62])/255.
+green = np.array([65,89,57])/255.  # From # 24
 
 def _reshape_worn(w_orn, unique_orn, mode='tile'):
     """Reshape w_orn."""

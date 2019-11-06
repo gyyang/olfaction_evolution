@@ -134,8 +134,8 @@ def _plot_progress(ys, legend, save_path, name, ylim, yticks, ylabel):
     ax.yaxis.set_ticks_position('left')
     plt.legend(legend, fontsize=4, frameon=False)
 
-    from standard.analysis import _easy_save
-    _easy_save(save_path, name, dpi=500)
+    from tools import save_fig
+    save_fig(save_path, name, dpi=500)
 
 def _load_epoch_activity(config_path, epoch_path):
     '''

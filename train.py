@@ -124,6 +124,7 @@ def train(config, reload=False, save_everytrainloss=False):
         sess.run(train_iter.initializer, feed_dict={train_x_ph: train_x,
                                                     train_y_ph: train_y})
 
+
         start_epoch = 0
         if reload:
             try:
@@ -183,7 +184,7 @@ def train(config, reload=False, save_everytrainloss=False):
                         w_glo = sess.run(model.w_glo)
                         w_glo[w_glo<1e-9] = 1e-9 #finite range for log
                         kcs = res['kc']
-                        
+
                         coding_level = (kcs > 0).mean()
                         coding_level_per_kc = kcs.mean(axis=0)
                         coding_level_per_odor = kcs.mean(axis=1)
@@ -321,6 +322,7 @@ def train(config, reload=False, save_everytrainloss=False):
                             break
                 else:
                     for b in range(n_batch-1):
+                        # print('tmp', b)
                         if config.separate_optimizer:
                             _, _ = sess.run([model.train_op, model.train_op1])
                         else:
@@ -329,7 +331,7 @@ def train(config, reload=False, save_everytrainloss=False):
                         # if b % 10 == 0:
                             # w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
                             # weights_over_time.append((w_orn, w_glo))
-                            
+
                 # Compute training loss and accuracy using last batch
                 if config.separate_optimizer:
                     # loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
@@ -345,7 +347,7 @@ def train(config, reload=False, save_everytrainloss=False):
             if finish_training:
                 break
 
-            sys.stdout.flush()            
+            sys.stdout.flush()
 
         print('Training finished')
         if 'save_log_only' in dir(config) and config.save_log_only is True:

@@ -30,10 +30,12 @@ mpl.rcParams['font.family'] = 'arial'
 mpl.rcParams['mathtext.fontset'] = 'stix'
 
 def load_optimal_K(filename, v_name):
+    print(filename)
+
     with open(filename, "rb") as f:
         # values is a dictionary of lists
         values = pickle.load(f)
-
+    # print(values[0]['dim'])
     # TODO: TEMPORARY HACK to make withdim analysis work    
     if isinstance(values, list):
         values = values[0]
@@ -155,17 +157,13 @@ def main():
                        'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
                                np.exp(model.intercept_), model.coef_[0])}
 
-    res_dim = res_perturb
-    res_dim_fit = res_perturb_fit
-# =============================================================================
-#     x, y = _load_result('all_value_withdim_m', v_name='dim')
-#     x, y = np.log(x), np.log(y)
-#     x_fit, y_fit, model = _fit(x, y)
-#     res_dim = {'log_N': x, 'log_K': y}
-#     res_dim_fit = {'log_N': x_fit, 'log_K': y_fit, 'model': model,
-#                    'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
-#                                np.exp(model.intercept_), model.coef_[0])}
-# =============================================================================
+    x, y = _load_result('all_value_withdim_m', v_name='dim')
+    x, y = np.log(x), np.log(y)
+    x_fit, y_fit, model = _fit(x, y)
+    res_dim = {'log_N': x, 'log_K': y}
+    res_dim_fit = {'log_N': x_fit, 'log_K': y_fit, 'model': model,
+                   'label': r'$K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+                               np.exp(model.intercept_), model.coef_[0])}
     
     # Get results from training
     path = os.path.join(rootpath, 'files', 'vary_n_orn2')
@@ -328,7 +326,9 @@ def main():
 
 if __name__ == '__main__':
     pass
-    main()
+    # main()
+    # x, y = _load_result('all_value_withdim_m', v_name='dim')
+    x, y = _load_result('all_value_m', v_name='theta')
 
 
     

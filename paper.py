@@ -19,16 +19,7 @@ import argparse
 import standard.experiment as se
 import standard.experiment_controls as experiment_controls
 from standard.hyper_parameter_train import local_train, cluster_train
-import standard.analysis as sa
-import standard.analysis_pn2kc_training as analysis_pn2kc_training
-import standard.analysis_pn2kc_random as analysis_pn2kc_random
-import standard.analysis_orn2pn as analysis_orn2pn
-import standard.analysis_activity as analysis_activity
-import standard.analysis_multihead as analysis_multihead
-import standard.analysis_metalearn as analysis_metalearn
-import oracle.evaluatewithnoise as evaluatewithnoise
-import analytical.numerical_test as numerical_test
-import analytical.analyze_simulation_results as analyze_simulation_results
+
 import matplotlib as mpl
 
 SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
@@ -38,7 +29,7 @@ PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
 parser.add_argument('-t', '--train', help='Training', action='store_true')
-parser.add_argument('-a', '--analyze', help='Analyzing', action='store_false')
+parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
 parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCHPATH)
@@ -62,6 +53,18 @@ if use_cluster:
     train = cluster_train
 else:
     train = local_train
+
+if ANALYZE:
+    import standard.analysis as sa
+    import standard.analysis_pn2kc_training as analysis_pn2kc_training
+    import standard.analysis_pn2kc_random as analysis_pn2kc_random
+    import standard.analysis_orn2pn as analysis_orn2pn
+    import standard.analysis_activity as analysis_activity
+    import standard.analysis_multihead as analysis_multihead
+    import standard.analysis_metalearn as analysis_metalearn
+    import oracle.evaluatewithnoise as evaluatewithnoise
+    import analytical.numerical_test as numerical_test
+    import analytical.analyze_simulation_results as analyze_simulation_results
 
 if cluster_path == 'peter' or cluster_path == 'pw':
     cluster_path = PETER_SCRATCHPATH
@@ -527,6 +530,14 @@ if 'vary_n_orn' in experiments:
         train(se.vary_n_orn(is_test), path, sequential=True)
     if ANALYZE:
         pass
+    
+if 'vary_lr_standard' in experiments:
+    # Train networks with different values of LR for standard network
+    path = './files/vary_lr_standard'
+    if TRAIN:
+        train(se.vary_lr_standard(is_test), path, path=cluster_path)
+    if ANALYZE:
+        pass
 
 tmp_experiments = [e for e in experiments if 'vary_lr_n_kc' in e]
 if len(tmp_experiments) > 0:
@@ -571,6 +582,14 @@ if len(tmp_experiments) > 0:
     for n_pn in n_pns:
         path = './files/vary_init_sparse_lr' + str(n_pn)
         train(se.vary_init_sparse_lr(is_test, n_pn), path, path=cluster_path)
+
+tmp_experiments = [e for e in experiments if 'vary_prune_lr' in e]
+if len(tmp_experiments) > 0:
+    experiment = tmp_experiments[0]
+    n_pns = [int(experiment[len('vary_prune_lr'):])]
+    for n_pn in n_pns:
+        path = './files/vary_prune_lr' + str(n_pn)
+        train(se.vary_prune_lr(is_test, n_pn), path, path=cluster_path)
 
 if 'longtrain' in experiments:
     # Reproducing most basic findings

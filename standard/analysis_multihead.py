@@ -18,7 +18,7 @@ import task
 from model import FullModel
 import tools
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
-from standard.analysis import _easy_save
+from tools import save_fig
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -64,7 +64,7 @@ def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath, xtick
     ax.set_ylim([ymin, ymax])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    _easy_save(figpath, 'scatter_' + xlabel + '_' + ylabel)
+    save_fig(figpath, 'scatter_' + xlabel + '_' + ylabel)
 
 def _compute_silouette_score(data, figpath):
     n_clusters = np.arange(2, 10)
@@ -78,7 +78,7 @@ def _compute_silouette_score(data, figpath):
     plt.plot(n_clusters, scores, 'o-')
     plt.xlabel('Number of clusters')
     plt.ylabel('Silouette score')
-    _easy_save(figpath, 'silhouette score')
+    save_fig(figpath, 'silhouette score')
 
 def _get_density(data, X, Y, method='scipy'):
     """Get density of data.
@@ -108,7 +108,7 @@ def _plot_density(Z, xmin, xmax, ymin, ymax, xlabel, ylabel, savename, figpath):
     ax.set_xticks([0, 7, 15])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    _easy_save(figpath, savename)
+    save_fig(figpath, savename)
 
 def lesion_analysis(config, units=None):
     tf.reset_default_graph()
@@ -212,7 +212,7 @@ def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
     # ax.set_xlim([-0.8, len(rules_perf)-0.2])
     ax.set_ylim(ylim)
     ax.set_yticks(ylim)
-    _easy_save(figpath, savename)
+    save_fig(figpath, savename)
 
 def main1(arg, foldername=None, subdir=None):
     if arg == 'metatrain':
@@ -343,7 +343,7 @@ def main():
     ax.set_xticks([0, 7, 15])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    _easy_save(figpath, 'scatter')
+    save_fig(figpath, 'scatter')
 
     _compute_silouette_score(data_norm)
 
@@ -421,7 +421,7 @@ def main():
         # ax.set_xlim([-0.8, len(rules_perf)-0.2])
         ax.set_ylim(ylim)
         ax.set_yticks(ylim)
-        _easy_save(figpath, savename)
+        save_fig(figpath, savename)
 
 
     _plot_hist('head1')

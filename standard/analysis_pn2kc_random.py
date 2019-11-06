@@ -7,7 +7,7 @@ import matplotlib as mpl
 import tools
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.patches as patches
-from standard.analysis import _easy_save
+from tools import save_fig
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -125,7 +125,7 @@ def pair_distribution(dir, shuffle_arg):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    _easy_save(dir, '_Pair_Distribution_' + shuffle_arg, dpi=500)
+    save_fig(dir, '_Pair_Distribution_' + shuffle_arg, dpi=500)
 
 # distribution of connections is not a bernoulli distribution, but is more compact
 def claw_distribution(dir, shuffle_arg):
@@ -164,7 +164,7 @@ def claw_distribution(dir, shuffle_arg):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    _easy_save(dir, '_Claw_Distribution_' + shuffle_arg, dpi=500)
+    save_fig(dir, '_Claw_Distribution_' + shuffle_arg, dpi=500)
 
 
 #all PNs make the same number of connections onto KCs
@@ -197,7 +197,7 @@ def plot_distribution(dir):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    _easy_save(dir, '_PN_Distribution', dpi=500)
+    save_fig(dir, '_PN_Distribution', dpi=500)
 
 # average correlation of weights between KCs decrease as a function of training
 # and is similar to shuffled weights with the same connection probability
@@ -260,7 +260,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    _easy_save(dir, '_Cosine_Similarity_' + shuffle_arg, dpi=500)
+    save_fig(dir, '_Cosine_Similarity_' + shuffle_arg, dpi=500)
 
 def display_matrix(wglo):
 

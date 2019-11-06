@@ -41,7 +41,7 @@ def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
         plt.tick_params(axis='both', which='major', labelsize=7)
         cb.ax.tick_params('both', length=0)
         plt.axis('tight')
-        sa._easy_save(save_path, '_' + name, pdf=False)
+        tools.save_fig(save_path, '_' + name, pdf=False)
 
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
     for i, d in enumerate(dirs):
@@ -90,7 +90,7 @@ def _distribution(data, save_path, name, xlabel, ylabel, xrange):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    sa._easy_save(save_path, '_' + name, pdf=True)
+    tools.save_fig(save_path, '_' + name, pdf=True)
 
 def distribution_activity(save_path, arg):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]

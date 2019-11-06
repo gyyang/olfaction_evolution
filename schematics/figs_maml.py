@@ -11,7 +11,7 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 from schematics.plotVoronoi import voronoi_plot_2d
-from standard.analysis import _easy_save
+from tools import save_fig
 
 
 def get_labels(prototypes, odors):
@@ -90,7 +90,7 @@ def _plot_task(episode, update):
     plt.yticks([0, 5], [])
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
-    _easy_save('maml', 'ep{:d}_{:s}update_task'.format(episode, update))
+    save_fig('maml', 'ep{:d}_{:s}update_task'.format(episode, update))
     # plt.savefig('task.pdf',transparent=True)
     
 def plot_task():

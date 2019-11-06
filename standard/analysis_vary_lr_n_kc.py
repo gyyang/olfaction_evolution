@@ -15,7 +15,7 @@ sys.path.append(rootpath)
 
 import tools
 from tools import nicename
-from standard.analysis import _easy_save
+from tools import save_fig
 from standard.analysis_pn2kc_training import plot_all_K
 
 mpl.rcParams['font.size'] = 10
@@ -109,7 +109,7 @@ def plot2d(path):
         cb = plt.colorbar(im, cax=ax)
         cb.outline.set_linewidth(0.5)
         
-        _easy_save(path, vname)
+        save_fig(path, vname)
 
 
 def get_all_K(acc_threshold = 0.75, exclude_start = 48, experiment_folder = 'default'):
@@ -211,7 +211,7 @@ def plot_fraction_badKC(n_orns, data, plot_scatter=False, plot_box=True, path='d
         name += '_scatter'
     if plot_box:
         name += '_box'
-    _easy_save(path, name)
+    save_fig(path, name)
 
 
 def main(experiment_folder):
