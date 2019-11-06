@@ -163,8 +163,8 @@ def main():
 
     config = configs.MetaConfig()
     config.metatrain_iterations = 30000
-    config.meta_lr = .0003
-    config.N_PN = 200
+    config.meta_lr = .001
+    config.N_PN = 50
     config.N_CLASS = 5
     config.meta_labels_per_class = 1
     config.meta_batch_size = 16

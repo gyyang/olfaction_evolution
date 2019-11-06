@@ -28,7 +28,7 @@ figpath = os.path.join(rootpath, 'figures')
 
 
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
-                  legends=None, exclude_epoch0=False, plot_vars=None):
+                  legends=None, epoch_range=None, plot_vars=None, ylim = None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -38,7 +38,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         log = dict_methods.filter(log, select_dict)
 
     def _plot_progress(xkey, ykey):
-        figsize = (1.5, 1.2)
+        figsize = (3, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect)
@@ -47,15 +47,17 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         xs = log[xkey]
 
         lstyles = ['-'] * len(xs) if linestyles is None else linestyles
+        from matplotlib import cm
+        colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
 
-        for x, y, s in zip(xs, ys, lstyles):
-            if exclude_epoch0:
-                x, y = x[1:], y[1:]
-            ax.plot(x, y, alpha=alpha, linestyle=s)
+        for x, y, s, c in zip(xs, ys, lstyles, colors):
+            if epoch_range:
+                x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
+            ax.plot(x, y, alpha=alpha, linestyle=s, color = c, linewidth=2)
 
         if legends is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
-            ax.legend(legends, fontsize=7, frameon=False)
+            ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -66,33 +68,37 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
         # ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
-        if ykey in ['val_acc', 'glo_score', 'or_glo_score', 'combined_glo_score']:
+        if ykey in ['glo_score', 'or_glo_score', 'combined_glo_score']:
             ax.set_ylim([0, 1.05])
             ax.yaxis.set_ticks([0, 0.5, 1.0])
-        ax.set_xlim([-1, log[xkey][0,-1]])
+
+        if epoch_range:
+            ax.set_xlim([epoch_range[0], epoch_range[1]])
+        else:
+            ax.set_xlim([-1, log[xkey][0,-1]])
+
+
+        if ylim is not None:
+            ax.set_ylim(ylim)
 
         figname = '_' + ykey
         if select_dict:
             for k, v in select_dict.items():
                 figname += k + '_' + str(v) + '_'
-        save_fig(save_path, figname)
+
+        if epoch_range:
+            figname += '_epoch_range_' + str(epoch_range[1])
+        _easy_save(save_path, figname)
+
 
     if plot_vars is None:
-        plot_vars = ['val_logloss']
-    _plot_progress('epoch', 'val_logloss')
-    _plot_progress('epoch', 'train_logloss')
-    _plot_progress('epoch', 'val_loss')
-    _plot_progress('epoch', 'train_loss')
-    _plot_progress('epoch', 'val_acc')
-    _plot_progress('epoch', 'glo_score')
-    try:
-        _plot_progress('epoch', 'or_glo_score')
-        _plot_progress('epoch', 'combined_glo_score')
-    except:
-        pass
+        plot_vars = ['val_logloss', 'train_logloss','val_loss','train_loss','val_acc','glo_score']
+
+    for plot_var in plot_vars:
+        _plot_progress('epoch', plot_var)
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
+def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, vlim = None):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
@@ -135,10 +141,11 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     ax = fig.add_axes(rect)
 
     max = np.max(abs(w_plot))
-    vlim = np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)
+    if not vlim:
+        vlim = [0, np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)]
     cmap = tools.get_colormap()
     # cmap = 'RdBu_r'
-    im = ax.imshow(w_plot, cmap=cmap, vmin=0, vmax=vlim,
+    im = ax.imshow(w_plot, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
                    interpolation='none')
 
 
@@ -168,7 +175,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False):
     ax.set_xticks([0, w_plot.shape[1]])
     ax.set_yticks([0, w_plot.shape[0]])
     ax = fig.add_axes(rect_cb)
-    cb = plt.colorbar(im, cax=ax, ticks=[0, vlim])
+    cb = plt.colorbar(im, cax=ax, ticks=[vlim[0], vlim[1]])
     cb.outline.set_linewidth(0.5)
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
@@ -262,7 +269,7 @@ def plot_activity(save_path):
     plt.show()
 
 
-def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = None,
+def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
                  figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
                  ax_args={}, plot_args={}, sort = True, res = None, string = ''):
     """Plot results for varying parameters experiments.
@@ -342,10 +349,6 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, yticks = N
 
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
-
-    if yticks is None:
-        ax.set_yticks([0, 0.5, 1.0])
-        plt.ylim([0, 1.1])
 
     if x_key == 'kc_inputs':
         ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')

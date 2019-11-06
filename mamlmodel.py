@@ -109,7 +109,7 @@ class MAML:
         task_accuracya = (task_accuracya_head1, task_accuracya_head2)
 
         lr_dict = {
-            'w_output': tf.minimum(0.2, self.update_lr[0]),
+            'w_output': tf.minimum(self.model.config.output_max_lr, self.update_lr[0]),
                           }
         fast_weights = _update_weights(task_lossa, lr_dict, weights)
 
