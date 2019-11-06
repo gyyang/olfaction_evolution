@@ -67,7 +67,7 @@ def _islikemodeldir(d):
     except NotADirectoryError:
         return False
     for file in files:
-        if 'model.ckpt' in file or 'log.pkl' in file:
+        if 'model.ckpt' in file or 'log.pkl' in file or 'model.pkl' in file:
             return True
     return False
 
@@ -93,10 +93,11 @@ def _get_alldirs(dir, model, sort):
 def get_allmodeldirs(dir):
     return _get_alldirs(dir, model=True, sort=True)
 
+
 def load_pickle(dir, var):
     """Load pickle by epoch in sorted order."""
     out = []
-    dirs = _get_alldirs(dir, model=False, sort=True)
+    dirs = get_allmodeldirs(dir)
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
