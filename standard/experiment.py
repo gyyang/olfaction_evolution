@@ -524,9 +524,9 @@ def train_multihead(argTest=False):
     '''
 
     '''
-    config = configs.input_ProtoConfig()
-    config.label_type = 'multi_head_sparse'
-    task.save_proto(config, folder_name='multi_head')
+    # config = configs.input_ProtoConfig()
+    # config.label_type = 'multi_head_sparse'
+    # task.save_proto(config, folder_name='multi_head')
 
     config = configs.FullConfig()
     config.max_epoch = 30
@@ -535,13 +535,16 @@ def train_multihead(argTest=False):
     config.ORN_NOISE_STD = 0
     config.train_pn2kc = True
     config.sparse_pn2kc = False
+
+    config.save_log_only = True
+    config.save_every_epoch = False
     # config.initial_pn2kc = .1
     # config.train_kc_bias = False
     # config.kc_loss = False
 
     config.pn_norm_pre = 'batch_norm'
     config.data_dir = './datasets/proto/multi_head'
-    config.save_every_epoch = True
+    # config.save_every_epoch = True
 
     hp_ranges = OrderedDict()
     hp_ranges['dummy_var'] = [True]
