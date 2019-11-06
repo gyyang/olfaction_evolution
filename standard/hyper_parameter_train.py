@@ -29,12 +29,12 @@ def local_train(experiment, save_path, sequential=False, control=False,
             print('[***] Hyper-parameter: %2d' % i)
             config.save_path = os.path.join(save_path, str(i).zfill(6))
 
-            # if train_arg == None:
-            #     train.train(config, **kwargs)
-            # elif train_arg == 'metalearn':
-            #     mamlmetatrain.train(config)
-            # else:
-            #     raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
+            if train_arg == None:
+                train.train(config, **kwargs)
+            elif train_arg == 'metalearn':
+                mamlmetatrain.train(config)
+            else:
+                raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
 
 
 def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
