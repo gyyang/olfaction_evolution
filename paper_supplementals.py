@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 print(args.__dict__)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
-TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.cluster_path
+TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 if use_cluster:
     train = cluster_train
