@@ -110,13 +110,13 @@ if 'control_pn2kc' in experiments:
     if TRAIN:
         train(experiment_controls.control_pn2kc(), save_path=path, control=True, path=cluster_path)
     if ANALYZE:
-        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3}
+        default = {'pn_norm_pre': None, 'kc_dropout_rate': 0.5, 'lr': 1e-3, 'initial_pn2kc':0, 'train_kc_bias':True}
         ykeys = ['val_acc', 'K_inferred']
 
         for yk in ykeys:
             if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
                 ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
-                exclude_dict = {'lr':3e-3}
+                exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
             elif yk == 'val_acc':
                 ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
                 exclude_dict = None
@@ -135,13 +135,13 @@ if 'control_pn2kc' in experiments:
                                 select_dict=temp,
                                 logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
 
-                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
-                                 ax_args={'ylim': ylim, 'yticks': yticks})
+                # sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
+                #                  ax_args={'ylim': ylim, 'yticks': yticks})
 
-        import temp1
-        res = temp1.do_everything(path, filter_peaks=False, redo=True)
-        for k, v in default.items():
-            temp = copy.deepcopy(default)
-            temp.pop(k)
-            sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
-                       ax_args={'ylim':[0, 500]})
+        # import standard.analysis_pn2kc_peter
+        # res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
+        # for k, v in default.items():
+        #     temp = copy.deepcopy(default)
+        #     temp.pop(k)
+        #     sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
+        #                ax_args={'ylim':[0, 500]})

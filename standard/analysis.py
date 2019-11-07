@@ -67,6 +67,8 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = 
         log = dict_methods.filter(log, select_dict)
         # get rid of duplicates
         values = log[legend_key]
+        if np.any(values == None):
+            values[values == None] = 'None'
         _, ixs = np.unique(values, return_index=True)
         for k, v in log.items():
             log[k] = log[k][ixs]
@@ -86,7 +88,10 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         log = dict_methods.exclude(log, exclude_dict)
 
     # get rid of duplicates
+
     values = log[legend_key]
+    if np.any(values == None):
+        values[values == None] = 'None'
     _, ixs = np.unique(values, return_index=True)
     for k, v in log.items():
         log[k] = log[k][ixs]
@@ -336,6 +341,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = Fal
         res = dict_methods.filter(res, select_dict)
         # get rid of duplicates
         values = res[x_key]
+        if np.any(values==None):
+            values[values == None] = 'None'
         _, ixs = np.unique(values, return_index=True)
         for k, v in res.items():
             res[k] = res[k][ixs]

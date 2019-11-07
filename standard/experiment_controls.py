@@ -36,17 +36,17 @@ def control_pn2kc():
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.direct_glo = True
-    # config.pn_norm_pre = 'batch_norm'
+    config.pn_norm_pre = 'batch_norm'
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['pn_norm_pre'] = ['None', 'batch_norm']
+    hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
     hp_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
     hp_ranges['lr'] = [3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
     hp_ranges['train_kc_bias'] = [False, True]
-    hp_ranges['initial_pn2kc'] = [0.01, 0.02, 0.05, 0.1, 0.2]
+    hp_ranges['initial_pn2kc'] = [0.05, 0.1, 0.2, 0.5]
 
     return config, hp_ranges
 
