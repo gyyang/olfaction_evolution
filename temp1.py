@@ -33,24 +33,6 @@ def _get_K(res):
     res['K'] = Ks
     res['bad_KC'] = bad_KC
 
-
-def simple_plot(xkey, ykey, filter_dict=None, ax_args={}):
-    if filter_dict is not None:
-        temp = filter(res, filter_dict=filter_dict)
-    else:
-        temp = copy.copy(res)
-
-    x = temp[xkey]
-    y = temp[ykey][:, -1]
-    fig = plt.figure(figsize = (3, 2))
-    ax_box = (0.25, 0.2, 0.65, 0.65)
-    ax = fig.add_axes(ax_box, **ax_args)
-    plt.plot(np.log(x), y, '*')
-    plt.xticks(np.log(x), x)
-    plt.xlabel(xkey)
-    plt.ylabel(ykey)
-    sa._easy_save(d, figname)
-
     # if filter_dict is not None:
     #   plt.legend('{} = {}'.format(filter_dict.key[0],filter_dict.value[0]))
 
@@ -138,7 +120,7 @@ plt.plot(x['lin_bins'][0,:-1],x['lin_hist'][:,-1].T, alpha = 0.75)
 plt.ylim([0, 500])
 plt.legend(x['lr'])
 plt.xlabel('PN-KC Weight Distribution')
-plt.ylabel('val_logloss')
+plt.ylabel('Count')
 ax = plt.gca()
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
@@ -154,10 +136,26 @@ plt.plot(x['val_logloss'].T, alpha = 0.75)
 plt.legend(np.unique(x['separate_lr']))
 plt.legend(x['lr'])
 plt.xlabel('Epoch')
-plt.ylabel('val_logloss')
+plt.ylabel('Log Loss')
 ax = plt.gca()
 ax.spines["right"].set_visible(False)
 ax.spines["top"].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
-sa._easy_save(d, 'training_speed')
+sa._easy_save(d, 'training_logloss')
+
+fig = plt.figure(figsize=(3,2))
+ax_box = (0.25, 0.2, 0.65, 0.65)
+ax = fig.add_axes(ax_box)
+# x = filter(x, {'N_KC':2500, 'kc_prune_threshold':0.1})
+plt.plot(x['val_acc'].T, alpha = 0.75)
+plt.legend(np.unique(x['separate_lr']))
+plt.legend(x['lr'])
+plt.xlabel('Epoch')
+plt.ylabel('Training Accuracy')
+ax = plt.gca()
+ax.spines["right"].set_visible(False)
+ax.spines["top"].set_visible(False)
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+sa._easy_save(d, 'training_accuracy')
