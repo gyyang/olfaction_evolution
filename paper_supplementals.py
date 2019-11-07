@@ -46,9 +46,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 # TRAIN = True
-# ANALYZE = True
+ANALYZE = True
 # use_cluster = True
-# args.experiment =['controls_glomeruli']
+args.experiment =['controls_glomeruli']
 
 
 if use_cluster:
@@ -88,22 +88,20 @@ if 'controls_glomeruli' in experiments:
     if TRAIN:
         train(experiment_controls.controls_glomeruli(is_test), save_path=path, control=True, path=cluster_path)
     if ANALYZE:
-        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10}
+        import copy
+        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10, 'lr':1e-3}
+        ykeys = ['glo_score', 'val_acc']
 
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10})
+        for yk in ykeys:
+            for k, v in default.items():
+                temp = copy.deepcopy(default)
+                temp.pop(k)
+                if k == 'lr':
+                    logx = True
+                else:
+                    logx= False
+                # sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
+                #                 logx=logx,
+                #                 ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10})
+                sa.plot_progress(path, select_dict=temp, plot_vars=[yk], legend_key=k)

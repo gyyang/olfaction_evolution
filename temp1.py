@@ -33,24 +33,6 @@ def _get_K(res):
     res['K'] = Ks
     res['bad_KC'] = bad_KC
 
-
-def simple_plot(xkey, ykey, filter_dict=None, ax_args={}):
-    if filter_dict is not None:
-        temp = filter(res, filter_dict=filter_dict)
-    else:
-        temp = copy.copy(res)
-
-    x = temp[xkey]
-    y = temp[ykey][:, -1]
-    fig = plt.figure(figsize = (3, 2))
-    ax_box = (0.25, 0.2, 0.65, 0.65)
-    ax = fig.add_axes(ax_box, **ax_args)
-    plt.plot(np.log(x), y, '*')
-    plt.xticks(np.log(x), x)
-    plt.xlabel(xkey)
-    plt.ylabel(ykey)
-    sa._easy_save(d, figname)
-
     # if filter_dict is not None:
     #   plt.legend('{} = {}'.format(filter_dict.key[0],filter_dict.value[0]))
 
