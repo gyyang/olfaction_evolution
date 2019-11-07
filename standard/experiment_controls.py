@@ -13,7 +13,7 @@ def controls_glomeruli(argTest=False):
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 60
+    config.max_epoch = 100
     config.pn_norm_pre = 'batch_norm'
     config.ORN_NOISE_STD = 0
 
