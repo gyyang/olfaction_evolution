@@ -221,7 +221,6 @@ def load_all_results(rootpath, argLast=True, ix=None,
         res: dictionary of numpy arrays, containing information from all models
     """
     dirs = get_allmodeldirs(rootpath)
-    print(dirs)
     from collections import defaultdict
     res = defaultdict(list)
 

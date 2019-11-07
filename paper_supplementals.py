@@ -46,9 +46,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 # TRAIN = True
-# ANALYZE = True
+ANALYZE = True
 # use_cluster = True
-# args.experiment =['controls_glomeruli']
+args.experiment =['controls_glomeruli']
 
 
 if use_cluster:
@@ -100,8 +100,8 @@ if 'controls_glomeruli' in experiments:
                     logx = True
                 else:
                     logx= False
-                # sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
-                #                 logx=logx,
-                #                 ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
+                sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
+                                logx=logx,
+                                ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
                 sa.plot_progress(path, select_dict=temp, plot_vars=[yk], legend_key=k)
