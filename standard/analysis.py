@@ -25,8 +25,56 @@ mpl.rcParams['font.family'] = 'arial'
 
 figpath = os.path.join(rootpath, 'figures')
 
-def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
-                  legend_key=None, epoch_range=None, plot_vars=None, ax_args = {}, exponential = False):
+def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = {}, log=None):
+    def _plot_progress(xkey, ykey):
+        figsize = (2.5, 2)
+        rect = [0.3, 0.3, 0.65, 0.5]
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_axes(rect, **ax_args)
+
+        ys = log[ykey]
+        xs = log[xkey]
+
+        from matplotlib import cm
+        colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
+
+        for x, y, c in zip(xs, ys, colors):
+            ax.plot(x, y, alpha= 1, color = c, linewidth=1)
+
+        if legend_key is not None:
+            legends = log[legend_key]
+            ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
+            plt.title(nicename(legend_key))
+
+        ax.set_xlabel(nicename(xkey))
+        ax.set_ylabel(nicename(ykey))
+        if ykey == 'val_acc' and log[ykey].shape[0] == 1:
+            plt.title('Final accuracy {:0.3f}'.format(log[ykey][0,-1]), fontsize=7)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
+        figname = '_' + ykey
+        if select_dict:
+            for k, v in select_dict.items():
+                figname += k + '_' + str(v) + '_'
+        save_fig(save_path, figname)
+
+    if log is None:
+        log = tools.load_all_results(save_path, argLast=False)
+    if select_dict is not None:
+        log = dict_methods.filter(log, select_dict)
+        # get rid of duplicates
+        values = log[legend_key]
+        _, ixs = np.unique(values, return_index=True)
+        for k, v in log.items():
+            log[k] = log[k][ixs]
+    _plot_progress(xkey, ykey)
+
+
+def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
+                  legend_key=None, epoch_range=None, ykeys=None, ax_args = {}):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -34,12 +82,14 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
     log = tools.load_all_results(save_path, argLast=False)
     if select_dict is not None:
         log = dict_methods.filter(log, select_dict)
+    if exclude_dict is not None:
+        log = dict_methods.exclude(log, exclude_dict)
 
-        # get rid of duplicates
-        values = log[legend_key]
-        _, ixs = np.unique(values, return_index=True)
-        for k, v in log.items():
-            log[k] = log[k][ixs]
+    # get rid of duplicates
+    values = log[legend_key]
+    _, ixs = np.unique(values, return_index=True)
+    for k, v in log.items():
+        log[k] = log[k][ixs]
 
     def _plot_progress(xkey, ykey):
         figsize = (2.5, 2)
@@ -50,20 +100,17 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         ys = log[ykey]
         xs = log[xkey]
 
-        lstyles = ['-'] * len(xs) if linestyles is None else linestyles
         from matplotlib import cm
         colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
 
-        for x, y, s, c in zip(xs, ys, lstyles, colors):
+        for x, y, c in zip(xs, ys, colors):
             if epoch_range:
                 x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
-            ax.plot(x, y, alpha=alpha, linestyle=s, color = c, linewidth=1)
+            ax.plot(x, y, alpha=alpha, color = c, linewidth=1)
 
         if legend_key is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
             legends = log[legend_key]
-            if exponential:
-                legends = ['{:.0e}'.format(x) for x in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
             plt.title(nicename(legend_key))
 
@@ -91,10 +138,10 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         save_fig(save_path, figname)
 
 
-    if plot_vars is None:
-        plot_vars = ['val_logloss', 'train_logloss','val_loss','train_loss','val_acc','glo_score']
+    if ykeys is None:
+        ykeys = ['val_logloss', 'train_logloss', 'val_loss', 'train_loss', 'val_acc', 'glo_score']
 
-    for plot_var in plot_vars:
+    for plot_var in ykeys:
         _plot_progress('epoch', plot_var)
 
 
@@ -271,7 +318,7 @@ def plot_activity(save_path):
 
 def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = False, logy = False,
                  figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
-                 ax_args={}, plot_args={}, sort = True, res = None, exponentialx = False, string =''):
+                 ax_args={}, plot_args={}, sort = True, res = None, string =''):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -343,12 +390,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = Fal
 
     if logx:
         ax.set_xticks(np.log(xticks))
-        if exponentialx:
-            xticks = ['{:.0e}'.format(x) for x in xticks]
         ax.set_xticklabels(xticks)
     else:
-        if exponentialx:
-            xticks = ['{:.0e}'.format(x) for x in xticks]
         ax.set_xticks(xticks)
 
     if logy:

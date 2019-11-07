@@ -15,7 +15,7 @@ python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
 
 import os
 import argparse
-
+import copy
 import standard.experiment as se
 import standard.experiment_controls
 import standard.experiment_controls as experiment_controls
@@ -48,7 +48,7 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # TRAIN = True
 # ANALYZE = True
 # use_cluster = True
-# args.experiment =['control_orn2pn']
+# args.experiment =['control_pn2kc']
 
 
 if use_cluster:
@@ -88,7 +88,6 @@ if 'control_orn2pn' in experiments:
     if TRAIN:
         train(experiment_controls.control_orn2pn(), save_path=path, control=True, path=cluster_path)
     if ANALYZE:
-        import copy
         default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10, 'lr':1e-3}
         ykeys = ['glo_score', 'val_acc']
 
@@ -97,37 +96,53 @@ if 'control_orn2pn' in experiments:
                 temp = copy.deepcopy(default)
                 temp.pop(k)
                 if k == 'lr':
-                    logx = True
-                    exponential = True
+                    logx= True
                 else:
-                    logx= False
-                    exponential = False
+                    logx = False
                 sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
-                                logx=logx, exponentialx= exponential,
-                                ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
-                #
-                # sa.plot_progress(path, select_dict=temp, plot_vars=[yk], legend_key=k, exponential= exponential,
-                #                  ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
+                                logx=logx, ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
+
+                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k,
+                                 ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
 if 'control_pn2kc' in experiments:
     path = './files/control_pn2kc'
     if TRAIN:
         train(experiment_controls.control_pn2kc(), save_path=path, control=True, path=cluster_path)
     if ANALYZE:
-        default = {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5}
+        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3}
+        ykeys = ['val_acc', 'K_inferred']
+        ykeys = ['val_acc']
 
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True,
-                                                      select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm'},
-                                                      ax_args = {'xticks': [0, .2, .4, .6]})
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', dynamic_thres=True,
-                                                      select_dict={'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='pn_norm_pre', dynamic_thres=True,
-                                                      select_dict={'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
-        analysis_pn2kc_training.plot_distribution(path)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc', ax_args ={'xticks': [0, .2, .4, .6]},
-                        select_dict= {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm'})
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',
-                        select_dict= {'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',
-                        select_dict= {'ORN_NOISE_STD':0, 'kc_dropout_rate':0.5})
+        for yk in ykeys:
+            if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
+                ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
+                exclude_dict = {'lr':3e-3}
+            elif yk == 'val_acc':
+                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+                exclude_dict = None
+            elif yk == 'train_logloss':
+                ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
+                exclude_dict = None
+
+            for k, v in default.items():
+                temp = copy.deepcopy(default)
+                temp.pop(k)
+                if k == 'lr':
+                    logx = True
+                else:
+                    logx = False
+                # sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                #                 select_dict=temp,
+                #                 logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
+                #
+                # sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
+                #                  ax_args={'ylim': ylim, 'yticks': yticks})
+
+        import temp1
+        res = temp1.do_everything(path, filter_peaks=False, redo=True)
+        for k, v in default.items():
+            temp = copy.deepcopy(default)
+            temp.pop(k)
+            sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
+                       ax_args={'ylim':[0, 500]})

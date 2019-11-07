@@ -36,7 +36,7 @@ def control_pn2kc():
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.direct_glo = True
-    config.pn_norm_pre = 'batch_norm'
+    # config.pn_norm_pre = 'batch_norm'
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
