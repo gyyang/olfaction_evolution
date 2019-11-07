@@ -45,6 +45,11 @@ print(args.__dict__)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
+# TRAIN = True
+# ANALYZE = True
+# use_cluster = True
+# args.experiment =['controls_glomeruli']
+
 if use_cluster:
     train = cluster_train
 
@@ -56,6 +61,7 @@ if use_cluster:
         cluster_path = SCRATCHPATH
 else:
     train = local_train
+
 
 if ANALYZE:
     import standard.analysis as sa

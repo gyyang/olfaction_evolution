@@ -14,7 +14,7 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 import tools
-from tools import nicename
+from tools import nicename, save_fig
 import task
 from model import SingleLayerModel, FullModel, NormalizedMLP
 
@@ -88,7 +88,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
 
         if epoch_range:
             figname += '_epoch_range_' + str(epoch_range[1])
-        _easy_save(save_path, figname)
+        save_fig(save_path, figname)
 
 
     if plot_vars is None:

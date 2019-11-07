@@ -122,7 +122,8 @@ def varying_config(experiment, i):
         config: new configuration
     """
     # Ranges of hyperparameters to loop over
-    config, hp_ranges = experiment
+    config_, hp_ranges = experiment
+    config = deepcopy(config_)
 
     # Unravel the input index
     keys = hp_ranges.keys()
