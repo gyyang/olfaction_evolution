@@ -42,10 +42,9 @@ def control_pn2kc():
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    hp_ranges['ORN_NOISE_STD'] = [0, .1, .2]
     hp_ranges['pn_norm_pre'] = ['None', 'batch_norm']
     hp_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
-    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    hp_ranges['lr'] = [3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
     return config, hp_ranges
 
 def controls_receptor(argTest=False):
