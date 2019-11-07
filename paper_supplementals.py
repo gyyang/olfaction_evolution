@@ -46,9 +46,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 # TRAIN = True
-ANALYZE = True
+# ANALYZE = True
 # use_cluster = True
-args.experiment =['controls_glomeruli']
+# args.experiment =['controls_glomeruli']
 
 
 if use_cluster:
