@@ -50,6 +50,7 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # use_cluster = True
 # args.experiment =['controls_glomeruli']
 
+
 if use_cluster:
     train = cluster_train
 
@@ -61,7 +62,6 @@ if use_cluster:
         cluster_path = SCRATCHPATH
 else:
     train = local_train
-
 
 if ANALYZE:
     import standard.analysis as sa
@@ -86,7 +86,7 @@ if 'controls_glomeruli' in experiments:
     # Vary ORN n duplication under different nKC
     path = './files/controls_glomeruli'
     if TRAIN:
-        train(experiment_controls.controls_glomeruli(is_test), path, control=True)
+        train(experiment_controls.controls_glomeruli(is_test), save_path=path, control=True, path=cluster_path)
     if ANALYZE:
         default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10}
 
