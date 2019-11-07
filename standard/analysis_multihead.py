@@ -25,8 +25,8 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
-LABELS = ['Input degree', 'Conn. to valence', 'Conn. to classif.']
-RANGES = [(0, 15), (0, 3), (0, 5)]
+LABELS = ['Input degree', 'Conn. to valence', 'Conn. to identity']
+RANGES = [(0, 15), (0, 5), (0, 10)]
 
 
 def _get_data(path):
@@ -47,12 +47,9 @@ def _get_data(path):
     thres = analysis_pn2kc_training.infer_threshold(wglo)
     print('Inferred threshold', thres)
     sparsity = np.count_nonzero(wglo > thres, axis=0)
-    v1 = sparsity
     strength_wout1 = np.linalg.norm(wout1, axis=1)
     strength_wout2 = np.linalg.norm(wout2, axis=1)
-    v2 = strength_wout2
-    v3 = strength_wout1
-    data = np.stack([v1, v2, v3]).T
+    data = np.stack([sparsity, strength_wout2, strength_wout1]).T
 
     return data
 
@@ -91,10 +88,13 @@ def _compute_silouette_score(data, figpath, plot=True):
 
     if plot:
         fig = plt.figure(figsize=(1.5, 1.5))
-        plt.plot(n_clusters, scores, 'o-')
+        ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
+        ax.plot(n_clusters, scores, 'o-')
         plt.xlabel('Number of clusters')
         plt.ylabel('Silouette score')
-        save_fig(figpath, 'silhouette score')
+        plt.xticks([2, 5, 10])
+        [ax.spines[s].set_visible(False) for s in ['right', 'top']]
+        save_fig(figpath, 'silhouette_score')
     
     optim_n_clusters = n_clusters[np.argmax(scores)]
     return optim_n_clusters
@@ -108,6 +108,7 @@ def _get_density(data, X, Y, method='scipy'):
     """
     positions = np.stack([X.ravel(), Y.ravel()]).T
     if method == 'scipy':
+        # This method is most appropriate for unimodal distribution
         kernel = stats.gaussian_kde(data.T)
         Z = np.reshape(kernel(positions.T), X.shape)
     elif method == 'sklearn':
@@ -118,10 +119,12 @@ def _get_density(data, X, Y, method='scipy'):
     return Z
 
 
-def _plot_density(Z, xind, yind, savename, figpath, title=None):
+def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
-    ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
+    cmap = plt.cm.gist_earth_r
+    # cmap = plt.cm.hot_r
+    ax.imshow(np.rot90(Z), cmap=cmap,
               extent=list(RANGES[xind])+list(RANGES[yind]), aspect='auto')
     ax.set_xlim(RANGES[xind])
     ax.set_ylim(RANGES[yind])
@@ -130,30 +133,54 @@ def _plot_density(Z, xind, yind, savename, figpath, title=None):
         ax.set_xticks([0, 7, 15])
     plt.xlabel(LABELS[xind])
     plt.ylabel(LABELS[yind])
+    [ax.spines[s].set_visible(False) for s in ['left', 'right', 'top', 'bottom']]
+    ax.tick_params(length=0)
     if title is not None:
         plt.title(title, fontsize=7)
-    # save_fig(figpath, savename)
+    if savename is not None and figpath is not None:
+        save_fig(figpath, savename)
+    return fig, ax
 
 
-def _plot_all_density(data, xind, yind):
+def _plot_all_density(data, groups, xind, yind, figpath, normalize=True):
     data_plot = data[:, [xind, yind]]
     xmin, xmax = RANGES[xind]
     ymin, ymax = RANGES[yind]
+    X_orig, Y_orig = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+    
+    if normalize:
+        norm_mean = np.mean(data_plot, axis=0)
+        norm_std = np.std(data_plot, axis=0)
+        data_plot = (data_plot - norm_mean) / norm_std
+        xmin, xmax = (np.array(RANGES[xind]) - norm_mean[0]) / norm_std[0]
+        ymin, ymax = (np.array(RANGES[yind]) - norm_mean[1]) / norm_std[1]
+    
     X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
     Z = _get_density(data_plot, X, Y)
     Zs = [_get_density(data_plot[group], X, Y) for group in groups]
+    
+    def add_text(ax):
+        for i in range(len(groups)):
+            ind = np.argmax(Zs[i])
+            ax.text(X_orig.flatten()[ind], Y_orig.flatten()[ind], str(i+1))
+        return ax
 
     name_pre = 'density_'+str(xind)+str(yind)
-    _plot_density(Z, xind, yind, savename=name_pre, figpath=figpath)
+    fig, ax = _plot_density(Z, xind, yind)
+    ax = add_text(ax)
+    save_fig(figpath, name_pre)
+    
     Zsum = 0
     for i, Z in enumerate(Zs):
-        title = 'Group {:d} n={:d}'.format(i, len(groups[i]))
-        _plot_density(Z, xind, yind, savename=name_pre+'_group'+str(i),
-                      figpath=figpath, title=title)
-        Zsum += Z
+        title = 'Cluster {:d} n={:d}'.format(i+1, len(groups[i]))
+        _plot_density(Z, xind, yind, title=title)
+        save_fig(figpath, name_pre+'_group'+str(i+1))
+        Zsum += Z/Z.max()
 
-    _plot_density(Zsum, xind, yind, savename=name_pre+'_group_sum', figpath=figpath)
-
+    fig, ax = _plot_density(Zsum, xind, yind)
+    ax = add_text(ax)
+    save_fig(figpath, name_pre+'_group_sum')
+    
 
 def lesion_analysis(config, units=None):
     tf.reset_default_graph()
@@ -232,7 +259,7 @@ def meta_lesion_analysis(config, units=None):
 def _plot_hist(name, ylim_heads, acc_plot, figpath):
     if name == 'head1':
         ylim = [ylim_heads[0], 1]
-        title = 'Odor'
+        title = 'Identity'
         savename = 'lesion_acc_head1'
     else:
         ylim = [ylim_heads[1], 1]  # replace with n_proto_valence
@@ -247,9 +274,9 @@ def _plot_hist(name, ylim_heads, acc_plot, figpath):
     b0 = ax.bar(xlocs, acc_plot,
                 width=width, edgecolor='none')
     ax.set_xticks(xlocs)
-    group_names = [str(i) for i in range(len(acc_plot))]
+    group_names = [str(i+1) for i in range(len(acc_plot))]
     ax.set_xticklabels(['None'] + group_names)
-    ax.set_xlabel('Lesioning group', fontsize=fs)
+    ax.set_xlabel('Lesioning cluster', fontsize=fs)
     ax.set_ylabel('Accuracy', fontsize=fs)
     ax.set_title(title, fontsize=fs)
     ax.tick_params(axis='both', which='major', labelsize=fs)
@@ -324,8 +351,8 @@ if __name__ == '__main__':
 #                   ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
 # =============================================================================
     
-    _plot_all_density(data, xind=0, yind=1)
-    _plot_all_density(data, xind=2, yind=1)
+    _plot_all_density(data, groups, xind=0, yind=1, figpath=figpath)
+    _plot_all_density(data, groups, xind=2, yind=1, figpath=figpath)
     
     val_accs = list()
     val_acc2s = list()
@@ -339,3 +366,4 @@ if __name__ == '__main__':
 
     _plot_hist('head1', ylim_heads, val_accs, figpath)
     _plot_hist('head2', ylim_heads, val_acc2s, figpath)
+
