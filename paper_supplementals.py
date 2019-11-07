@@ -145,3 +145,8 @@ if 'control_pn2kc' in experiments:
             temp.pop(k)
             sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
                        ax_args={'ylim':[0, 500]})
+
+if 'control_pn2kc_inhibition' in experiments:
+    path = './files/control_pn2kc_inhibition'
+    if TRAIN:
+        train(experiment_controls.control_pn2kc_inhibition(), save_path=path, control=True, path=cluster_path)

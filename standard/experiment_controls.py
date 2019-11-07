@@ -48,8 +48,29 @@ def control_pn2kc():
     hp_ranges['train_kc_bias'] = [False, True]
     hp_ranges['initial_pn2kc'] = [0.05, 0.1, 0.2, 0.5]
     hp_ranges['apl'] = [False, True]
-
     return config, hp_ranges
+
+def control_pn2kc_inhibition():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 100
+
+    config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
+    config.direct_glo = True
+    # config.pn_norm_pre = 'batch_norm'
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+
+    config.w_glo_meansub = True
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    cs = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+    hp_ranges['w_glo_meansub_coeff'] = cs
+    hp_ranges['kc_bias'] = [-1 + c for c in cs]
+    return config, hp_ranges
+
 
 def controls_receptor(argTest=False):
     config = configs.FullConfig()
@@ -383,7 +404,7 @@ def vary_w_glo_meansub_coeff(argTest=False):
     """Vary APL."""
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 5
+    config.max_epoch = 30
 
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0.

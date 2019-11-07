@@ -781,8 +781,8 @@ class FullModel(Model):
             b_apl = weights['b_apl']
             w_apl2kc = weights['w_apl_out']
 
-            # sigmoidal APL with subtractive inhibition
-            apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)  # standard
+            # APL with subtractive inhibition
+            apl = tf.relu(tf.matmul(kc, w_kc2apl) + b_apl)  # standard
             kc_in = tf.matmul(apl, w_apl2kc) + kc_in
 
             # multiplicative APL inhibition
