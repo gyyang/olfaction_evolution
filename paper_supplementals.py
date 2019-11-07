@@ -48,7 +48,7 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # TRAIN = True
 # ANALYZE = True
 # use_cluster = True
-# args.experiment =['control_pn2kc']
+# args.experiment =['control_orn2pn']
 
 
 if use_cluster:
@@ -98,13 +98,16 @@ if 'control_orn2pn' in experiments:
                 temp.pop(k)
                 if k == 'lr':
                     logx = True
+                    exponential = True
                 else:
                     logx= False
+                    exponential = False
                 sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
-                                logx=logx,
+                                logx=logx, exponentialx= exponential,
                                 ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
-
-                sa.plot_progress(path, select_dict=temp, plot_vars=[yk], legend_key=k)
+                #
+                # sa.plot_progress(path, select_dict=temp, plot_vars=[yk], legend_key=k, exponential= exponential,
+                #                  ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
 if 'control_pn2kc' in experiments:
     path = './files/control_pn2kc'

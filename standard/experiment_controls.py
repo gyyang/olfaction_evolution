@@ -51,7 +51,7 @@ def control_pn2kc():
 def controls_receptor(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
+    config.max_epoch = 100
 
     config.receptor_layer = True
     config.or2orn_normalization = True

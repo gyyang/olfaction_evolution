@@ -24,11 +24,9 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 figpath = os.path.join(rootpath, 'figures')
-# figpath = r'C:\Users\Peter\Dropbox\olfaction_evolution\manuscript\plots'
-
 
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
-                  legend_key=None, epoch_range=None, plot_vars=None, ylim = None):
+                  legend_key=None, epoch_range=None, plot_vars=None, ax_args = {}, exponential = False):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -47,7 +45,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
-        ax = fig.add_axes(rect)
+        ax = fig.add_axes(rect, **ax_args)
 
         ys = log[ykey]
         xs = log[xkey]
@@ -63,7 +61,10 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
 
         if legend_key is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
-            ax.legend(log[legend_key], fontsize=7, frameon=False, ncol= 2, loc='best')
+            legends = log[legend_key]
+            if exponential:
+                legends = ['{:.0e}'.format(x) for x in legends]
+            ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
             plt.title(nicename(legend_key))
 
         ax.set_xlabel(nicename(xkey))
@@ -74,19 +75,11 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        # ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
-        if ykey in ['glo_score', 'or_glo_score', 'combined_glo_score']:
-            ax.set_ylim([0, 1.05])
-            ax.yaxis.set_ticks([0, 0.5, 1.0])
 
         if epoch_range:
             ax.set_xlim([epoch_range[0], epoch_range[1]])
         else:
             ax.set_xlim([-1, log[xkey][0,-1]])
-
-
-        if ylim is not None:
-            ax.set_ylim(ylim)
 
         figname = '_' + ykey
         if select_dict:
@@ -278,7 +271,7 @@ def plot_activity(save_path):
 
 def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = False, logy = False,
                  figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
-                 ax_args={}, plot_args={}, sort = True, res = None, string = ''):
+                 ax_args={}, plot_args={}, sort = True, res = None, exponentialx = False, string =''):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -350,8 +343,12 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = Fal
 
     if logx:
         ax.set_xticks(np.log(xticks))
+        if exponentialx:
+            xticks = ['{:.0e}'.format(x) for x in xticks]
         ax.set_xticklabels(xticks)
     else:
+        if exponentialx:
+            xticks = ['{:.0e}'.format(x) for x in xticks]
         ax.set_xticks(xticks)
 
     if logy:
