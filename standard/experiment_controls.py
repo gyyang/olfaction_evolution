@@ -47,6 +47,7 @@ def control_pn2kc():
     hp_ranges['lr'] = [3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
     hp_ranges['train_kc_bias'] = [False, True]
     hp_ranges['initial_pn2kc'] = [0.05, 0.1, 0.2, 0.5]
+    hp_ranges['apl'] = [False, True]
 
     return config, hp_ranges
 

@@ -589,7 +589,7 @@ class FullModel(Model):
             with tf.variable_scope('kc2apl', reuse=tf.AUTO_REUSE):
                 w_kc2apl0 = tf.get_variable(
                     'kernel', shape=(N_KC, 1), dtype=tf.float32,
-                    initializer=tf.constant_initializer(1./N_KC))
+                    initializer=tf.constant_initializer(0.01))
                 b_apl = tf.get_variable('bias', shape=(1,), dtype=tf.float32)
                 w_kc2apl = tf.abs(w_kc2apl0)
 
@@ -764,39 +764,40 @@ class FullModel(Model):
         return kc
 
     def _build_kc_activity_withapl(self, pn, weights, training):
-        # KC input before activation function
-        config = self.config
-        w_glo = weights['w_glo']
-        b_glo = weights['b_glo']
+        with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
+            # KC input before activation function
+            config = self.config
+            w_glo = weights['w_glo']
+            b_glo = weights['b_glo']
 
-        kc_in = tf.matmul(pn, w_glo) + b_glo
-        kc = tf.nn.relu(kc_in)
+            kc_in = tf.matmul(pn, w_glo) + b_glo
+            kc_in = _normalize(kc_in, config.kc_norm_pre, training)
+            kc = tf.nn.relu(kc_in)
 
-        # kc_in = tf.matmul(pn, w_glo)
-        # kc = tf.nn.relu(kc_in + b_glo)
+            # kc_in = tf.matmul(pn, w_glo)
+            # kc = tf.nn.relu(kc_in + b_glo)
 
-        w_kc2apl = weights['w_apl_in']
-        b_apl = weights['b_apl']
-        w_apl2kc = weights['w_apl_out']
+            w_kc2apl = weights['w_apl_in']
+            b_apl = weights['b_apl']
+            w_apl2kc = weights['w_apl_out']
 
-        # sigmoidal APL with subtractive inhibition
-        # apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)  # standard
-        # kc_in = tf.matmul(apl, w_apl2kc) + kc_in
+            # sigmoidal APL with subtractive inhibition
+            apl = tf.nn.sigmoid(tf.matmul(kc, w_kc2apl) + b_apl)  # standard
+            kc_in = tf.matmul(apl, w_apl2kc) + kc_in
 
-        # multiplicative APL inhibition
-        apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
-        kc_in = kc_in * tf.nn.sigmoid(tf.matmul(apl, w_apl2kc))
-        # kc_in = kc_in / (1 - tf.matmul(apl, w_apl2kc))
+            # multiplicative APL inhibition
+            # apl = tf.nn.relu(tf.matmul(kc, w_kc2apl) + b_apl)
+            # kc_in = kc_in * tf.nn.sigmoid(tf.matmul(apl, w_apl2kc))
+            # kc_in = kc_in / (1 - tf.matmul(apl, w_apl2kc))
+            kc = tf.nn.relu(kc_in)
+            # kc = tf.nn.relu(kc_in + b_glo)
 
-        kc_in = _normalize(kc_in, config.kc_norm_pre, training)
-        kc = tf.nn.relu(kc_in)
-        # kc = tf.nn.relu(kc_in + b_glo)
+            if config.kc_dropout:
+                kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
+            kc = _normalize(kc, config.kc_norm_post, training)
 
-        if config.kc_dropout:
-            kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
-
-        self.kc_in = kc_in
-        self.kc = kc
+            self.kc_in = kc_in
+            self.kc = kc
         return kc
 
     def _build_logit_activity(self, kc, weights, training):
