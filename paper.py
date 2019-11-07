@@ -231,29 +231,6 @@ if 'train_kc_claws' in experiments:
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
         analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
 
-if 'controls_kc_claw' in experiments:
-    path = './files/controls_kc_claw'
-    if TRAIN:
-        local_train(experiment_controls.controls_kc_claw(is_test), path, control=True)
-    if ANALYZE:
-        default = {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5}
-
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True,
-                                                      select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm'},
-                                                      ax_args = {'xticks': [0, .2, .4, .6]})
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', dynamic_thres=True,
-                                                      select_dict={'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='pn_norm_pre', dynamic_thres=True,
-                                                      select_dict={'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
-        # analysis_pn2kc_training.plot_distribution(path)
-        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        # sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc', ax_args ={'xticks': [0, .2, .4, .6]},
-        #                 select_dict= {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm'})
-        # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',
-        #                 select_dict= {'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5})
-        # sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',
-        #                 select_dict= {'ORN_NOISE_STD':0, 'kc_dropout_rate':0.5})
-
 if 'controls_receptor' in experiments:
     path = './files/controls_receptor'
     if TRAIN:
