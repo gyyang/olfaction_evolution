@@ -46,9 +46,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 # TRAIN = True
-ANALYZE = True
+# ANALYZE = True
 # use_cluster = True
-args.experiment =['controls_glomeruli']
+# args.experiment =['control_pn2kc']
 
 
 if use_cluster:
@@ -84,7 +84,7 @@ else:
 
 if 'control_orn2pn' in experiments:
     # Vary ORN n duplication under different nKC
-    path = './files/controls_orn2pn'
+    path = './files/control_orn2pn'
     if TRAIN:
         train(experiment_controls.control_orn2pn(), save_path=path, control=True, path=cluster_path)
     if ANALYZE:
@@ -107,7 +107,7 @@ if 'control_orn2pn' in experiments:
                 sa.plot_progress(path, select_dict=temp, plot_vars=[yk], legend_key=k)
 
 if 'control_pn2kc' in experiments:
-    path = './files/controls_pn2kc'
+    path = './files/control_pn2kc'
     if TRAIN:
         train(experiment_controls.control_pn2kc(), save_path=path, control=True, path=cluster_path)
     # if ANALYZE:
