@@ -45,6 +45,12 @@ print(args.__dict__)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
+# TRAIN = True
+# ANALYZE = True
+# use_cluster = True
+# args.experiment =['control_orn2pn']
+
+
 if use_cluster:
     train = cluster_train
 
@@ -76,28 +82,52 @@ else:
     experiments = args.experiment
 
 
-if 'controls_glomeruli' in experiments:
+if 'control_orn2pn' in experiments:
     # Vary ORN n duplication under different nKC
-    path = './files/controls_glomeruli'
+    path = './files/control_orn2pn'
     if TRAIN:
-        train(experiment_controls.controls_glomeruli(is_test), path, control=True)
+        train(experiment_controls.control_orn2pn(), save_path=path, control=True, path=cluster_path)
     if ANALYZE:
-        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10}
+        import copy
+        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10, 'lr':1e-3}
+        ykeys = ['glo_score', 'val_acc']
 
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10})
+        for yk in ykeys:
+            for k, v in default.items():
+                temp = copy.deepcopy(default)
+                temp.pop(k)
+                if k == 'lr':
+                    logx = True
+                    exponential = True
+                else:
+                    logx= False
+                    exponential = False
+                sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
+                                logx=logx, exponentialx= exponential,
+                                ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
+                #
+                # sa.plot_progress(path, select_dict=temp, plot_vars=[yk], legend_key=k, exponential= exponential,
+                #                  ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'N_ORN_DUPLICATION': 10, 'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
-        sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'N_ORN_DUPLICATION':10})
+if 'control_pn2kc' in experiments:
+    path = './files/control_pn2kc'
+    if TRAIN:
+        train(experiment_controls.control_pn2kc(), save_path=path, control=True, path=cluster_path)
+    # if ANALYZE:
+        # default = {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5}
+        #
+        # analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='kc_dropout_rate', dynamic_thres=True,
+        #                                               select_dict={'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm'},
+        #                                               ax_args = {'xticks': [0, .2, .4, .6]})
+        # analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='ORN_NOISE_STD', dynamic_thres=True,
+        #                                               select_dict={'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5})
+        # analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='pn_norm_pre', dynamic_thres=True,
+        #                                               select_dict={'ORN_NOISE_STD': 0, 'kc_dropout_rate': 0.5})
+        # analysis_pn2kc_training.plot_distribution(path)
+        # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        # sa.plot_results(path, x_key='kc_dropout_rate', y_key='val_acc', ax_args ={'xticks': [0, .2, .4, .6]},
+        #                 select_dict= {'ORN_NOISE_STD':0, 'pn_norm_pre':'batch_norm'})
+        # sa.plot_results(path, x_key='ORN_NOISE_STD', y_key='val_acc',
+        #                 select_dict= {'pn_norm_pre':'batch_norm', 'kc_dropout_rate':0.5})
+        # sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',
+        #                 select_dict= {'ORN_NOISE_STD':0, 'kc_dropout_rate':0.5})

@@ -123,7 +123,8 @@ def varying_config(experiment, i):
         config: new configuration
     """
     # Ranges of hyperparameters to loop over
-    config, hp_ranges = experiment
+    config_, hp_ranges = experiment
+    config = deepcopy(config_)
 
     # Unravel the input index
     keys = hp_ranges.keys()
@@ -221,7 +222,6 @@ def load_all_results(rootpath, argLast=True, ix=None,
         res: dictionary of numpy arrays, containing information from all models
     """
     dirs = get_allmodeldirs(rootpath)
-    print(dirs)
     from collections import defaultdict
     res = defaultdict(list)
 

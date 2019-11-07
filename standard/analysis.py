@@ -14,7 +14,7 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 import tools
-from tools import nicename
+from tools import nicename, save_fig
 import task
 from model import SingleLayerModel, FullModel, NormalizedMLP
 
@@ -24,11 +24,9 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 figpath = os.path.join(rootpath, 'figures')
-# figpath = r'C:\Users\Peter\Dropbox\olfaction_evolution\manuscript\plots'
-
 
 def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
-                  legends=None, epoch_range=None, plot_vars=None, ylim = None):
+                  legend_key=None, epoch_range=None, plot_vars=None, ax_args = {}, exponential = False):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -37,11 +35,17 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
     if select_dict is not None:
         log = dict_methods.filter(log, select_dict)
 
+        # get rid of duplicates
+        values = log[legend_key]
+        _, ixs = np.unique(values, return_index=True)
+        for k, v in log.items():
+            log[k] = log[k][ixs]
+
     def _plot_progress(xkey, ykey):
-        figsize = (3, 2)
+        figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
-        ax = fig.add_axes(rect)
+        ax = fig.add_axes(rect, **ax_args)
 
         ys = log[ykey]
         xs = log[xkey]
@@ -53,11 +57,15 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         for x, y, s, c in zip(xs, ys, lstyles, colors):
             if epoch_range:
                 x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
-            ax.plot(x, y, alpha=alpha, linestyle=s, color = c, linewidth=2)
+            ax.plot(x, y, alpha=alpha, linestyle=s, color = c, linewidth=1)
 
-        if legends is not None:
+        if legend_key is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
+            legends = log[legend_key]
+            if exponential:
+                legends = ['{:.0e}'.format(x) for x in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
+            plt.title(nicename(legend_key))
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -67,19 +75,11 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        # ax.xaxis.set_ticks(np.arange(0, log[xkey][0,-1]+2, 10))
-        if ykey in ['glo_score', 'or_glo_score', 'combined_glo_score']:
-            ax.set_ylim([0, 1.05])
-            ax.yaxis.set_ticks([0, 0.5, 1.0])
 
         if epoch_range:
             ax.set_xlim([epoch_range[0], epoch_range[1]])
         else:
             ax.set_xlim([-1, log[xkey][0,-1]])
-
-
-        if ylim is not None:
-            ax.set_ylim(ylim)
 
         figname = '_' + ykey
         if select_dict:
@@ -88,7 +88,7 @@ def plot_progress(save_path, linestyles=None, select_dict=None, alpha=1,
 
         if epoch_range:
             figname += '_epoch_range_' + str(epoch_range[1])
-        _easy_save(save_path, figname)
+        save_fig(save_path, figname)
 
 
     if plot_vars is None:
@@ -269,9 +269,9 @@ def plot_activity(save_path):
     plt.show()
 
 
-def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
+def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = False, logy = False,
                  figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
-                 ax_args={}, plot_args={}, sort = True, res = None, string = ''):
+                 ax_args={}, plot_args={}, sort = True, res = None, exponentialx = False, string =''):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -280,17 +280,6 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         y_key: str, key for the y-axis variable
         loop_key: str, key for the value to loop around
     """
-    #TODO PW: this function is getting very messy, needs to be cleaned up
-    log_plot_dict = {'N_KC': [30, 100, 1000, 10000],
-                     'N_PN': [20, 50, 100, 1000],
-                     'kc_loss_alpha': [.1, 1, 10, 100],
-                     'kc_loss_beta': [.1, 1, 10, 100],
-                     'initial_pn2kc':[.05, .1, 1],
-                     'N_ORN_DUPLICATION':[1,3,10,30,100],
-                     'n_trueclass':[100, 200, 500, 1000],
-                     # 'val_loss':[],
-                     'glo_dimensionality':[5, 50, 200, 1000]}
-
     plot_dict = {'kc_inputs': [3, 7, 15, 30, 40, 50]}
 
     if res is None:
@@ -298,6 +287,11 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
 
     if select_dict is not None:
         res = dict_methods.filter(res, select_dict)
+        # get rid of duplicates
+        values = res[x_key]
+        _, ixs = np.unique(values, return_index=True)
+        for k, v in res.items():
+            res[k] = res[k][ixs]
 
     # Sort by x_key
     if sort:
@@ -312,9 +306,9 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
             ind = res[loop_key] == x
             x_plot = res[x_key][ind]
             y_plot = res[y_key][ind]
-            if x_key in log_plot_dict.keys():
+            if logx:
                 x_plot = np.log(x_plot)
-            if y_key in log_plot_dict.keys():
+            if logy:
                 y_plot = np.log(y_plot)
             label = str(x).rsplit('/',1)[-1]
             # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
@@ -327,25 +321,41 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         x_plot=x_plot[ix]
         y_plot=y_plot[ix]
 
-        if x_key in log_plot_dict.keys():
+        if logx:
             x_plot = np.log(x_plot)
-        if y_key in log_plot_dict.keys():
+        if logy:
             y_plot = np.log(y_plot)
         ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
 
-    if x_key in log_plot_dict.keys():
-        xticks = np.array(log_plot_dict[x_key])
-        ax.set_xticks(np.log(xticks))
-        ax.set_xticklabels(xticks)
+    if 'xticks' in ax_args.keys():
+        xticks = ax_args['xticks']
     elif x_key in plot_dict.keys():
         xticks = np.array(plot_dict[x_key])
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(xticks)
+    else:
+        xticks = np.unique(res[x_key])
 
-    if y_key in log_plot_dict.keys():
-        yticks = np.array(log_plot_dict[y_key])
+    if 'yticks' in ax_args.keys():
+        yticks = ax_args['yticks']
+    elif y_key in plot_dict.keys():
+        yticks = np.array(plot_dict[y_key])
+    else:
+        yticks = np.unique(res[y_key])
+
+    if logx:
+        ax.set_xticks(np.log(xticks))
+        if exponentialx:
+            xticks = ['{:.0e}'.format(x) for x in xticks]
+        ax.set_xticklabels(xticks)
+    else:
+        if exponentialx:
+            xticks = ['{:.0e}'.format(x) for x in xticks]
+        ax.set_xticks(xticks)
+
+    if logy:
         ax.set_yticks(np.log(yticks))
         ax.set_yticklabels(yticks)
+    else:
+        ax.set_yticks(yticks)
 
     ax.set_xlabel(nicename(x_key))
     ax.set_ylabel(nicename(y_key))
