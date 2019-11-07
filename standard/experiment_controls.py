@@ -34,6 +34,7 @@ def control_pn2kc():
     config.max_epoch = 100
 
     config.replicate_orn_with_tiling = False
+    config.N_ORN_DUPLICATION = 1
     config.direct_glo = True
     config.pn_norm_pre = 'batch_norm'
     config.train_pn2kc = True
