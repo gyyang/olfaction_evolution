@@ -112,7 +112,6 @@ if 'control_pn2kc' in experiments:
     if ANALYZE:
         default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3}
         ykeys = ['val_acc', 'K_inferred']
-        ykeys = ['val_acc']
 
         for yk in ykeys:
             if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
@@ -132,12 +131,12 @@ if 'control_pn2kc' in experiments:
                     logx = True
                 else:
                     logx = False
-                # sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                #                 select_dict=temp,
-                #                 logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
-                #
-                # sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
-                #                  ax_args={'ylim': ylim, 'yticks': yticks})
+                sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                                select_dict=temp,
+                                logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
+
+                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
+                                 ax_args={'ylim': ylim, 'yticks': yticks})
 
         import temp1
         res = temp1.do_everything(path, filter_peaks=False, redo=True)
