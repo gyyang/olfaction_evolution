@@ -25,8 +25,17 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
+LABELS = ['Input degree', 'Conn. to valence', 'Conn. to classif.']
+RANGES = [(0, 15), (0, 3), (0, 5)]
+
 
 def _get_data(path):
+    """Load data.
+    
+    Returns:
+        data: np array (n_neuron, dim)
+            The rows are input degree, conn. to valence, conn. to identity
+    """
     # TODO: clean up these paths
     # d = os.path.join(path, '000000', 'epoch')
     # d = os.path.join(path, 'epoch')
@@ -43,23 +52,20 @@ def _get_data(path):
     strength_wout2 = np.linalg.norm(wout2, axis=1)
     v2 = strength_wout2
     v3 = strength_wout1
-    # data = np.stack([v1, v2]).T
-    data = np.stack([v1, v2]).T
-    norm_factor = data.mean(axis=0)
-    data_norm = data / norm_factor
-    return v1, v2, v3, data_norm, data
+    data = np.stack([v1, v2, v3]).T
+
+    return data
 
 
-def _get_groups(data_norm, config):
-    labels = KMeans(n_clusters=2, random_state=0).fit_predict(data_norm)
-    # Make sure group0 has more neurons
-    group0 = np.arange(config.N_KC)[labels == 1]
-    group1 = np.arange(config.N_KC)[labels == 0]
-    if len(group0) < len(group1):
-        group0, group1 = group1, group0
-    print('Group 0 has {:d} neurons'.format(len(group0)))
-    print('Group 1 has {:d} neurons'.format(len(group1)))
-    return group0, group1
+def _get_groups(data_norm, config, n_clusters=2):
+    labels = KMeans(n_clusters=n_clusters, random_state=0).fit_predict(data_norm)
+    label_inds = np.arange(n_clusters)
+    group_sizes = np.array([np.sum(labels==ind) for ind in label_inds])
+    ind_sort = np.argsort(group_sizes)
+    label_inds = [label_inds[i] for i in ind_sort]
+    groups = [np.arange(config.N_KC)[labels==l] for l in label_inds]
+    print('Group sizes', group_sizes[ind_sort])
+    return groups
 
 
 def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath,
@@ -75,7 +81,7 @@ def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath,
     save_fig(figpath, 'scatter_' + xlabel + '_' + ylabel)
 
 
-def _compute_silouette_score(data, figpath):
+def _compute_silouette_score(data, figpath, plot=True):
     n_clusters = np.arange(2, 10)
     scores = list()
     for n in n_clusters:
@@ -83,11 +89,15 @@ def _compute_silouette_score(data, figpath):
         score = silhouette_score(data, labels)
         scores.append(score)
 
-    fig = plt.figure(figsize=(1.5, 1.5))
-    plt.plot(n_clusters, scores, 'o-')
-    plt.xlabel('Number of clusters')
-    plt.ylabel('Silouette score')
-    save_fig(figpath, 'silhouette score')
+    if plot:
+        fig = plt.figure(figsize=(1.5, 1.5))
+        plt.plot(n_clusters, scores, 'o-')
+        plt.xlabel('Number of clusters')
+        plt.ylabel('Silouette score')
+        save_fig(figpath, 'silhouette score')
+    
+    optim_n_clusters = n_clusters[np.argmax(scores)]
+    return optim_n_clusters
 
 
 def _get_density(data, X, Y, method='scipy'):
@@ -108,18 +118,41 @@ def _get_density(data, X, Y, method='scipy'):
     return Z
 
 
-def _plot_density(Z, xmin, xmax, ymin, ymax, xlabel, ylabel, savename, figpath):
+def _plot_density(Z, xind, yind, savename, figpath, title=None):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
-    ax.plot([7, 7], [ymin, ymax], '--', color='gray', linewidth=1)
     ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
-              extent=[xmin, xmax, ymin, ymax], aspect='auto')
-    ax.set_xlim([xmin, xmax])
-    ax.set_ylim([ymin, ymax])
-    ax.set_xticks([0, 7, 15])
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    save_fig(figpath, savename)
+              extent=list(RANGES[xind])+list(RANGES[yind]), aspect='auto')
+    ax.set_xlim(RANGES[xind])
+    ax.set_ylim(RANGES[yind])
+    if xind == 0:
+        ax.plot([7, 7], RANGES[yind], '--', color='gray', linewidth=1)
+        ax.set_xticks([0, 7, 15])
+    plt.xlabel(LABELS[xind])
+    plt.ylabel(LABELS[yind])
+    if title is not None:
+        plt.title(title, fontsize=7)
+    # save_fig(figpath, savename)
+
+
+def _plot_all_density(data, xind, yind):
+    data_plot = data[:, [xind, yind]]
+    xmin, xmax = RANGES[xind]
+    ymin, ymax = RANGES[yind]
+    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+    Z = _get_density(data_plot, X, Y)
+    Zs = [_get_density(data_plot[group], X, Y) for group in groups]
+
+    name_pre = 'density_'+str(xind)+str(yind)
+    _plot_density(Z, xind, yind, savename=name_pre, figpath=figpath)
+    Zsum = 0
+    for i, Z in enumerate(Zs):
+        title = 'Group {:d} n={:d}'.format(i, len(groups[i]))
+        _plot_density(Z, xind, yind, savename=name_pre+'_group'+str(i),
+                      figpath=figpath, title=title)
+        Zsum += Z
+
+    _plot_density(Zsum, xind, yind, savename=name_pre+'_group_sum', figpath=figpath)
 
 
 def lesion_analysis(config, units=None):
@@ -196,26 +229,27 @@ def meta_lesion_analysis(config, units=None):
         return val_acc, val_acc2
 
 
-def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
+def _plot_hist(name, ylim_heads, acc_plot, figpath):
     if name == 'head1':
-        ylim = [ylim_head1, 1]
+        ylim = [ylim_heads[0], 1]
         title = 'Odor'
         savename = 'lesion_acc_head1'
     else:
-        ylim = [ylim_head2, 1]  # replace with n_proto_valence
+        ylim = [ylim_heads[1], 1]  # replace with n_proto_valence
         title = 'Valence'
         savename = 'lesion_acc_head2'
 
     fs = 6
-    width = 0.7
+    width = 0.5
     fig = plt.figure(figsize=(1.2, 1.2))
     ax = fig.add_axes([0.35, 0.35, 0.6, 0.4])
     xlocs = np.arange(len(acc_plot))
     b0 = ax.bar(xlocs, acc_plot,
                 width=width, edgecolor='none')
     ax.set_xticks(xlocs)
-    ax.set_xticklabels(['None', 'Group 1', 'Group 2'], rotation=25)
-    ax.set_xlabel('Lesioning', fontsize=fs, labelpad=-2)
+    group_names = [str(i) for i in range(len(acc_plot))]
+    ax.set_xticklabels(['None'] + group_names)
+    ax.set_xlabel('Lesioning group', fontsize=fs)
     ax.set_ylabel('Accuracy', fontsize=fs)
     ax.set_title(title, fontsize=fs)
     ax.tick_params(axis='both', which='major', labelsize=fs)
@@ -231,162 +265,12 @@ def _plot_hist(name, ylim_head1, ylim_head2, acc_plot, figpath):
 
 
 
-
-def main():
-    # foldername = 'metatrain'
-    foldername = 'tmp_multihead'
-
-    path = os.path.join(rootpath, 'files', foldername)
-    figpath = os.path.join(rootpath, 'figures', foldername)
-
-    # analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-
-    # TODO: clean up these paths
-    path = os.path.join(path, '0')
-    config = tools.load_config(path)
-    config.data_dir = rootpath + config.data_dir[1:]
-    config.save_path = rootpath + config.save_path[1:]
-
-    # d = os.path.join(path, '000000', 'epoch')
-    d = os.path.join(path, 'epoch')
-    # Load results from last epoch
-    wout1 = tools.load_pickle(d, 'model/layer3/kernel:0')[-1]
-    wout2 = tools.load_pickle(d, 'model/layer3_2/kernel:0')[-1]
-    wglo = tools.load_pickle(d, 'w_glo')[-1]
-
-    # Compute sparsity
-    thres = analysis_pn2kc_training.infer_threshold(wglo)
-    # thres = .1
-    print('Threshold: {:0.3f}'.format(thres))
-    sparsity = np.count_nonzero(wglo > thres, axis=0)
-
-
-    # =============================================================================
-    # ind_sort = np.argsort(sparsity)
-    # sparsity = sparsity[ind_sort]
-    # wout1 = wout1[ind_sort, :]
-    # wout2 = wout2[ind_sort, :]
-    # plt.figure()
-    # plt.imshow(wout1[:500], aspect='auto')
-    # plt.figure()
-    # plt.imshow(wout2[:500], aspect='auto')
-    # =============================================================================
-
-    v1 = sparsity
-    # strength_wout1 = np.sum(abs(wout1), axis=1)
-    # strength_wout2 = np.sum(abs(wout2), axis=1)
-    strength_wout2 = np.linalg.norm(wout2, axis=1)
-
-    # v2 = strength_wout1
-    v2 = strength_wout2
-    # v2 = strength_wout2/(strength_wout1+strength_wout2)
-
-    data = np.stack([v1, v2]).T
-    norm_factor = data.mean(axis=0)
-    data_norm = data / norm_factor
-
-    xlabel = 'KC Input degree'
-    ylabel = 'Conn. to valence'
-    xmin, xmax, ymin, ymax = 0, 50, 0, 3
-
-    fig = plt.figure(figsize=(1.5, 1.5))
-    ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
-    ax.scatter(v1, v2, alpha=0.3, marker='.')
-    ax.set_xlim([xmin, xmax])
-    ax.set_ylim([ymin, ymax])
-    ax.set_xticks([0, 7, 15])
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    save_fig(figpath, 'scatter')
-
-    _compute_silouette_score(data_norm)
-
-    labels = KMeans(n_clusters=3, random_state=0).fit_predict(data_norm)
-
-    group0 = np.arange(config.N_KC)[labels==0]
-    group1 = np.arange(config.N_KC)[labels==2]
-    
-    print('Group 0 has {:d} neurons'.format(len(group0)))
-    print('Group 1 has {:d} neurons'.format(len(group1)))
-
-    fig = plt.figure(figsize=(1.5, 1.5))
-    plt.scatter(v1[group0], v2[group0], alpha=0.02)
-    plt.scatter(v1[group1], v2[group1], alpha=0.3)
-    xlabel = 'KC Input degree'
-    ylabel = 'Conn. to valence'
-    xmin, xmax, ymin, ymax = 0, 15, 0, 3
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-
-    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-    positions = np.stack([X.ravel(), Y.ravel()]).T
-
-    # positions /= norm_factor
-    # data /= norm_factor
-
-    Z = _get_density(data)
-    Z1 = _get_density(data[group0])
-    Z2 = _get_density(data[group1])
-
-    _plot_density(Z, 'density')
-    _plot_density(Z1, 'density_group1')
-    _plot_density(Z2, 'density_group2')
-    _plot_density(Z1+Z2, 'density_group12')
-
-
-    val_accs = list()
-    val_acc2s = list()
-    for units in [None, group0, group1]:
-        acc, acc2 = meta_lesion_analysis(units)
-        val_accs.append(acc)
-        val_acc2s.append(acc2)
-
-
-    def _plot_hist(name):
-        if name == 'head1':
-            acc_plot = val_accs
-            ylim = [0, 1]
-            title = 'Odor'
-            savename = 'lesion_acc_head1'
-        else:
-            acc_plot = val_acc2s
-            ylim = [0.9, 1]  # replace with n_proto_valence
-            title = 'Valence'
-            savename = 'lesion_acc_head2'
-
-        fs = 6
-        width = 0.7
-        fig = plt.figure(figsize=(1.2, 1.2))
-        ax = fig.add_axes([0.35, 0.35, 0.6, 0.4])
-        xlocs = np.arange(len(val_accs))
-        b0 = ax.bar(xlocs, acc_plot,
-                    width=width, edgecolor='none')
-        ax.set_xticks(xlocs)
-        ax.set_xticklabels(['None', 'Group 1', 'Group 2'], rotation=25)
-        ax.set_xlabel('Lesioning', fontsize=fs, labelpad=-2)
-        ax.set_ylabel('Accuracy', fontsize=fs)
-        ax.set_title(title, fontsize=fs)
-        ax.tick_params(axis='both', which='major', labelsize=fs)
-        plt.locator_params(axis='y',nbins=2)
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-        # ax.set_xlim([-0.8, len(rules_perf)-0.2])
-        ax.set_ylim(ylim)
-        ax.set_yticks(ylim)
-        save_fig(figpath, savename)
-
-
-    _plot_hist('head1')
-    _plot_hist('head2')
-
 if __name__ == '__main__':
     # main1('multi_head', foldername='multi_head', subdir='000000')
     arg = 'multi_head'
     foldername='multi_head'
     # foldername='tmp_multi_head'
-    subdir='000005'
+    subdir='000025'
     # subdir='000001'
 # def main1(arg, foldername=None, subdir=None):
     
@@ -395,15 +279,13 @@ if __name__ == '__main__':
             foldername = 'metatrain'
         if subdir is None:
             subdir = '0'
-        ylim_head1 = .5
-        ylim_head2 = .5
+        ylim_heads = (.5, .5)
     else:
         if foldername is None:
             foldername = 'multi_head'
         if subdir is None:
             subdir = '000000'
-        ylim_head1 = 0
-        ylim_head2 = .8
+        ylim_heads = (0, .8)
 
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
@@ -423,44 +305,31 @@ if __name__ == '__main__':
         config.data_dir = rootpath + config.data_dir[1:]
         config.save_path = rootpath + config.save_path[1:]
 
-    v1, v2, v3, data_norm, data = _get_data(subpath)
-    group0, group1 = _get_groups(data_norm, config)
-
-    xmin, xmax, ymin, ymax = 0, 15, 0, 3
-    degree_label = 'Input degree'
-    valence_label = 'Conn. to valence'
-    class_label = 'Conn. to classif.'
+    data = _get_data(subpath)
+    
+    norm_factor = data.mean(axis=0)
+    # data_norm = data / norm_factor
+    data_norm = (data - data.mean(axis=0)) / np.std(data, axis=0)
+    
+    optim_n_clusters = _compute_silouette_score(data_norm, figpath)
+    # optim_n_clusters = 2
+    groups = _get_groups(data_norm, config, n_clusters=optim_n_clusters)
+    
 # =============================================================================
 #     _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label,
 #                   ylabel=valence_label, figpath=figpath)
 #     _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label,
 #                   ylabel=class_label, figpath=figpath)
+#     _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label,
+#                   ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
 # =============================================================================
-    _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label,
-                  ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
-    _compute_silouette_score(data_norm, figpath)
-
-    X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-    Z = _get_density(data, X, Y)
-    Z1 = _get_density(data[group0], X, Y)
-    Z2 = _get_density(data[group1], X, Y)
-
-    _plot_density(Z, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel= valence_label,
-                  savename='density', figpath = figpath)
-    _plot_density(Z1, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel= valence_label,
-                  savename='density_group1', figpath = figpath)
-    _plot_density(Z2, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel=valence_label,
-                  savename='density_group2', figpath=figpath)
-    _plot_density(Z1+Z2, xmin, xmax, ymin, ymax,
-                  xlabel=degree_label, ylabel=valence_label,
-                  savename='density_group12', figpath=figpath)
-
+    
+    _plot_all_density(data, xind=0, yind=1)
+    _plot_all_density(data, xind=2, yind=1)
+    
     val_accs = list()
     val_acc2s = list()
-    for units in [None, group0, group1]:
+    for units in [None] + groups:
         if arg == 'metatrain':
             acc, acc2 = meta_lesion_analysis(config, units)
         elif arg == 'multi_head':
@@ -468,5 +337,5 @@ if __name__ == '__main__':
         val_accs.append(acc)
         val_acc2s.append(acc2)
 
-    _plot_hist('head1', ylim_head1, ylim_head2, val_accs, figpath)
-    _plot_hist('head2', ylim_head1, ylim_head2, val_acc2s, figpath)
+    _plot_hist('head1', ylim_heads, val_accs, figpath)
+    _plot_hist('head2', ylim_heads, val_acc2s, figpath)
