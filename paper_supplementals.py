@@ -178,7 +178,7 @@ if 'control_pn2kc_prune_boolean' in experiments:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             train(experiment_controls.control_pn2kc_prune_boolean(n_pn),
-                  save_path=cur_path, sequential=True, path=cluster_path)
+                  save_path=cur_path, path=cluster_path)
     if ANALYZE:
         pass
 
@@ -189,6 +189,6 @@ if 'control_pn2kc_prune_hyper' in experiments:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             train(experiment_controls.control_pn2kc_prune_hyper(n_pn),
-                  save_path=cur_path, sequential=True, path=cluster_path)
+                  save_path=cur_path, path=cluster_path)
     if ANALYZE:
         pass

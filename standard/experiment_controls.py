@@ -84,14 +84,13 @@ def control_pn2kc_prune_hyper(n_pn=50):
     config.skip_orn2pn = True
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.kc_prune_weak_weights = True
     config.pn_norm_pre = 'batch_norm'
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1/n_pn
+    config.initial_pn2kc = 4/n_pn
 
     hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
-    hp_ranges['N_KC'] = [2500, 5000, 10000]
-    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
-    hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
+    hp_ranges['kc_prune_weak_weights'] = [False, True]
     return config, hp_ranges
 
 def control_pn2kc_prune_boolean(n_pn=50):
