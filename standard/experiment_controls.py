@@ -58,7 +58,7 @@ def control_pn2kc_inhibition():
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     config.direct_glo = True
-    # config.pn_norm_pre = 'batch_norm'
+    config.pn_norm_pre = 'batch_norm'
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
@@ -68,7 +68,7 @@ def control_pn2kc_inhibition():
     hp_ranges = OrderedDict()
     cs = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
     hp_ranges['w_glo_meansub_coeff'] = cs
-    hp_ranges['kc_bias'] = [-1 + c for c in cs]
+    hp_ranges['kc_bias'] = [-1 + 2 * c for c in cs]
     return config, hp_ranges
 
 

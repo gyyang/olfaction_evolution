@@ -155,7 +155,7 @@ if 'control_pn2kc_inhibition' in experiments:
         ykeys = ['val_acc', 'K_inferred']
         for yk in ykeys:
             if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
-                ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
+                ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 20, 30]
             elif yk == 'val_acc':
                 ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
 
