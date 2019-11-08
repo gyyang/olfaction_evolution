@@ -273,6 +273,36 @@ def train_multihead(argTest=False):
     return config, hp_ranges
 
 
+def train_multihead_pruning(argTest=False):
+    '''
+
+    '''
+
+    config = configs.FullConfig()
+    config.max_epoch = 30
+    config.batch_size = 256
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+
+    config.save_every_epoch = False
+    config.initial_pn2kc = 10./config.N_PN
+    config.kc_prune_threshold = 2./config.N_PN
+    config.kc_prune_weak_weights = True
+
+    config.data_dir = './datasets/proto/multi_head'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
+    hp_ranges['dummy'] = [0, 1, 2]
+    if argTest:
+        config.max_epoch = testing_epochs
+
+    return config, hp_ranges
+
+
 def train_multihead_sequential():
     config = configs.input_ProtoConfig()
     config.label_type = 'multi_head_sparse'

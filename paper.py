@@ -415,6 +415,11 @@ if 'multi_head' in experiments:
         # analysis_multihead.main1('multi_head')
         sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn', sort_axis=1, dir_ix=0)
 
+if 'multi_head_prune' in experiments:
+    path = './files/multi_head_prune'
+    if TRAIN:
+        train(se.train_multihead_pruning(is_test), path)
+
 if 'vary_kc_activity_fixed' in experiments:
     # Vary KC activity under different number of relabels
     path = './files/vary_kc_activity_fixed'
