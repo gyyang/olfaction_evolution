@@ -48,10 +48,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 # TRAIN = True
-# ANALYZE = True
 # use_cluster = True
+# ANALYZE = True
 # args.experiment =['control_pn2kc_prune_hyper']
-# args.pn = [50]
+# args.pn = [100]
 
 
 if use_cluster:
@@ -183,7 +183,6 @@ if 'control_pn2kc_prune_boolean' in experiments:
     if ANALYZE:
         xkey = 'kc_prune_weak_weights'
         ykeys = ['val_acc', 'K_inferred']
-        ykeys = ['K']
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             for yk in ykeys:
@@ -209,7 +208,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             default = {'N_KC': 2500, 'lr': 1e-3, 'initial_pn2kc':4./n_pn, 'kc_prune_threshold': 1./n_pn}
-            ykeys = ['val_acc', 'K_inferred']
+            ykeys = ['val_acc', 'K']
             for yk in ykeys:
                 if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
                     ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
@@ -222,20 +221,17 @@ if 'control_pn2kc_prune_hyper' in experiments:
                 for k, v in default.items():
                     temp = copy.deepcopy(default)
                     temp.pop(k)
-                    if k == 'lr':
-                        logx = True
-                    else:
-                        logx = False
+                    logx = True
                     sa.plot_results(cur_path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                                     select_dict=temp,
                                     logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
 
-                    # sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
-                    #                  ax_args={'ylim': ylim, 'yticks': yticks})
+                    sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
+                                     ax_args={'ylim': ylim, 'yticks': yticks})
             #
-            # res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
-            # for k, v in default.items():
-            #     temp = copy.deepcopy(default)
-            #     temp.pop(k)
-            #     sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
-            #                ax_args={'ylim': [0, 500]})
+            res = standard.analysis_pn2kc_peter.do_everything(cur_path, filter_peaks=False, redo=True)
+            for k, v in default.items():
+                temp = copy.deepcopy(default)
+                temp.pop(k)
+                sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
+                           ax_args={'ylim': [0, 500]})

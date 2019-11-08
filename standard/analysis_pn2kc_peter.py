@@ -25,11 +25,15 @@ def _get_K(res):
     Ks = np.zeros((n_model, n_epoch))
     bad_KC = np.zeros((n_model, n_epoch))
     for i in range(n_model):
-        for j in range(n_epoch):
-            sparsity = res['sparsity'][i, j]
-            Ks[i, j] = sparsity[sparsity>0].mean()
-            bad_KC[i,j] = np.sum(sparsity==0)/sparsity.size
-    res['K'] = Ks
+        if res['kc_prune_weak_weights'][i]:
+            Ks[i] = res['K'][i]
+        else:
+            Ks[i] = res['K_inferred'][i]
+
+            # sparsity = res['sparsity'][i, j]
+            # Ks[i, j] = sparsity[sparsity>0].mean()
+            # bad_KC[i,j] = np.sum(sparsity==0)/sparsity.size
+    res['K_inferred'] = Ks
     res['bad_KC'] = bad_KC
 
 def _filter_peak(res):

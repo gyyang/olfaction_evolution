@@ -96,7 +96,7 @@ def control_pn2kc_prune_boolean(n_pn=50):
 def control_pn2kc_prune_hyper(n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
@@ -107,7 +107,7 @@ def control_pn2kc_prune_hyper(n_pn=50):
     config.sparse_pn2kc = False
     config.train_pn2kc = True
     config.kc_prune_weak_weights = True
-    config.initial_pn2kc = 4./n_pn
+    config.initial_pn2kc = 5./n_pn
     config.kc_prune_threshold = 1./n_pn
     config.pn_norm_pre = 'batch_norm'
 
