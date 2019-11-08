@@ -35,6 +35,7 @@ def _get_data(path):
     Returns:
         data: np array (n_neuron, dim)
             The rows are input degree, conn. to valence, conn. to identity
+        data_norm: normalized array
     """
     # TODO: clean up these paths
     # d = os.path.join(path, '000000', 'epoch')
@@ -43,15 +44,22 @@ def _get_data(path):
     wout1 = tools.load_pickle(d, 'model/layer3/kernel:0')[-1]
     wout2 = tools.load_pickle(d, 'model/layer3_2/kernel:0')[-1]
     wglo = tools.load_pickle(d, 'w_glo')[-1]
+    config = tools.load_config(d)
 
-    thres = analysis_pn2kc_training.infer_threshold(wglo)
-    print('Inferred threshold', thres)
+    if config.kc_prune_weak_weights:
+        thres = config.kc_prune_threshold
+        print('Using KC prune threshold')
+    else:
+        thres = analysis_pn2kc_training.infer_threshold(wglo)
+        print('Inferred threshold', thres)
     sparsity = np.count_nonzero(wglo > thres, axis=0)
     strength_wout1 = np.linalg.norm(wout1, axis=1)
     strength_wout2 = np.linalg.norm(wout2, axis=1)
     data = np.stack([sparsity, strength_wout2, strength_wout1]).T
+    
+    data_norm = (data - data.mean(axis=0)) / np.std(data, axis=0)
 
-    return data
+    return data, data_norm
 
 
 def _get_groups(data_norm, config, n_clusters=2):
@@ -257,6 +265,23 @@ def meta_lesion_analysis(config, units=None):
         return val_acc, val_acc2
 
 
+def _get_lesion_acc(path, groups):
+    config = tools.load_config(path)
+    val_accs = list()
+    val_acc2s = list()
+    for units in [None] + groups:
+        if arg == 'metatrain':
+            acc, acc2 = meta_lesion_analysis(config, units)
+        elif arg == 'multi_head':
+            acc, acc2 = lesion_analysis(config, units)
+        val_accs.append(acc)
+        val_acc2s.append(acc2)
+    
+    val_accs = np.array(val_accs)
+    val_acc2s = np.array(val_acc2s)
+    return val_accs, val_acc2s
+
+
 def _plot_hist(name, ylim_heads, acc_plot, figpath):
     if name == 'head1':
         ylim = [ylim_heads[0], 1]
@@ -273,7 +298,7 @@ def _plot_hist(name, ylim_heads, acc_plot, figpath):
     ax = fig.add_axes([0.35, 0.35, 0.6, 0.4])
     xlocs = np.arange(len(acc_plot))
     b0 = ax.bar(xlocs, acc_plot,
-                width=width, edgecolor='none')
+                width=width, edgecolor='none', facecolor=tools.blue)
     ax.set_xticks(xlocs)
     group_names = [str(i+1) for i in range(len(acc_plot))]
     ax.set_xticklabels(['None'] + group_names)
@@ -292,16 +317,7 @@ def _plot_hist(name, ylim_heads, acc_plot, figpath):
     save_fig(figpath, savename)
 
 
-
-if __name__ == '__main__':
-    # main1('multi_head', foldername='multi_head', subdir='000000')
-    arg = 'multi_head'
-    foldername='multi_head'
-    # foldername='tmp_multi_head'
-    subdir='000024'
-    # subdir='000001'
-# def main1(arg, foldername=None, subdir=None):
-    
+def analyze_example_network(arg='multi_head', foldername=None, subdir=None):
     if arg == 'metatrain':
         if foldername is None:
             foldername = 'metatrain'
@@ -318,7 +334,7 @@ if __name__ == '__main__':
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
     
-    res = tools.load_all_results(path)
+    # res = tools.load_all_results(path)
 
     subpath = os.path.join(path, subdir)
     # subpath = path
@@ -333,14 +349,10 @@ if __name__ == '__main__':
         config.data_dir = rootpath + config.data_dir[1:]
         config.save_path = rootpath + config.save_path[1:]
 
-    data = _get_data(subpath)
-    
-    norm_factor = data.mean(axis=0)
-    # data_norm = data / norm_factor
-    data_norm = (data - data.mean(axis=0)) / np.std(data, axis=0)
+    data, data_norm = _get_data(subpath)
     
     optim_n_clusters = _compute_silouette_score(data_norm, figpath)
-    # optim_n_clusters = 2
+    optim_n_clusters = 2
     groups = _get_groups(data_norm, config, n_clusters=optim_n_clusters)
     
 # =============================================================================
@@ -355,16 +367,21 @@ if __name__ == '__main__':
     _plot_all_density(data, groups, xind=0, yind=1, figpath=figpath)
     _plot_all_density(data, groups, xind=2, yind=1, figpath=figpath)
     
-    val_accs = list()
-    val_acc2s = list()
-    for units in [None] + groups:
-        if arg == 'metatrain':
-            acc, acc2 = meta_lesion_analysis(config, units)
-        elif arg == 'multi_head':
-            acc, acc2 = lesion_analysis(config, units)
-        val_accs.append(acc)
-        val_acc2s.append(acc2)
-
+    val_accs, val_acc2s = _get_lesion_acc(subpath, groups)
     _plot_hist('head1', ylim_heads, val_accs, figpath)
     _plot_hist('head2', ylim_heads, val_acc2s, figpath)
+
+
+if __name__ == '__main__':
+    # main1('multi_head', foldername='multi_head', subdir='000000')
+    arg = 'multi_head'
+    foldername='multi_head'
+    # foldername='tmp_multi_head'
+    subdir='000025'
+    # subdir='000001'
+# def main1(arg, foldername=None, subdir=None):
+    analyze_example_network('multi_head', 'multi_head', subdir)
+    
+
+
 
