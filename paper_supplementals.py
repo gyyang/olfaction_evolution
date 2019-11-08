@@ -205,4 +205,5 @@ if 'control_pn2kc_prune_hyper' in experiments:
             train(experiment_controls.control_pn2kc_prune_hyper(n_pn), control=True,
                   save_path=cur_path, path=cluster_path)
     if ANALYZE:
-        pass
+        default = {'N_KC': 2500, 'lr': 1e-3, 'initial_pn2kc':0, 'kc_prune_threshold':True}
+        ykeys = ['val_acc', 'K_inferred']

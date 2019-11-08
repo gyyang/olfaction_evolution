@@ -107,6 +107,8 @@ def control_pn2kc_prune_hyper(n_pn=50):
     config.sparse_pn2kc = False
     config.train_pn2kc = True
     config.kc_prune_weak_weights = True
+    config.initial_pn2kc = 4./n_pn
+    config.kc_prune_threshold = 1./n_pn
 
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
