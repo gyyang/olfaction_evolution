@@ -43,7 +43,8 @@ def train(config, reload=False, save_everytrainloss=False):
     dataset_config = tools.load_config(config.data_dir)
     dataset_config.update(config)
     config = dataset_config
-    print(config)
+    for item in config.__dict__.items():
+        print(item)
 
     if not os.path.exists(config.save_path):
         os.makedirs(config.save_path)

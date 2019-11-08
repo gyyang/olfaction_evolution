@@ -41,7 +41,8 @@ args = parser.parse_args()
 # args.experiment = ['controls_glomeruli']
 # args.train = True
 
-print(args.__dict__)
+for item in args.__dict__.items():
+    print(item)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
@@ -65,6 +66,7 @@ else:
 
 if ANALYZE:
     import standard.analysis as sa
+    import standard.analysis_pn2kc_peter
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
@@ -138,7 +140,6 @@ if 'control_pn2kc' in experiments:
                 sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
                                  ax_args={'ylim': ylim, 'yticks': yticks})
         #
-        import standard.analysis_pn2kc_peter
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
         for k, v in default.items():
             temp = copy.deepcopy(default)
@@ -165,7 +166,6 @@ if 'control_pn2kc_inhibition' in experiments:
 
             sa.plot_progress(path, ykeys=[yk], legend_key=xk, ax_args={'ylim': ylim, 'yticks': yticks})
         #
-        import standard.analysis_pn2kc_peter
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
         sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
                    ax_args={'ylim':[0, 500]})
