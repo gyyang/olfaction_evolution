@@ -162,7 +162,8 @@ def _plot_all_density(data, groups, xind, yind, figpath, normalize=True):
     def add_text(ax):
         for i in range(len(groups)):
             ind = np.argmax(Zs[i])
-            ax.text(X_orig.flatten()[ind], Y_orig.flatten()[ind], str(i+1))
+            ax.text(X_orig.flatten()[ind], Y_orig.flatten()[ind], str(i+1),
+                    color='white')
         return ax
 
     name_pre = 'density_'+str(xind)+str(yind)
@@ -297,7 +298,7 @@ if __name__ == '__main__':
     arg = 'multi_head'
     foldername='multi_head'
     # foldername='tmp_multi_head'
-    subdir='000025'
+    subdir='000024'
     # subdir='000001'
 # def main1(arg, foldername=None, subdir=None):
     
