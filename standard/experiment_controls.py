@@ -71,6 +71,52 @@ def control_pn2kc_inhibition():
     hp_ranges['kc_bias'] = [-1 + 2 * c for c in cs]
     return config, hp_ranges
 
+def control_pn2kc_prune_hyper(n_pn=50):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 30
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0.
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.kc_prune_weak_weights = True
+    config.pn_norm_pre = 'batch_norm'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    hp_ranges['N_KC'] = [2500, 5000, 10000]
+    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
+    hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
+    return config, hp_ranges
+
+def control_pn2kc_prune_boolean(n_pn=50):
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 30
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0.
+    config.skip_orn2pn = True
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.kc_prune_weak_weights = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    hp_ranges['N_KC'] = [2500, 5000, 10000]
+    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
+    hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
+    return config, hp_ranges
+
+
 
 def controls_receptor(argTest=False):
     config = configs.FullConfig()
@@ -217,40 +263,6 @@ def vary_pn2kc_init(argTest=False, n_pn=50):
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [1e-3, 5*1e-4, 2*1e-4, 1e-4, 5*1e-5]
     hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
-    if argTest:
-        config.max_epoch = testing_epochs
-    return config, hp_ranges
-
-
-def vary_prune_pn2kc_init(argTest=False, n_pn=50):
-    """Standard training setting"""
-    config = configs.FullConfig()
-    config.max_epoch = 200
-
-    config.N_PN = n_pn
-    config.data_dir = './datasets/proto/orn'+str(n_pn)
-
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0.
-    config.skip_orn2pn = True
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
-    # config.N_KC = 5000
-
-    config.initial_pn2kc = 10./n_pn
-
-    config.kc_prune_weak_weights = True
-    # config.kc_prune_threshold = 0.02
-
-    config.save_every_epoch = False
-    config.save_log_only = True
-
-    hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
-    # hp_ranges['N_KC'] = [2500, 5000, 10000, 20000]
-    hp_ranges['N_KC'] = [10000, 20000]
-    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
-    # hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges

@@ -34,6 +34,7 @@ parser.add_argument('-test', '--testing', help='For debugging', action='store_tr
 parser.add_argument('-e', '--experiment', nargs='+', help='Experiments', default='core')
 parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCHPATH)
 parser.add_argument('-c', '--cluster', help='Use cluster?', action='store_true')
+parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50])
 args = parser.parse_args()
 
 # args.cluster_path = 'pw'
@@ -169,3 +170,25 @@ if 'control_pn2kc_inhibition' in experiments:
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
         sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
                    ax_args={'ylim':[0, 500]})
+
+if 'control_pn2kc_prune_boolean' in experiments:
+    n_pns = [int(x) for x in args.pn]
+    path = './files/control_pn2kc_prune_boolean'
+    if TRAIN:
+        for n_pn in n_pns:
+            cur_path = path + '_' + str(n_pn)
+            train(experiment_controls.control_pn2kc_prune_boolean(n_pn),
+                  save_path=cur_path, sequential=True, path=cluster_path)
+    if ANALYZE:
+        pass
+
+if 'control_pn2kc_prune_hyper' in experiments:
+    n_pns = [int(x) for x in args.pn]
+    path = './files/control_pn2kc_prune_hyper'
+    if TRAIN:
+        for n_pn in n_pns:
+            cur_path = path + '_' + str(n_pn)
+            train(experiment_controls.control_pn2kc_prune_hyper(n_pn),
+                  save_path=cur_path, sequential=True, path=cluster_path)
+    if ANALYZE:
+        pass
