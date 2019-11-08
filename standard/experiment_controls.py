@@ -71,7 +71,7 @@ def control_pn2kc_inhibition():
     hp_ranges['kc_bias'] = [-1 + 2 * c for c in cs]
     return config, hp_ranges
 
-def control_pn2kc_prune_hyper(n_pn=50):
+def control_pn2kc_prune_boolean(n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
     config.max_epoch = 30
@@ -93,7 +93,7 @@ def control_pn2kc_prune_hyper(n_pn=50):
     hp_ranges['kc_prune_weak_weights'] = [False, True]
     return config, hp_ranges
 
-def control_pn2kc_prune_boolean(n_pn=50):
+def control_pn2kc_prune_hyper(n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
     config.max_epoch = 30
