@@ -66,7 +66,6 @@ def do_everything(path, filter_peaks = False, redo=False, range = 2):
             hist, bins = np.histogram(w, bins=1000, range=[0, range])
             res['lin_bins'][i] = bins
             res['lin_hist'][i][-1,:] = hist #hack
-
         _get_K(res)
 
     badkc_ind = _filter_badkc(res)

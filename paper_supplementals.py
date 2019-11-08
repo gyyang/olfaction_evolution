@@ -48,10 +48,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 # TRAIN = True
-ANALYZE = True
+# ANALYZE = True
 # use_cluster = True
-args.experiment =['control_pn2kc_prune_boolean']
-args.pn = [100]
+# args.experiment =['control_pn2kc_prune_boolean']
+# args.pn = [50]
 
 
 if use_cluster:
@@ -183,6 +183,7 @@ if 'control_pn2kc_prune_boolean' in experiments:
     if ANALYZE:
         xkey = 'kc_prune_weak_weights'
         ykeys = ['val_acc', 'K_inferred']
+        ykeys = ['K']
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             for yk in ykeys:
