@@ -149,4 +149,4 @@ if 'control_pn2kc' in experiments:
 if 'control_pn2kc_inhibition' in experiments:
     path = './files/control_pn2kc_inhibition'
     if TRAIN:
-        train(experiment_controls.control_pn2kc_inhibition(), save_path=path, control=True, path=cluster_path)
+        train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True, path=cluster_path)
