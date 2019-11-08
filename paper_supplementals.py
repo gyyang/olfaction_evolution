@@ -156,10 +156,8 @@ if 'control_pn2kc_inhibition' in experiments:
         for yk in ykeys:
             if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
                 ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
-                exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
             elif yk == 'val_acc':
                 ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-                exclude_dict = None
 
             sa.plot_results(path, x_key=xk, y_key=yk,
                             figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
