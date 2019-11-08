@@ -23,10 +23,22 @@ from tools import save_fig
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
-mpl.rcParams['font.family'] = 'arial'
+mpl.rcParams['font.family'] = 'Arial'
 
 LABELS = ['Input degree', 'Conn. to valence', 'Conn. to identity']
 RANGES = [(0, 15), (0, 5), (0, 10)]
+
+
+def _fix_config(config):
+    """Hack function to fix config."""
+    try:
+        # dirty hack
+        config.data_dir = rootpath + config.data_dir.split('olfaction_evolution')[1]
+        config.save_path = rootpath + config.save_path.split('olfaction_evolution')[1]
+    except IndexError:
+        config.data_dir = rootpath + config.data_dir[1:]
+        config.save_path = rootpath + config.save_path[1:]
+    return config
 
 
 def _get_data(path):
@@ -150,7 +162,8 @@ def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None):
     return fig, ax
 
 
-def _plot_all_density(data, groups, xind, yind, figpath, normalize=True):
+def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
+                      name_pre=None):
     data_plot = data[:, [xind, yind]]
     xmin, xmax = RANGES[xind]
     ymin, ymax = RANGES[yind]
@@ -174,7 +187,9 @@ def _plot_all_density(data, groups, xind, yind, figpath, normalize=True):
                     color='white')
         return ax
 
-    name_pre = 'density_'+str(xind)+str(yind)
+    if name_pre is None:
+        name_pre = ''
+    name_pre = name_pre + 'density_'+str(xind)+str(yind)
     fig, ax = _plot_density(Z, xind, yind)
     ax = add_text(ax)
     save_fig(figpath, name_pre)
@@ -218,7 +233,7 @@ def lesion_analysis(config, units=None):
         val_loss, val_acc, val_acc2 = sess.run(
             [val_model.loss, val_model.acc, val_model.acc2],
             {val_x_ph: val_x, val_y_ph: val_y})
-        return val_acc, val_acc2
+        return (val_acc, val_acc2)
 
 
 def meta_lesion_analysis(config, units=None):
@@ -262,11 +277,12 @@ def meta_lesion_analysis(config, units=None):
         val_x, val_y = data_generator.generate('val')
         val_acc, val_acc2 = sess.run(
                 val_model.total_acc3, {train_x_ph: val_x, train_y_ph: val_y})
-        return val_acc, val_acc2
+        return (val_acc, val_acc2)
 
 
-def _get_lesion_acc(path, groups):
+def _get_lesion_acc(path, groups, arg='multi_head'):
     config = tools.load_config(path)
+    config = _fix_config(config)
     val_accs = list()
     val_acc2s = list()
     for units in [None] + groups:
@@ -282,7 +298,16 @@ def _get_lesion_acc(path, groups):
     return val_accs, val_acc2s
 
 
-def _plot_hist(name, ylim_heads, acc_plot, figpath):
+def _plot_hist(name, ylim_heads, acc_plot,
+               plot_bar=False, plot_box=True):
+    """
+    Plot histogram.
+    
+    Args:
+        name: head1 or head2
+        ylim_heads: ylim for head 1 and head 2
+        acc_plot: np array (n_box, n_point_per_box)
+    """
     if name == 'head1':
         ylim = [ylim_heads[0], 1]
         title = 'Identity'
@@ -297,8 +322,21 @@ def _plot_hist(name, ylim_heads, acc_plot, figpath):
     fig = plt.figure(figsize=(1.2, 1.2))
     ax = fig.add_axes([0.35, 0.35, 0.6, 0.4])
     xlocs = np.arange(len(acc_plot))
-    b0 = ax.bar(xlocs, acc_plot,
-                width=width, edgecolor='none', facecolor=tools.blue)
+    if plot_bar:
+        b0 = ax.bar(xlocs, acc_plot,
+                    width=width, edgecolor='none', facecolor=tools.blue)
+    if plot_box:
+        color = tools.blue
+        flierprops = {'markersize': 3, 'markerfacecolor': color,
+              'markeredgecolor': 'none'}
+        boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
+        medianprops = {'color': color*0.5}
+        whiskerprops = {'color': color}
+        ax.boxplot(list(acc_plot), positions=xlocs, widths=width,
+                   patch_artist=True, medianprops=medianprops,
+                   flierprops=flierprops, boxprops=boxprops, showcaps=False,
+                   whiskerprops=whiskerprops
+                   )
     ax.set_xticks(xlocs)
     group_names = [str(i+1) for i in range(len(acc_plot))]
     ax.set_xticklabels(['None'] + group_names)
@@ -314,10 +352,11 @@ def _plot_hist(name, ylim_heads, acc_plot, figpath):
     # ax.set_xlim([-0.8, len(rules_perf)-0.2])
     ax.set_ylim(ylim)
     ax.set_yticks(ylim)
-    save_fig(figpath, savename)
+    return fig
 
 
-def analyze_example_network(arg='multi_head', foldername=None, subdir=None):
+def analyze_example_network(arg='multi_head', foldername=None, subdir=None,
+                            fix_cluster=None):
     if arg == 'metatrain':
         if foldername is None:
             foldername = 'metatrain'
@@ -341,18 +380,13 @@ def analyze_example_network(arg='multi_head', foldername=None, subdir=None):
     config = tools.load_config(subpath)
     print('Learning rate', config.lr)
     print('PN norm', config.pn_norm_pre)
-    try:
-        # dirty hack
-        config.data_dir = rootpath + config.data_dir.split('olfaction_evolution')[1]
-        config.save_path = rootpath + config.save_path.split('olfaction_evolution')[1]
-    except IndexError:
-        config.data_dir = rootpath + config.data_dir[1:]
-        config.save_path = rootpath + config.save_path[1:]
+    config = _fix_config(config)
 
     data, data_norm = _get_data(subpath)
     
     optim_n_clusters = _compute_silouette_score(data_norm, figpath)
-    optim_n_clusters = 2
+    if fix_cluster is not None:
+        optim_n_clusters = fix_cluster
     groups = _get_groups(data_norm, config, n_clusters=optim_n_clusters)
     
 # =============================================================================
@@ -364,23 +398,64 @@ def analyze_example_network(arg='multi_head', foldername=None, subdir=None):
 #                   ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
 # =============================================================================
     
-    _plot_all_density(data, groups, xind=0, yind=1, figpath=figpath)
-    _plot_all_density(data, groups, xind=2, yind=1, figpath=figpath)
+    name_pre = 'cluster'+str(optim_n_clusters)
+    _plot_all_density(data, groups, xind=0, yind=1, figpath=figpath, name_pre=name_pre)
+    _plot_all_density(data, groups, xind=2, yind=1, figpath=figpath, name_pre=name_pre)
     
-    val_accs, val_acc2s = _get_lesion_acc(subpath, groups)
-    _plot_hist('head1', ylim_heads, val_accs, figpath)
-    _plot_hist('head2', ylim_heads, val_acc2s, figpath)
+    val_accs, val_acc2s = _get_lesion_acc(subpath, groups, arg=arg)
+    for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
+        fig = _plot_hist(head, ylim_heads, val_acc[:, np.newaxis])
+        save_fig(figpath, 'example_cluster'+str(optim_n_clusters)+'_lesion'+head)
+
+
+def analyze_many_networks_lesion(arg='multi_head', foldername=None):
+    import dict_methods
+    if arg == 'metatrain':
+        if foldername is None:
+            foldername = 'metatrain'
+        ylim_heads = (.5, .5)
+    else:
+        if foldername is None:
+            foldername = 'multi_head'
+        ylim_heads = (0, .8)
+
+    path = os.path.join(rootpath, 'files', foldername)
+    figpath = os.path.join(rootpath, 'figures', foldername)
+    
+    res = tools.load_all_results(path)
+    select_dict = {'lr': 0.001, 'pn_norm_pre': 'batch_norm'}
+    # select_dict = {'lr': 0.001, 'pn_norm_pre': None}
+    res = dict_methods.filter(res, select_dict)
+    subdirs = [p.split('/')[-1] for p in res['save_path']]
+
+    val_accs, val_acc2s = list(), list()
+    for subdir in subdirs:
+        subpath = os.path.join(path, subdir)
+        # subpath = path
+        config = tools.load_config(subpath)
+        config = _fix_config(config)
+        print('Learning rate', config.lr)
+        print('PN norm', config.pn_norm_pre)
+    
+        data, data_norm = _get_data(subpath)
+        groups = _get_groups(data_norm, config, n_clusters=2)
+        val_accs_tmp, val_acc2s_tmp = _get_lesion_acc(subpath, groups, arg=arg)
+        val_accs.append(val_accs_tmp)
+        val_acc2s.append(val_acc2s_tmp)
+        
+    val_accs = np.array(val_accs).T
+    val_acc2s = np.array(val_acc2s).T
+    
+    for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
+        fig = _plot_hist(head, ylim_heads, val_acc)
+        save_fig(figpath, 'population_lesion'+head)
 
 
 if __name__ == '__main__':
-    # main1('multi_head', foldername='multi_head', subdir='000000')
-    arg = 'multi_head'
-    foldername='multi_head'
-    # foldername='tmp_multi_head'
-    subdir='000025'
-    # subdir='000001'
-# def main1(arg, foldername=None, subdir=None):
-    analyze_example_network('multi_head', 'multi_head', subdir)
+    analyze_example_network('multi_head', 'multi_head', '000025')
+    analyze_example_network('multi_head', 'multi_head', '000025', fix_cluster=2)
+    analyze_many_networks_lesion('multi_head', 'multi_head')
+    pass
     
 
 
