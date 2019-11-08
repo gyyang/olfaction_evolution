@@ -114,8 +114,8 @@ def control_pn2kc_prune_hyper(n_pn=50):
     hp_ranges = OrderedDict()
     hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
     hp_ranges['N_KC'] = [2500, 5000, 10000]
-    hp_ranges['kc_prune_threshold'] = np.array([1., 2., 5.])/n_pn
-    hp_ranges['initial_pn2kc'] = np.array([2., 4., 10.])/n_pn
+    hp_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2.])/n_pn
+    hp_ranges['initial_pn2kc'] = np.array([2.5, 5, 10.])/n_pn
     return config, hp_ranges
 
 

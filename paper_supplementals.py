@@ -50,7 +50,7 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # TRAIN = True
 # ANALYZE = True
 # use_cluster = True
-# args.experiment =['control_pn2kc_prune_boolean']
+# args.experiment =['control_pn2kc_prune_hyper']
 # args.pn = [50]
 
 
@@ -226,12 +226,12 @@ if 'control_pn2kc_prune_hyper' in experiments:
                         logx = True
                     else:
                         logx = False
-                    sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                    sa.plot_results(cur_path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                                     select_dict=temp,
                                     logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
 
-                    sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
-                                     ax_args={'ylim': ylim, 'yticks': yticks})
+                    # sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
+                    #                  ax_args={'ylim': ylim, 'yticks': yticks})
             #
             # res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
             # for k, v in default.items():
