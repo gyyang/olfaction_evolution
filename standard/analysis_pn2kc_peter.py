@@ -51,7 +51,7 @@ def _filter_badkc(res, threshold = 0.2):
     badkc_ind = res['bad_KC'][:, -1] < threshold
     return badkc_ind
 
-def do_everything(path, filter_peaks = False, redo=False):
+def do_everything(path, filter_peaks = False, redo=False, range = 2):
     d = os.path.join(path)
     files = glob.glob(d)
     res = defaultdict(list)
@@ -63,7 +63,7 @@ def do_everything(path, filter_peaks = False, redo=False):
         wglos = tools.load_pickle(path, 'w_glo')
         for i, wglo in enumerate(wglos):
             w = wglo.flatten()
-            hist, bins = np.histogram(w, bins=1000, range=[0, 3])
+            hist, bins = np.histogram(w, bins=1000, range=[0, range])
             res['lin_bins'][i] = bins
             res['lin_hist'][i][-1,:] = hist #hack
 

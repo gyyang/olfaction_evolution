@@ -50,7 +50,8 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # TRAIN = True
 # ANALYZE = True
 # use_cluster = True
-# args.experiment =['control_pn2kc_inhibition']
+# args.experiment =['control_pn2kc_prune_boolean']
+# args.pn = [200]
 
 
 if use_cluster:
@@ -153,7 +154,7 @@ if 'control_pn2kc_inhibition' in experiments:
     if TRAIN:
         train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True, path=cluster_path)
     if ANALYZE:
-        xk = 'w_glo_meansub_coeff'
+        xkey = 'w_glo_meansub_coeff'
         ykeys = ['val_acc', 'K_inferred']
         for yk in ykeys:
             if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
@@ -161,14 +162,14 @@ if 'control_pn2kc_inhibition' in experiments:
             elif yk == 'val_acc':
                 ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
 
-            sa.plot_results(path, x_key=xk, y_key=yk,
+            sa.plot_results(path, x_key=xkey, y_key=yk,
                             figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                             ax_args={'ylim': ylim, 'yticks': yticks})
 
-            sa.plot_progress(path, ykeys=[yk], legend_key=xk, ax_args={'ylim': ylim, 'yticks': yticks})
+            sa.plot_progress(path, ykeys=[yk], legend_key=xkey, ax_args={'ylim': ylim, 'yticks': yticks})
         #
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
-        sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
+        sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
                    ax_args={'ylim':[0, 500]})
 
 if 'control_pn2kc_prune_boolean' in experiments:
@@ -180,7 +181,20 @@ if 'control_pn2kc_prune_boolean' in experiments:
             train(experiment_controls.control_pn2kc_prune_boolean(n_pn),
                   save_path=cur_path, path=cluster_path)
     if ANALYZE:
-        pass
+        xkey = 'kc_prune_weak_weights'
+        ykeys = ['val_acc', 'K_inferred']
+        for n_pn in n_pns:
+            cur_path = path + '_' + str(n_pn)
+            for yk in ykeys:
+                if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+                    ylim, yticks = [0, 15], [0, 3, 7, 10, 15]
+                elif yk == 'val_acc':
+                    ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+                sa.plot_progress(cur_path, ykeys=[yk], legend_key=xkey, ax_args={'ylim': ylim, 'yticks': yticks})
+
+            res = standard.analysis_pn2kc_peter.do_everything(cur_path, filter_peaks=False, redo=True, range=1)
+            sa.plot_xy(cur_path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
+                       ax_args={'ylim': [0, 500]})
 
 if 'control_pn2kc_prune_hyper' in experiments:
     n_pns = [int(x) for x in args.pn]
@@ -188,7 +202,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
     if TRAIN:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
-            train(experiment_controls.control_pn2kc_prune_hyper(n_pn),
+            train(experiment_controls.control_pn2kc_prune_hyper(n_pn), control=True,
                   save_path=cur_path, path=cluster_path)
     if ANALYZE:
         pass
