@@ -122,7 +122,7 @@ if __name__ == '__main__':
     # make_mask_row_dataset()
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
-    # make_multi_head_dataset()
-    make_vary_or_datasets()
+    make_multi_head_dataset()
+    # make_vary_or_datasets()
     # temp()
 
