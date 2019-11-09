@@ -256,7 +256,7 @@ if 'control_vary_kc' in experiments:
 if 'control_vary_pn' in experiments:
     path = './files/control_vary_pn'
     if TRAIN:
-        train(experiment_controls.control_vary_kc(), save_path=path, path=cluster_path)
+        train(experiment_controls.control_vary_pn(), save_path=path, path=cluster_path)
     if ANALYZE:
         default = {'kc_dropout_rate': 0.5, 'N_PN':50}
         ykeys = ['val_acc', 'K_inferred']
