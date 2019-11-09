@@ -50,7 +50,7 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # TRAIN = True
 # use_cluster = True
 # ANALYZE = True
-# args.experiment =['control_pn2kc_prune_hyper']
+# args.experiment =['control_vary_kc']
 # args.pn = [200]
 
 
@@ -242,6 +242,23 @@ if 'control_vary_kc' in experiments:
         train(experiment_controls.control_vary_kc(), save_path=path, path=cluster_path)
     if ANALYZE:
         default = {'kc_dropout_rate': 0.5, 'N_KC':2500}
+        ykeys = ['val_acc', 'glo_score']
+        ylim, yticks = [0, 1.1], [0, .25, .5, .75, 1]
+        xticks = [50, 200, 1000, 2500, 10000]
+        for ykey in ykeys:
+            sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
+                            loop_key='kc_dropout_rate',
+                            logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
+            sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+                            loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
+                            logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
+
+if 'control_vary_pn' in experiments:
+    path = './files/control_vary_pn'
+    if TRAIN:
+        train(experiment_controls.control_vary_kc(), save_path=path, path=cluster_path)
+    if ANALYZE:
+        default = {'kc_dropout_rate': 0.5, 'N_PN':50}
         ykeys = ['val_acc', 'K_inferred']
 
         for yk in ykeys:
@@ -259,10 +276,3 @@ if 'control_vary_kc' in experiments:
 
                 sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk, exclude_dict=exclude_dict,
                                  ax_args={'ylim': ylim, 'yticks': yticks})
-        #
-        # res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
-        # for xk, v in default.items():
-        #     temp = copy.deepcopy(default)
-        #     temp.pop(xk)
-        #     sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
-        #                ax_args={'ylim':[0, 500]})
