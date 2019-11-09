@@ -91,12 +91,10 @@ def vary_kc_configs(argTest=False):
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
-    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
 
     if argTest:
         config.max_epoch = testing_epochs
         hp_ranges['N_KC'] = [100, 200, 500, 1000, 2500, 10000]
-        hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
 
 def receptor(argTest=False):

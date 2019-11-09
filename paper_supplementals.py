@@ -49,8 +49,8 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 
 # TRAIN = True
 # use_cluster = True
-ANALYZE = True
-args.experiment =['control_pn2kc_prune_hyper']
+# ANALYZE = True
+# args.experiment =['control_pn2kc_prune_hyper']
 # args.pn = [200]
 
 
@@ -96,17 +96,17 @@ if 'control_orn2pn' in experiments:
         ykeys = ['glo_score', 'val_acc']
 
         for yk in ykeys:
-            for k, v in default.items():
+            for xk, v in default.items():
                 temp = copy.deepcopy(default)
-                temp.pop(k)
-                if k == 'lr':
+                temp.pop(xk)
+                if xk == 'lr':
                     logx= True
                 else:
                     logx = False
-                sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
+                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
                                 logx=logx, ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
-                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k,
+                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk,
                                  ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
 if 'control_pn2kc' in experiments:
@@ -128,25 +128,25 @@ if 'control_pn2kc' in experiments:
                 ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
                 exclude_dict = None
 
-            for k, v in default.items():
+            for xk, v in default.items():
                 temp = copy.deepcopy(default)
-                temp.pop(k)
-                if k == 'lr':
+                temp.pop(xk)
+                if xk == 'lr':
                     logx = True
                 else:
                     logx = False
-                sa.plot_results(path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                                 select_dict=temp,
                                 logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
 
-                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
+                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk, exclude_dict=exclude_dict,
                                  ax_args={'ylim': ylim, 'yticks': yticks})
         #
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
-        for k, v in default.items():
+        for xk, v in default.items():
             temp = copy.deepcopy(default)
-            temp.pop(k)
-            sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
+            temp.pop(xk)
+            sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
                        ax_args={'ylim':[0, 500]})
 
 if 'control_pn2kc_inhibition' in experiments:
@@ -218,9 +218,9 @@ if 'control_pn2kc_prune_hyper' in experiments:
                     ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
                     exclude_dict = None
 
-                for k, v in default.items():
+                for xk, v in default.items():
                     temp = copy.deepcopy(default)
-                    temp.pop(k)
+                    temp.pop(xk)
                     logx = True
                     # sa.plot_results(cur_path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                     #                 select_dict=temp,
@@ -230,8 +230,39 @@ if 'control_pn2kc_prune_hyper' in experiments:
                     #                  ax_args={'ylim': ylim, 'yticks': yticks})
             #
             res = standard.analysis_pn2kc_peter.do_everything(cur_path, filter_peaks=True, redo=True, range=.75)
-            for k, v in default.items():
+            for xk, v in default.items():
                 temp = copy.deepcopy(default)
-                temp.pop(k)
-                sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=k, log=res,
+                temp.pop(xk)
+                sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
                            ax_args={'ylim': [0, 500]})
+
+if 'control_vary_kc' in experiments:
+    path = './files/control_vary_kc'
+    if TRAIN:
+        train(experiment_controls.control_vary_kc(), save_path=path, path=cluster_path)
+    if ANALYZE:
+        default = {'kc_dropout_rate': 0.5, 'N_KC':2500}
+        ykeys = ['val_acc', 'K_inferred']
+
+        for yk in ykeys:
+            if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
+                ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
+            elif yk == 'val_acc':
+                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+
+            for xk, v in default.items():
+                temp = copy.deepcopy(default)
+                temp.pop(xk)
+                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                                select_dict=temp,
+                                logx=True, ax_args={'ylim': ylim, 'yticks': yticks})
+
+                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk, exclude_dict=exclude_dict,
+                                 ax_args={'ylim': ylim, 'yticks': yticks})
+        #
+        # res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
+        # for xk, v in default.items():
+        #     temp = copy.deepcopy(default)
+        #     temp.pop(xk)
+        #     sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
+        #                ax_args={'ylim':[0, 500]})

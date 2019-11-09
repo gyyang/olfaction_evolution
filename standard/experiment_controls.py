@@ -118,6 +118,18 @@ def control_pn2kc_prune_hyper(n_pn=50):
     hp_ranges['initial_pn2kc'] = np.array([2.5, 5, 10.])/n_pn
     return config, hp_ranges
 
+def control_vary_kc():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.pn_norm_pre = 'batch_norm'
+
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+    hp_ranges = OrderedDict()
+    hp_ranges['N_KC'] = [50, 100, 200, 400, 1000, 2500, 5000, 10000, 20000]
+    hp_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+    return config, hp_ranges
 
 
 def controls_receptor(argTest=False):
