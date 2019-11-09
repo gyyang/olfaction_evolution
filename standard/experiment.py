@@ -25,20 +25,20 @@ def train_standardnet(argTest=False):
 def train_standardnet_with_or2orn(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 20
+    config.max_epoch = 30
 
     config.receptor_layer = True
     config.or2orn_normalization = True
     config.replicate_orn_with_tiling= True
     config.N_ORN_DUPLICATION = 10
-    config.ORN_NOISE_STD = 0.25
+    config.ORN_NOISE_STD = 0.2
 
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
 
     config.data_dir = './datasets/proto/standard'
-    config.save_every_epoch = True
+    config.save_every_epoch = False
     hp_ranges = OrderedDict()
     hp_ranges['sign_constraint_orn2pn'] = [True]
     if argTest:
@@ -63,12 +63,9 @@ def vary_pn_configs(argTest=False):
 
     hp_ranges = OrderedDict()
     hp_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
-    hp_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
 
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['N_PN'] = [20, 30, 40, 50, 100, 150, 200]
-        hp_ranges['ORN_NOISE_STD'] = [0]
 
     return config, hp_ranges
 
@@ -94,7 +91,6 @@ def vary_kc_configs(argTest=False):
 
     if argTest:
         config.max_epoch = testing_epochs
-        hp_ranges['N_KC'] = [100, 200, 500, 1000, 2500, 10000]
     return config, hp_ranges
 
 def receptor(argTest=False):

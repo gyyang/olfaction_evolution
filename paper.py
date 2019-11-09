@@ -42,7 +42,8 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
-print(args.__dict__)
+for item in args.__dict__.items():
+    print(item)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
