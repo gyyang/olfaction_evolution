@@ -134,11 +134,11 @@ def control_vary_kc():
 def control_vary_pn():
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 12
-    # config.pn_norm_pre = 'batch_norm'
+    config.max_epoch = 30
+    config.pn_norm_pre = 'batch_norm'
 
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
+    # config.train_pn2kc = True
+    # config.sparse_pn2kc = False
     hp_ranges = OrderedDict()
     hp_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
     hp_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
