@@ -45,8 +45,8 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # TRAIN = True
 # use_cluster = True
 # args.pn = [50]
-ANALYZE = True
-args.experiment =['control_nonnegative']
+# ANALYZE = True
+# args.experiment =['control_vary_pn']
 
 
 if use_cluster:
@@ -270,17 +270,19 @@ if 'control_vary_pn' in experiments:
         sa.plot_weights(os.path.join(path,'000012'), sort_axis=1, average=False)
         sa.plot_weights(os.path.join(path,'000021'), sort_axis=1, average=False)
 
-        # default = {'kc_dropout_rate': 0.5, 'N_PN':50}
-        # ykeys = ['val_acc', 'glo_score', 'K_inferred']
-        # xticks = [20, 50, 100, 200, 1000]
-        # for ykey in ykeys:
-        #     if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-        #         ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 30]
-        #     else:
-        #         ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-        #     sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
-        #                     loop_key='kc_dropout_rate',
-        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
-        #     sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
-        #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
-        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
+        default = {'kc_dropout_rate': 0.5, 'N_PN':50}
+        ykeys = ['val_acc', 'glo_score', 'K_inferred']
+        xticks = [20, 50, 100, 200, 1000]
+        for ykey in ykeys:
+            if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+                ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 30]
+            else:
+                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+            sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
+                            loop_key='kc_dropout_rate',
+                            logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
+            sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+                            loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
+                            logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
+            sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN', select_dict={'kc_dropout_rate':0.5},
+                             ax_args={'ylim': ylim, 'yticks': yticks})
