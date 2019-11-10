@@ -234,7 +234,7 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, 
     plt.axis('tight')
     var_name = var_name.replace('/','_')
     var_name = var_name.replace(':','_')
-    save_fig(path, '_' + var_name + '_' + str(dir_ix))
+    save_fig(os.path.split(path)[0], '_' + var_name + '_' + os.path.split(path)[1])
 
 
     # Plot distribution of various connections

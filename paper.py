@@ -92,7 +92,7 @@ if 'standard_without_or2orn' in experiments:
         train(se.train_standardnet(is_test), path)
     if ANALYZE:
         # # accuracy, glo score, cosine similarity
-        # sa.plot_progress(path, select_dict={'sign_constraint_orn2pn': True})
+        # sa.plot_progress(path, select_dict={'sign_constgraint_orn2pn': True})
         # analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
 
         # #weights

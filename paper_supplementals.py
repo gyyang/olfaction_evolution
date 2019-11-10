@@ -37,11 +37,6 @@ parser.add_argument('-c', '--cluster', help='Use cluster?', action='store_true')
 parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50])
 args = parser.parse_args()
 
-# args.cluster_path = 'pw'
-# args.cluster = True
-# args.experiment = ['controls_glomeruli']
-# args.train = True
-
 for item in args.__dict__.items():
     print(item)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
@@ -49,9 +44,9 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 
 # TRAIN = True
 # use_cluster = True
+# args.pn = [50]
 # ANALYZE = True
-# args.experiment =['control_vary_kc']
-# args.pn = [200]
+# args.experiment =['control_vary_pn']
 
 
 if use_cluster:
@@ -258,21 +253,21 @@ if 'control_vary_pn' in experiments:
     if TRAIN:
         train(experiment_controls.control_vary_pn(), save_path=path, path=cluster_path)
     if ANALYZE:
-        default = {'kc_dropout_rate': 0.5, 'N_PN':50}
-        ykeys = ['val_acc', 'K_inferred']
+        sa.plot_weights(os.path.join(path,'000003'), sort_axis=1, average=False)
+        sa.plot_weights(os.path.join(path,'000012'), sort_axis=1, average=False, vlim=[0, 5])
+        sa.plot_weights(os.path.join(path,'000021'), sort_axis=1, average=False, vlim=[0, 5])
 
-        for yk in ykeys:
-            if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
-                ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
-            elif yk == 'val_acc':
-                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-
-            for xk, v in default.items():
-                temp = copy.deepcopy(default)
-                temp.pop(xk)
-                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                                select_dict=temp,
-                                logx=True, ax_args={'ylim': ylim, 'yticks': yticks})
-
-                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk, exclude_dict=exclude_dict,
-                                 ax_args={'ylim': ylim, 'yticks': yticks})
+        # default = {'kc_dropout_rate': 0.5, 'N_PN':50}
+        # ykeys = ['val_acc', 'glo_score', 'K_inferred']
+        # xticks = [20, 50, 100, 200, 1000]
+        # for ykey in ykeys:
+        #     if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+        #         ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 30]
+        #     else:
+        #         ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+        #     sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
+        #                     loop_key='kc_dropout_rate',
+        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
+        #     sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+        #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
+        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
