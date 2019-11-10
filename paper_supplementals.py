@@ -269,9 +269,9 @@ if 'control_vary_pn' in experiments:
     if TRAIN:
         train(experiment_controls.control_vary_pn(), save_path=path, path=cluster_path)
     if ANALYZE:
-        sa.plot_weights(os.path.join(path,'000003'), sort_axis=1, average=False)
-        sa.plot_weights(os.path.join(path,'000012'), sort_axis=1, average=False)
-        sa.plot_weights(os.path.join(path,'000021'), sort_axis=1, average=False)
+        # sa.plot_weights(os.path.join(path,'000003'), sort_axis=1, average=False)
+        # sa.plot_weights(os.path.join(path,'000012'), sort_axis=1, average=False)
+        # sa.plot_weights(os.path.join(path,'000021'), sort_axis=1, average=False)
 
         default = {'kc_dropout_rate': 0.5, 'N_PN':50}
         ykeys = ['val_acc', 'glo_score', 'K_inferred']
