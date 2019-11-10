@@ -153,8 +153,9 @@ def control_vary_pn():
     # config.train_pn2kc = True
     # config.sparse_pn2kc = False
     hp_ranges = OrderedDict()
-    hp_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
-    hp_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+    # hp_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
+    # hp_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+    hp_ranges['dummy'] = [0]
     return config, hp_ranges
 
 

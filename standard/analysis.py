@@ -149,7 +149,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         _plot_progress('epoch', plot_var)
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, vlim = None):
+def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, vlim = None, positive_cmap = True):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
@@ -194,8 +194,11 @@ def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, 
     max = np.max(abs(w_plot))
     if not vlim:
         vlim = [0, np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)]
-    cmap = tools.get_colormap()
-    # cmap = 'RdBu_r'
+
+    if positive_cmap:
+        cmap = tools.get_colormap()
+    else:
+        cmap = 'RdBu_r'
     im = ax.imshow(w_plot, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
                    interpolation='none')
 

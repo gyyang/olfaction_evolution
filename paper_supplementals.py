@@ -46,7 +46,7 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # use_cluster = True
 # args.pn = [50]
 # ANALYZE = True
-# args.experiment =['control_vary_pn']
+# args.experiment =['control_nonnegative']
 
 
 if use_cluster:
@@ -86,8 +86,11 @@ if 'control_nonnegative' in experiments:
     if TRAIN:
         train(experiment_controls.control_nonnegative(), save_path=path, path=cluster_path)
     if ANALYZE:
-        analysis_nonnegative.orthogonality(path, ix=0, arg='ortho', vlim= 500)
-        analysis_nonnegative.orthogonality(path, ix=0, arg='corr')
+        sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
+        sa.plot_weights(os.path.join(path, '000001'), sort_axis=1, average=False, positive_cmap=False, vlim=[-1, 1])
+        for ix in range(0,2):
+            analysis_nonnegative.orthogonality(path, ix=ix, arg='ortho')
+            analysis_nonnegative.orthogonality(path, ix=ix, arg='corr')
         # analysis_nonnegative.orthogonality(path, ix=1, arg='ortho')
 
 
