@@ -88,7 +88,6 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         log = dict_methods.exclude(log, exclude_dict)
 
     # get rid of duplicates
-
     values = log[legend_key]
     if np.any(values == None):
         values[values == None] = 'None'

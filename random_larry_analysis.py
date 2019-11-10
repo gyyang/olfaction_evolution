@@ -1,7 +1,6 @@
 import tools
 import matplotlib.pyplot as plt
 import task
-import standard.analysis as sa
 import numpy as np
 import os
 
@@ -100,29 +99,6 @@ print(np.sum(ix_good), np.sum(ix_bad))
 _lesion_multiglomerular_pn(os.path.join(path,'000000'), ix, None)
 _lesion_multiglomerular_pn(os.path.join(path,'000000'), ix, ix_good)
 _lesion_multiglomerular_pn(os.path.join(path,'000000'), ix, ix_bad)
-
-def _orthogonality(path, ix, arg):
-    w_orns = tools.load_pickle(path, 'w_orn')
-    w_orn = w_orns[ix]
-    print(w_orn.shape)
-
-    out = np.zeros((w_orn.shape[1], w_orn.shape[1]))
-    for i in range(w_orn.shape[1]):
-        for j in range(w_orn.shape[1]):
-            x = np.dot(w_orn[:,i], w_orn[:,j])
-            y = np.corrcoef(w_orn[:,i], w_orn[:,j])[0,1]
-            if arg == 'ortho':
-                out[i,j] = x
-            else:
-                out[i,j] = y
-    plt.imshow(out, cmap='RdBu_r', interpolation='none')
-    plt.colorbar()
-
-    txt = '_orthogonality_' if arg == 'ortho' else '_correlation_'
-    tools.save_fig(path, txt + str(ix))
-
-# path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files\standard_net'
-# _orthogonality(path, 0, arg='ortho')
 
 def _distance_preserve(x_arg, y_arg):
     save_path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files\pn_normalization\000010'

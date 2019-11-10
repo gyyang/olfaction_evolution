@@ -45,8 +45,8 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # TRAIN = True
 # use_cluster = True
 # args.pn = [50]
-# ANALYZE = True
-# args.experiment =['control_vary_pn']
+ANALYZE = True
+args.experiment =['control_nonnegative']
 
 
 if use_cluster:
@@ -73,12 +73,23 @@ if ANALYZE:
     import oracle.evaluatewithnoise as evaluatewithnoise
     import analytical.numerical_test as numerical_test
     import analytical.analyze_simulation_results as analyze_simulation_results
+    import standard.analysis_nonnegative as analysis_nonnegative
 
 # experiments
 if args.experiment == 'core':
     experiments = ['']
 else:
     experiments = args.experiment
+
+if 'control_nonnegative' in experiments:
+    path = './files/control_nonnegative'
+    if TRAIN:
+        train(experiment_controls.control_nonnegative(), save_path=path, path=cluster_path)
+    if ANALYZE:
+        analysis_nonnegative.orthogonality(path, ix=0, arg='ortho', vlim= 500)
+        analysis_nonnegative.orthogonality(path, ix=0, arg='corr')
+        # analysis_nonnegative.orthogonality(path, ix=1, arg='ortho')
+
 
 
 if 'control_orn2pn' in experiments:

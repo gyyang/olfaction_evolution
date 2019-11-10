@@ -8,6 +8,19 @@ from standard.experiment import testing_epochs
 
 testing_epochs = 12
 
+def control_nonnegative():
+    """Standard training setting"""
+    config = configs.FullConfig()
+    config.max_epoch = 30
+    config.pn_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.data_dir = './datasets/proto/standard'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['sign_constraint_orn2pn'] = [True, False]
+    return config, hp_ranges
+
 def control_orn2pn():
     '''
     '''
