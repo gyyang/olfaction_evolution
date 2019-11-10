@@ -46,7 +46,7 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 # use_cluster = True
 # args.pn = [50]
 # ANALYZE = True
-# args.experiment =['control_nonnegative']
+# args.experiment =['control_vary_pn']
 
 
 if use_cluster:
@@ -269,12 +269,12 @@ if 'control_vary_pn' in experiments:
     if TRAIN:
         train(experiment_controls.control_vary_pn(), save_path=path, path=cluster_path)
     if ANALYZE:
-        # sa.plot_weights(os.path.join(path,'000003'), sort_axis=1, average=False)
-        # sa.plot_weights(os.path.join(path,'000012'), sort_axis=1, average=False)
-        # sa.plot_weights(os.path.join(path,'000021'), sort_axis=1, average=False)
+        sa.plot_weights(os.path.join(path,'000005'), sort_axis=1, average=False)
+        sa.plot_weights(os.path.join(path,'000011'), sort_axis=1, average=False, vlim=[0, 10])
+        sa.plot_weights(os.path.join(path,'000020'), sort_axis=1, average=False, vlim=[0, 10])
 
         default = {'kc_dropout_rate': 0.5, 'N_PN':50}
-        ykeys = ['val_acc', 'glo_score', 'K_inferred']
+        ykeys = ['val_acc', 'glo_score']
         xticks = [20, 50, 100, 200, 1000]
         for ykey in ykeys:
             if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
