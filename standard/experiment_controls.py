@@ -135,7 +135,7 @@ def control_vary_pn():
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 12
-    config.pn_norm_pre = 'batch_norm'
+    # config.pn_norm_pre = 'batch_norm'
 
     config.train_pn2kc = True
     config.sparse_pn2kc = False
