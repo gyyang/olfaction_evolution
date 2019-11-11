@@ -5,24 +5,25 @@ import configs
 
 testing_epochs = 16
 
-def train_standardnet(argTest=False):
+def standard(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 16
 
     config.pn_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
+    config.initial_pn2kc = 0.06
+    config.save_every_epoch = True
 
     config.data_dir = './datasets/proto/standard'
-    config.save_every_epoch = True
     hp_ranges = OrderedDict()
     hp_ranges['dummy'] = [True]
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
-def train_standardnet_with_or2orn(argTest=False):
+def receptor(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
     config.max_epoch = 30
@@ -88,28 +89,6 @@ def vary_kc_configs(argTest=False):
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
-
-    if argTest:
-        config.max_epoch = testing_epochs
-    return config, hp_ranges
-
-def receptor(argTest=False):
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-
-    config.receptor_layer = True
-    config.or2orn_normalization = True
-    config.ORN_NOISE_STD = .4
-    config.save_every_epoch = True
-    config.pn_norm_pre = 'batch_norm'
-
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['dummy'] = [0]
 
     if argTest:
         config.max_epoch = testing_epochs

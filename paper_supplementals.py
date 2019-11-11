@@ -92,8 +92,11 @@ if 'control_nonnegative' in experiments:
         for ix in range(0,2):
             analysis_nonnegative.orthogonality(path, ix=ix, arg='ortho')
             analysis_nonnegative.orthogonality(path, ix=ix, arg='corr')
-        # analysis_nonnegative.orthogonality(path, ix=1, arg='ortho')
 
+        # # #sign constraint
+        sa.plot_progress(path, ykeys=['glo_score','val_acc'], legend_key='sign_constraint_orn2pn')
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
+        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
 
 
 if 'control_orn2pn' in experiments:
@@ -309,7 +312,6 @@ if 'train_kc_claws' in experiments:
         sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=1)
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
-        analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
 
 if 'controls_receptor' in experiments:
     path = './files/controls_receptor'
@@ -388,7 +390,6 @@ if 'vary_kc_activity_trainable' in experiments:
     if ANALYZE:
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=False, thres=.25)
         # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
         # analysis_activity.sparseness_activity(path, 'kc_out')
         # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
@@ -413,8 +414,7 @@ if 'meansub' in experiments:
     if TRAIN:
         train(standard.experiment_controls.vary_w_glo_meansub_coeff(is_test), path, sequential=True)
     if ANALYZE:
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(
-            path, x_key='w_glo_meansub_coeff', dynamic_thres=True)
+        pass
 
 if 'vary_init_sparse' in experiments:
     # Vary PN2KC initialization to be sparse or dense

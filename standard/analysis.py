@@ -65,6 +65,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = 
         log = tools.load_all_results(save_path, argLast=False)
     if select_dict is not None:
         log = dict_methods.filter(log, select_dict)
+    if legend_key:
         # get rid of duplicates
         values = log[legend_key]
         if np.any(values == None):
@@ -88,12 +89,13 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         log = dict_methods.exclude(log, exclude_dict)
 
     # get rid of duplicates
-    values = log[legend_key]
-    if np.any(values == None):
-        values[values == None] = 'None'
-    _, ixs = np.unique(values, return_index=True)
-    for k, v in log.items():
-        log[k] = log[k][ixs]
+    if legend_key:
+        values = log[legend_key]
+        if np.any(values == None):
+            values[values == None] = 'None'
+        _, ixs = np.unique(values, return_index=True)
+        for k, v in log.items():
+            log[k] = log[k][ixs]
 
     def _plot_progress(xkey, ykey):
         figsize = (2.5, 2)
@@ -149,7 +151,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         _plot_progress('epoch', plot_var)
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis=1, dir_ix=0, average=False, vlim = None, positive_cmap = True):
+def plot_weights(path, var_name ='w_orn', sort_axis=1, average=False, vlim = None, positive_cmap = True):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
