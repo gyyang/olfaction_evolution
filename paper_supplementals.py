@@ -21,6 +21,7 @@ import standard.experiment_controls
 import standard.experiment_controls as experiment_controls
 from standard.hyper_parameter_train import local_train, cluster_train
 import matplotlib as mpl
+import numpy as np
 
 SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
 ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
@@ -269,9 +270,16 @@ if 'control_vary_pn' in experiments:
     if TRAIN:
         train(experiment_controls.control_vary_pn(), save_path=path, path=cluster_path)
     if ANALYZE:
-        sa.plot_weights(os.path.join(path,'000005'), sort_axis=1, average=False)
-        sa.plot_weights(os.path.join(path,'000011'), sort_axis=1, average=False, vlim=[0, 10])
-        sa.plot_weights(os.path.join(path,'000020'), sort_axis=1, average=False, vlim=[0, 10])
+        sa.plot_weights(os.path.join(path,'000004'), sort_axis=1, average=False)
+        sa.plot_weights(os.path.join(path,'000010'), sort_axis=1, average=False, vlim=[0, 5])
+        sa.plot_weights(os.path.join(path,'000022'), sort_axis=1, average=False, vlim=[0, 5])
+
+        ix = 22
+        ix_good, ix_bad = analysis_orn2pn._plot_gloscores(path, ix, cutoff=.9, shuffle=False)
+        analysis_orn2pn._distribution_multiglomerular_pn(path, ix, ix_good, ix_bad)
+        analysis_orn2pn.lesion_glom(path, ix, ix_good, ix_bad)
+        print(np.sum(ix_good))
+        print(np.sum(ix_bad))
 
         default = {'kc_dropout_rate': 0.5, 'N_PN':50}
         ykeys = ['val_acc', 'glo_score']
@@ -280,7 +288,7 @@ if 'control_vary_pn' in experiments:
             if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
                 ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 30]
             else:
-                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+                ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
             sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
                             loop_key='kc_dropout_rate',
                             logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
