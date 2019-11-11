@@ -68,9 +68,9 @@ def _extract_paircounts(mat):
     counts = lower[lower>0]
     return counts, counts_matrix
 
-def _get_claws(dir):
+def _get_claws(dir, ix = 0):
     dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    wglos = tools.load_pickle(os.path.join(dirs[0], 'epoch'), 'w_glo')
+    wglos = tools.load_pickle(os.path.join(dirs[ix], 'epoch'), 'w_glo')
     wglo_binaries = []
     for i, wglo in enumerate(wglos):
         if i == 0:
@@ -84,9 +84,9 @@ def _get_claws(dir):
     return wglo_binaries, wglos
 
 #frequency of identical pairs vs shuffled
-def pair_distribution(dir, shuffle_arg):
+def pair_distribution(dir, dir_ix, shuffle_arg):
     bin_range = 150
-    wglo_binaries, _ = _get_claws(dir)
+    wglo_binaries, _ = _get_claws(dir, dir_ix)
     wglo_binary = wglo_binaries[-1]
 
     trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
@@ -125,11 +125,11 @@ def pair_distribution(dir, shuffle_arg):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    save_fig(dir, '_Pair_Distribution_' + shuffle_arg, dpi=500)
+    save_fig(dir, '_' + str(dir_ix) + '_pair_distribution_' + shuffle_arg)
 
 # distribution of connections is not a bernoulli distribution, but is more compact
-def claw_distribution(dir, shuffle_arg):
-    wglo_binaries, _ = _get_claws(dir)
+def claw_distribution(dir, dir_ix, shuffle_arg):
+    wglo_binaries, _ = _get_claws(dir, dir_ix)
     wglo_binary = wglo_binaries[-1]
     sparsity = np.count_nonzero(wglo_binary > 0, axis= 0)
 
@@ -164,12 +164,12 @@ def claw_distribution(dir, shuffle_arg):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    save_fig(dir, '_Claw_Distribution_' + shuffle_arg, dpi=500)
+    save_fig(dir, '_' + str(dir_ix) + '_claw_distribution_' + shuffle_arg)
 
 
 #all PNs make the same number of connections onto KCs
-def plot_distribution(dir):
-    wglo_binaries, _ = _get_claws(dir)
+def plot_distribution(dir, dir_ix):
+    wglo_binaries, _ = _get_claws(dir, dir_ix)
     wglo_binary = wglo_binaries[-1]
 
     weights_per_pn = np.mean(wglo_binary, axis=1)
@@ -197,11 +197,11 @@ def plot_distribution(dir):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    save_fig(dir, '_PN_Distribution', dpi=500)
+    save_fig(dir, '_' + str(dir_ix) + '_pn_distribution')
 
 # average correlation of weights between KCs decrease as a function of training
 # and is similar to shuffled weights with the same connection probability
-def plot_cosine_similarity(dir, shuffle_arg, log= True):
+def plot_cosine_similarity(dir, dir_ix, shuffle_arg, log= True):
     def _get_similarity(mat):
         similarity_matrix = cosine_similarity(mat)
         diag_mask = ~np.eye(similarity_matrix.shape[0], dtype=bool)
@@ -209,7 +209,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
         average_correlation = np.mean(corrs)
         return average_correlation, similarity_matrix
 
-    wglo_binaries, wglos = _get_claws(dir)
+    wglo_binaries, wglos = _get_claws(dir, ix = dir_ix)
     y = []
     for wglo in wglo_binaries:
         corr, similarity_matrix = _get_similarity(np.transpose(wglo))
@@ -231,7 +231,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
         y_shuffled.append(temp)
 
     legends = ['Trained', 'Shuffled']
-    figsize = (1.5, 1.2)
+    figsize = (2, 1.5)
     rect = [0.3, 0.3, 0.65, 0.5]
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(rect)
@@ -246,8 +246,8 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
         ylim = [0, 1]
     xlim = len(y)
     ax.plot(y)
-    # ax.plot(range(xlim), y_shuffled, '--', color='gray')
-    # ax.legend(legends, fontsize=5)
+    ax.plot(range(xlim), y_shuffled, '--', color='gray')
+    ax.legend(legends, fontsize=7, frameon=False)
     xticks =np.arange(0, xlim, 10)
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Cosine Similarity')
@@ -260,7 +260,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log= True):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    save_fig(dir, '_Cosine_Similarity_' + shuffle_arg, dpi=500)
+    save_fig(dir, '_' + str(dir_ix) + '_cosine_similarity_' + shuffle_arg, dpi=500)
 
 def display_matrix(wglo):
 

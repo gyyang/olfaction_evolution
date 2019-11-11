@@ -103,17 +103,17 @@ if 'standard' in experiments:
 
         # pn-kc
         # sa.plot_weights(os.path.join(path,'000000'), var_name='w_glo')
-        # analysis_pn2kc_random.plot_cosine_similarity(path, 'preserve', log=False)
 
         # pn-kc K
         # analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=False)
         # analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=True)
-        analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, epoch=-1)
+        # analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, epoch=-1)
 
         # pn-kc random
-        # analysis_pn2kc_random.plot_distribution(path)
-        # analysis_pn2kc_random.claw_distribution(path, 'random')
-        # analysis_pn2kc_random.pair_distribution(path, 'preserve')
+        # analysis_pn2kc_random.plot_cosine_similarity(path, dir_ix= 0, shuffle_arg='preserve', log=False)
+        # analysis_pn2kc_random.plot_distribution(path, dir_ix= 0)
+        # analysis_pn2kc_random.claw_distribution(path, dir_ix= 0, shuffle_arg='random')
+        # analysis_pn2kc_random.pair_distribution(path, dir_ix= 0, shuffle_arg='preserve')
 
         # # # correlation
         # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
