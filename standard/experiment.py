@@ -17,7 +17,7 @@ def train_standardnet(argTest=False):
     config.data_dir = './datasets/proto/standard'
     config.save_every_epoch = True
     hp_ranges = OrderedDict()
-    hp_ranges['sign_constraint_orn2pn'] = [True, False]
+    hp_ranges['dummy'] = [True]
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges

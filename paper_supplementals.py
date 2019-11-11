@@ -297,3 +297,137 @@ if 'control_vary_pn' in experiments:
                             logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
             sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN', select_dict={'kc_dropout_rate':0.5},
                              ax_args={'ylim': ylim, 'yticks': yticks})
+
+if 'train_kc_claws' in experiments:
+    path = './files/train_kc_claws'
+    if TRAIN:
+        train(standard.experiment_controls.train_claw_configs(is_test), path, sequential=True)
+    if ANALYZE:
+        sa.plot_progress(
+            path, alpha=.75, linestyles=[':', '-'],
+            legends=['Trained', 'Fixed']),
+        sa.plot_weights(path, var_name='w_glo', sort_axis=-1, dir_ix=1)
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=False)
+        analysis_pn2kc_training.plot_weight_distribution_per_kc(path, xrange=15)
+
+if 'controls_receptor' in experiments:
+    path = './files/controls_receptor'
+    if TRAIN:
+        local_train(experiment_controls.controls_receptor(is_test), path, control=True)
+    if ANALYZE:
+        default = {'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='or_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
+
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='combined_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
+
+        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
+        sa.plot_results(path, x_key='or2orn_normalization', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
+        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
+
+if 'vary_kc_claws' in experiments:
+    path = './files/vary_kc_claws'
+    if TRAIN:
+        train(standard.experiment_controls.vary_claw_configs(is_test), path)
+    if ANALYZE:
+        import tools
+        t = [1, 2, 9, 19, 29, 39, 49, 59, 69]
+        for i in t:
+            res = tools.load_all_results(path, argLast=False, ix=i)
+            sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss',
+                            select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i), figsize=(2, 2),
+                            ax_box=(0.27, 0.25, 0.65, 0.65))
+
+        sa.plot_progress(path, select_dict = {'kc_inputs':[7,15,30], 'ORN_NOISE_STD':0}, legends=['7', '15', '30'])
+        # analysis_activity.sparseness_activity(path, 'kc_out')
+        # import tools
+        # for i in range(8):
+        #     res = tools.load_all_results(path, argLast=False, ix=i)
+        #     sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
+        #                     select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i))
+
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
+                        figsize=(2, 2), ax_box=(0.27, 0.25, 0.65, 0.65),)
+        # sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', loop_key='ORN_NOISE_STD',
+        #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        #                 ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
+        sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', select_dict={'ORN_NOISE_STD': 0},
+                        figsize=(2, 2), ax_box=(0.27, 0.25, 0.65, 0.65),
+                        ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
+
+if 'vary_kc_activity_fixed' in experiments:
+    # Vary KC activity under different number of relabels
+    path = './files/vary_kc_activity_fixed'
+    if TRAIN:
+        train(se.vary_kc_activity_fixed(is_test), path)
+    if ANALYZE:
+        # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
+        analysis_activity.sparseness_activity(path, 'kc_out')
+        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+
+if 'vary_kc_activity_trainable' in experiments:
+    # Vary KC activity under different number of relabels
+    path = './files/vary_kc_activity_trainable'
+    if TRAIN:
+        train(se.vary_kc_activity_trainable(is_test), path)
+    if ANALYZE:
+        analysis_pn2kc_training.plot_distribution(path)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='n_trueclass', dynamic_thres=False, thres=.25)
+        # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
+        # analysis_activity.sparseness_activity(path, 'kc_out')
+        # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+
+if 'apl' in experiments:
+    # Adding inhibitory APL unit.
+    path = './files/apl'
+    if TRAIN:
+        train(standard.experiment_controls.vary_apl(is_test), path)
+    if ANALYZE:
+        analysis_activity.sparseness_activity(
+            path, 'kc_out', activity_threshold=0., lesion_kwargs=None)
+        lk = {'name': 'model/apl2kc/kernel:0',
+              'units': 0, 'arg': 'outbound'}
+        analysis_activity.sparseness_activity(
+            path, 'kc_out', activity_threshold=0., lesion_kwargs=lk,
+            figname='lesion_apl_')
+
+if 'meansub' in experiments:
+    # Subtracting mean from activity
+    path = './files/meansub'
+    if TRAIN:
+        train(standard.experiment_controls.vary_w_glo_meansub_coeff(is_test), path, sequential=True)
+    if ANALYZE:
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(
+            path, x_key='w_glo_meansub_coeff', dynamic_thres=True)
+
+if 'vary_init_sparse' in experiments:
+    # Vary PN2KC initialization to be sparse or dense
+    path = './files/vary_init_sparse'
+    if TRAIN:
+        train(standard.experiment_controls.vary_init_sparse(is_test), path)
+    if ANALYZE:
+        pass
+
+if 'analytical' in experiments:
+    if TRAIN:
+        numerical_test.get_optimal_K_simulation()
+    if ANALYZE:
+        numerical_test.main_compare()
+        numerical_test.main_plot()
+        analyze_simulation_results.main()
