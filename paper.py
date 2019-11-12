@@ -205,7 +205,7 @@ if 'multi_head' in experiments:
         train(se.train_multihead(is_test), path)
     if ANALYZE:
         # analysis_multihead.main1('multi_head')
-        sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn', sort_axis=1, dir_ix=0)
+        sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn', sort_axis=1)
 
 if 'metalearn' in experiments:
     path = './files/metalearn'
@@ -213,7 +213,7 @@ if 'metalearn' in experiments:
         train(se.metalearn(is_test), path, train_arg='metalearn', sequential=True)
     if ANALYZE:
         # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
-        sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1, dir_ix=0)
+        sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1)
         # analysis_pn2kc_training.plot_distribution(path, xrange=1)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
         # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)

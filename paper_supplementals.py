@@ -301,6 +301,12 @@ if 'control_vary_pn' in experiments:
             sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN', select_dict={'kc_dropout_rate':0.5},
                              ax_args={'ylim': ylim, 'yticks': yticks})
 
+#TODO
+if 'multi_head_prune' in experiments:
+    path = './files/multi_head_prune'
+    if TRAIN:
+        train(se.train_multihead_pruning(is_test), path)
+
 if 'train_kc_claws' in experiments:
     path = './files/train_kc_claws'
     if TRAIN:
