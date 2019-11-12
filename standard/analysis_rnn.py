@@ -1,27 +1,10 @@
 import os
 import task
-import configs
-from collections import OrderedDict
 import numpy as np
 import tools
-import train
-import standard.analysis as sa
-import pickle
 import model as network_models
 import standard.analysis_pn2kc_training
-import standard.analysis_activity as analysis_activity
-
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-
-mpl.rcParams['font.size'] = 7
-mpl.rcParams['pdf.fonttype'] = 42
-mpl.rcParams['ps.fonttype'] = 42
-mpl.rcParams['font.family'] = 'arial'
-
-rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-figpath = os.path.join(rootpath, 'figures')
-figpath = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\figures'
 
 def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extra_str ='', vlim = None):
     rect = [0.2, 0.15, 0.6, 0.6]
@@ -79,25 +62,19 @@ def _load_activity(save_path):
     return rnn_outputs
 
 def rnn_distribution(w_glo, dir_ix, path):
-    training_ix = 1
-    save_path = os.path.join(figpath, path.split('/')[-1])
-    fig_name = os.path.join(save_path, 'distribution_' + str(dir_ix) + '_' + str(training_ix))
-    standard.analysis_pn2kc_training._plot_distribution(w_glo.flatten(), savename= fig_name, xrange=1.0, yrange=5000)
+    n = os.path.join(path, '__' + str(dir_ix) + '_distribution')
+    standard.analysis_pn2kc_training._plot_distribution(w_glo.flatten(), savename= n, xrange=1.0, yrange=5000)
 
 def rnn_sparsity(w_glo, dir_ix, path):
-    training_ix = 1
-    yrange = [0.5, 0.5]
     thres = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
     claw_count = np.count_nonzero(w_glo>thres,axis=0)
+    n = os.path.join(path, '__' + str(dir_ix) + '_sparsity')
+    standard.analysis_pn2kc_training._plot_sparsity(claw_count, savename= n, yrange = 0.5)
 
-    save_path = os.path.join(figpath, path.split('/')[-1])
-    fig_name = os.path.join(save_path, 'sparsity_' + str(dir_ix) + '_' + str(training_ix))
-    standard.analysis_pn2kc_training._plot_sparsity(claw_count, savename=fig_name, yrange = yrange[training_ix])
-
-def plot_activity(rnn_outputs, dir_ix, path):
+def plot_activity(rnn_outputs, dir_ix, threshold, path):
     ## plot summary
     mean_activities = [np.mean(x, axis=0) for x in rnn_outputs]
-    neurons_active = [np.sum(x > 0.05) for x in mean_activities]
+    neurons_active = [np.sum(x > threshold) for x in mean_activities]
     log_neurons_active = np.log(neurons_active)
     xticks = [50, 500, 3000]
 
@@ -116,20 +93,16 @@ def plot_activity(rnn_outputs, dir_ix, path):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    fig_name = '_activity_' + str(dir_ix)
+    fig_name = '__' + str(dir_ix) + '_activity'
     tools.save_fig(path, fig_name, pdf=True)
 
+def analyze_t0(path, dir_ix):
+    dirs = [os.path.join(path, n) for n in os.listdir(path)]
+    save_path = dirs[dir_ix]
+    config = tools.load_config(save_path)
+    w_rnn = tools.load_pickle(path, 'w_rnn')[dir_ix]
+    rnn_outputs = _load_activity(save_path)
 
-path = './files/RNN'
-dirs = [os.path.join(path, n) for n in os.listdir(path)]
-dir_ix = 0
-save_path = dirs[dir_ix]
-config = tools.load_config(save_path)
-rnn_outputs = _load_activity(save_path)
-w_rnns = tools.load_pickle(path, 'w_rnn')
-w_rnn = w_rnns[dir_ix]
-
-def analyze_t0(w_rnn, config, path):
     N_ORN = config.N_ORN * config.N_ORN_DUPLICATION
     w_glo = w_rnn[:N_ORN, N_ORN:]
     w_glo_subsample = w_glo[:, :20]
@@ -137,7 +110,16 @@ def analyze_t0(w_rnn, config, path):
     rnn_distribution(w_glo, dir_ix, path)
     rnn_sparsity(w_glo, dir_ix, path)
 
-def analyze_t_greater(w_rnn, time_steps):
+    _easy_weights(rnn_outputs[0], dir_ix=dir_ix, y_label='odors', x_label='Sorted, Layer_0', save_path=path)
+    _easy_weights(rnn_outputs[1], dir_ix=dir_ix, y_label='odors', x_label='Sorted, Layer_1', save_path=path)
+
+def analyze_t_greater(path, dir_ix, threshold = 0.05):
+    dirs = [os.path.join(path, n) for n in os.listdir(path)]
+    save_path = dirs[dir_ix]
+    config = tools.load_config(save_path)
+    w_rnn = tools.load_pickle(path, 'w_rnn')[dir_ix]
+    rnn_outputs = _load_activity(save_path)
+
     N_OR = config.N_ORN
     N_ORN = config.N_ORN * config.N_ORN_DUPLICATION
     ixs = []
@@ -145,12 +127,11 @@ def analyze_t_greater(w_rnn, time_steps):
     for i in range(1, config.TIME_STEPS):
         pn = np.mean(rnn_outputs[i], axis=0)
         ix = np.argsort(pn)[::-1]
-        pn_cutoff= np.argmax(pn[ix] < .2)
+        pn_cutoff= np.argmax(pn[ix] < threshold)
         pn_ix = ix[:pn_cutoff]
         ixs.append(ix)
         pn_ixs.append(pn_ix)
-
-    plot_activity(rnn_outputs, dir_ix=dir_ix, path=path)
+    plot_activity(rnn_outputs, dir_ix=dir_ix, path=path, threshold=threshold)
 
     ## plot activity
     #ORN activation
@@ -172,7 +153,7 @@ def analyze_t_greater(w_rnn, time_steps):
                   x_label='T=' + str(i),
                   save_path=path)
 
-    if time_steps == 3:
+    if config.TIME_STEPS == 3:
         i = 2
         _easy_weights(rnn_outputs[i][:100, ixs[1][:x_range]], dir_ix=dir_ix, y_label='Odors',
                       x_label='T=' + str(i),
@@ -183,10 +164,9 @@ def analyze_t_greater(w_rnn, time_steps):
                       save_path=path)
 
     #KC activation, sorted to T=1
-    _easy_weights(rnn_outputs[time_steps][:100, ixs[0]], dir_ix= dir_ix, y_label='Odors',
-                  x_label='T=' + str(time_steps),
+    _easy_weights(rnn_outputs[config.TIME_STEPS][:100, ixs[0]], dir_ix= dir_ix, y_label='Odors',
+                  x_label='T=' + str(config.TIME_STEPS),
                   save_path=path)
-
 
     ## plot weight
     w_orn = w_rnn[:N_ORN, pn_ixs[0]]
@@ -210,7 +190,7 @@ def analyze_t_greater(w_rnn, time_steps):
 
     w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
 
-    if time_steps == 3:
+    if config.TIME_STEPS == 3:
         pn_to_pn1 = w_rnn[pn_ixs[0][:,None], pn_ixs[1]]
         ind_max = np.argmax(pn_to_pn1, axis=1)
         ind_sort = np.argsort(ind_max)
@@ -230,59 +210,45 @@ def analyze_t_greater(w_rnn, time_steps):
         w_glo_subsample = w_glo[:, 1000:1020]
         _easy_weights(w_glo_subsample, y_label='T=1', x_label='T=2', dir_ix=dir_ix, save_path=path)
 
-N_OR = 50
-N_ORN = 500
-
-if dir_ix == 0:
-    analyze_t0(w_rnn)
-else:
-    analyze_t_greater(w_rnn, config.TIME_STEPS)
-
-if config.TIME_STEPS == 1:
-    ixs = [np.arange(w_rnn.shape[0])]
-    pn_ixs = [np.arange(N_OR)]
-else:
-    ixs = []
-    pn_ixs = []
-    for i in range(1, config.TIME_STEPS):
-        pn = np.mean(rnn_outputs[i], axis=0)
-        ix = np.argsort(pn)[::-1]
-        pn_cutoff= np.argmax(pn[ix] < .2)
-        pn_ix = ix[:pn_cutoff]
-        ixs.append(ix)
-        pn_ixs.append(pn_ix)
-
+    #EXTRAS
     # sorted to first layer
     for i in range(config.TIME_STEPS):
-        _easy_weights(rnn_outputs[i][:, ixs[0]], dir_ix= dir_ix, y_label='odors',
+        _easy_weights(rnn_outputs[i][:, ixs[0]], dir_ix=dir_ix, y_label='odors',
                       x_label='Sorted to Layer 1, Layer' + '_' + str(i), save_path=path)
 
-_easy_weights(rnn_outputs[0], dir_ix= dir_ix, y_label='odors', x_label='Sorted, Layer_0', save_path=path)
-# sorted to each
-for i, ix in enumerate(ixs):
-    _easy_weights(rnn_outputs[i + 1][:, ix], dir_ix= dir_ix, y_label='odors',
-                  x_label='Sorted, Layer' + '_' + str(i + 1), save_path=path)
+    # sorted to each
+    _easy_weights(rnn_outputs[0], dir_ix=dir_ix, y_label='odors', x_label='Sorted to Each, Layer_0', save_path=path)
+    for i, ix in enumerate(ixs):
+        _easy_weights(rnn_outputs[i + 1][:, ix], dir_ix=dir_ix, y_label='odors',
+                      x_label='Sorted to Each, Layer' + '_' + str(i + 1), save_path=path)
 
-w_orn = w_rnn[:N_ORN, pn_ixs[0]]
-w_orn_reshaped = tools._reshape_worn(w_orn, N_OR, mode='tile')
-w_orn_reshaped = w_orn_reshaped.mean(axis=0)
-ind_max = np.argmax(w_orn_reshaped, axis=0)
-ind_sort = np.argsort(ind_max)
-w_orn_reshaped = w_orn_reshaped[:, ind_sort]
-
-w_glo = w_rnn[pn_ixs[-1], :]
-w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
-
-if len(pn_ixs) == 2:
-    pn_to_pn1 = w_rnn[pn_ixs[1][:,None], pn_ixs[0]]
-    ind_max = np.argmax(pn_to_pn1, axis=1)
+    w_orn = w_rnn[:N_ORN, pn_ixs[0]]
+    w_orn_reshaped = tools._reshape_worn(w_orn, N_OR, mode='tile')
+    w_orn_reshaped = w_orn_reshaped.mean(axis=0)
+    ind_max = np.argmax(w_orn_reshaped, axis=0)
     ind_sort = np.argsort(ind_max)
-    pn_to_pn1_reshaped = pn_to_pn1[ind_sort,:]
-    _easy_weights(pn_to_pn1_reshaped, dir_ix= dir_ix, y_label='Layer_1', x_label='Layer_2', save_path=path)
+    w_orn_reshaped = w_orn_reshaped[:, ind_sort]
+    #
+    w_glo = w_rnn[pn_ixs[-1], :]
+    w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
+
+    if len(pn_ixs) == 2:
+        pn_to_pn1 = w_rnn[pn_ixs[1][:, None], pn_ixs[0]]
+        ind_max = np.argmax(pn_to_pn1, axis=1)
+        ind_sort = np.argsort(ind_max)
+        pn_to_pn1_reshaped = pn_to_pn1[ind_sort, :]
+        _easy_weights(pn_to_pn1_reshaped, dir_ix=dir_ix, y_label='Layer_1', x_label='Layer_2', save_path=path)
+    #
+    # _easy_weights(w_rnn, y_label='Input', x_label='Output', dir_ix=dir_ix, save_path=path)
+    # _easy_weights(w_rnn[:50, ixs[0]], y_label='ORN', x_label='All', dir_ix=dir_ix, save_path=path)
+    # _easy_weights(w_orn, y_label='ORN', x_label='PN', dir_ix=dir_ix, save_path=path)
+    # _easy_weights(w_glo, y_label='PN', x_label='KC', dir_ix=dir_ix, save_path=path)
+    # _easy_weights(w_glo_sorted, y_label='PN', x_label='KC_sorted', dir_ix=dir_ix, save_path=path)
 #
-_easy_weights(w_rnn, y_label='Input', x_label='Output', dir_ix= dir_ix, save_path = path)
-_easy_weights(w_rnn[:50, ixs[0]], y_label='ORN', x_label='All', dir_ix= dir_ix, save_path = path)
-_easy_weights(w_orn, y_label='ORN', x_label='PN', dir_ix= dir_ix, save_path = path)
-_easy_weights(w_orn_reshaped, y_label='ORN', x_label='sorted PN', dir_ix= dir_ix, save_path = path)
-_easy_weights(w_glo, y_label='PN', x_label='KC', dir_ix= dir_ix, save_path = path)
-_easy_weights(w_glo_sorted, y_label='PN', x_label='KC_sorted', dir_ix= dir_ix, save_path = path)
+# path = './files/RNN'
+# dir_ix = 0
+#
+# if dir_ix == 0:
+#     analyze_t0(path, dir_ix)
+# else:
+#     analyze_t_greater(path, dir_ix)

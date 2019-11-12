@@ -51,8 +51,8 @@ else:
 
 # TRAIN = True
 # is_test = True
-# ANALYZE = True
-# args.experiment = ['vary_kc']
+ANALYZE = True
+args.experiment = ['rnn']
 
 if ANALYZE:
     import standard.analysis as sa
@@ -65,6 +65,7 @@ if ANALYZE:
     import oracle.evaluatewithnoise as evaluatewithnoise
     import analytical.numerical_test as numerical_test
     import analytical.analyze_simulation_results as analyze_simulation_results
+    import standard.analysis_rnn as analysis_rnn
 
 if cluster_path == 'peter' or cluster_path == 'pw':
     cluster_path = PETER_SCRATCHPATH
@@ -159,6 +160,10 @@ if 'rnn' in experiments:
         train(se.rnn(is_test), save_path=path, path=cluster_path, sequential=True)
     if ANALYZE:
         sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
+        analysis_rnn.analyze_t0(path, dir_ix=0)
+        analysis_rnn.analyze_t_greater(path, dir_ix=1)
+        analysis_rnn.analyze_t_greater(path, dir_ix=2)
+
 
 
 
