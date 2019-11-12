@@ -45,7 +45,7 @@ def receptor(argTest=False):
         config.max_epoch = 16
     return config, hp_ranges
 
-def vary_pn_configs(argTest=False):
+def vary_pn(argTest=False):
     '''
     Vary number of PNs while fixing KCs to be 2500
     Results:
@@ -69,13 +69,9 @@ def vary_pn_configs(argTest=False):
 
     return config, hp_ranges
 
-def vary_kc_configs(argTest=False):
+def vary_kc(argTest=False):
     '''
     Vary number of KCs while also training ORN2PN.
-    Results:
-        GloScore and Accuracy peaks at >2500 KCs for all noise values
-        GloScore does not depend on noise. Should be lower for higher noise values
-        GloScore depends on nKC. Should be lower for lower nKC
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'

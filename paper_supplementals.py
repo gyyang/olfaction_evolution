@@ -251,25 +251,6 @@ if 'control_pn2kc_prune_hyper' in experiments:
                 sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
                            ax_args={'ylim': [0, 500]})
 
-if 'control_vary_kc' in experiments:
-    path = './files/control_vary_kc'
-    if TRAIN:
-        train(experiment_controls.control_vary_kc(), save_path=path, path=cluster_path)
-    if ANALYZE:
-        sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
-        sa.plot_weights(os.path.join(path, '000021'), sort_axis=1, average=False)
-        # default = {'kc_dropout_rate': 0.5, 'N_KC':2500}
-        # ykeys = ['val_acc', 'glo_score']
-        # ylim, yticks = [0, 1.1], [0, .25, .5, .75, 1]
-        # xticks = [50, 200, 1000, 2500, 10000]
-        # for ykey in ykeys:
-        #     sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
-        #                     loop_key='kc_dropout_rate',
-        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
-        #     sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
-        #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
-        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
-
 if 'control_vary_pn' in experiments:
     path = './files/control_vary_pn'
     if TRAIN:
@@ -300,6 +281,25 @@ if 'control_vary_pn' in experiments:
                             logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
             sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN', select_dict={'kc_dropout_rate':0.5},
                              ax_args={'ylim': ylim, 'yticks': yticks})
+
+if 'control_vary_kc' in experiments:
+    path = './files/control_vary_kc'
+    if TRAIN:
+        train(experiment_controls.control_vary_kc(), save_path=path, path=cluster_path)
+    if ANALYZE:
+        sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
+        sa.plot_weights(os.path.join(path, '000021'), sort_axis=1, average=False)
+        # default = {'kc_dropout_rate': 0.5, 'N_KC':2500}
+        # ykeys = ['val_acc', 'glo_score']
+        # ylim, yticks = [0, 1.1], [0, .25, .5, .75, 1]
+        # xticks = [50, 200, 1000, 2500, 10000]
+        # for ykey in ykeys:
+        #     sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
+        #                     loop_key='kc_dropout_rate',
+        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
+        #     sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+        #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
+        #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
 #TODO
 if 'multi_head_prune' in experiments:
