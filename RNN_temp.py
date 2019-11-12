@@ -120,7 +120,7 @@ def plot_activity(rnn_outputs, dir_ix, path):
     tools.save_fig(path, fig_name, pdf=True)
 
 
-path = './files/rnn'
+path = './files/RNN'
 dirs = [os.path.join(path, n) for n in os.listdir(path)]
 dir_ix = 0
 save_path = dirs[dir_ix]
@@ -129,7 +129,7 @@ rnn_outputs = _load_activity(save_path)
 w_rnns = tools.load_pickle(path, 'w_rnn')
 w_rnn = w_rnns[dir_ix]
 
-def analyze_t0(w_rnn):
+def analyze_t0(w_rnn, config, path):
     N_ORN = config.N_ORN * config.N_ORN_DUPLICATION
     w_glo = w_rnn[:N_ORN, N_ORN:]
     w_glo_subsample = w_glo[:, :20]
@@ -234,57 +234,55 @@ N_OR = 50
 N_ORN = 500
 
 if dir_ix == 0:
-    # analyze_t0(w_rnn)
-    analyze_t_greater(w_rnn, config.TIME_STEPS)
+    analyze_t0(w_rnn)
 else:
     analyze_t_greater(w_rnn, config.TIME_STEPS)
 
+if config.TIME_STEPS == 1:
+    ixs = [np.arange(w_rnn.shape[0])]
+    pn_ixs = [np.arange(N_OR)]
+else:
+    ixs = []
+    pn_ixs = []
+    for i in range(1, config.TIME_STEPS):
+        pn = np.mean(rnn_outputs[i], axis=0)
+        ix = np.argsort(pn)[::-1]
+        pn_cutoff= np.argmax(pn[ix] < .2)
+        pn_ix = ix[:pn_cutoff]
+        ixs.append(ix)
+        pn_ixs.append(pn_ix)
 
-# if config.TIME_STEPS == 1:
-#     ixs = [np.arange(w_rnn.shape[0])]
-#     pn_ixs = [np.arange(N_OR)]
-# else:
-#     ixs = []
-#     pn_ixs = []
-#     for i in range(1, config.TIME_STEPS):
-#         pn = np.mean(rnn_outputs[i], axis=0)
-#         ix = np.argsort(pn)[::-1]
-#         pn_cutoff= np.argmax(pn[ix] < .2)
-#         pn_ix = ix[:pn_cutoff]
-#         ixs.append(ix)
-#         pn_ixs.append(pn_ix)
+    # sorted to first layer
+    for i in range(config.TIME_STEPS):
+        _easy_weights(rnn_outputs[i][:, ixs[0]], dir_ix= dir_ix, y_label='odors',
+                      x_label='Sorted to Layer 1, Layer' + '_' + str(i), save_path=path)
+
+_easy_weights(rnn_outputs[0], dir_ix= dir_ix, y_label='odors', x_label='Sorted, Layer_0', save_path=path)
+# sorted to each
+for i, ix in enumerate(ixs):
+    _easy_weights(rnn_outputs[i + 1][:, ix], dir_ix= dir_ix, y_label='odors',
+                  x_label='Sorted, Layer' + '_' + str(i + 1), save_path=path)
+
+w_orn = w_rnn[:N_ORN, pn_ixs[0]]
+w_orn_reshaped = tools._reshape_worn(w_orn, N_OR, mode='tile')
+w_orn_reshaped = w_orn_reshaped.mean(axis=0)
+ind_max = np.argmax(w_orn_reshaped, axis=0)
+ind_sort = np.argsort(ind_max)
+w_orn_reshaped = w_orn_reshaped[:, ind_sort]
+
+w_glo = w_rnn[pn_ixs[-1], :]
+w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
+
+if len(pn_ixs) == 2:
+    pn_to_pn1 = w_rnn[pn_ixs[1][:,None], pn_ixs[0]]
+    ind_max = np.argmax(pn_to_pn1, axis=1)
+    ind_sort = np.argsort(ind_max)
+    pn_to_pn1_reshaped = pn_to_pn1[ind_sort,:]
+    _easy_weights(pn_to_pn1_reshaped, dir_ix= dir_ix, y_label='Layer_1', x_label='Layer_2', save_path=path)
 #
-#     # sorted to first layer
-#     for i in range(config.TIME_STEPS):
-#         _easy_weights(rnn_outputs[i][:, ixs[0]], dir_ix= dir_ix, y_label='odors',
-#                       x_label='Sorted to Layer 1, Layer' + '_' + str(i), save_path=path)
-#
-# _easy_weights(rnn_outputs[0], dir_ix= dir_ix, y_label='odors', x_label='Sorted, Layer_0', save_path=path)
-# # sorted to each
-# for i, ix in enumerate(ixs):
-#     _easy_weights(rnn_outputs[i + 1][:, ix], dir_ix= dir_ix, y_label='odors',
-#                   x_label='Sorted, Layer' + '_' + str(i + 1), save_path=path)
-#
-# w_orn = w_rnn[:N_ORN, pn_ixs[0]]
-# w_orn_reshaped = tools._reshape_worn(w_orn, N_OR, mode='tile')
-# w_orn_reshaped = w_orn_reshaped.mean(axis=0)
-# ind_max = np.argmax(w_orn_reshaped, axis=0)
-# ind_sort = np.argsort(ind_max)
-# w_orn_reshaped = w_orn_reshaped[:, ind_sort]
-#
-# w_glo = w_rnn[pn_ixs[-1], :]
-# w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
-#
-# if len(pn_ixs) == 2:
-#     pn_to_pn1 = w_rnn[pn_ixs[1][:,None], pn_ixs[0]]
-#     ind_max = np.argmax(pn_to_pn1, axis=1)
-#     ind_sort = np.argsort(ind_max)
-#     pn_to_pn1_reshaped = pn_to_pn1[ind_sort,:]
-#     _easy_weights(pn_to_pn1_reshaped, dir_ix= dir_ix, y_label='Layer_1', x_label='Layer_2', save_path=path)
-#
-# _easy_weights(w_rnn, y_label='Input', x_label='Output', dir_ix= dir_ix, save_path = path)
-# _easy_weights(w_rnn[:50, ixs[0]], y_label='ORN', x_label='All', dir_ix= dir_ix, save_path = path)
-# _easy_weights(w_orn, y_label='ORN', x_label='PN', dir_ix= dir_ix, save_path = path)
-# _easy_weights(w_orn_reshaped, y_label='ORN', x_label='sorted PN', dir_ix= dir_ix, save_path = path)
-# _easy_weights(w_glo, y_label='PN', x_label='KC', dir_ix= dir_ix, save_path = path)
-# _easy_weights(w_glo_sorted, y_label='PN', x_label='KC_sorted', dir_ix= dir_ix, save_path = path)
+_easy_weights(w_rnn, y_label='Input', x_label='Output', dir_ix= dir_ix, save_path = path)
+_easy_weights(w_rnn[:50, ixs[0]], y_label='ORN', x_label='All', dir_ix= dir_ix, save_path = path)
+_easy_weights(w_orn, y_label='ORN', x_label='PN', dir_ix= dir_ix, save_path = path)
+_easy_weights(w_orn_reshaped, y_label='ORN', x_label='sorted PN', dir_ix= dir_ix, save_path = path)
+_easy_weights(w_glo, y_label='PN', x_label='KC', dir_ix= dir_ix, save_path = path)
+_easy_weights(w_glo_sorted, y_label='PN', x_label='KC_sorted', dir_ix= dir_ix, save_path = path)
