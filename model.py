@@ -925,7 +925,6 @@ class RNN(Model):
         rnn_outputs = []
         rnn_outputs.append(rnn_output)
         with tf.variable_scope('layer_rnn', reuse=tf.AUTO_REUSE):
-            # TODO: do not want ORNs to connect to each other, nor for them to have a bias
             initializer = _initializer(config.initial_rnn_weight, arg='constant')
             w_rnn = tf.get_variable('kernel', shape=(NEURONS, NEURONS), dtype=tf.float32, initializer=initializer)
             w_rnn = tf.abs(w_rnn)
@@ -946,10 +945,7 @@ class RNN(Model):
         if config.dropout:
             rnn_output = tf.layers.dropout(rnn_output, config.dropout_rate, training=training)
 
-        # logits = tf.layers.dense(kc, n_logits, name='layer_out', reuse=tf.AUTO_REUSE)
         with tf.variable_scope('layer_out', reuse=tf.AUTO_REUSE):
-            # TODO: do not want ORNs to output to classes
-            initializer = _initializer(_sparse_range(config.N_ORN), arg='uniform')
             w_out = tf.get_variable('kernel', shape=(NEURONS, config.N_CLASS), dtype=tf.float32)
             w_out = tf.abs(w_out)
             b_out = tf.get_variable('bias', shape=config.N_CLASS, dtype=tf.float32)
@@ -957,8 +953,6 @@ class RNN(Model):
 
         loss = tf.losses.sparse_softmax_cross_entropy(
             labels=y, logits=logits)
-        if config.WEIGHT_LOSS:
-            loss += config.WEIGHT_ALPHA * tf.reduce_mean(tf.tanh(w_rnn))
 
         self.loss = loss
         pred = tf.argmax(logits, axis=-1, output_type=tf.int32)

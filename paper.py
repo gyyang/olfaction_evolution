@@ -140,26 +140,28 @@ if 'vary_pn' in experiments:
             sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
                             loop_key='kc_dropout_rate', logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
-
 if 'vary_kc' in experiments:
     # Vary nKC
-    path = './files/vary_kc`'
+    path = './files/vary_kc'
     if TRAIN:
         train(se.vary_kc(is_test), save_path=path, path=cluster_path)
     if ANALYZE:
-        # sa.plot_weights(os.path.join(path,'000002'), sort_axis=1, dir_ix=0, average=True)
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0})
-        # sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 select_dict={'ORN_NOISE_STD': 0})
+        xticks = [50, 200, 1000, 2500, 10000]
+        ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
+        ykeys = ['val_acc', 'glo_score']
+        for ykey in ykeys:
+            sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+                            loop_key='kc_dropout_rate', logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
-        # # correlation and dimensionality
-        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
-        #                 yticks=[0, .1, .2],
-        #                 ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
-        # analysis_orn2pn.get_dimensionality(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
+if 'rnn' in experiments:
+    path = './files/rnn'
+    if TRAIN:
+        train(se.vary_kc(is_test), save_path=path, path=cluster_path, sequential=True)
+    if ANALYZE:
+        pass
+
+
+
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'

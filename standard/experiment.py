@@ -23,6 +23,26 @@ def standard(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def rnn(argTest=False):
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.model = 'rnn'
+
+    config.NEURONS = 2500
+    config.BATCH_NORM = False
+
+    config.dropout = True
+    config.dropout_rate = .5
+
+    hp_ranges = OrderedDict()
+    hp_ranges['TIME_STEPS'] = [1, 2, 3]
+    hp_ranges['replicate_orn_with_tiling'] = [False, True, True]
+    hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
+    if argTest:
+        config.max_epoch = 16
+    return config, hp_ranges
+
 def receptor(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
