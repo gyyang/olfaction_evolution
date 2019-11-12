@@ -244,6 +244,7 @@ def _generate_proto_threshold(
 
         train_odors_neutral = rng.uniform(0, max_activation, (n_train_neutral, n_orn))
         ind = rng.randint(n_good_odor, size=(n_train_good))
+        # TODO(gryang): This should be changed
         train_odors_good = prototypes_good[ind] + rng.uniform(0, 1, (n_train_good, n_orn))
         ind = rng.randint(n_bad_odor, size=(n_train_bad))
         train_odors_bad = prototypes_bad[ind] + rng.uniform(0, 1, (n_train_bad, n_orn))
