@@ -157,7 +157,7 @@ def control_vary_pn():
     hp_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
     return config, hp_ranges
 
-
+#TODO
 def controls_receptor(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
