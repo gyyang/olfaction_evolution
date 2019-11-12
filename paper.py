@@ -51,8 +51,8 @@ else:
 
 # TRAIN = True
 # is_test = True
-ANALYZE = True
-args.experiment = ['rnn']
+# ANALYZE = True
+# args.experiment = ['rnn']
 
 if ANALYZE:
     import standard.analysis as sa
