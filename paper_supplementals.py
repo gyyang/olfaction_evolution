@@ -16,6 +16,8 @@ python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
 import os
 import argparse
 import copy
+
+import standard.analysis_orn2pn
 import standard.experiment as se
 import standard.experiment_controls
 import standard.experiment_controls as experiment_controls
@@ -90,8 +92,8 @@ if 'control_nonnegative' in experiments:
         sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
         sa.plot_weights(os.path.join(path, '000001'), sort_axis=1, average=False, positive_cmap=False, vlim=[-1, 1])
         for ix in range(0,2):
-            analysis_nonnegative.orthogonality(path, ix=ix, arg='ortho')
-            analysis_nonnegative.orthogonality(path, ix=ix, arg='corr')
+            standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='ortho')
+            standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='corr')
 
         # # #sign constraint
         sa.plot_progress(path, ykeys=['glo_score','val_acc'], legend_key='sign_constraint_orn2pn')
@@ -278,11 +280,9 @@ if 'control_vary_pn' in experiments:
         sa.plot_weights(os.path.join(path,'000022'), sort_axis=1, average=False, vlim=[0, 5])
 
         ix = 22
-        ix_good, ix_bad = analysis_orn2pn._plot_gloscores(path, ix, cutoff=.9, shuffle=False)
-        analysis_orn2pn._distribution_multiglomerular_pn(path, ix, ix_good, ix_bad)
-        analysis_orn2pn.lesion_glom(path, ix, ix_good, ix_bad)
-        print(np.sum(ix_good))
-        print(np.sum(ix_bad))
+        ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(path, ix, cutoff=.9, shuffle=False)
+        analysis_orn2pn.multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad)
+        analysis_orn2pn.multiglo_lesion(path, ix, ix_good, ix_bad)
 
         default = {'kc_dropout_rate': 0.5, 'N_PN':50}
         ykeys = ['val_acc', 'glo_score']

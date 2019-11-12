@@ -39,11 +39,10 @@ def receptor(argTest=False):
     config.train_pn2kc = True
 
     config.data_dir = './datasets/proto/standard'
-    config.save_every_epoch = False
     hp_ranges = OrderedDict()
     hp_ranges['sign_constraint_orn2pn'] = [True]
     if argTest:
-        config.max_epoch = 12
+        config.max_epoch = 16
     return config, hp_ranges
 
 def vary_pn_configs(argTest=False):

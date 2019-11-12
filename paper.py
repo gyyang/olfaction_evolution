@@ -49,8 +49,10 @@ if use_cluster:
 else:
     train = local_train
 
-TRAIN = False
-ANALYZE = True
+# TRAIN = True
+# ANALYZE = True
+# is_test = True
+# args.experiments = ['receptor']
 
 if ANALYZE:
     import standard.analysis as sa
@@ -86,50 +88,43 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
-experiments = ['standard']
-
 if 'standard' in experiments:
     path = './files/standard'
     if TRAIN:
         train(se.standard(is_test), path)
     if ANALYZE:
-        folder = os.path.join(path,'000000')
         # accuracy
-        # sa.plot_progress(path, ykeys = ['val_acc'])
+        sa.plot_progress(path, ykeys = ['val_acc'])
 
         # orn-pn
-        # sa.plot_weights(os.path.join(path,'000000'), var_name='w_orn', sort_axis=1)
-        # sa.plot_progress(path, ykeys = ['glo_score'])
+        sa.plot_weights(os.path.join(path,'000000'), var_name='w_orn', sort_axis=1)
+        sa.plot_progress(path, ykeys = ['glo_score'])
+        analysis_orn2pn.correlation_across_epochs(path, arg = 'weight')
+        analysis_orn2pn.correlation_across_epochs(path, arg = 'activity')
 
         # pn-kc
-        # sa.plot_weights(os.path.join(path,'000000'), var_name='w_glo')
+        sa.plot_weights(os.path.join(path,'000000'), var_name='w_glo')
 
         # pn-kc K
-        # analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=False)
-        # analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=True)
-        # analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, epoch=-1)
+        analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=False)
+        analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=True)
+        analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, epoch=-1)
 
         # pn-kc random
-        # analysis_pn2kc_random.plot_cosine_similarity(path, dir_ix= 0, shuffle_arg='preserve', log=False)
-        # analysis_pn2kc_random.plot_distribution(path, dir_ix= 0)
-        # analysis_pn2kc_random.claw_distribution(path, dir_ix= 0, shuffle_arg='random')
-        # analysis_pn2kc_random.pair_distribution(path, dir_ix= 0, shuffle_arg='preserve')
-
-        # # # correlation
-        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        # sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key= 'glo_activity_corrcoef', yticks=[0, .25, .5],
-        #                 ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
-        # analysis_orn2pn.correlation_across_epochs(path, ['Non-negative', 'No constraint'])
+        analysis_pn2kc_random.plot_cosine_similarity(path, dir_ix= 0, shuffle_arg='preserve', log=False)
+        analysis_pn2kc_random.plot_distribution(path, dir_ix= 0)
+        analysis_pn2kc_random.claw_distribution(path, dir_ix= 0, shuffle_arg='random')
+        analysis_pn2kc_random.pair_distribution(path, dir_ix= 0, shuffle_arg='preserve')
 
 if 'receptor' in experiments:
     path = './files/receptor'
     if TRAIN:
         train(se.receptor(is_test), path)
     if ANALYZE:
-        # #weights
-        # sa.plot_weights(path, var_name='w_or', sort_axis=0, dir_ix=0)
-        # sa.plot_weights(path, var_name='w_combined', dir_ix=0)
-        # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=0)
+        path = os.path.join(path,'000000')
+        sa.plot_weights(path, var_name='w_or', sort_axis=0)
+        sa.plot_weights(path, var_name='w_orn', sort_axis=1)
+        sa.plot_weights(path, var_name='w_combined')
         sa.plot_weights(path, var_name='w_glo')
 
 if 'vary_pn' in experiments:
@@ -148,14 +143,6 @@ if 'vary_pn' in experiments:
         #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}),
         # sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
         #                 select_dict={'ORN_NOISE_STD': 0})
-
-        # # correlation and dimensionality
-        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        # sa.plot_results(path, x_key='N_PN', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
-        #                 yticks=[0, .25, .5],
-        #                 ax_args={'ylim':[-.05, .5],'yticks':[0, .25, .5]})
-        # analysis_orn2pn.get_dimensionality(path, 'glo')
-        # sa.plot_results(path, x_key='N_PN', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
 if 'vary_kc' in experiments:
     # Vary nKC under different noise levels
@@ -176,20 +163,6 @@ if 'vary_kc' in experiments:
         #                 ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
         # analysis_orn2pn.get_dimensionality(path, 'glo')
         # sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
-
-if 'or2orn' in experiments:
-    path = './files/or2orn'
-    if TRAIN:
-        train(se.receptor(is_test), path)
-    if ANALYZE:
-        sa.plot_progress(path)
-        sa.plot_progress(path, select_dict={'ORN_NOISE_STD': 0.25})
-        sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix= 0)
-        sa.plot_weights(path, var_name = 'w_or', sort_axis=0, dir_ix= 1)
-        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=0)
-        sa.plot_weights(path, var_name = 'w_orn', sort_axis= 1, dir_ix=1)
-        sa.plot_weights(path, var_name = 'w_combined', dir_ix=0)
-        sa.plot_weights(path, var_name = 'w_combined', dir_ix=1)
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
