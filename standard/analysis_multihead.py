@@ -14,6 +14,7 @@ import tensorflow as tf
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
+import dict_methods
 import task
 from model import FullModel
 import tools
@@ -108,8 +109,8 @@ def _compute_silouette_score(data, figpath, plot=True):
 
     if plot:
         fig = plt.figure(figsize=(1.5, 1.5))
-        ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
-        ax.plot(n_clusters, scores, 'o-')
+        ax = fig.add_axes([0.3, 0.3, 0.65, 0.65])
+        ax.plot(n_clusters, scores, 'o-', markersize=3)
         plt.xlabel('Number of clusters')
         plt.ylabel('Silouette score')
         plt.xticks([2, 5, 10])
@@ -140,8 +141,8 @@ def _get_density(data, X, Y, method='scipy'):
 
 
 def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None):
-    fig = plt.figure(figsize=(1.5, 1.5))
-    ax = fig.add_axes([0.25, 0.25, 0.7, 0.7])
+    fig = plt.figure(figsize=(1.6, 1.6))
+    ax = fig.add_axes([0.25, 0.25, 0.6, 0.6])
     cmap = plt.cm.gist_earth_r
     # cmap = plt.cm.hot_r
     ax.imshow(np.rot90(Z), cmap=cmap,
@@ -355,25 +356,25 @@ def _plot_hist(name, ylim_heads, acc_plot,
     return fig
 
 
-def analyze_example_network(arg='multi_head', foldername=None, subdir=None,
-                            fix_cluster=None):
+def analyze_example_network(arg='multi_head', foldername=None, fix_cluster=None):
     if arg == 'metatrain':
         if foldername is None:
             foldername = 'metatrain'
-        if subdir is None:
-            subdir = '0'
         ylim_heads = (.5, .5)
     else:
         if foldername is None:
             foldername = 'multi_head'
-        if subdir is None:
-            subdir = '000000'
         ylim_heads = (0, .8)
 
     path = os.path.join(rootpath, 'files', foldername)
     figpath = os.path.join(rootpath, 'figures', foldername)
     
-    # res = tools.load_all_results(path)
+    res = tools.load_all_results(path)
+    select_dict = {'lr': 0.001, 'pn_norm_pre': 'batch_norm'}
+    # select_dict = {'lr': 0.001, 'pn_norm_pre': None}
+    res = dict_methods.filter(res, select_dict)
+    subdirs = [p.split('/')[-1] for p in res['save_path']]
+    subdir = subdirs[0]
 
     subpath = os.path.join(path, subdir)
     # subpath = path
@@ -409,7 +410,6 @@ def analyze_example_network(arg='multi_head', foldername=None, subdir=None,
 
 
 def analyze_many_networks_lesion(arg='multi_head', foldername=None):
-    import dict_methods
     if arg == 'metatrain':
         if foldername is None:
             foldername = 'metatrain'
@@ -452,9 +452,9 @@ def analyze_many_networks_lesion(arg='multi_head', foldername=None):
 
 
 if __name__ == '__main__':
-    analyze_example_network('multi_head', 'multi_head', '000025')
-    analyze_example_network('multi_head', 'multi_head', '000025', fix_cluster=2)
-    analyze_many_networks_lesion('multi_head', 'multi_head')
+    analyze_example_network('multi_head', 'multi_head')
+    analyze_example_network('multi_head', 'multi_head', fix_cluster=2)
+    # analyze_many_networks_lesion('multi_head', 'multi_head')
     pass
     
 
