@@ -68,10 +68,20 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
         texts = ['Class A', 'Class B', 'Class C']
         lim = 5
         size = 10
+    elif mode == 'innate':
+        innate_point = np.array([8, 0])
+        proto_points = np.array([[2, 4], [4, 3], [3, 1], innate_point])
+        texts = ['Class ' + i for i in ['A','B','C', 'D']]
+        lim = 10
     else:
         raise ValueError('Unknown mode: ', mode)
 
-    rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
+    if mode == 'innate':
+        rand_points = np.random.uniform(low=0, high=5, size=[size, 2])
+        rand_innate_points = innate_point+np.random.uniform(low=0, high=2, size=[20, 2])
+        rand_points = np.concatenate((rand_points, rand_innate_points), axis=0)
+    else:
+        rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
     if mode == 'concentration':
         rand_labels = get_labels(proto_points, _normalize(rand_points))
     else:
@@ -80,7 +90,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
     rand_colors = [colors[i] for i in rand_labels]
     
     #plotting
-    fig = plt.figure(figsize=(2.5, 1.8))
+    fig = plt.figure(figsize=(1.8, 1.8))
     ax = fig.add_axes([.2, .2, .7, .7])
     plt.sca(ax)
 
@@ -104,7 +114,10 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
             ax.scatter(p[0], p[1], color=c, s=2)
 
     for i, (txt,p) in enumerate(zip(texts, proto_points)):
-        ax.annotate(txt, (p[0]-.3, p[1]-.35))
+        if mode == 'innate':
+            ax.annotate(txt, (p[0]-.3, p[1]+.35))
+        else:
+            ax.annotate(txt, (p[0]-.3, p[1]-.35))
 
     plt.axis('square')
     plt.xlim([0, lim])
@@ -127,6 +140,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
 
 if __name__ == '__main__':
     plot_task('standard', include_prototypes=True)
+    # plot_task('innate', include_prototypes=True)
     # plot_task('concentration', include_prototypes=True, include_data=True)
     # plot_task('relabel', include_prototypes=True)
     # plot_task('metalearn', include_data=True, include_prototypes=True, meta_ix=2)
