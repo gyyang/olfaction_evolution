@@ -50,9 +50,9 @@ else:
     train = local_train
 
 # TRAIN = True
-# ANALYZE = True
 # is_test = True
-# args.experiment = ['vary_pn']
+ANALYZE = True
+args.experiment = ['vary_kc']
 
 if ANALYZE:
     import standard.analysis as sa
@@ -156,9 +156,10 @@ if 'vary_kc' in experiments:
 if 'rnn' in experiments:
     path = './files/rnn'
     if TRAIN:
-        train(se.vary_kc(is_test), save_path=path, path=cluster_path, sequential=True)
+        train(se.rnn(is_test), save_path=path, path=cluster_path, sequential=True)
     if ANALYZE:
-        pass
+        sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
+
 
 
 

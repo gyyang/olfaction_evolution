@@ -19,46 +19,9 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
-#TODO: make code neater
-
-def t(experiment, save_path,s=0,e=1000):
-    """Train all models locally."""
-    for i in range(s, e):
-        config = tools.varying_config(experiment, i)
-        if config:
-            print('[***] Hyper-parameter: %2d' % i)
-            config.save_path = os.path.join(save_path, str(i).zfill(6))
-            train.train(config)
-
-def st(experiment, save_path, s=0,e=1000):
-    """Train all models locally."""
-    for i in range(s, e):
-        config = tools.varying_config_sequential(experiment, i)
-        if config:
-            print('[***] Hyper-parameter: %2d' % i)
-            config.save_path = os.path.join(save_path, str(i).zfill(6))
-            train.train(config)
-
-def rnn():
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 50
-    config.model = 'rnn'
-
-    config.NEURONS = 2500
-    config.WEIGHT_LOSS = False
-    config.WEIGHT_ALPHA = 0
-    config.BATCH_NORM = False
-    config.DIAGONAL_INIT = True
-
-    config.dropout = True
-    config.dropout_rate = .5
-
-    hp_ranges = OrderedDict()
-    hp_ranges['TIME_STEPS'] = [1, 2, 3]
-    hp_ranges['replicate_orn_with_tiling'] = [False, True, True]
-    hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
-    return config, hp_ranges
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+figpath = os.path.join(rootpath, 'figures')
+figpath = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\figures'
 
 def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extra_str ='', vlim = None):
     rect = [0.2, 0.15, 0.6, 0.6]
@@ -92,7 +55,7 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extr
     plt.axis('tight')
     tools.save_fig(save_path, '__' + str(dir_ix) + '_' + y_label + '_' + x_label + '_' + extra_str, dpi=400)
 
-def load_activity(save_path):
+def _load_activity(save_path):
     import tensorflow as tf
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
@@ -115,29 +78,21 @@ def load_activity(save_path):
         rnn_outputs = sess.run(model.rnn_outputs, {val_x_ph: val_x, val_y_ph: val_y})
     return rnn_outputs
 
-rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-figpath = os.path.join(rootpath, 'figures')
-figpath = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\figures'
 def rnn_distribution(w_glo, dir_ix, path):
-    titles = ['Before Training', 'After Training']
     training_ix = 1
     save_path = os.path.join(figpath, path.split('/')[-1])
     fig_name = os.path.join(save_path, 'distribution_' + str(dir_ix) + '_' + str(training_ix))
-    standard.analysis_pn2kc_training._plot_distribution(w_glo.flatten(), savename= fig_name, title= titles[training_ix],
-                                                        xrange=1.0, yrange=5000)
+    standard.analysis_pn2kc_training._plot_distribution(w_glo.flatten(), savename= fig_name, xrange=1.0, yrange=5000)
+
 def rnn_sparsity(w_glo, dir_ix, path):
-    titles = ['Before Training', 'After Training']
     training_ix = 1
     yrange = [0.5, 0.5]
-    force_thres = 0.05
     thres = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
-    print('thres=', str(thres))
     claw_count = np.count_nonzero(w_glo>thres,axis=0)
 
     save_path = os.path.join(figpath, path.split('/')[-1])
     fig_name = os.path.join(save_path, 'sparsity_' + str(dir_ix) + '_' + str(training_ix))
-    standard.analysis_pn2kc_training._plot_sparsity(claw_count, savename=fig_name, title= titles[training_ix],
-                                                    yrange = yrange[training_ix])
+    standard.analysis_pn2kc_training._plot_sparsity(claw_count, savename=fig_name, yrange = yrange[training_ix])
 
 def plot_activity(rnn_outputs, dir_ix, path):
     ## plot summary
@@ -165,18 +120,13 @@ def plot_activity(rnn_outputs, dir_ix, path):
     tools.save_fig(path, fig_name, pdf=True)
 
 
-path = './files/test50'
-# st(rnn(), path, s=0, e=100)
-
-sa.plot_progress(path, ykeys=['val_acc', 'val_logloss'], legends=['0', '1', '2'])
-
-var_name = 'w_rnn'
+path = './files/rnn'
 dirs = [os.path.join(path, n) for n in os.listdir(path)]
 dir_ix = 0
 save_path = dirs[dir_ix]
 config = tools.load_config(save_path)
-rnn_outputs = load_activity(save_path)
-w_rnns = tools.load_pickle(path, var_name)
+rnn_outputs = _load_activity(save_path)
+w_rnns = tools.load_pickle(path, 'w_rnn')
 w_rnn = w_rnns[dir_ix]
 
 def analyze_t0(w_rnn):
