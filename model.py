@@ -930,10 +930,6 @@ class RNN(Model):
             w_rnn = tf.abs(w_rnn)
             b_rnn = tf.get_variable('bias', shape=NEURONS, dtype=tf.float32, initializer=tf.constant_initializer(-1))
 
-            if config.prune_weak_weights and config.prune_threshold:
-                thres = tf.cast(w_rnn > config.prune_threshold, tf.float32)
-                w_rnn = tf.multiply(w_rnn, thres)
-
             for t in range(TIME_STEPS):
                 rnn_output = tf.matmul(rnn_output, w_rnn) + b_rnn
                 rnn_output = tf.nn.relu(rnn_output)
