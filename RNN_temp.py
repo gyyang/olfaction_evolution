@@ -168,7 +168,7 @@ def plot_activity(rnn_outputs, dir_ix, path):
 path = './files/test50'
 # st(rnn(), path, s=0, e=100)
 
-sa.plot_progress(path, plot_vars=['val_acc', 'val_logloss'], legends=['0','1','2'])
+sa.plot_progress(path, ykeys=['val_acc', 'val_logloss'], legends=['0', '1', '2'])
 
 var_name = 'w_rnn'
 dirs = [os.path.join(path, n) for n in os.listdir(path)]

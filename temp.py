@@ -77,63 +77,33 @@ def temp_meta():
     hp_ranges['dummy'] = [True]
     return config, hp_ranges
 
-def temp(n_pn=50):
+def temp():
+    """Standard training setting"""
     config = configs.FullConfig()
-    config.N_PN = n_pn
-    config.data_dir = './datasets/proto/orn' + str(n_pn)
+    config.max_epoch = 30
 
-    config.max_epoch = 100
-    config.direct_glo = True
+    config.receptor_layer = False
+    config.or2orn_normalization = True
+    config.replicate_orn_with_tiling= True
+    config.N_ORN_DUPLICATION = 10
+    config.ORN_NOISE_STD = 0.2
 
-    config.kc_dropout = True
-    config.kc_dropout_rate = 0.5
-
-    config.train_pn2kc = True
+    config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
-    config.coding_level = None
+    config.train_pn2kc = True
 
-    config.separate_optimizer = True
-    config.separate_lr = 1e-3
-    config.save_log_only = True
-
-    config.kc_prune_weak_weights = True
-    config.initial_pn2kc = 8 / n_pn
-    config.kc_prune_threshold = 5/n_pn
-
-    # Ranges of hyperparameters to loop over
+    config.data_dir = './datasets/proto/standard'
     hp_ranges = OrderedDict()
-    hp_ranges['kc_prune_weak_weights'] = [True, False]
-    return config, hp_ranges
-
-def temp_glomeruli(n_pn=50):
-    config = configs.FullConfig()
-    config.N_PN = n_pn
-    config.data_dir = './datasets/proto/orn' + str(n_pn)
-
-    config.max_epoch = 15
-    config.pn_norm_pre = 'batch_norm'
-
-    config.initializer_orn2pn = 'constant'
-    config.initial_orn2pn = .1
-    config.pn_prune_threshold = .05
-    config.pn_prune_weak_weights = True
-
-    config.train_pn2kc = False
-    config.sparse_pn2kc = True
-
-    config.save_log_only = True
-
-    # Ranges of hyperparameters to loop over
-    hp_ranges = OrderedDict()
-    hp_ranges['lr'] = [1e-3]
+    hp_ranges['sign_constraint_orn2pn'] = [True]
     return config, hp_ranges
 
 path = './files_temp/meta'
-try:
-    shutil.rmtree(path)
-except:
-    pass
-mamlmetatrain.train(temp_meta()[0])
+# try:
+#     shutil.rmtree(path)
+# except:
+#     pass
+# mamlmetatrain.train(temp_meta()[0])
+
 
 # folder = '0'
 # ix = '7000'
@@ -145,12 +115,12 @@ mamlmetatrain.train(temp_meta()[0])
 # standard.analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.01, epochs=[-1])
 
 #
-# path = './files_temp/cluster_pn2kc_prune_or_not_prune_lr_1e-3_50'
-# try:
-#     shutil.rmtree(path)
-# except:
-#     pass
-# t(temp_glomeruli(), path, s=0)
+path = './files_temp/test'
+try:
+    shutil.rmtree(path)
+except:
+    pass
+t(temp(), path, s=0)
 
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20], epoch_range=[0,100])
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.7, .9], epoch_range=[0,100])

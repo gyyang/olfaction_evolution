@@ -33,8 +33,6 @@ def _set_colormap(nbins):
     cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=nbins)
     return cm
 
-
-
 def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
                     downsample=True):
 
@@ -112,241 +110,47 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
             ax.hist(x[:, 0], bins=bins, density=True)
             ax.plot([thres_, thres_], [0, 1])
             # ax.set_ylim([0, 1])
-
     return thres
 
+def plot_distribution(dir, dir_ix, epoch=None, xrange=1.0, log=False):
+    dir_folder = tools._get_alldirs(dir, model=True, sort=True)[dir_ix]
+    folder = os.path.split(dir_folder)[-1]
+    experiment = os.path.split(dir)[-1]
 
-def plot_pn2kc_claw_stats(dir, x_key, loop_key=None, dynamic_thres=False, select_dict = None, thres = THRES, ax_args=None):
-    import standard.analysis as sa
-    wglos = tools.load_pickle(dir, 'w_glo')
-    xrange = wglos[0].shape[0]
-    zero_claws = []
-    mean_claws = []
+    if epoch is not None:
+        dir_folder = tools._get_alldirs(os.path.join(dir_folder, 'epoch'), model=True, sort=True)[epoch]
 
-    for i, wglo in enumerate(wglos):
-        # dynamically infer threshold after training
-        if dynamic_thres:
-            thres = infer_threshold(wglo)
-            print(thres)
-        else:
-            thres = thres
-        sparsity = np.count_nonzero(wglo > thres, axis=0)
+    try:
+        w = tools.load_pickle(dir_folder, 'w_glo')[0]
+    except KeyError:
+        w = tools.load_pickle(dir_folder, 'w_kc')[0]
+    w[np.isnan(w)] = 0
+    distribution = w.flatten()
 
-        y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
-        zero_claws.append(np.sum(sparsity == 0)/ sparsity.size)
-        mean_claws.append(np.mean(sparsity[sparsity != 0]))
-
-    ylim = [1, 15]
-    yticks = [1, 5, 7, 9, 15]
-
-    dirs = tools._get_alldirs(dir, model=False, sort=True)
-    for i, d in enumerate(dirs):
-        config = tools.load_config(d)
-        setattr(config, 'mean_claw', mean_claws[i])
-        setattr(config, 'zero_claw', zero_claws[i])
-        tools.save_config(config, d)
-
-    yticks_mean = [0, 3, 7, 15, 20]
-    yticks_zero = [0., .5, 1]
-    ax_args_0 = {'ylim':ylim,'yticks':yticks}
-    ax_args_1 = {'ylim': [0, 1], 'yticks': [0, .5, 1]}
-    if ax_args:
-        ax_args_0.update(ax_args)
-        ax_args_1.update(ax_args)
-    sa.plot_results(dir, x_key=x_key, y_key='mean_claw', yticks = yticks_mean, loop_key=loop_key,
-                    select_dict= select_dict,
-                    ax_args= ax_args_0,
-                    figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
-
-    sa.plot_results(dir, x_key=x_key, y_key='zero_claw', yticks = yticks_zero, loop_key=loop_key,
-                    select_dict=select_dict,
-                    ax_args= ax_args_1,
-                    figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65))
-
-def image_pn2kc_parameters(dir, dynamic_thres=False):
-    def _rank(coor):
-        rank = rankdata(coor,'dense')-1
-        vals, counts = np.unique(coor, return_counts=True)
-        vals = [int(val) if val >= 1 else val for val in vals.tolist()]
-        return rank, vals, counts
-
-    def _image(path, xkey, ykey, zkey, zticks):
-        res = tools.load_all_results(path)
-        x_coor = res[xkey]
-        y_coor = res[ykey]
-        z_coor = res[zkey]
-        x_rank, xs, x_counts = _rank(x_coor)
-        y_rank, ys, y_counts = _rank(y_coor)
-        image = np.zeros((np.max(x_counts), np.max(y_counts)))
-        image[x_rank, y_rank] = z_coor
-
-        rect = [0.15, 0.15, 0.65, 0.65]
-        rect_cb = [0.82, 0.15, 0.02, 0.65]
-
-        fig = plt.figure(figsize=(2.6, 2.6))
-        ax = fig.add_axes(rect)
-        cm = 'jet'
-        if zkey == 'mean_claw':
-            cm = plt.cm.get_cmap(cm, zticks[-1]-zticks[0])
-        im = ax.imshow(image, cmap=cm, vmin=zticks[0], vmax=zticks[-1], interpolation='none')
-        ax.set_xlabel(nicename(xkey))
-        ax.set_ylabel(nicename(ykey))
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-
-        ax.tick_params('both', length=0)
-        ax.set_xticks(range(x_counts[0]))
-        ax.set_yticks(range(y_counts[0]))
-        ax.set_xticklabels(xs)
-        ax.set_yticklabels(ys)
-
-        ax = fig.add_axes(rect_cb)
-        cb = plt.colorbar(im, cax=ax)
-        if zkey == 'mean_claw':
-            cb.set_ticks([x+.5 for x in zticks])
-            cb.set_ticklabels(zticks)
-        else:
-            cb.set_ticks(zticks)
-        cb.outline.set_linewidth(0.5)
-        cb.set_label(nicename(zkey), fontsize=7, labelpad=5)
-        plt.tick_params(axis='both', which='major', labelsize=7)
-        cb.ax.tick_params('both',length=0)
-        plt.axis('tight')
-        save_fig(path, '_' + nicename(zkey), pdf=False)
-
-
-    wglos = tools.load_pickle(dir, 'w_glo')
-    xrange = wglos[0].shape[0]
-    zero_claws = []
-    mean_claws = []
-    for wglo in wglos:
-        # dynamically infer threshold after training
-        thres = infer_threshold(wglo) if dynamic_thres else THRES
-        sparsity = np.count_nonzero(wglo > thres, axis=0)
-        y, _ = np.histogram(sparsity, bins=xrange, range=[0,xrange], density=True)
-        zero_claws.append(y[0])
-        mean_claws.append(np.mean(sparsity))
-
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    for i, d in enumerate(dirs):
-        config = tools.load_config(d)
-        setattr(config, 'mean_claw', mean_claws[i])
-        setattr(config, 'zero_claw', zero_claws[i])
-        tools.save_config(config, d)
-
-    _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='val_acc', zticks=[0, .5, 1])
-    _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='zero_claw', zticks=[0, .5, 1])
-    _image(dir, xkey='kc_loss_alpha', ykey='kc_loss_beta', zkey='mean_claw', zticks=[0, 4, 7, 10, 11])
-
-
-def plot_weight_distribution_per_kc(path, xrange=15, loopkey=None):
-    '''
-    Plots the distribution of sorted PN2KC weights
-    Assumptions thus far:
-    indices are no loss, loss, sparse and fixed
-    sparse and fixed data is at index 2
-    :param path:
-    :return:
-    '''
-
-    def _plot(means, stds, thres):
-        fig = plt.figure(figsize=(2.5, 2))
-        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-
-        for i, (mean, std) in enumerate(zip(means, stds)):
-            x = np.arange(0, mean.size)
-            if np.mean(std) > .001:
-                plt.plot(x, mean)
-                plt.fill_between(x, mean - std, mean + std, alpha=.5)
-            else:
-                plt.step(x, mean)
-
-        plt.plot([0, xrange], [thres, thres], '--', color='gray')
-        ax.legend(legend)
-
-        ax.set_xlabel('Connections from PNs, Sorted')
-        ax.set_ylabel('Connection Weight')
-        xticks = np.array([1, 5, 7, 9, 11, xrange])
-        yticks = np.arange(0, yrange, .25)
-        ax.set_xticks(xticks - 1)
-        ax.set_xticklabels(xticks)
-        ax.set_yticks(yticks)
-        plt.ylim([-.01, yrange])
-        plt.xlim([0, xrange])
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-
-        save_fig(path, str='_weights_per_kc', pdf=True)
-
-    if loopkey is None:
-        legend = ['Trained, no loss', 'Trained, with loss', 'Fixed']
+    if epoch is not None:
+        string = '_epoch_' + str(epoch)
     else:
-        res = tools.load_all_results(path)
-        legend = res[loopkey]
-    wglos = tools.load_pickle(path, 'w_glo')
-    means = []
-    stds = []
-    yrange = .6
-    for wglo in wglos:
-        wglo[np.isnan(wglo)] = 0
-        sorted_wglo = np.sort(wglo, axis=0)
-        sorted_wglo = np.flip(sorted_wglo, axis=0)
-        mean = np.mean(sorted_wglo, axis=1)
-        std = np.std(sorted_wglo, axis=1)
-        means.append(mean)
-        stds.append(std)
-    # TODO: figure out how to use dynamic threshold here
-    _plot(means, stds, THRES)
+        string = ''
 
-
-def plot_distribution(dir, xrange=1.0, log=False):
-    save_name = dir.split('/')[-1]
-    path = os.path.join(figpath, save_name)
-    os.makedirs(path, exist_ok=True)
-    if tools._islikemodeldir(dir):
-        dirs = [dir]
+    if epoch == 0:
+        cutoff = None
+        approximate = False
     else:
-        dirs = tools._get_alldirs(dir, model=True, sort=True)
+        cutoff = infer_threshold(distribution)
+        approximate = True
 
-    titles = ['Before Training', 'After Training']
-
-    for i, d in enumerate(dirs):
-        print('Analyzing results from: ' + str(d))
-        try:
-            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
-        except KeyError:
-            wglo = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
-        for j in [0, -1]:
-            w = wglo[j]
-            w[np.isnan(w)] = 0
-            distribution = w.flatten()
-            save_name = os.path.join(path, 'distribution_' + str(i) + '_' + str(j))
-            print(save_name)
-
-            if j == 0:
-                cutoff = 0
-            else:
-                cutoff = infer_threshold(distribution)
-
-            if log == False:
-                _plot_distribution(distribution, save_name, cutoff = cutoff,
-                                   title=titles[j], xrange= xrange, yrange=5000)
-            else:
-                if j == 0:
-                    approximate=False
-                else:
-                    approximate=True
-                _plot_log_distribution(distribution, save_name, cutoff = cutoff,
-                                   title=titles[j], xrange= xrange, yrange=5000, approximate=approximate)
+    save_path = os.path.join(figpath, experiment)
+    save_name = os.path.join(save_path, '_' + folder + '_distribution'  + string)
+    if log == False:
+        _plot_distribution(distribution, save_name, cutoff = cutoff, xrange= xrange, yrange=5000)
+    else:
+        _plot_log_distribution(distribution, save_name, cutoff = cutoff,
+                               xrange= xrange, yrange=5000, approximate=approximate)
 
 
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
                      thres=THRES):
-    print('Analyzing results from: ' + str(d))
+    print('compute sparsity needs to be replaced')
     try:
         wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
     except KeyError:
@@ -354,23 +158,6 @@ def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
     w = wglos[epoch]
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
     return sparsity
-
-
-def compute_sparsity_allepochs(d, dynamic_thres=False, visualize=False,
-                     thres=THRES):
-    print('Analyzing results from: ' + str(d))
-    try:
-        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
-    except KeyError:
-        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
-
-    sparsity_list = list()
-    for i, w in enumerate(wglos):
-        _dynamic_thres = dynamic_thres if i > 0 else THRES
-        sparsity, thres = _compute_sparsity(w, _dynamic_thres, visualize, thres)
-        sparsity_list.append(sparsity)
-    return sparsity_list
-
 
 def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     w[np.isnan(w)] = 0
@@ -389,59 +176,59 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(dir, dynamic_thres=False, visualize=False, thres=THRES, xrange = 50,
-                  epochs=None):
-    save_name = dir.split('/')[-1]
-    path = os.path.join(figpath, save_name)
-    os.makedirs(path,exist_ok=True)
+def plot_sparsity(dir, dir_ix, epoch=None, dynamic_thres=False, visualize=False, thres=THRES, xrange = 50, plot=True):
+    dir_folder = tools._get_alldirs(dir, model=True, sort=True)[dir_ix]
+    folder = os.path.split(dir_folder)[-1]
+    experiment = os.path.split(dir)[-1]
 
-    if tools._islikemodeldir(dir):
-        dirs = [dir]
-    else:
-        dirs = tools._get_alldirs(dir, model=True, sort=True)
+    if epoch is not None:
+        dir_folder = tools._get_alldirs(os.path.join(dir_folder, 'epoch'), model=True, sort=True)[epoch]
 
-    if epochs is None:
-        epochs = [-1]  # analyze the first and the last
-        titles = ['Before Training', 'After Training']
-        yrange = [1, 0.5]
-    else:
-        titles = ['Epoch {:d}'.format(e) for e in epochs]
-        yrange = [0.5]*len(epochs)
+    try:
+        w = tools.load_pickle(dir_folder, 'w_glo')[0]
+    except KeyError:
+        w = tools.load_pickle(dir_folder, 'w_kc')[0]
+    sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
 
-    for i, d in enumerate(dirs):
-        for j, epoch in enumerate(epochs):
-            sparsity = compute_sparsity(d, epoch, dynamic_thres=dynamic_thres,
-                                        visualize=visualize, thres=thres)
-            save_name = os.path.join(path, 'sparsity_' + str(i) + '_' + str(j))
-            _plot_sparsity(sparsity, save_name, title= titles[j], yrange= yrange[j], xrange=xrange)
-            print(sparsity[sparsity>0].mean())
+    if plot:
+        if epoch is not None:
+            string = '_epoch_' + str(epoch)
+        else:
+            string = ''
+
+        if epoch == 0:
+            yrange = 1
+        else:
+            yrange = 0.5
+        save_path = os.path.join(figpath, experiment)
+        save_name = os.path.join(save_path, '_' + folder + '_sparsity' + string)
+        _plot_sparsity(sparsity, save_name, yrange= yrange, xrange=xrange)
+    return sparsity
 
 
-def _plot_sparsity(data, savename, title, xrange=50, yrange=.5):
+def _plot_sparsity(data, savename, xrange=50, yrange=.5):
     fig = plt.figure(figsize=(2, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.6])
     plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
     plt.plot([7, 7], [0, yrange], '--', color='gray')
     ax.set_xlabel('PN inputs per KC')
     ax.set_ylabel('Fraction of KCs')
-    name = title
-    ax.set_title(name)
 
     xticks = [1, 7, 15, 25, 50]
     ax.set_xticks(xticks)
     ax.set_yticks(np.linspace(0, yrange, 3))
     plt.ylim([0, yrange])
     plt.xlim([-1, xrange])
+    plt.title(data[data>0].mean())
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    print(savename)
-    plt.savefig(savename + '.png', dpi=500)
-    plt.savefig(savename + '.pdf', transparent=True)
+    split = os.path.split(savename)
+    tools.save_fig(split[0], split[1])
 
-def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0, approximate=True):
+def _plot_log_distribution(data, savename, xrange, yrange, cutoff = 0, approximate=True):
     # if visualize:
     #     bins = np.linspace(x.min(), x.max(), 100)
     #     fig = plt.figure(figsize=(3, 3))
@@ -466,8 +253,6 @@ def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0, ap
 
     # y = np.log(data)
     x = np.log(data + 1e-10)
-    cutoff = np.log(cutoff)
-    xrange = np.log(xrange)
 
     xticks = ['$10^{-6}$','$10^{-4}$', '.01', '1']
     xticks_log = np.log([1e-6, 1e-4, 1e-2, 1])
@@ -481,8 +266,6 @@ def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0, ap
         plt.hist(x, bins=50, range = [-12, 3], weights=weights)
     ax.set_xlabel('PN to KC Weight')
     ax.set_ylabel('Distribution of Connections')
-    name = title
-    ax.set_title(name)
     ax.set_xticks(xticks_log)
     ax.set_xticklabels(xticks)
 
@@ -497,7 +280,10 @@ def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0, ap
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    ax.plot([cutoff, cutoff], [0, plt.ylim()[1]], '--', color='gray', linewidth=1)
+
+    if cutoff is not None:
+        cutoff = np.log(cutoff)
+        ax.plot([cutoff, cutoff], [0, plt.ylim()[1]], '--', color='gray', linewidth=1)
 
     if approximate:
         x = np.asarray(data).flatten()
@@ -516,19 +302,17 @@ def _plot_log_distribution(data, savename, title, xrange, yrange, cutoff = 0, ap
         ax.plot(x_tmp, pdf2, linestyle='--', linewidth=1, alpha = 1)
         # ax.plot(x_tmp, pdf1 + pdf2, color='black', linewidth=1, alpha = .5)
 
-    plt.savefig(savename + '_log.png', dpi=500)
-    plt.savefig(savename + '_log.pdf', transparent=True)
+    split = os.path.split(savename)
+    tools.save_fig(split[0], split[1])
 
 
-def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, cutoff = 0):
+def _plot_distribution(data, savename, xrange, yrange, broken_axis=True, cutoff = None):
     fig = plt.figure(figsize=(2, 1.5))
     if not broken_axis:
         ax = fig.add_axes([0.25, 0.25, 0.6, 0.6])
         plt.hist(data, bins=50, range=[0, xrange], density=False)
         ax.set_xlabel('PN to KC Weight')
         ax.set_ylabel('Number of Connections')
-        name = title
-        ax.set_title(name)
 
         xticks = [0, .2, .4, .6, .8, 1]
         ax.set_xticks(xticks)
@@ -544,8 +328,8 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
-
+        if cutoff is not None:
+            ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
     else:
         ax = fig.add_axes([0.25, 0.25, 0.7, 0.45])
         ax2 = fig.add_axes([0.25, 0.75, 0.7, 0.1])
@@ -570,9 +354,6 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
         kwargs.update(transform=ax.transAxes)  # switch to the bottom axes
         ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
 
-        name = title
-        ax2.set_title(name)
-
         ax.set_xlabel('PN to KC Weight')
         ax.set_ylabel('Number of Connections')
         xticks = np.arange(0, xrange + 0.01, .5)
@@ -587,12 +368,12 @@ def _plot_distribution(data, savename, title, xrange, yrange, broken_axis=True, 
         ax2.set_yticks([np.max(n)])
         ax2.set_yticklabels(['{:d}K'.format(int(np.max(n)/1000))])
         ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
-        ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
-        ax2.plot([cutoff, cutoff], ax2.get_ylim(), '--', color='gray')
+        if cutoff is not None:
+            ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
+            ax2.plot([cutoff, cutoff], ax2.get_ylim(), '--', color='gray')
 
-        plt.savefig(savename + '.png', dpi=500)
-        plt.savefig(savename + '.pdf', transparent=True)
-
+        split = os.path.split(savename)
+        tools.save_fig(split[0], split[1])
 
 def plot_all_K(n_orns, Ks, plot_scatter=False,
                plot_box=False, plot_data=True,
