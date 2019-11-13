@@ -160,8 +160,8 @@ if 'rnn' in experiments:
     if ANALYZE:
         sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
         # analysis_rnn.analyze_t0(path, dir_ix=0)
-        # analysis_rnn.analyze_t_greater(path, dir_ix=1)
-        analysis_rnn.analyze_t_greater(path, dir_ix=2)
+        analysis_rnn.analyze_t_greater(path, dir_ix=1)
+        # analysis_rnn.analyze_t_greater(path, dir_ix=2)
 
 if 'metalearn' in experiments:
     path = './files/metalearn'
@@ -176,9 +176,6 @@ if 'metalearn' in experiments:
         # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
         # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
         # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
-
-
-
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'

@@ -31,7 +31,7 @@ def local_train(experiment, save_path, sequential=False, control=False,
 
             if train_arg == None:
                 train.train(config, **kwargs)
-            elif train_arg == 'metalearn':
+            elif train_arg == 'metatrain':
                 mamlmetatrain.train(config)
             else:
                 raise ValueError('training function is not recognized by keyword {}'.format(train_arg))

@@ -26,7 +26,7 @@ def standard(argTest=False):
 def rnn(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
+    config.max_epoch = 16
     config.model = 'rnn'
 
     config.NEURONS = 2500
@@ -200,7 +200,7 @@ def pn_normalization(argTest):
 
 def metalearn(argTest=False):
     config = configs.MetaConfig()
-    config.meta_lr = .001
+    config.meta_lr = .0005
     config.N_CLASS = 10
     config.save_every_epoch = True
     config.meta_output_dimension = 10
