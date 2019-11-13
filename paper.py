@@ -161,7 +161,7 @@ if 'rnn' in experiments:
         sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
         # analysis_rnn.analyze_t0(path, dir_ix=0)
         analysis_rnn.analyze_t_greater(path, dir_ix=1)
-        # analysis_rnn.analyze_t_greater(path, dir_ix=2)
+        analysis_rnn.analyze_t_greater(path, dir_ix=2)
 
 if 'metalearn' in experiments:
     path = './files/metalearn'

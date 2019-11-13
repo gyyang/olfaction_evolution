@@ -26,7 +26,7 @@ def standard(argTest=False):
 def rnn(argTest=False):
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 16
+    config.max_epoch = 12
     config.model = 'rnn'
 
     config.NEURONS = 2500
@@ -41,6 +41,35 @@ def rnn(argTest=False):
     hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
     if argTest:
         config.max_epoch = 16
+    return config, hp_ranges
+
+def metalearn(argTest=False):
+    config = configs.MetaConfig()
+    config.meta_lr = .001
+    config.N_CLASS = 5
+    config.meta_output_dimension = 5
+    config.save_every_epoch = True
+    config.meta_batch_size = 32
+    config.meta_num_samples_per_class = 32
+    config.meta_print_interval = 500
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 1
+    config.train_kc_bias = True
+
+    config.metatrain_iterations = 15000
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+
+    config.data_dir = './datasets/proto/meta_dataset'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy'] = [True]
+
+    if argTest:
+        pass
     return config, hp_ranges
 
 def receptor(argTest=False):
@@ -198,34 +227,6 @@ def pn_normalization(argTest):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
-def metalearn(argTest=False):
-    config = configs.MetaConfig()
-    config.meta_lr = .0005
-    config.N_CLASS = 10
-    config.save_every_epoch = True
-    config.meta_output_dimension = 10
-    config.meta_batch_size = 32
-    config.meta_num_samples_per_class = 32
-    config.meta_print_interval = 500
-
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.train_kc_bias = True
-
-    config.metatrain_iterations = 15000
-    config.pn_norm_pre = 'batch_norm'
-    config.kc_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
-
-    config.data_dir = './datasets/proto/meta_dataset'
-
-    hp_ranges = OrderedDict()
-    hp_ranges['dummy'] = [True]
-
-    if argTest:
-        pass
-    return config, hp_ranges
 
 
 def train_multihead(argTest=False):
