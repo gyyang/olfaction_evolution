@@ -119,7 +119,7 @@ def cluster_train(experiment, save_path, sequential=False, control=False, path=S
             arg =  '\'' + config.save_path + '\''
 
             if train_arg == 'metatrain':
-                cmd = r'''python -c "import mamlmetatrain; train.train_from_path(''' + arg + ''')"'''
+                cmd = r'''python -c "import mamlmetatrain; mamlmetatrain.train_from_path(''' + arg + ''')"'''
             else:
                 cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
 
