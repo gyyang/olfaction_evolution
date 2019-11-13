@@ -355,7 +355,8 @@ class FullModel(Model):
         if config.label_type == 'combinatorial':
             class_loss += tf.losses.sigmoid_cross_entropy(multi_class_labels=y, logits=logits)
         elif config.label_type == 'one_hot':
-            class_loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
+            # class_loss += tf.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
+            class_loss += tf.compat.v1.losses.softmax_cross_entropy(onehot_labels=y, logits=logits)
         elif config.label_type == 'sparse':
             class_loss += tf.losses.sparse_softmax_cross_entropy(labels=y,
                                                            logits=logits)
