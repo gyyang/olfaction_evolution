@@ -925,10 +925,10 @@ class RNN(Model):
         rnn_outputs = []
         rnn_outputs.append(rnn_output)
         with tf.variable_scope('layer_rnn', reuse=tf.AUTO_REUSE):
-            initializer = _initializer(_sparse_range(config.N_ORN), arg='constant')
+            initializer = _initializer(_sparse_range(config.N_ORN), arg='uniform')
             w_rnn = tf.get_variable('kernel', shape=(NEURONS, NEURONS), dtype=tf.float32, initializer=initializer)
             w_rnn = tf.abs(w_rnn)
-            b_rnn = tf.get_variable('bias', shape=NEURONS, dtype=tf.float32, initializer=tf.constant_initializer(-1))
+            b_rnn = tf.get_variable('bias', shape=NEURONS, dtype=tf.float32, initializer=tf.constant_initializer(0))
 
             for t in range(TIME_STEPS):
                 rnn_output = tf.matmul(rnn_output, w_rnn) + b_rnn

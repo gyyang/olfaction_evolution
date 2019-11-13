@@ -54,7 +54,7 @@ def metalearn(argTest=False):
     config.meta_print_interval = 500
 
     config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 1
+    config.N_ORN_DUPLICATION = 10
     config.train_kc_bias = True
 
     config.metatrain_iterations = 15000
