@@ -218,7 +218,7 @@ def metalearn(argTest=False):
     config.sparse_pn2kc = False
     config.train_pn2kc = True
 
-    config.data_dir = './datasets/proto/test'
+    config.data_dir = './datasets/proto/meta_dataset'
 
     hp_ranges = OrderedDict()
     hp_ranges['dummy'] = [True]
