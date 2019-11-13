@@ -943,7 +943,6 @@ class RNN(Model):
 
         with tf.variable_scope('layer_out', reuse=tf.AUTO_REUSE):
             w_out = tf.get_variable('kernel', shape=(NEURONS, config.N_CLASS), dtype=tf.float32)
-            w_out = tf.abs(w_out)
             b_out = tf.get_variable('bias', shape=config.N_CLASS, dtype=tf.float32)
             logits = tf.matmul(rnn_output, w_out) + b_out
 

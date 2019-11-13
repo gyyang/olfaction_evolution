@@ -55,7 +55,7 @@ def metalearn(argTest=False):
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.train_kc_bias = False
-    config.output_max_lr = 0.2
+    config.output_max_lr = 1.0
 
     config.metatrain_iterations = 15000
     config.pn_norm_pre = 'batch_norm'
