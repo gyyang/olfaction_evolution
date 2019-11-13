@@ -33,8 +33,8 @@ def rnn(argTest=False):
     config.BATCH_NORM = False
 
     config.dropout = True
-    config.dropout_rate = .5
-    config.DIAGONAL = False
+    config.dropout_rate = .2
+    config.DIAGONAL = True
 
     hp_ranges = OrderedDict()
     hp_ranges['TIME_STEPS'] = [1, 2, 3]

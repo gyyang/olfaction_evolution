@@ -103,11 +103,12 @@ path = './files/metalearn'
 
 
 folder = '000000'
-ix = '5500'
+ix = '3500'
 sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, average=True)
 sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1)
 import standard.analysis_pn2kc_training
 standard.analysis_pn2kc_training.plot_distribution(path, dir_ix=0, epoch = -1, xrange=1, log=True)
+standard.analysis_pn2kc_training.plot_distribution(path, dir_ix=0, epoch = -1, xrange=1, log=False)
 standard.analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, epoch=-1)
 # standard.analysis_pn2kc_training.plot_distribution(path, xrange=1)
 
