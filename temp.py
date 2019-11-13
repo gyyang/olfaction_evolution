@@ -67,9 +67,6 @@ def temp_meta():
     config.train_pn2kc = True
     config.initial_pn2kc = 0.05
 
-    config.pn_prune_threshold = 0.01
-    config.kc_prune_weak_weights = True
-
     config.data_dir = './datasets/proto/test'
     config.save_path = './files_temp/meta/0'
 
@@ -97,7 +94,7 @@ def temp():
     hp_ranges['sign_constraint_orn2pn'] = [True]
     return config, hp_ranges
 
-path = './files_temp/meta'
+path = './files/metalearn'
 # try:
 #     shutil.rmtree(path)
 # except:
@@ -105,23 +102,22 @@ path = './files_temp/meta'
 # mamlmetatrain.train(temp_meta()[0])
 
 
-# folder = '0'
-# ix = '7000'
-# sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
-# sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1, dir_ix=0)
+folder = '000000'
+ix = '4500'
+sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, average=False)
+sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1)
 # import standard.analysis_pn2kc_training
 # standard.analysis_pn2kc_training.plot_distribution(path, xrange=1, log=True)
 # standard.analysis_pn2kc_training.plot_distribution(path, xrange=1)
 # standard.analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.01, epochs=[-1])
 
 #
-path = './files_temp/test'
-try:
-    shutil.rmtree(path)
-except:
-    pass
-t(temp(), path, s=0)
-
+# path = './files_temp/test'
+# try:
+#     shutil.rmtree(path)
+# except:
+#     pass
+# t(temp(), path, s=0)
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['K','K_inferred'], ylim=[0, 20], epoch_range=[0,100])
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_acc'], ylim=[.7, .9], epoch_range=[0,100])
 # sa.plot_progress(path, legends=['Prune','None'], plot_vars= ['val_logloss', 'train_logloss'], epoch_range=[0,100])

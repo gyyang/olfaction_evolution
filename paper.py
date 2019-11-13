@@ -52,7 +52,7 @@ else:
 # TRAIN = True
 # is_test = True
 # ANALYZE = True
-# args.experiment = ['rnn']
+# args.experiment = ['metalearn']
 
 if ANALYZE:
     import standard.analysis as sa
@@ -159,8 +159,8 @@ if 'rnn' in experiments:
         train(se.rnn(is_test), save_path=path, path=cluster_path, sequential=True)
     if ANALYZE:
         sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
-        analysis_rnn.analyze_t0(path, dir_ix=0)
-        analysis_rnn.analyze_t_greater(path, dir_ix=1)
+        # analysis_rnn.analyze_t0(path, dir_ix=0)
+        # analysis_rnn.analyze_t_greater(path, dir_ix=1)
         analysis_rnn.analyze_t_greater(path, dir_ix=2)
 
 if 'metalearn' in experiments:
@@ -169,9 +169,9 @@ if 'metalearn' in experiments:
         train(se.metalearn(is_test), path, train_arg='metalearn', sequential=True)
     if ANALYZE:
         # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
-        sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1)
+        # sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1)
         # analysis_pn2kc_training.plot_distribution(path, xrange=1)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
+        analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, thres=.05)
         # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
         # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
         # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
