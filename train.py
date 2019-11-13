@@ -139,7 +139,7 @@ def train(config, reload=False, save_everytrainloss=False):
         if 'set_oracle' in dir(config) and config.set_oracle:
             oracle.set_oracle_weights()
 
-        if config.model == 'rnn':
+        if config.model == 'rnn' and config.DIAGONAL:
             model.set_weights()
 
         loss = 0

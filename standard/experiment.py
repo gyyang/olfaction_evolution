@@ -34,6 +34,7 @@ def rnn(argTest=False):
 
     config.dropout = True
     config.dropout_rate = .5
+    config.DIAGONAL = False
 
     hp_ranges = OrderedDict()
     hp_ranges['TIME_STEPS'] = [1, 2, 3]
@@ -46,23 +47,23 @@ def rnn(argTest=False):
 def metalearn(argTest=False):
     config = configs.MetaConfig()
     config.meta_lr = .001
-    config.N_CLASS = 10
+    config.N_CLASS = 10 #10
     config.save_every_epoch = True
-    config.meta_batch_size = 32
-    config.meta_num_samples_per_class = 32
+    config.meta_batch_size = 32 #32
+    config.meta_num_samples_per_class = 16 #16
     config.meta_print_interval = 500
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
-    config.train_kc_bias = False
-    config.output_max_lr = 1.0
+    config.train_kc_bias = True #False
+    config.output_max_lr = 2.0 #1.0
 
     config.metatrain_iterations = 15000
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.initial_pn2kc = 0.05
+    config.initial_pn2kc = 0.05 #0.1
 
     config.data_dir = './datasets/proto/meta_dataset'
 
