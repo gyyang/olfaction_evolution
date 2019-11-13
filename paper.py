@@ -166,7 +166,7 @@ if 'rnn' in experiments:
 if 'metalearn' in experiments:
     path = './files/metalearn'
     if TRAIN:
-        train(se.metalearn(is_test), path, train_arg='metalearn', sequential=True)
+        train(se.metalearn(is_test), path, train_arg='metatrain', sequential=True)
     if ANALYZE:
         # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
         # sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1)
