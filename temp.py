@@ -103,7 +103,7 @@ path = './files/metalearn'
 
 
 folder = '000000'
-ix = '3500'
+ix = '5000'
 sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_orn', sort_axis=1, average=True)
 sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_axis=-1)
 import standard.analysis_pn2kc_training

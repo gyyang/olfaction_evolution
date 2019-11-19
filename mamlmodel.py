@@ -219,7 +219,7 @@ class MAML:
             # self.gvs = gvs = optimizer.compute_gradients(self.total_loss3, var_list)
             self.metatrain_op = optimizer.apply_gradients(gvs)
 
-            training_learning_rate = False
+            training_learning_rate = True
             if training_learning_rate:
                 update_lr_learning_rate = .01
                 print(self.update_lr)

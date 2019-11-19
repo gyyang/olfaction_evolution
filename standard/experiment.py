@@ -33,7 +33,7 @@ def rnn(argTest=False):
     config.BATCH_NORM = False
 
     config.dropout = True
-    config.dropout_rate = .2
+    config.dropout_rate = .5
     config.DIAGONAL = True
 
     hp_ranges = OrderedDict()
@@ -55,15 +55,14 @@ def metalearn(argTest=False):
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
-    config.train_kc_bias = True #False
-    config.output_max_lr = 2.0 #1.0
+    config.output_max_lr = 2.0 #2.0
 
     config.metatrain_iterations = 15000
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.initial_pn2kc = 0.05 #0.1
+    config.initial_pn2kc = 0.05 #0.05
 
     config.data_dir = './datasets/proto/meta_dataset'
 
