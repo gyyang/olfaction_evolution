@@ -33,7 +33,7 @@ def rnn(argTest=False):
     config.BATCH_NORM = False
 
     config.dropout = True
-    config.dropout_rate = .5
+    config.dropout_rate = 0
     config.DIAGONAL = True
 
     hp_ranges = OrderedDict()
@@ -50,7 +50,7 @@ def metalearn(argTest=False):
     config.N_CLASS = 10 #10
     config.save_every_epoch = True
     config.meta_batch_size = 32 #32
-    config.meta_num_samples_per_class = 16 #16
+    config.meta_num_samples_per_class = 8 #16
     config.meta_print_interval = 500
 
     config.replicate_orn_with_tiling = True
