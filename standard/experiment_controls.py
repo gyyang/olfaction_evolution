@@ -68,18 +68,24 @@ def control_pn2kc_inhibition():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
 
-    config.replicate_orn_with_tiling = False
+    # config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
-    config.direct_glo = True
-    config.pn_norm_pre = 'batch_norm'
+    # config.direct_glo = True
+    config.skip_orn2pn = True
+    # config.pn_norm_pre = 'batch_norm'
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
     config.w_glo_meansub = True
 
+    config.kc_prune_weak_weights = True
+    config.initial_pn2kc = 5./config.N_PN
+    config.kc_prune_threshold = 1./config.N_PN
+
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    cs = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+    cs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+          0.8, 0.9, 1.0]
     hp_ranges['w_glo_meansub_coeff'] = cs
     hp_ranges['kc_bias'] = [-1 + 2 * c for c in cs]
     return config, hp_ranges
