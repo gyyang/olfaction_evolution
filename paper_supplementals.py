@@ -170,7 +170,8 @@ if 'control_pn2kc_inhibition' in experiments:
         train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True, path=cluster_path)
     if ANALYZE:
         xkey = 'w_glo_meansub_coeff'
-        ykeys = ['val_acc', 'K_inferred']
+        ykeys = ['val_acc', 'K_inferred', 'K']
+        xticks = [0, 0.5, 1.0]
         for yk in ykeys:
             if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
                 ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 20, 30]
@@ -179,7 +180,7 @@ if 'control_pn2kc_inhibition' in experiments:
 
             sa.plot_results(path, x_key=xkey, y_key=yk,
                             figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                            ax_args={'ylim': ylim, 'yticks': yticks})
+                            ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks})
 
             sa.plot_progress(path, ykeys=[yk], legend_key=xkey, ax_args={'ylim': ylim, 'yticks': yticks})
         #

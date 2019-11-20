@@ -77,7 +77,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = 
 
 
 def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
-                  legend_key=None, epoch_range=None, ykeys=None, ax_args = {}):
+                  legend_key=None, epoch_range=None, ykeys=None, ax_args=None):
     """Plot progress through training.
         Fixed to allow for multiple plots
     """
@@ -96,7 +96,8 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         _, ixs = np.unique(values, return_index=True)
         for k, v in log.items():
             log[k] = log[k][ixs]
-
+    if ax_args is None:
+        ax_args = {}
     def _plot_progress(xkey, ykey):
         figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
