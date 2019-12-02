@@ -129,6 +129,10 @@ def train(config, reload=False, save_everytrainloss=False):
             start_time = time.time()
 
         try:
+            if config.save_every_epoch:
+                model.save_pickle(ep)
+                model.save(ep)
+
             model.train()
             for batch_idx, (data, target) in enumerate(loader):
                 loss, acc = model(data.to(device), target.to(device))
@@ -144,10 +148,15 @@ def train(config, reload=False, save_everytrainloss=False):
 
         if finish_training:
             break
+        sys.stdout.flush()
 
     print('Training finished')
 
-
+    if 'save_log_only' in dir(config) and config.save_log_only is True:
+        pass
+    else:
+        model.save_pickle()
+        model.save()
 
 if __name__ == '__main__':
     config = FullConfig()
