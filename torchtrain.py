@@ -17,24 +17,6 @@ from standard.analysis_pn2kc_training import _compute_sparsity
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-class MyDataset(Dataset):
-    def __init__(self, data, target, transform=None):
-        self.data = torch.from_numpy(data).float()
-        self.target = torch.from_numpy(target).long()
-        self.transform = transform
-
-    def __getitem__(self, index):
-        x = self.data[index]
-        y = self.target[index]
-
-        if self.transform:
-            x = self.transform(x)
-
-        return x, y
-
-    def __len__(self):
-        return len(self.data)
-
 
 def train_from_path(path):
     """Train from a path with a config file in it."""
@@ -69,15 +51,8 @@ def train(config, reload=False, save_everytrainloss=False):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr, weight_decay=0)
 
-    # Build training dataset
-    dataset = MyDataset(train_x, train_y)
-    loader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=2,
-        pin_memory=torch.cuda.is_available()
-    )
+    train_data = torch.from_numpy(train_x).float().to(device)
+    train_target = torch.from_numpy(train_y).long().to(device)
 
     # Build validation dataset
     val_data = torch.from_numpy(val_x).float().to(device)
@@ -112,12 +87,13 @@ def train(config, reload=False, save_everytrainloss=False):
         with torch.no_grad():
             model.eval()
             loss_val, acc_val = model(val_data, val_target)
+        loss_val = loss_val.item()
 
         if ep % config.save_epoch_interval == 0:
             print('[*' + '*'*50 + '*]')
             print('Epoch {:d}'.format(ep))
             print('Train/Validation loss {:0.2f}/{:0.2f}'.format(
-                loss_train, loss_val.item()))
+                loss_train, loss_val))
             print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(
                 acc, acc_val))
 
@@ -134,8 +110,15 @@ def train(config, reload=False, save_everytrainloss=False):
                 model.save(ep)
 
             model.train()
-            for batch_idx, (data, target) in enumerate(loader):
-                loss, acc = model(data.to(device), target.to(device))
+
+            random_idx = np.random.permutation(config.n_train)
+            idx = 0
+            while idx < config.n_train:
+                batch_indices = random_idx[idx:idx+batch_size]
+                idx += batch_size
+
+                loss, acc = model(train_data[batch_indices],
+                                  train_target[batch_indices])
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
