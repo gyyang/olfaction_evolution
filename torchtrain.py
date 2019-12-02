@@ -35,12 +35,11 @@ class MyDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+
 def train_from_path(path):
     """Train from a path with a config file in it."""
     config = tools.load_config(path)
     train(config, reload=True)
-
-
 
 
 def train(config, reload=False, save_everytrainloss=False):
@@ -65,7 +64,7 @@ def train(config, reload=False, save_everytrainloss=False):
     else:
         n_batch = train_x.shape[0] // batch_size
 
-    model = FullModel()
+    model = FullModel(config=config)
     model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr, weight_decay=0)
@@ -111,6 +110,7 @@ def train(config, reload=False, save_everytrainloss=False):
     for ep in range(start_epoch, config.max_epoch):
         # validation
         with torch.no_grad():
+            model.eval()
             loss_val, acc_val = model(val_data, val_target)
 
         if ep % config.save_epoch_interval == 0:
@@ -129,6 +129,7 @@ def train(config, reload=False, save_everytrainloss=False):
             start_time = time.time()
 
         try:
+            model.train()
             for batch_idx, (data, target) in enumerate(loader):
                 loss, acc = model(data.to(device), target.to(device))
                 optimizer.zero_grad()
@@ -156,6 +157,7 @@ if __name__ == '__main__':
     config.save_path = './files/tmp_train'
     config.train_pn2kc = True
     config.sparse_pn2kc = False
+    config.pn_norm_pre = 'batch_norm'
 
     train(config)
 
