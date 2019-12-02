@@ -7,7 +7,6 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import tensorflow as tf
 import dict_methods
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,7 +15,6 @@ sys.path.append(rootpath)
 import tools
 from tools import nicename, save_fig
 import task
-from model import SingleLayerModel, FullModel, NormalizedMLP
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -256,7 +254,8 @@ def load_activity(save_path, lesion_kwargs=None):
     :param save_path:
     :return:
     '''
-
+    import tensorflow as tf
+    from model import SingleLayerModel, FullModel, NormalizedMLP
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
     config.label_type = 'sparse'
