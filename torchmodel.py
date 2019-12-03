@@ -183,7 +183,16 @@ class FullModel(nn.Module):
         with torch.no_grad():
             _, pred = torch.max(y, 1)
             acc = (pred == target).sum().item() / target.size(0)
-        return loss, acc
+        return {'loss': loss, 'acc': acc, 'kc': act2}
+
+    @property
+    def w_orn(self):
+        # Transpose to be consistent with tensorflow default
+        return self.layer1.effective_weight.data.cpu().numpy().T
+
+    @property
+    def w_glo(self):
+        return self.layer2.effective_weight.data.cpu().numpy().T
 
     def save(self, epoch=None):
         print('Model not saved in pytorch format')
@@ -202,9 +211,9 @@ class FullModel(nn.Module):
         var_dict = dict()
         for name, param in self.named_parameters():
             var_dict[name] = param.data.cpu().numpy()
-        # Transpose to be consistent with tensorflow default
-        var_dict['w_orn'] = self.layer1.effective_weight.data.cpu().numpy().T
-        var_dict['w_glo'] = self.layer2.effective_weight.data.cpu().numpy().T
+
+        var_dict['w_orn'] = self.w_orn
+        var_dict['w_glo'] = self.w_glo
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
