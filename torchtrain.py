@@ -18,10 +18,10 @@ from standard.analysis_pn2kc_training import _compute_sparsity
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def _log_full_model_train_pn2kc(log, model, config):
+def _log_full_model_train_pn2kc(log, model, res, config):
     w_glo = model.w_glo
     w_glo[w_glo < 1e-9] = 1e-9  # finite range for log
-    kcs = res['kc']
+    kcs = res['kc'].cpu().numpy()  # (n_odor, n_neuron)
 
     coding_level = (kcs > 0).mean()
     coding_level_per_kc = kcs.mean(axis=0)
@@ -41,9 +41,8 @@ def _log_full_model_train_pn2kc(log, model, config):
     log['kc_w_sum'].append(w_glo.sum(axis=0))
     # Store sparsity computed with threshold
 
-    sparsity_inferred, thres_inferred = _compute_sparsity(w_glo,
-                                                          dynamic_thres=True,
-                                                          thres=.1)
+    sparsity_inferred, thres_inferred = _compute_sparsity(
+        w_glo, dynamic_thres=True)
     K_inferred = sparsity_inferred[sparsity_inferred > 0].mean()
     bad_KC_inferred = np.sum(
         sparsity_inferred == 0) / sparsity_inferred.size
@@ -52,8 +51,11 @@ def _log_full_model_train_pn2kc(log, model, config):
     log['K_inferred'].append(K_inferred)
     log['bad_KC_inferred'].append(bad_KC_inferred)
 
-    sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False,
-                                        thres=config.kc_prune_threshold)
+    if config.kc_prune_weak_weights:
+        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False,
+                                            thres=config.kc_prune_threshold)
+    else:
+        sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False)
     K = sparsity[sparsity > 0].mean()
     bad_KC = np.sum(sparsity == 0) / sparsity.size
     log['sparsity'].append(sparsity)
@@ -68,10 +70,22 @@ def _log_full_model_train_pn2kc(log, model, config):
     return log
 
 
-def logging(log, model, config):
+def logging(log, model, res, config):
     if config.model == 'full':
         if config.train_pn2kc:
-            return _log_full_model_train_pn2kc(log, model, config)
+            log = _log_full_model_train_pn2kc(log, model, res, config)
+
+        if config.train_orn2pn and not config.direct_glo and not config.skip_orn2pn:
+            w_orn = model.w_orn
+            glo_score, _ = tools.compute_glo_score(w_orn, config.N_ORN)
+            log['glo_score'].append(glo_score)
+            print('Glo score ' + str(glo_score))
+
+            sim_score, _ = tools.compute_sim_score(w_orn, config.N_ORN)
+            log['sim_score'].append(sim_score)
+            print('Sim score ' + str(sim_score))
+
+    return log
 
 
 def train(config, reload=False, save_everytrainloss=False):
@@ -136,15 +150,17 @@ def train(config, reload=False, save_everytrainloss=False):
         # validation
         with torch.no_grad():
             model.eval()
-            loss_val, acc_val = model(val_data, val_target)
-        loss_val = loss_val.item()
+            res_val = model(val_data, val_target)
+        loss_val = res_val['loss'].item()
 
         print('[*' + '*'*50 + '*]')
         print('Epoch {:d}'.format(ep))
         print('Train/Validation loss {:0.2f}/{:0.2f}'.format(
             loss_train, loss_val))
         print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(
-            acc, acc_val))
+            acc, res_val['acc']))
+
+        log = logging(log, model, res_val, config)
 
         if ep > 0:
             time_spent = time.time() - start_time
@@ -162,13 +178,13 @@ def train(config, reload=False, save_everytrainloss=False):
                 batch_indices = random_idx[idx:idx+batch_size]
                 idx += batch_size
 
-                loss, acc = model(train_data[batch_indices],
-                                  train_target[batch_indices])
+                res = model(train_data[batch_indices],
+                            train_target[batch_indices])
                 optimizer.zero_grad()
-                loss.backward()
+                res['loss'].backward()
                 optimizer.step()
 
-            loss_train = loss.item()
+            loss_train = res['loss'].item()
 
         except KeyboardInterrupt:
             print('Training interrupted by users')
