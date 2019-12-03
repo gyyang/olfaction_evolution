@@ -18,10 +18,60 @@ from standard.analysis_pn2kc_training import _compute_sparsity
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def train_from_path(path):
-    """Train from a path with a config file in it."""
-    config = tools.load_config(path)
-    train(config, reload=True)
+def _log_full_model_train_pn2kc(log, model, config):
+    w_glo = model.w_glo
+    w_glo[w_glo < 1e-9] = 1e-9  # finite range for log
+    kcs = res['kc']
+
+    coding_level = (kcs > 0).mean()
+    coding_level_per_kc = kcs.mean(axis=0)
+    coding_level_per_odor = kcs.mean(axis=1)
+    log['coding_level'].append(coding_level)
+    hist, _ = np.histogram(coding_level_per_kc, bins=log['activity_bins'])
+    log['coding_level_per_kc'].append(hist)
+    hist, _ = np.histogram(coding_level_per_odor, bins=log['activity_bins'])
+    log['coding_level_per_odor'].append(hist)
+
+    # Store distribution of flattened weigths
+    log_hist, _ = np.histogram(np.log(w_glo.flatten()),
+                               bins=log['log_bins'])
+    hist, _ = np.histogram(w_glo.flatten(), bins=log['lin_bins'])
+    log['log_hist'].append(log_hist)
+    log['lin_hist'].append(hist)
+    log['kc_w_sum'].append(w_glo.sum(axis=0))
+    # Store sparsity computed with threshold
+
+    sparsity_inferred, thres_inferred = _compute_sparsity(w_glo,
+                                                          dynamic_thres=True,
+                                                          thres=.1)
+    K_inferred = sparsity_inferred[sparsity_inferred > 0].mean()
+    bad_KC_inferred = np.sum(
+        sparsity_inferred == 0) / sparsity_inferred.size
+    log['sparsity_inferred'].append(sparsity_inferred)
+    log['thres_inferred'].append(thres_inferred)
+    log['K_inferred'].append(K_inferred)
+    log['bad_KC_inferred'].append(bad_KC_inferred)
+
+    sparsity, thres = _compute_sparsity(w_glo, dynamic_thres=False,
+                                        thres=config.kc_prune_threshold)
+    K = sparsity[sparsity > 0].mean()
+    bad_KC = np.sum(sparsity == 0) / sparsity.size
+    log['sparsity'].append(sparsity)
+    log['thres'].append(thres)
+    log['K'].append(K)
+    log['bad_KC'].append(bad_KC)
+
+    print('KC coding level={}'.format(np.round(coding_level, 2)))
+    print('Bad KCs (fixed, inferred) ={}, {}'.format(bad_KC,
+                                                     bad_KC_inferred))
+    print('K (fixed, inferred) ={}, {}'.format(K, K_inferred))
+    return log
+
+
+def logging(log, model, config):
+    if config.model == 'full':
+        if config.train_pn2kc:
+            return _log_full_model_train_pn2kc(log, model, config)
 
 
 def train(config, reload=False, save_everytrainloss=False):
@@ -71,44 +121,39 @@ def train(config, reload=False, save_everytrainloss=False):
 
     loss_train = 0
     acc = 0
-    lr = config.lr
     acc_smooth = 0
     total_time, start_time = 0, time.time()
-    w_bins = np.linspace(0, 1, 201)
-    w_bins_log = np.linspace(-20, 5, 201)
-    log['w_bins'] = w_bins
-    log['w_bins_log'] = w_bins_log
-    lin_bins = np.linspace(0, 1, 1001)
-    log['lin_bins'] = lin_bins
-    activity_bins = np.linspace(0, 1, 201)
+
+    log['lin_bins'] = np.linspace(0, 1, 1001)
+    log['log_bins'] = np.linspace(-20, 5, 201)
+    log['activity_bins'] = np.linspace(0, 1, 201)
 
     for ep in range(start_epoch, config.max_epoch):
+        if config.save_every_epoch:
+            model.save_pickle(ep)
+            model.save(ep)
+
         # validation
         with torch.no_grad():
             model.eval()
             loss_val, acc_val = model(val_data, val_target)
         loss_val = loss_val.item()
 
-        if ep % config.save_epoch_interval == 0:
-            print('[*' + '*'*50 + '*]')
-            print('Epoch {:d}'.format(ep))
-            print('Train/Validation loss {:0.2f}/{:0.2f}'.format(
-                loss_train, loss_val))
-            print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(
-                acc, acc_val))
+        print('[*' + '*'*50 + '*]')
+        print('Epoch {:d}'.format(ep))
+        print('Train/Validation loss {:0.2f}/{:0.2f}'.format(
+            loss_train, loss_val))
+        print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(
+            acc, acc_val))
 
-            if ep > 0:
-                time_spent = time.time() - start_time
-                total_time += time_spent
-                print('Time taken {:0.1f}s'.format(total_time))
-                print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
-            start_time = time.time()
+        if ep > 0:
+            time_spent = time.time() - start_time
+            total_time += time_spent
+            print('Time taken {:0.1f}s'.format(total_time))
+            print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
+        start_time = time.time()
 
         try:
-            if config.save_every_epoch:
-                model.save_pickle(ep)
-                model.save(ep)
-
             model.train()
 
             random_idx = np.random.permutation(config.n_train)
@@ -140,6 +185,13 @@ def train(config, reload=False, save_everytrainloss=False):
     else:
         model.save_pickle()
         model.save()
+
+
+def train_from_path(path):
+    """Train from a path with a config file in it."""
+    config = tools.load_config(path)
+    train(config, reload=True)
+
 
 if __name__ == '__main__':
     config = FullConfig()
