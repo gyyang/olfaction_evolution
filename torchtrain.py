@@ -156,6 +156,11 @@ def train(config, reload=False, save_everytrainloss=False):
             loss_train, loss_val))
         print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(
             res['acc'], res_val['acc']))
+        log['epoch'].append(ep)
+        log['train_loss'].append(loss_train)
+        log['val_loss'].append(loss_val)
+        log['train_acc'].append(res['acc'])
+        log['val_acc'].append(res_val['acc'])
 
         log = logging(log, model, res_val, config)
 

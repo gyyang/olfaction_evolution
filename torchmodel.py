@@ -67,6 +67,7 @@ class Layer(nn.Module):
                  bias=True,
                  sign_constraint=False,
                  weight_initializer=None,
+                 weight_initial_value=None,
                  bias_initial_value=0,
                  pre_norm=None,
                  post_norm=None,
@@ -84,7 +85,10 @@ class Layer(nn.Module):
             self.register_parameter('bias', None)
 
         self.weight_initializer = weight_initializer
-        self.weight_init_range = 2. / in_features
+        if weight_initial_value:
+            self.weight_init_range = weight_initial_value
+        else:
+            self.weight_init_range = 2. / in_features
         self.bias_initial_value = bias_initial_value
         self.sign_constraint = sign_constraint
         self.weight = nn.Parameter(
@@ -138,7 +142,7 @@ class Layer(nn.Module):
         else:
             weight = self.weight
 
-        if self.prune_weak_weights and self.prune_threshold:
+        if self.prune_weak_weights:
             not_pruned = (weight > self.prune_threshold)
             weight = weight * not_pruned
 
@@ -169,6 +173,7 @@ class FullModel(nn.Module):
 
         self.layer1 = Layer(config.N_PN, config.N_PN,
                             weight_initializer=config.initializer_orn2pn,
+                            weight_initial_value=config.initial_orn2pn,
                             sign_constraint=config.sign_constraint_orn2pn,
                             pre_norm=config.pn_norm_pre,
                             post_norm=config.pn_norm_post,
@@ -183,6 +188,7 @@ class FullModel(nn.Module):
 
         self.layer2 = Layer(config.N_PN, config.N_KC,
                             weight_initializer=config.initializer_pn2kc,
+                            weight_initial_value=config.initial_pn2kc,
                             bias_initial_value=config.kc_bias,
                             sign_constraint=config.sign_constraint_pn2kc,
                             pre_norm=config.kc_norm_pre,
