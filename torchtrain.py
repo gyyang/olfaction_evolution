@@ -84,6 +84,9 @@ def logging(log, model, res, config):
         if config.train_pn2kc:
             log = _log_full_model_train_pn2kc(log, model, res, config)
 
+    # consider json instead of pickle
+    with open(os.path.join(config.save_path, 'log.pkl'), 'wb') as f:
+        pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
     return log
 
 
@@ -123,12 +126,8 @@ def train(config, reload=False, save_everytrainloss=False):
 
     # Make custom logger
     log = defaultdict(list)
-    log_name = os.path.join(config.save_path, 'log.pkl')  # Consider json instead of pickle
-
-    glo_score_mode = 'tile' if config.replicate_orn_with_tiling else 'repeat'
 
     finish_training = False
-
 
     start_epoch = 0
 
@@ -180,6 +179,8 @@ def train(config, reload=False, save_everytrainloss=False):
                             train_target[batch_indices])
                 optimizer.zero_grad()
                 res['loss'].backward()
+                # model.layer2.weight.grad *= (0.8 + 0.4*
+                #     torch.rand_like(model.layer2.weight.grad))
                 optimizer.step()
 
             loss_train = res['loss'].item()

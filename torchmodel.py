@@ -72,6 +72,8 @@ class Layer(nn.Module):
                  post_norm=None,
                  dropout=False,
                  dropout_rate=None,
+                 prune_weak_weights=False,
+                 prune_threshold=None,
                  ):
         super(Layer, self).__init__()
         self.in_features = in_features
@@ -96,6 +98,9 @@ class Layer(nn.Module):
             self.dropout = nn.Dropout(p=dropout_rate)
         else:
             self.dropout = lambda x: x
+
+        self.prune_weak_weights = prune_weak_weights
+        self.prune_threshold = prune_threshold
 
         self.reset_parameters()
 
@@ -129,11 +134,18 @@ class Layer(nn.Module):
     @property
     def effective_weight(self):
         if self.sign_constraint:
-            return torch.abs(self.weight)
+            weight = torch.abs(self.weight)
         else:
-            return self.weight
+            weight = self.weight
+
+        if self.prune_weak_weights and self.prune_threshold:
+            not_pruned = (weight > self.prune_threshold)
+            weight = weight * not_pruned
+
+        return weight
 
     def forward(self, input):
+        # Random perturbation of weights
         pre_act = F.linear(input, self.effective_weight, self.bias)
         pre_act_normalized = self.pre_norm(pre_act)
         output = self.activation(pre_act_normalized)
@@ -161,7 +173,9 @@ class FullModel(nn.Module):
                             pre_norm=config.pn_norm_pre,
                             post_norm=config.pn_norm_post,
                             dropout=config.pn_dropout,
-                            dropout_rate=config.pn_dropout_rate)
+                            dropout_rate=config.pn_dropout_rate,
+                            prune_weak_weights=config.pn_prune_weak_weights,
+                            prune_threshold=config.pn_prune_threshold)
 
         if config.skip_orn2pn or config.direct_glo:  # make these two the same
             init.eye_(self.layer1.weight.data)
@@ -174,7 +188,9 @@ class FullModel(nn.Module):
                             pre_norm=config.kc_norm_pre,
                             post_norm=config.kc_norm_post,
                             dropout=config.kc_dropout,
-                            dropout_rate=config.kc_dropout_rate)
+                            dropout_rate=config.kc_dropout_rate,
+                            prune_weak_weights=config.kc_prune_weak_weights,
+                            prune_threshold=config.kc_prune_threshold)
 
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
