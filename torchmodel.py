@@ -163,6 +163,10 @@ class FullModel(nn.Module):
                             dropout=config.pn_dropout,
                             dropout_rate=config.pn_dropout_rate)
 
+        if config.skip_orn2pn or config.direct_glo:  # make these two the same
+            init.eye_(self.layer1.weight.data)
+            self.layer1.weight.requires_grad=False
+
         self.layer2 = Layer(config.N_PN, config.N_KC,
                             weight_initializer=config.initializer_pn2kc,
                             bias_initial_value=config.kc_bias,

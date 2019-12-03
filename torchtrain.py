@@ -72,18 +72,17 @@ def _log_full_model_train_pn2kc(log, model, res, config):
 
 def logging(log, model, res, config):
     if config.model == 'full':
+        w_orn = model.w_orn
+        glo_score, _ = tools.compute_glo_score(w_orn, config.N_ORN)
+        log['glo_score'].append(glo_score)
+        print('Glo score ' + str(glo_score))
+
+        sim_score, _ = tools.compute_sim_score(w_orn, config.N_ORN)
+        log['sim_score'].append(sim_score)
+        print('Sim score ' + str(sim_score))
+
         if config.train_pn2kc:
             log = _log_full_model_train_pn2kc(log, model, res, config)
-
-        if config.train_orn2pn and not config.direct_glo and not config.skip_orn2pn:
-            w_orn = model.w_orn
-            glo_score, _ = tools.compute_glo_score(w_orn, config.N_ORN)
-            log['glo_score'].append(glo_score)
-            print('Glo score ' + str(glo_score))
-
-            sim_score, _ = tools.compute_sim_score(w_orn, config.N_ORN)
-            log['sim_score'].append(sim_score)
-            print('Sim score ' + str(sim_score))
 
     return log
 
@@ -134,8 +133,7 @@ def train(config, reload=False, save_everytrainloss=False):
     start_epoch = 0
 
     loss_train = 0
-    acc = 0
-    acc_smooth = 0
+    res = {'acc': np.nan}
     total_time, start_time = 0, time.time()
 
     log['lin_bins'] = np.linspace(0, 1, 1001)
@@ -158,7 +156,7 @@ def train(config, reload=False, save_everytrainloss=False):
         print('Train/Validation loss {:0.2f}/{:0.2f}'.format(
             loss_train, loss_val))
         print('Train/Validation accuracy {:0.2f}/{:0.2f}'.format(
-            acc, res_val['acc']))
+            res['acc'], res_val['acc']))
 
         log = logging(log, model, res_val, config)
 
