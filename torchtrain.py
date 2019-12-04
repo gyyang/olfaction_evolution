@@ -107,16 +107,11 @@ def train(config, reload=False, save_everytrainloss=False):
     train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
 
     batch_size = config.batch_size
-    if 'n_batch' in dir(config):
-        n_batch = config.n_batch
-    else:
-        n_batch = train_x.shape[0] // batch_size
 
     model = FullModel(config=config)
     model.to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr, weight_decay=0)
-
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
     train_data = torch.from_numpy(train_x).float().to(device)
     train_target = torch.from_numpy(train_y).long().to(device)
 
@@ -173,7 +168,6 @@ def train(config, reload=False, save_everytrainloss=False):
 
         try:
             model.train()
-
             random_idx = np.random.permutation(config.n_train)
             idx = 0
             while idx < config.n_train:
@@ -184,8 +178,6 @@ def train(config, reload=False, save_everytrainloss=False):
                             train_target[batch_indices])
                 optimizer.zero_grad()
                 res['loss'].backward()
-                # model.layer2.weight.grad *= (0.8 + 0.4*
-                #     torch.rand_like(model.layer2.weight.grad))
                 optimizer.step()
 
             loss_train = res['loss'].item()
