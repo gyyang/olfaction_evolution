@@ -203,6 +203,9 @@ class FullModel(nn.Module):
                             prune_weak_weights=config.kc_prune_weak_weights,
                             prune_threshold=config.kc_prune_threshold)
 
+        if not config.train_kc_bias:
+            self.layer2.bias.requires_grad = False
+
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
 
