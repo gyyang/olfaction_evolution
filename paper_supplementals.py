@@ -17,7 +17,6 @@ import os
 import argparse
 import copy
 
-import standard.analysis_orn2pn
 import standard.experiment as se
 import standard.experiment_controls
 import standard.experiment_controls as experiment_controls
