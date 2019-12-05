@@ -254,6 +254,7 @@ def load_all_results(rootpath, argLast=True, ix=None,
 
     for key, val in res.items():
         res[key] = np.array(val)
+
     try:
         res['val_logloss'] = np.log(res['val_loss'])
         res['train_logloss'] = np.log(res['train_loss'])

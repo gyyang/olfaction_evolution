@@ -42,7 +42,7 @@ def local_train(experiment, save_path, sequential=False, control=False,
 
 
 def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
-                  nodes=1, ppn=1, gpus=0, mem=12, nhours=1):
+                  nodes=1, ppn=4, gpus=0, mem=4, nhours=1):
     """
     Create a job file.
 
@@ -72,7 +72,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
             + '\n'
             # + '#SBATCH --nodes={}\n'.format(nodes)
             # + '#SBATCH --ntasks-per-node=1\n'
-            # + '#SBATCH --cpus-per-task={}\n'.format(ppn)
+            + '#SBATCH --cpus-per-task={}\n'.format(ppn)
             + '#SBATCH --mem-per-cpu={}gb\n'.format(mem)
             # + '#SBATCH --partition=xwang_gpu\n'
             + '#SBATCH --gres=gpu:1\n'

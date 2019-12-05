@@ -128,7 +128,8 @@ class Layer(nn.Module):
         if self.weight_initializer == 'constant':
             init.constant_(self.weight, self.weight_init_range)
         elif self.weight_initializer == 'uniform':
-            init.uniform_(self.weight, 0, self.weight_init_range)
+            low = self.prune_threshold if self.prune_weak_weights else 0.
+            init.uniform_(self.weight, low, self.weight_init_range)
         elif self.weight_initializer == 'normal':
             init.normal_(self.weight, 0, self.weight_init_range)
         else:
