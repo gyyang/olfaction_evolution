@@ -70,15 +70,10 @@ if ANALYZE:
     import standard.analysis as sa
     import standard.analysis_pn2kc_peter
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
-    import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
     import standard.analysis_activity as analysis_activity
-    import standard.analysis_multihead as analysis_multihead
-    import standard.analysis_metalearn as analysis_metalearn
-    import oracle.evaluatewithnoise as evaluatewithnoise
     import analytical.numerical_test as numerical_test
     import analytical.analyze_simulation_results as analyze_simulation_results
-    import standard.analysis_nonnegative as analysis_nonnegative
 
 # experiments
 if args.experiment == 'core':
@@ -137,12 +132,20 @@ if 'control_pn2kc' in experiments:
                    'lr': 1e-3,
                    'initial_pn2kc':0,
                    'train_kc_bias':True}
+        # Override previous default
+        default = {'pn_norm_pre': 'batch_norm',
+                   'kc_dropout_rate': 0.5,
+                   'lr': 2e-3,
+                   # 'initial_pn2kc': 0,
+                   'train_kc_bias': True}
+
         ykeys = ['val_acc', 'K_inferred']
 
         for yk in ykeys:
-            if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
+            if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
                 ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
-                exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
+                exclude_dict = {'lr': [5e-2, 2e-2, 1e-2]}
+                # exclude_dict = None
             elif yk == 'val_acc':
                 ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
                 exclude_dict = None
@@ -155,10 +158,12 @@ if 'control_pn2kc' in experiments:
                 temp.pop(xk)
                 if xk == 'lr':
                     logx = True
+                    figsize = (4.5, 1.5)
                 else:
                     logx = False
+                    figsize = (1.5, 1.5)
                 sa.plot_results(
-                    path, x_key=xk, y_key=yk, figsize=(1.5, 1.5),
+                    path, x_key=xk, y_key=yk, figsize=figsize,
                     ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
                     logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
 
@@ -175,7 +180,7 @@ if 'control_pn2kc' in experiments:
             temp.pop(xk)
             sa.plot_xy(
                 path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_',
-                legend_key=xk, log=res, ax_args={'ylim':[0, 500]})
+                legend_key=xk, log=res, ax_args={'ylim': [0, 500]})
 
 if 'control_pn2kc_inhibition' in experiments:
     path = './files/control_pn2kc_inhibition'

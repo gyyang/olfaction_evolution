@@ -370,7 +370,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = Fal
                 y_plot = np.log(y_plot)
             label = str(x).rsplit('/',1)[-1]
             # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
-            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label, **plot_args)
+            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=nicename(label),
+                    **plot_args)
     else:
         x_plot = res[x_key]
         y_plot = res[y_key]
@@ -399,11 +400,18 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = Fal
     else:
         yticks = np.unique(res[y_key])
 
+    if x_key == 'lr':
+        from numpy import format_float_scientific
+        xticklabels = [format_float_scientific(x, precision=0, exp_digits=1)
+                       for x in xticks]
+    else:
+        xticklabels = [nicename(x) for x in xticks]
+
     if logx:
         ax.set_xticks(np.log(xticks))
-        ax.set_xticklabels(xticks)
     else:
         ax.set_xticks(xticks)
+    ax.set_xticklabels(xticklabels)
 
     if logy:
         ax.set_yticks(np.log(yticks))
