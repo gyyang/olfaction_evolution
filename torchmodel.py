@@ -154,8 +154,8 @@ class Layer(nn.Module):
     def forward(self, input):
         # Random perturbation of weights
         # pre_act = F.linear(input, self.effective_weight, self.bias)
-        weight = self.w_dropout(self.effective_weight)
-        pre_act = F.linear(input, weight, self.bias)
+        # weight = self.w_dropout(self.effective_weight)
+        pre_act = F.linear(input, self.effective_weight, self.bias)
         pre_act_normalized = self.pre_norm(pre_act)
         output = self.activation(pre_act_normalized)
         output_normalized = self.post_norm(output)
