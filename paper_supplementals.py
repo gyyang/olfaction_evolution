@@ -236,8 +236,8 @@ if 'control_pn2kc_prune_hyper' in experiments:
     if TRAIN:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
-            train(experiment_controls.control_pn2kc_prune_hyper(n_pn), control=True,
-                  save_path=cur_path)
+            train(experiment_controls.control_pn2kc_prune_hyper(n_pn),
+                  control=True, save_path=cur_path)
     if ANALYZE:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
