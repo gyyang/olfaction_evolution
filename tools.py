@@ -279,7 +279,7 @@ nicename_dict = {
         'kc_dropout': 'KC Dropout Rate',
         'kc_loss_alpha': r'$\alpha$',
         'kc_loss_beta': r'$\beta$',
-        'initial_pn2kc': 'Initial PN2KC Weights',
+        'initial_pn2kc': 'Initial PN-KC Weights',
         'initializer_pn2kc': 'Initializer',
         'mean_claw': 'Average Number of KC Claws',
         'zero_claw': 'Fraction of KC with No Input',
@@ -293,7 +293,9 @@ nicename_dict = {
         'kc_dropout_rate': 'KC dropout rate',
         'pn_dropout_rate': 'PN dropout rate',
         'K_inferred': 'K',
-        'K': 'fixed threshold K'
+        'K': 'fixed threshold K',
+        'lin_hist_': 'Number',
+        'lin_bins_': 'PN-KC Weight'
         }
 
 
