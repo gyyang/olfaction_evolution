@@ -108,6 +108,9 @@ class Layer(nn.Module):
 
         self.reset_parameters()
 
+        # self.w_dropout = nn.Dropout(p=0.1)
+        self.w_dropout = nn.Identity()
+
     def reset_parameters(self):
         if self.sign_constraint:
             self._reset_sign_constraint_parameters()
@@ -150,7 +153,9 @@ class Layer(nn.Module):
 
     def forward(self, input):
         # Random perturbation of weights
-        pre_act = F.linear(input, self.effective_weight, self.bias)
+        # pre_act = F.linear(input, self.effective_weight, self.bias)
+        weight = self.w_dropout(self.effective_weight)
+        pre_act = F.linear(input, weight, self.bias)
         pre_act_normalized = self.pre_norm(pre_act)
         output = self.activation(pre_act_normalized)
         output_normalized = self.post_norm(output)
