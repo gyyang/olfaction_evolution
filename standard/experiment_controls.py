@@ -82,14 +82,15 @@ def control_pn2kc():
     config.batch_size = 8192  # Much bigger batch size
     config.initial_pn2kc = 10./config.N_PN
     config.initializer_pn2kc = 'uniform'  # Prevent degeneration
+    config.lr = 2e-3
 
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    # hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
-    # hp_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
+    hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    hp_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
     hp_ranges['lr'] = [5e-2, 2e-2, 1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
-    # hp_ranges['train_kc_bias'] = [False, True]
-    # hp_ranges['initial_pn2kc'] = [0.05, 0.1, 0.2, 0.5]
+    hp_ranges['train_kc_bias'] = [False, True]
+    hp_ranges['initial_pn2kc'] = np.array([2., 5., 10., 20.])/config.N_PN
     # hp_ranges['apl'] = [False, True]
     return config, hp_ranges
 
