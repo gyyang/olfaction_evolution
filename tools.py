@@ -287,6 +287,13 @@ nicename_dict = {
         'n_trueclass': 'Odor Prototypes Per Class',
         'weight_perturb': 'Weight Perturb.',
         'lr': 'Learning rate',
+        'train_kc_bias': 'Training KC bias',
+        'pn_norm_pre': 'PN normalization',
+        'batch_norm': 'Batch Norm',
+        'kc_dropout_rate': 'KC dropout rate',
+        'pn_dropout_rate': 'PN dropout rate',
+        'K_inferred': 'K',
+        'K': 'fixed threshold K'
         }
 
 
