@@ -1,15 +1,12 @@
-import numpy as np
 import os
 
-from matplotlib import pyplot as plt
-
-import standard.analysis as sa
-import tools
-import matplotlib.pyplot as plt
-import task
-import tensorflow as tf
-from model import FullModel
+import numpy as np
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+import tools
+import task
+
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -17,6 +14,9 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 def correlation_across_epochs(save_path, legend = None, arg = 'weight'):
+    import tensorflow as tf
+    from model import FullModel
+
     def _correlation(mat):
         corrcoef = np.corrcoef(mat, rowvar=False)
         mask = ~np.eye(corrcoef.shape[0], dtype=bool)

@@ -9,14 +9,12 @@ from scipy import stats
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.neighbors.kde import KernelDensity
-import tensorflow as tf
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 import dict_methods
 import task
-from model import FullModel
 import tools
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 from tools import save_fig
@@ -208,6 +206,9 @@ def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
     
 
 def lesion_analysis(config, units=None):
+    import tensorflow as tf
+    from model import FullModel
+
     tf.reset_default_graph()
 
     # Load dataset
@@ -238,6 +239,7 @@ def lesion_analysis(config, units=None):
 
 
 def meta_lesion_analysis(config, units=None):
+    import tensorflow as tf
     import mamldataset
     import mamlmodel
     tf.reset_default_graph()
