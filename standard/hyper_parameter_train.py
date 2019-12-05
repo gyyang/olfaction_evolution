@@ -92,8 +92,9 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
 
 import subprocess
 
-def cluster_train(experiment, save_path, sequential=False, control=False, path=SCRATCHPATH):
-    """Train all models locally."""
+def cluster_train(experiment, save_path, sequential=False, control=False,
+                  path=SCRATCHPATH, use_torch=False):
+    """Train all models on cluster."""
     job_name = save_path.split('/')[-1]  # get end of path as job name
     config = tools.varying_config(experiment, 0)
     original_data_dir = config.data_dir[2:]  # HACK
@@ -118,7 +119,10 @@ def cluster_train(experiment, save_path, sequential=False, control=False, path=S
 
             arg =  '\'' + config.save_path + '\''
 
-            cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
+            if use_torch:
+                cmd = r'''python -c "import torchtrain; torchtrain.train_from_path(''' + arg + ''')"'''
+            else:
+                cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
 
             jobfile = write_jobfile(cmd, job_name + str(i))
             subprocess.call(['sbatch', jobfile])

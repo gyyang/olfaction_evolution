@@ -22,8 +22,7 @@ import standard.experiment as se
 import standard.experiment_controls
 import standard.experiment_controls as experiment_controls
 from standard.hyper_parameter_train import local_train, cluster_train
-import matplotlib as mpl
-import numpy as np
+
 
 SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
 ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
@@ -38,6 +37,7 @@ parser.add_argument('-e', '--experiment', nargs='+', help='Experiments', default
 parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCHPATH)
 parser.add_argument('-c', '--cluster', help='Use cluster?', action='store_true')
 parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50])
+parser.add_argument('--torch', help='Use torch', action='store_true')
 args = parser.parse_args()
 
 for item in args.__dict__.items():
@@ -53,14 +53,17 @@ TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, a
 
 
 if use_cluster:
-    train = cluster_train
-
     if cluster_path == 'peter' or cluster_path == 'pw':
         cluster_path = PETER_SCRATCHPATH
     elif cluster_path == 'robert' or cluster_path == 'gry':
         cluster_path = ROBERT_SCRATCHPATH
     else:
         cluster_path = SCRATCHPATH
+
+    def train(experiment, save_path, **kwargs):
+        cluster_train(experiment, save_path, path=cluster_path,
+                      use_torch=args.torch, **kwargs)
+
 else:
     train = local_train
 
@@ -87,7 +90,7 @@ else:
 if 'control_nonnegative' in experiments:
     path = './files/control_nonnegative'
     if TRAIN:
-        train(experiment_controls.control_nonnegative(), save_path=path, path=cluster_path)
+        train(experiment_controls.control_nonnegative(), save_path=path)
     if ANALYZE:
         sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
         sa.plot_weights(os.path.join(path, '000001'), sort_axis=1, average=False, positive_cmap=False, vlim=[-1, 1])
@@ -105,7 +108,7 @@ if 'control_orn2pn' in experiments:
     # Vary ORN n duplication under different nKC
     path = './files/control_orn2pn'
     if TRAIN:
-        train(experiment_controls.control_orn2pn(), save_path=path, control=True, path=cluster_path)
+        train(experiment_controls.control_orn2pn(), save_path=path, control=True)
     if ANALYZE:
         default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10, 'lr':1e-3}
         ykeys = ['glo_score', 'val_acc']
@@ -127,9 +130,14 @@ if 'control_orn2pn' in experiments:
 if 'control_pn2kc' in experiments:
     path = './files/control_pn2kc'
     if TRAIN:
-        train(experiment_controls.control_pn2kc(), save_path=path, control=True, path=cluster_path)
+        train(experiment_controls.control_pn2kc(),
+              save_path=path, control=True)
     if ANALYZE:
-        default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3, 'initial_pn2kc':0, 'train_kc_bias':True}
+        default = {'pn_norm_pre': 'batch_norm',
+                   'kc_dropout_rate': 0.5,
+                   'lr': 1e-3,
+                   'initial_pn2kc':0,
+                   'train_kc_bias':True}
         ykeys = ['val_acc', 'K_inferred']
 
         for yk in ykeys:
@@ -150,24 +158,30 @@ if 'control_pn2kc' in experiments:
                     logx = True
                 else:
                     logx = False
-                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                                select_dict=temp,
-                                logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
+                sa.plot_results(
+                    path, x_key=xk, y_key=yk, figsize=(1.5, 1.5),
+                    ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
+                    logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
 
-                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk, exclude_dict=exclude_dict,
-                                 ax_args={'ylim': ylim, 'yticks': yticks})
+                sa.plot_progress(
+                    path, select_dict=temp, ykeys=[yk], legend_key=xk,
+                    exclude_dict=exclude_dict,
+                    ax_args={'ylim': ylim, 'yticks': yticks})
         #
-        res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
+        res = standard.analysis_pn2kc_peter.do_everything(
+            path, filter_peaks=False, redo=True)
+
         for xk, v in default.items():
             temp = copy.deepcopy(default)
             temp.pop(xk)
-            sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
-                       ax_args={'ylim':[0, 500]})
+            sa.plot_xy(
+                path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_',
+                legend_key=xk, log=res, ax_args={'ylim':[0, 500]})
 
 if 'control_pn2kc_inhibition' in experiments:
     path = './files/control_pn2kc_inhibition'
     if TRAIN:
-        train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True, path=cluster_path)
+        train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True)
     if ANALYZE:
         xkey = 'w_glo_meansub_coeff'
         ykeys = ['val_acc', 'K_inferred', 'K']
@@ -195,7 +209,7 @@ if 'control_pn2kc_prune_boolean' in experiments:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             train(experiment_controls.control_pn2kc_prune_boolean(n_pn),
-                  save_path=cur_path, path=cluster_path)
+                  save_path=cur_path)
     if ANALYZE:
         xkey = 'kc_prune_weak_weights'
         ykeys = ['val_acc', 'K_inferred','K']
@@ -219,7 +233,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             train(experiment_controls.control_pn2kc_prune_hyper(n_pn), control=True,
-                  save_path=cur_path, path=cluster_path)
+                  save_path=cur_path)
     if ANALYZE:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
@@ -255,7 +269,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
 if 'control_vary_kc' in experiments:
     path = './files/control_vary_kc'
     if TRAIN:
-        train(experiment_controls.control_vary_kc(), save_path=path, path=cluster_path)
+        train(experiment_controls.control_vary_kc(), save_path=path)
     if ANALYZE:
         sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
         sa.plot_weights(os.path.join(path, '000021'), sort_axis=1, average=False)
@@ -274,7 +288,7 @@ if 'control_vary_kc' in experiments:
 if 'control_vary_pn' in experiments:
     path = './files/control_vary_pn'
     if TRAIN:
-        train(experiment_controls.control_vary_pn(), save_path=path, path=cluster_path)
+        train(experiment_controls.control_vary_pn(), save_path=path)
     if ANALYZE:
         sa.plot_weights(os.path.join(path,'000004'), sort_axis=1, average=False)
         sa.plot_weights(os.path.join(path,'000010'), sort_axis=1, average=False, vlim=[0, 5])

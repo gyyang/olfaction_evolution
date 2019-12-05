@@ -32,6 +32,7 @@ parser.add_argument('-test', '--testing', help='For debugging', action='store_tr
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
 parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCHPATH)
 parser.add_argument('-c','--cluster', help='Use cluster?', action='store_true')
+parser.add_argument('--torch', help='Use torch', action='store_true')
 args = parser.parse_args()
 
 mpl.rcParams['font.size'] = 7
@@ -45,7 +46,16 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
 
 if use_cluster:
-    train = cluster_train
+    if cluster_path == 'peter' or cluster_path == 'pw':
+        cluster_path = PETER_SCRATCHPATH
+    elif cluster_path == 'robert' or cluster_path == 'gry':
+        cluster_path = ROBERT_SCRATCHPATH
+    else:
+        cluster_path = SCRATCHPATH
+
+    def train(experiment, save_path, **kwargs):
+        cluster_train(experiment, save_path, path=cluster_path,
+                      use_torch=args.torch, **kwargs)
 else:
     train = local_train
 
@@ -66,12 +76,6 @@ if ANALYZE:
     import analytical.numerical_test as numerical_test
     import analytical.analyze_simulation_results as analyze_simulation_results
 
-if cluster_path == 'peter' or cluster_path == 'pw':
-    cluster_path = PETER_SCRATCHPATH
-elif cluster_path == 'robert' or cluster_path == 'gry':
-    cluster_path = ROBERT_SCRATCHPATH
-else:
-    cluster_path = SCRATCHPATH
 
 if args.experiment == 'core':
     experiments = ['standard',

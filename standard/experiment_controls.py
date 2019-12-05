@@ -39,8 +39,9 @@ def control_orn2pn():
     return config, hp_ranges
 
 
-def control_pn2kc():
+def control_pn2kc_backup():
     '''
+    This is the setup Peter last used
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -62,6 +63,36 @@ def control_pn2kc():
     hp_ranges['initial_pn2kc'] = [0.05, 0.1, 0.2, 0.5]
     hp_ranges['apl'] = [False, True]
     return config, hp_ranges
+
+def control_pn2kc():
+    '''
+    New setup Robert using for torch models
+    '''
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 200
+
+    config.N_ORN_DUPLICATION = 1
+    config.direct_glo = True  # skip_orn2pn has same effect
+    config.pn_norm_pre = 'batch_norm'
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+
+    # New settings
+    config.batch_size = 8192  # Much bigger batch size
+    config.initial_pn2kc = 10./config.N_PN
+    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
+
+    # Ranges of hyperparameters to loop over
+    hp_ranges = OrderedDict()
+    # hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    # hp_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
+    hp_ranges['lr'] = [5e-2, 2e-2, 1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
+    # hp_ranges['train_kc_bias'] = [False, True]
+    # hp_ranges['initial_pn2kc'] = [0.05, 0.1, 0.2, 0.5]
+    # hp_ranges['apl'] = [False, True]
+    return config, hp_ranges
+
 
 def control_pn2kc_inhibition():
     config = configs.FullConfig()
