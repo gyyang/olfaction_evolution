@@ -103,7 +103,7 @@ def make_vary_or_datasets():
 
 def make_multi_or_datasets():
     task_config = task.input_ProtoConfig()
-    for n_or_per_orn in range(10):
+    for n_or_per_orn in range(1, 10):
         task_config.n_or_per_orn = n_or_per_orn
         task.save_proto(
             config=task_config, seed=0,

@@ -385,3 +385,25 @@ def vary_claw_configs(argTest=False):
         hp_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 20, 30]
         hp_ranges['ORN_NOISE_STD'] = [0]
     return config, hp_ranges
+
+
+def control_n_or_per_orn():
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 200
+    config.pn_norm_pre = 'batch_norm'
+
+    config.batch_size = 8192
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0
+    config.lr = 2 * 1e-3
+    config.initial_pn2kc = 10. / config.N_PN
+    config.initializer_pn2kc = 'uniform'
+
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+
+    hp_ranges = OrderedDict()
+    hp_ranges['n_or_per_orn'] = list(range(1, 10))
+    hp_ranges['data_dir'] = ['n_or_per_orn'+str(n) for n in range(1, 10)]
+    return config, hp_ranges

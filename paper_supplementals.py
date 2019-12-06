@@ -482,3 +482,9 @@ if 'analytical' in experiments:
         numerical_test.main_compare()
         numerical_test.main_plot()
         analyze_simulation_results.main()
+
+if 'control_n_or_per_orn' in experiments:
+    path = './files/control_n_or_per_orn'
+    if TRAIN:
+        train(experiment_controls.control_n_or_per_orn(),
+              path, sequential=True)
