@@ -177,6 +177,7 @@ def _generate_proto_threshold(
         n_class_valence=None,
         n_proto_valence=None,
         has_special_odors=False,
+        n_or_per_orn=1,
         seed=0):
     """Activate all ORNs randomly.
 
@@ -413,6 +414,25 @@ def _generate_proto_threshold(
         plt.hist(train_labels, bins= n_proto, density=True)
         plt.show()
 
+    if n_or_per_orn > 1:
+        # mix_or_per_orn_mode = 'random'
+        mix_or_per_orn_mode = 'circulant'
+        if mix_or_per_orn_mode == 'random':
+            # Randoml mix OR per ORN
+            mask = np.zeros((n_orn, n_orn))
+            mask[:n_or_per_orn] = 1./n_or_per_orn
+            for i in range(n_orn):
+                np.random.shuffle(mask[:, i])  # shuffling in-place
+        else:
+            from scipy.linalg import circulant
+            tmp = np.zeros(n_orn)
+            tmp[:n_or_per_orn] = 1./n_or_per_orn
+            mask = circulant(tmp)
+
+        train_odors = np.dot(train_odors, mask)
+        val_odors = np.dot(val_odors, mask)
+        prototypes = np.dot(prototypes, mask)
+
     return train_odors, train_labels, val_odors, val_labels, prototypes
 
 
@@ -449,6 +469,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         n_class_valence=config.n_class_valence,
         n_proto_valence=config.n_proto_valence,
         has_special_odors=config.has_special_odors,
+        n_or_per_orn=config.n_or_per_orn,
         seed=seed)
 
     if folder_name is None:

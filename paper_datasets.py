@@ -101,6 +101,13 @@ def make_vary_or_datasets():
         task_config.N_ORN = n_or
         task.save_proto(config=task_config, seed=0, folder_name='orn'+str(n_or))
 
+def make_multi_or_datasets():
+    task_config = task.input_ProtoConfig()
+    for n_or_per_orn in range(10):
+        task_config.n_or_per_orn = n_or_per_orn
+        task.save_proto(
+            config=task_config, seed=0,
+            folder_name='n_or_per_orn'+str(n_or_per_orn))
 
 def temp():
     config = configs.input_ProtoConfig()
@@ -122,7 +129,8 @@ if __name__ == '__main__':
     # make_mask_row_dataset()
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
-    make_multi_head_dataset()
+    # make_multi_head_dataset()
+    make_multi_or_datasets()
     # make_vary_or_datasets()
     # temp()
 

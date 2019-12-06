@@ -24,6 +24,7 @@ class input_ProtoConfig(BaseConfig):
         self.N_CLASS = 100
         #TODO: this name should really be N_OR. fix without breaking code
         self.N_ORN = 50
+        self.n_or_per_orn = 1
 
         # label type can be either combinatorial, one_hot, sparse
         self.label_type = 'sparse'
