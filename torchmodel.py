@@ -177,7 +177,7 @@ class FullModel(nn.Module):
 
         self.config = config
 
-        self.layer1 = Layer(config.N_PN, config.N_PN,
+        self.layer1 = Layer(config.N_ORN, config.N_PN,
                             weight_initializer=config.initializer_orn2pn,
                             weight_initial_value=config.initial_orn2pn,
                             sign_constraint=config.sign_constraint_orn2pn,
