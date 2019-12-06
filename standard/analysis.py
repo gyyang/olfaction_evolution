@@ -391,7 +391,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
             for x, y in zip(x_plot, y_plot):
                 if y > ax.get_ylim()[-1]:
                     continue
-                ax.text(x, y, '{:0.2f}'.format(y),
+                ax.text(x, y, '{:0.1f}'.format(y),
                         horizontalalignment='center',
                         verticalalignment='bottom') 
             

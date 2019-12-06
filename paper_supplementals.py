@@ -16,6 +16,7 @@ python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
 import os
 import argparse
 import copy
+import numpy as np
 
 import standard.experiment as se
 import standard.experiment_controls
@@ -165,7 +166,9 @@ if 'control_pn2kc' in experiments:
                 sa.plot_results(
                     path, x_key=xk, y_key=yk, figsize=figsize,
                     ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
-                    logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
+                    logx=logx, ax_args={'ylim': ylim, 'yticks': yticks},
+                    plot_actual_value=True
+                )
 
                 sa.plot_progress(
                     path, select_dict=temp, ykeys=[yk], legend_key=xk,
@@ -243,19 +246,28 @@ if 'control_pn2kc_prune_hyper' in experiments:
             cur_path = path + '_' + str(n_pn)
             default = {'N_KC': 2500,
                        'lr': 2e-3,  # N_PN=50
-                       # 'lr': 1e-3,
                        'initial_pn2kc': 10./n_pn,
                        'kc_prune_threshold': 1./n_pn}
         
             ykeys = ['val_acc', 'K']
             for yk in ykeys:
                 if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-                    ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 30]
+                    if n_pn == 50:
+                        ax_args = {'ylim': [0, 30],
+                                   'yticks': [0, 3, 7, 10, 15, 30]}
+                    else:
+                        ax_args = {'ylim': [0, int(n_pn**0.8)]}
                     # TODO: Need to do this automatically
-                    exclude_dict = {'lr': [5e-3, 1e-2, 2e-2, 5e-2]}
-                    # exclude_dict = None
+                    if n_pn == 50:
+                        exclude_dict = {'lr': [5e-3, 1e-2, 2e-2, 5e-2]}
+                    elif n_pn == 200:
+                        default['lr'] = 1e-3
+                        exclude_dict = {'lr': [2e-3, 5e-3, 1e-2, 2e-2, 5e-2]}
+                    else:
+                        exclude_dict = None
                 elif yk == 'val_acc':
-                    ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+                    ax_args = {'ylim': [0, 1],
+                               'yticks': [0, .25, .5, .75, 1]}
                     exclude_dict = None
         
                 for xk, v in default.items():
@@ -269,12 +281,11 @@ if 'control_pn2kc_prune_hyper' in experiments:
                     sa.plot_results(cur_path, x_key=xk, y_key=yk, figsize=figsize,
                                     ax_box=(0.27, 0.25, 0.65, 0.65),
                                     select_dict=temp, logx=logx,
-                                    ax_args={'ylim': ylim, 'yticks': yticks},
-                                    plot_actual_value=True)
+                                    ax_args=ax_args, plot_actual_value=True)
         
                     sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk],
                                      legend_key=xk, exclude_dict=exclude_dict,
-                                     ax_args={'ylim': ylim, 'yticks': yticks})
+                                     ax_args=ax_args)
             #
             res = standard.analysis_pn2kc_peter.do_everything(
                     cur_path, filter_peaks=False, redo=True, range=.75)
