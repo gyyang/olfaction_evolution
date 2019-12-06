@@ -405,5 +405,6 @@ def control_n_or_per_orn():
 
     hp_ranges = OrderedDict()
     hp_ranges['n_or_per_orn'] = list(range(1, 10))
-    hp_ranges['data_dir'] = ['n_or_per_orn'+str(n) for n in range(1, 10)]
+    hp_ranges['data_dir'] = ['./datasets/proto/n_or_per_orn'+str(n)
+                             for n in range(1, 10)]
     return config, hp_ranges
