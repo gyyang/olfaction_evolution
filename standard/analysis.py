@@ -325,9 +325,11 @@ def plot_activity(save_path):
     plt.show()
 
 
-def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = False, logy = False,
+def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
+                 logx=False, logy=False,
                  figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
-                 ax_args={}, plot_args={}, sort = True, res = None, string =''):
+                 ax_args={}, plot_args={}, sort=True, res=None, string='',
+                 plot_actual_value=False):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -385,7 +387,14 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None, logx = Fal
         if logy:
             y_plot = np.log(y_plot)
         ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
-
+        if plot_actual_value:
+            for x, y in zip(x_plot, y_plot):
+                if y > ax.get_ylim()[-1]:
+                    continue
+                ax.text(x, y, '{:0.2f}'.format(y),
+                        horizontalalignment='center',
+                        verticalalignment='bottom') 
+            
     if 'xticks' in ax_args.keys():
         xticks = ax_args['xticks']
     elif x_key in plot_dict.keys():

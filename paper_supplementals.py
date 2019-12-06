@@ -35,7 +35,7 @@ parser.add_argument('-test', '--testing', help='For debugging', action='store_tr
 parser.add_argument('-e', '--experiment', nargs='+', help='Experiments', default='core')
 parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCHPATH)
 parser.add_argument('-c', '--cluster', help='Use cluster?', action='store_true')
-parser.add_argument('-p','--pn', nargs='+', help='N_PN', default=[50])
+parser.add_argument('-p','--pn', type=int, nargs='+', help='N_PN', default=[50])
 parser.add_argument('--torch', help='Use torch', action='store_true')
 args = parser.parse_args()
 
@@ -241,33 +241,48 @@ if 'control_pn2kc_prune_hyper' in experiments:
     if ANALYZE:
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
-            default = {'N_KC': 2500, 'lr': 1e-3, 'initial_pn2kc':4./n_pn, 'kc_prune_threshold': 1./n_pn}
+            default = {'N_KC': 2500,
+                       'lr': 2e-3,  # N_PN=50
+                       # 'lr': 1e-3,
+                       'initial_pn2kc': 10./n_pn,
+                       'kc_prune_threshold': 1./n_pn}
+        
             ykeys = ['val_acc', 'K']
             for yk in ykeys:
                 if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
                     ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 30]
-                    # exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
-                    exclude_dict = None
+                    # TODO: Need to do this automatically
+                    exclude_dict = {'lr': [5e-3, 1e-2, 2e-2, 5e-2]}
+                    # exclude_dict = None
                 elif yk == 'val_acc':
                     ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
                     exclude_dict = None
-
+        
                 for xk, v in default.items():
                     temp = copy.deepcopy(default)
                     temp.pop(xk)
+                    if xk == 'lr':
+                        figsize = (4.5, 1.5)
+                    else:
+                        figsize = (1.5, 1.5)
                     logx = True
-                    # sa.plot_results(cur_path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                    #                 select_dict=temp,
-                    #                 logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
-                    #
-                    # sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict,
-                    #                  ax_args={'ylim': ylim, 'yticks': yticks})
+                    sa.plot_results(cur_path, x_key=xk, y_key=yk, figsize=figsize,
+                                    ax_box=(0.27, 0.25, 0.65, 0.65),
+                                    select_dict=temp, logx=logx,
+                                    ax_args={'ylim': ylim, 'yticks': yticks},
+                                    plot_actual_value=True)
+        
+                    sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk],
+                                     legend_key=xk, exclude_dict=exclude_dict,
+                                     ax_args={'ylim': ylim, 'yticks': yticks})
             #
-            res = standard.analysis_pn2kc_peter.do_everything(cur_path, filter_peaks=True, redo=True, range=.75)
+            res = standard.analysis_pn2kc_peter.do_everything(
+                    cur_path, filter_peaks=False, redo=True, range=.75)
             for xk, v in default.items():
                 temp = copy.deepcopy(default)
                 temp.pop(xk)
-                sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_', legend_key=xk, log=res,
+                sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_',
+                           ykey='lin_hist_', legend_key=xk, log=res,
                            ax_args={'ylim': [0, 500]})
 
 if 'control_vary_kc' in experiments:

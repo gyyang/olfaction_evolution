@@ -296,7 +296,8 @@ nicename_dict = {
         'K_inferred': 'K',
         'K': 'fixed threshold K',
         'lin_hist_': 'Number',
-        'lin_bins_': 'PN-KC Weight'
+        'lin_bins_': 'PN-KC Weight',
+        'kc_prune_threshold': 'KC prune threshold'
         }
 
 
