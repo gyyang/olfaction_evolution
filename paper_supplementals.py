@@ -236,41 +236,23 @@ if 'control_pn2kc_prune_hyper' in experiments:
         
             ykeys = ['val_acc', 'K']
             for yk in ykeys:
+                exclude_dict = None
                 if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-                    if n_pn == 50:
-                        ax_args = {'ylim': [0, 30],
-                                   'yticks': [0, 3, 7, 10, 15, 30]}
-                    else:
-                        ax_args = {'ylim': [0, int(n_pn**0.8)]}
                     # TODO: Need to do this automatically
                     if n_pn == 50:
                         exclude_dict = {'lr': [5e-3, 1e-2, 2e-2, 5e-2]}
-                    elif n_pn == 200:
+                    if n_pn == 200:
                         default['lr'] = 1e-3
                         exclude_dict = {'lr': [2e-3, 5e-3, 1e-2, 2e-2, 5e-2]}
-                    else:
-                        exclude_dict = None
-                elif yk == 'val_acc':
-                    ax_args = {'ylim': [0, 1],
-                               'yticks': [0, .25, .5, .75, 1]}
-                    exclude_dict = None
         
                 for xk, v in default.items():
                     temp = copy.deepcopy(default)
                     temp.pop(xk)
-                    if xk == 'lr':
-                        figsize = (4.5, 1.5)
-                    else:
-                        figsize = (1.5, 1.5)
-                    logx = True
-                    sa.plot_results(cur_path, x_key=xk, y_key=yk, figsize=figsize,
-                                    ax_box=(0.27, 0.25, 0.65, 0.65),
-                                    select_dict=temp, logx=logx,
-                                    ax_args=ax_args, plot_actual_value=True)
+                    sa.plot_results(cur_path, x_key=xk, y_key=yk,
+                                    select_dict=temp, plot_actual_value=True)
         
                     sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk],
-                                     legend_key=xk, exclude_dict=exclude_dict,
-                                     ax_args=ax_args)
+                                     legend_key=xk, exclude_dict=exclude_dict)
             #
             res = standard.analysis_pn2kc_peter.do_everything(
                     cur_path, filter_peaks=False, redo=True, range=.75)

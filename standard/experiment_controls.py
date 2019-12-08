@@ -125,7 +125,7 @@ def control_pn2kc_inhibition():
 def control_pn2kc_prune_boolean(n_pn=50):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 100
+    config.max_epoch = 200
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
@@ -137,8 +137,17 @@ def control_pn2kc_prune_boolean(n_pn=50):
     config.train_pn2kc = True
     config.pn_norm_pre = 'batch_norm'
     config.kc_prune_weak_weights = True
-    config.kc_prune_threshold = 1/n_pn
-    config.initial_pn2kc = 4/n_pn
+    config.kc_prune_threshold = 1./n_pn
+
+    # New settings
+    config.batch_size = 8192  # Much bigger batch size
+    config.initial_pn2kc = 10. / config.N_PN
+    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
+    # Heuristics
+    if n_pn > 100:
+        config.lr = 1e-3
+    else:
+        config.lr = 2e-3
 
     hp_ranges = OrderedDict()
     hp_ranges['kc_prune_weak_weights'] = [False, True]

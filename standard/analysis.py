@@ -23,6 +23,23 @@ mpl.rcParams['font.family'] = 'arial'
 
 figpath = os.path.join(rootpath, 'figures')
 
+
+def _get_ax_args(xkey, ykey, n_pn=50):
+    if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+        if n_pn == 50:
+            ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
+        else:
+            return {'ylim': [0, int(0.5*n_pn ** 0.8)]}
+    elif ykey == 'val_acc':
+        ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+    elif ykey == 'train_logloss':
+        ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
+    else:
+        ylim, yticks = None, None
+    ax_args = {'ylim': ylim, 'yticks': yticks}
+    return ax_args
+
+
 def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = {}, log=None):
     def _plot_progress(xkey, ykey):
         figsize = (2.5, 2)
@@ -99,15 +116,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
     def _plot_progress(xkey, ykey):
         if ax_args is None:
-            if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-                ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
-            elif ykey == 'val_acc':
-                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-            elif ykey == 'train_logloss':
-                ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
-            else:
-                ylim, yticks = None, None
-            ax_args_ = {'ylim': ylim, 'yticks': yticks}
+            ax_args_ = _get_ax_args(xkey, ykey)
         else:
             ax_args_ = ax_args
 
@@ -377,18 +386,10 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
 
     # Default ax_args and other values, based on x and y keys
     if ax_args is None:
-        if y_key in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-            ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
-        elif y_key == 'val_acc':
-            ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-        elif y_key == 'train_logloss':
-            ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
-        else:
-            ylim, yticks = None, None
-        ax_args = {'ylim': ylim, 'yticks': yticks}
+        ax_args = _get_ax_args(x_key, y_key)
 
     if logx is None:
-        logx = x_key == 'lr'
+        logx = x_key in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold']
 
     if figsize is None:
         if x_key == 'lr':
