@@ -456,7 +456,12 @@ if 'control_n_or_per_orn' in experiments:
         train(experiment_controls.control_n_or_per_orn(),
               path, sequential=True)
     if ANALYZE:
-        ykeys = ['K_inferred']
+        xkey = 'n_or_per_orn'
+        ykeys = ['K_inferred', 'val_acc', 'glo_score']
         for ykey in ykeys:
-            sa.plot_results(path, x_key='n_or_per_orn', y_key=ykey,
-                            figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65))
+            sa.plot_results(path, x_key=xkey, y_key=ykey)
+
+        res = standard.analysis_pn2kc_peter.do_everything(
+            path, filter_peaks=False, redo=True)
+        sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey,
+                   log=res, ax_args={'ylim': [0, 500]})
