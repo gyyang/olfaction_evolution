@@ -41,8 +41,10 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = 
 
         if legend_key is not None:
             legends = log[legend_key]
+            if legend_key == 'lr':
+                legends = [nicename(l, 'lr') for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
-            plt.title(nicename(legend_key))
+            ax.set_title(nicename(legend_key), fontsize=7)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -116,8 +118,10 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         if legend_key is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
             legends = log[legend_key]
+            if legend_key == 'lr':
+                legends = [nicename(l, 'lr') for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
-            plt.title(nicename(legend_key))
+            plt.title(nicename(legend_key), fontsize=7)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -370,9 +374,13 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
                 x_plot = np.log(x_plot)
             if logy:
                 y_plot = np.log(y_plot)
-            label = str(x).rsplit('/',1)[-1]
+            if loop_key == 'lr':
+                label = nicename(x, 'lr')
+            else:
+                label = nicename(str(x).rsplit('/', 1)[-1])
+
             # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
-            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=nicename(label),
+            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label,
                     **plot_args)
     else:
         x_plot = res[x_key]
@@ -391,7 +399,11 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
             for x, y in zip(x_plot, y_plot):
                 if y > ax.get_ylim()[-1]:
                     continue
-                ax.text(x, y, '{:0.1f}'.format(y),
+                if y_key == 'val_acc':
+                    ytext = '{:0.2f}'.format(y)
+                else:
+                    ytext = '{:0.1f}'.format(y)
+                ax.text(x, y, ytext,
                         horizontalalignment='center',
                         verticalalignment='bottom') 
             
@@ -410,8 +422,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         yticks = np.unique(res[y_key])
 
     if x_key == 'lr':
-        from numpy import format_float_scientific
-        xticklabels = [format_float_scientific(x, precision=0, exp_digits=1)
+        xticklabels = [np.format_float_scientific(x, precision=0, exp_digits=1)
                        for x in xticks]
     else:
         xticklabels = [nicename(x) for x in xticks]

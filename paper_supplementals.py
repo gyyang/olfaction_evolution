@@ -160,12 +160,14 @@ if 'control_pn2kc' in experiments:
                 if xk == 'lr':
                     logx = True
                     figsize = (4.5, 1.5)
+                    ax_box = (0.2, 0.25, 0.75, 0.65)
                 else:
                     logx = False
-                    figsize = (1.5, 1.5)
+                    figsize = (2.0, 1.5)
+                    ax_box = (0.3, 0.25, 0.6, 0.65)
                 sa.plot_results(
                     path, x_key=xk, y_key=yk, figsize=figsize,
-                    ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
+                    ax_box=ax_box, select_dict=temp,
                     logx=logx, ax_args={'ylim': ylim, 'yticks': yticks},
                     plot_actual_value=True
                 )

@@ -302,8 +302,10 @@ nicename_dict = {
         }
 
 
-def nicename(name):
+def nicename(name, mode='dict'):
     """Return nice name for publishing."""
+    if mode == 'lr':
+        return np.format_float_scientific(name, precision=0, exp_digits=1)
     try:
         return nicename_dict[name]
     except KeyError:
