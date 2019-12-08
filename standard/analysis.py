@@ -25,7 +25,7 @@ figpath = os.path.join(rootpath, 'figures')
 
 
 def _get_ax_args(xkey, ykey, n_pn=50):
-    if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+    if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity', 'K_smart']:
         if n_pn == 50:
             ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
         else:
@@ -40,12 +40,17 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     return ax_args
 
 
-def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = {}, log=None):
+def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=None, log=None):
     def _plot_progress(xkey, ykey):
+        ax_args_ = {}
+        if ax_args is None:
+            if ykey == 'lin_hist_':
+                ax_args_ = {'ylim': [0, 500]}
+
         figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
-        ax = fig.add_axes(rect, **ax_args)
+        ax = fig.add_axes(rect, **ax_args_)
 
         ys = log[ykey]
         xs = log[xkey]
@@ -116,7 +121,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
     def _plot_progress(xkey, ykey):
         if ax_args is None:
-            ax_args_ = _get_ax_args(xkey, ykey)
+            ax_args_ = _get_ax_args(xkey, ykey, n_pn=log['N_PN'][0])
         else:
             ax_args_ = ax_args
 
@@ -386,7 +391,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
 
     # Default ax_args and other values, based on x and y keys
     if ax_args is None:
-        ax_args = _get_ax_args(x_key, y_key)
+        ax_args = _get_ax_args(x_key, y_key, n_pn=res['N_PN'][0])
 
     if logx is None:
         logx = x_key in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold']

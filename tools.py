@@ -236,7 +236,8 @@ def load_all_results(rootpath, argLast=True, ix=None,
         
         if exclude_early_models and n_actual_epoch < config.max_epoch:
             continue
-        
+
+        # Add logger values
         for key, val in log.items():
             if len(val) == n_actual_epoch:
                 if argLast:
@@ -247,6 +248,11 @@ def load_all_results(rootpath, argLast=True, ix=None,
                     res[key].append(val)
             else:
                 res[key].append(val)
+
+        k_smart_key = 'K' if config.kc_prune_weak_weights else 'K_inferred'
+        res['K_smart'].append(log[k_smart_key])
+
+        # Adding configuration values
         for k in dir(config):
             if k == 'coding_level':  # name conflict with log entry
                 res['coding_level_set'].append(config.coding_level)
@@ -299,7 +305,9 @@ nicename_dict = {
         'lin_hist_': 'Number',
         'lin_bins_': 'PN-KC Weight',
         'kc_prune_threshold': 'KC prune threshold',
-        'n_or_per_orn': 'Number of ORs per ORN'
+        'n_or_per_orn': 'Number of ORs per ORN',
+        'K_smart': 'K',
+        'kc_prune_weak_weights': 'Prune PN-KC weights'
         }
 
 
