@@ -21,6 +21,7 @@ def control_nonnegative():
     hp_ranges['sign_constraint_orn2pn'] = [True, False]
     return config, hp_ranges
 
+
 def control_orn2pn():
     '''
     '''
@@ -29,13 +30,19 @@ def control_orn2pn():
     config.max_epoch = 100
     config.pn_norm_pre = 'batch_norm'
 
+    # New settings
+    config.batch_size = 8192  # Much bigger batch size
+    config.initial_pn2kc = 10. / config.N_PN
+    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
+    config.lr = 2e-3
+
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 10, 30]
     hp_ranges['pn_norm_pre'] = ['None', 'batch_norm']
     hp_ranges['ORN_NOISE_STD']= [0, .1, .2]
     hp_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
-    hp_ranges['lr'] = [3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5]
+    hp_ranges['lr'] = [1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
     return config, hp_ranges
 
 
