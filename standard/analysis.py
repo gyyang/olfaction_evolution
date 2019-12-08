@@ -76,7 +76,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args = 
     _plot_progress(xkey, ykey)
 
 
-def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
+def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
                   legend_key=None, epoch_range=None, ykeys=None, ax_args=None):
     """Plot progress through training.
         Fixed to allow for multiple plots
@@ -96,13 +96,25 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict = None,
         _, ixs = np.unique(values, return_index=True)
         for k, v in log.items():
             log[k] = log[k][ixs]
-    if ax_args is None:
-        ax_args = {}
+
     def _plot_progress(xkey, ykey):
+        if ax_args is None:
+            if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+                ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
+            elif ykey == 'val_acc':
+                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+            elif ykey == 'train_logloss':
+                ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
+            else:
+                ylim, yticks = None, None
+            ax_args_ = {'ylim': ylim, 'yticks': yticks}
+        else:
+            ax_args_ = ax_args
+
         figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
-        ax = fig.add_axes(rect, **ax_args)
+        ax = fig.add_axes(rect, **ax_args_)
 
         ys = log[ykey]
         xs = log[xkey]
@@ -330,9 +342,9 @@ def plot_activity(save_path):
 
 
 def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
-                 logx=False, logy=False,
-                 figsize = (2,2), ax_box = (0.25, 0.2, 0.65, 0.65),
-                 ax_args={}, plot_args={}, sort=True, res=None, string='',
+                 logx=None, logy=False,
+                 figsize=None, ax_box=None,
+                 ax_args=None, plot_args={}, sort=True, res=None, string='',
                  plot_actual_value=False):
     """Plot results for varying parameters experiments.
 
@@ -363,7 +375,34 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         for key, val in res.items():
             res[key] = val[ind_sort]
 
-    fig = plt.figure(figsize= figsize)
+    # Default ax_args and other values, based on x and y keys
+    if ax_args is None:
+        if y_key in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+            ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
+        elif y_key == 'val_acc':
+            ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+        elif y_key == 'train_logloss':
+            ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
+        else:
+            ylim, yticks = None, None
+        ax_args = {'ylim': ylim, 'yticks': yticks}
+
+    if logx is None:
+        logx = x_key == 'lr'
+
+    if figsize is None:
+        if x_key == 'lr':
+            figsize = (4.5, 1.5)
+        else:
+            figsize = (2.0, 1.5)
+
+    if ax_box is None:
+        if x_key == 'lr':
+            ax_box = (0.2, 0.25, 0.75, 0.65)
+        else:
+            ax_box = (0.3, 0.25, 0.6, 0.65)
+
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(ax_box, **ax_args)
     if loop_key:
         for x in np.unique(res[loop_key]):

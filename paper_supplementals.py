@@ -143,39 +143,22 @@ if 'control_pn2kc' in experiments:
         ykeys = ['val_acc', 'K_inferred']
 
         for yk in ykeys:
+            exclude_dict = None
             if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-                ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
                 exclude_dict = {'lr': [5e-2, 2e-2, 1e-2]}
-                # exclude_dict = None
-            elif yk == 'val_acc':
-                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-                exclude_dict = None
-            elif yk == 'train_logloss':
-                ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
-                exclude_dict = None
 
             for xk, v in default.items():
                 temp = copy.deepcopy(default)
                 temp.pop(xk)
-                if xk == 'lr':
-                    logx = True
-                    figsize = (4.5, 1.5)
-                    ax_box = (0.2, 0.25, 0.75, 0.65)
-                else:
-                    logx = False
-                    figsize = (2.0, 1.5)
-                    ax_box = (0.3, 0.25, 0.6, 0.65)
+
                 sa.plot_results(
-                    path, x_key=xk, y_key=yk, figsize=figsize,
-                    ax_box=ax_box, select_dict=temp,
-                    logx=logx, ax_args={'ylim': ylim, 'yticks': yticks},
+                    path, x_key=xk, y_key=yk, select_dict=temp,
                     plot_actual_value=True
                 )
 
                 sa.plot_progress(
                     path, select_dict=temp, ykeys=[yk], legend_key=xk,
-                    exclude_dict=exclude_dict,
-                    ax_args={'ylim': ylim, 'yticks': yticks})
+                    exclude_dict=exclude_dict)
         #
         res = standard.analysis_pn2kc_peter.do_everything(
             path, filter_peaks=False, redo=True)
