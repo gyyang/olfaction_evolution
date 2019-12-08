@@ -298,7 +298,8 @@ nicename_dict = {
         'K': 'fixed threshold K',
         'lin_hist_': 'Number',
         'lin_bins_': 'PN-KC Weight',
-        'kc_prune_threshold': 'KC prune threshold'
+        'kc_prune_threshold': 'KC prune threshold',
+        'n_or_per_orn': 'Number of ORs per ORN'
         }
 
 

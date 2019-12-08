@@ -30,12 +30,12 @@ def _get_ax_args(xkey, ykey, n_pn=50):
             ylim, yticks = [0, 20], [0, 3, 7, 10, 15, 20]
         else:
             return {'ylim': [0, int(0.5*n_pn ** 0.8)]}
-    elif ykey == 'val_acc':
-        ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+    elif ykey in ['val_acc', 'glo_score']:
+        ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
     elif ykey == 'train_logloss':
         ylim, yticks = [-2, 2], [-2, -1, 0, 1, 2]
     else:
-        ylim, yticks = None, None
+        return {}
     ax_args = {'ylim': ylim, 'yticks': yticks}
     return ax_args
 
