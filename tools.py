@@ -157,7 +157,8 @@ def varying_config_sequential(experiment, i):
     Returns:
         config: new configuration
     """
-    config, hp_ranges = experiment
+    config_, hp_ranges = experiment
+    config = deepcopy(config_)
 
     # Unravel the input index
     keys = hp_ranges.keys()
