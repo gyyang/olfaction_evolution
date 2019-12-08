@@ -168,7 +168,7 @@ if 'control_pn2kc' in experiments:
             temp.pop(xk)
             sa.plot_xy(
                 path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_',
-                legend_key=xk, log=res, ax_args={'ylim': [0, 500]})
+                legend_key=xk, log=res)
 
 if 'control_pn2kc_inhibition' in experiments:
     path = './files/control_pn2kc_inhibition'
@@ -191,8 +191,7 @@ if 'control_pn2kc_inhibition' in experiments:
             sa.plot_progress(path, ykeys=[yk], legend_key=xkey, ax_args={'ylim': ylim, 'yticks': yticks})
         #
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
-        sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
-                   ax_args={'ylim':[0, 500]})
+        sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res)
 
 if 'control_pn2kc_prune_boolean' in experiments:
     n_pns = [int(x) for x in args.pn]
@@ -204,19 +203,16 @@ if 'control_pn2kc_prune_boolean' in experiments:
                   save_path=cur_path)
     if ANALYZE:
         xkey = 'kc_prune_weak_weights'
-        ykeys = ['val_acc', 'K_inferred','K']
+        ykeys = ['val_acc', 'K_smart']
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
             for yk in ykeys:
-                if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-                    ylim, yticks = [0, 15], [0, 3, 7, 10, 15]
-                elif yk == 'val_acc':
-                    ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-                sa.plot_progress(cur_path, ykeys=[yk], legend_key=xkey, ax_args={'ylim': ylim, 'yticks': yticks})
+                sa.plot_progress(cur_path, ykeys=[yk], legend_key=xkey)
 
-            res = standard.analysis_pn2kc_peter.do_everything(cur_path, filter_peaks=False, redo=True, range=1)
-            sa.plot_xy(cur_path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
-                       ax_args={'ylim': [0, 500]})
+            res = standard.analysis_pn2kc_peter.do_everything(
+                cur_path, filter_peaks=False, redo=True, range=1)
+            sa.plot_xy(cur_path, xkey='lin_bins_', ykey='lin_hist_',
+                       legend_key=xkey, log=res)
 
 if 'control_pn2kc_prune_hyper' in experiments:
     n_pns = [int(x) for x in args.pn]
@@ -260,8 +256,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
                 temp = copy.deepcopy(default)
                 temp.pop(xk)
                 sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_',
-                           ykey='lin_hist_', legend_key=xk, log=res,
-                           ax_args={'ylim': [0, 500]})
+                           ykey='lin_hist_', legend_key=xk, log=res)
 
 if 'control_vary_kc' in experiments:
     path = './files/control_vary_kc'
