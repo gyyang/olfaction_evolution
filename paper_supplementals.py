@@ -488,3 +488,8 @@ if 'control_n_or_per_orn' in experiments:
     if TRAIN:
         train(experiment_controls.control_n_or_per_orn(),
               path, sequential=True)
+    if ANALYZE:
+        ykeys = ['K_inferred']
+        for ykey in ykeys:
+            sa.plot_results(path, x_key='n_or_per_orn', y_key=ykey,
+                            figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65))
