@@ -177,7 +177,9 @@ class FullModel(nn.Module):
 
         self.config = config
 
-        self.layer1 = Layer(config.N_ORN, config.N_PN,
+        n_orn = config.N_ORN * config.N_ORN_DUPLICATION
+
+        self.layer1 = Layer(n_orn, config.N_PN,
                             weight_initializer=config.initializer_orn2pn,
                             weight_initial_value=config.initial_orn2pn,
                             sign_constraint=config.sign_constraint_orn2pn,
@@ -211,6 +213,12 @@ class FullModel(nn.Module):
         self.loss = nn.CrossEntropyLoss()
 
     def forward(self, x, target):
+        # Process ORNs
+        if self.config.N_ORN_DUPLICATION > 1:
+            x = x.repeat(1, self.config.N_ORN_DUPLICATION)
+        if self.config.ORN_NOISE_STD > 0:
+            x += torch.randn_like(x) * self.config.ORN_NOISE_STD
+
         act1 = self.layer1(x)
         act2 = self.layer2(act1)
         y = self.layer3(act2)
