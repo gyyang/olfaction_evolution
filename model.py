@@ -718,13 +718,13 @@ class FullModel(Model):
         b_glo = weights['b_glo']
 
         with tf.variable_scope('layer2', reuse=tf.AUTO_REUSE):
-            if 'w_glo_meansub' in dir(config) and config.w_glo_meansub:
+            if 'kc_ffinh' in dir(config) and config.kc_ffinh:
                 # w_glo_mean = tf.reduce_mean(w_glo, axis=0, keepdims=True)
                 w_glo_mean = tf.reduce_mean(w_glo)
                 # w_glo_mean = tf.stop_gradient(tf.reduce_mean(w_glo))
-                w_glo_meansubtract = \
-                    w_glo - w_glo_mean * config.w_glo_meansub_coeff
-                kc_in = tf.matmul(pn, w_glo_meansubtract) + b_glo
+                kc_ffinhtract = \
+                    w_glo - w_glo_mean * config.kc_ffinh_coeff
+                kc_in = tf.matmul(pn, kc_ffinhtract) + b_glo
             else:
                 kc_in = tf.matmul(pn, w_glo) + b_glo
             kc_in = _normalize(kc_in, config.kc_norm_pre, training)

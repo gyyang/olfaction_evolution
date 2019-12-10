@@ -74,6 +74,8 @@ class Layer(nn.Module):
                  dropout_rate=None,
                  prune_weak_weights=False,
                  prune_threshold=None,
+                 feedforward_inh=False,
+                 feedforward_inh_coeff=0,
                  ):
         super(Layer, self).__init__()
         self.in_features = in_features
@@ -109,6 +111,9 @@ class Layer(nn.Module):
 
         # self.w_dropout = nn.Dropout(p=0.1)
         self.w_dropout = nn.Identity()
+
+        self.feedforward_inh = feedforward_inh
+        self.feedforward_inh_coeff = feedforward_inh_coeff
 
     def reset_parameters(self):
         if self.sign_constraint:
@@ -155,7 +160,12 @@ class Layer(nn.Module):
         # Random perturbation of weights
         # pre_act = F.linear(input, self.effective_weight, self.bias)
         # weight = self.w_dropout(self.effective_weight)
-        pre_act = F.linear(input, self.effective_weight, self.bias)
+        if self.feedforward_inh:
+            weight = (self.effective_weight - self.feedforward_inh_coeff *
+                      torch.mean(self.effective_weight))
+        else:
+            weight = self.effective_weight
+        pre_act = F.linear(input, weight, self.bias)
         pre_act_normalized = self.pre_norm(pre_act)
         output = self.activation(pre_act_normalized)
         output_normalized = self.post_norm(output)
@@ -203,7 +213,9 @@ class FullModel(nn.Module):
                             dropout=config.kc_dropout,
                             dropout_rate=config.kc_dropout_rate,
                             prune_weak_weights=config.kc_prune_weak_weights,
-                            prune_threshold=config.kc_prune_threshold)
+                            prune_threshold=config.kc_prune_threshold,
+                            feedforward_inh=config.kc_ffinh,
+                            feedforward_inh_coeff=config.kc_ffinh_coeff)
 
         if not config.train_kc_bias:
             self.layer2.bias.requires_grad = False

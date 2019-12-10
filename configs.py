@@ -214,8 +214,13 @@ class FullConfig(BaseConfig):
         # coding level on kcs
         self.coding_level = None
 
+        # Whether to prune weak KC weights
         self.kc_prune_weak_weights = False
         self.kc_prune_threshold = 0.02
+
+        # Whether to do feedforward inhibition on KC
+        self.kc_ffinh = False
+        self.kc_ffinh_coeff = 0
 
         #separate optimizer
         self.separate_optimizer = False
