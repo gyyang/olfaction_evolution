@@ -130,7 +130,7 @@ def control_pn2kc_inhibition():
     cs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
           0.8, 0.9, 1.0]
     hp_ranges['kc_ffinh_coeff'] = cs
-    hp_ranges['kc_bias'] = [-1*(1-c) for c in cs]
+    hp_ranges['kc_bias'] = [-1*(1-2*c) for c in cs]
     return config, hp_ranges
 
 def control_pn2kc_prune_boolean(n_pn=50):
