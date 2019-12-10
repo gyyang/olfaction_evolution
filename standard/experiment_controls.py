@@ -110,11 +110,16 @@ def control_pn2kc_inhibition():
     config.N_ORN_DUPLICATION = 1
     # config.direct_glo = True
     config.skip_orn2pn = True
-    # config.pn_norm_pre = 'batch_norm'
+    config.pn_norm_pre = 'batch_norm'
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
     config.kc_ffinh = True
+
+    # New settings
+    config.batch_size = 8192  # Much bigger batch size
+    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
+    config.lr = 2e-3
 
     config.kc_prune_weak_weights = True
     config.initial_pn2kc = 5./config.N_PN
