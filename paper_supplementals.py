@@ -172,7 +172,7 @@ if 'control_pn2kc_inhibition' in experiments:
     if TRAIN:
         train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True)
     if ANALYZE:
-        xkey = 'w_glo_meansub_coeff'
+        xkey = 'kc_ffinh_coeff'
         ykeys = ['val_acc', 'K_inferred', 'K']
         xticks = [0, 0.5, 1.0]
         for yk in ykeys:
@@ -421,7 +421,7 @@ if 'meansub' in experiments:
     # Subtracting mean from activity
     path = './files/meansub'
     if TRAIN:
-        train(standard.experiment_controls.vary_w_glo_meansub_coeff(is_test), path, sequential=True)
+        train(standard.experiment_controls.vary_kc_ffinh_coeff(is_test), path, sequential=True)
     if ANALYZE:
         pass
 

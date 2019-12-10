@@ -101,11 +101,10 @@ def control_pn2kc():
     # hp_ranges['apl'] = [False, True]
     return config, hp_ranges
 
-
 def control_pn2kc_inhibition():
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
+    config.max_epoch = 200
 
     # config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
@@ -115,7 +114,7 @@ def control_pn2kc_inhibition():
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
-    config.w_glo_meansub = True
+    config.kc_ffinh = True
 
     config.kc_prune_weak_weights = True
     config.initial_pn2kc = 5./config.N_PN
@@ -125,8 +124,8 @@ def control_pn2kc_inhibition():
     hp_ranges = OrderedDict()
     cs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
           0.8, 0.9, 1.0]
-    hp_ranges['w_glo_meansub_coeff'] = cs
-    hp_ranges['kc_bias'] = [-1 + 2 * c for c in cs]
+    hp_ranges['kc_ffinh_coeff'] = cs
+    hp_ranges['kc_bias'] = [-1*(1-c) for c in cs]
     return config, hp_ranges
 
 def control_pn2kc_prune_boolean(n_pn=50):
@@ -283,7 +282,7 @@ def vary_apl(argTest=False):
     return config, hp_ranges
 
 
-def vary_w_glo_meansub_coeff(argTest=False):
+def vary_kc_ffinh_coeff(argTest=False):
     """Vary APL."""
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -295,14 +294,14 @@ def vary_w_glo_meansub_coeff(argTest=False):
     config.sparse_pn2kc = False
     config.train_pn2kc = True
     config.skip_orn2pn = True
-    config.w_glo_meansub = True
+    config.kc_ffinh = True
     config.kc_bias = 0.5
 
     config.save_every_epoch = True
 
     hp_ranges = OrderedDict()
     cs = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
-    hp_ranges['w_glo_meansub_coeff'] = cs
+    hp_ranges['kc_ffinh_coeff'] = cs
     hp_ranges['kc_bias'] = [-1 + 2*c for c in cs]
     if argTest:
         config.max_epoch = testing_epochs
