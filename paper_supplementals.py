@@ -112,12 +112,12 @@ if 'control_orn2pn' in experiments:
                    'lr':2e-3}
         ykeys = ['glo_score', 'val_acc']
 
-        for yk in ykeys:
-            for xk, v in default.items():
-                temp = copy.deepcopy(default)
-                temp.pop(xk)
-                sa.plot_results(path, x_key=xk, y_key=yk, select_dict=temp)
-                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk)
+        for xk, v in default.items():
+            temp = copy.deepcopy(default)
+            temp.pop(xk)
+            sa.plot_results(path, x_key=xk, y_key=ykeys, select_dict=temp,
+                            plot_actual_value=True)
+            sa.plot_progress(path, select_dict=temp, ykeys=ykeys, legend_key=xk)
 
 if 'control_pn2kc' in experiments:
     path = './files/control_pn2kc'
@@ -203,8 +203,7 @@ if 'control_pn2kc_prune_boolean' in experiments:
         ykeys = ['val_acc', 'K_smart']
         for n_pn in n_pns:
             cur_path = path + '_' + str(n_pn)
-            for yk in ykeys:
-                sa.plot_progress(cur_path, ykeys=[yk], legend_key=xkey)
+            sa.plot_progress(cur_path, ykeys=ykeys, legend_key=xkey)
 
             res = standard.analysis_pn2kc_peter.do_everything(
                 cur_path, filter_peaks=False, redo=True, range=1)

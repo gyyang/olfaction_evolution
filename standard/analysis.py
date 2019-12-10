@@ -174,13 +174,18 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
 
     if ykeys is None:
-        ykeys = ['val_logloss', 'train_logloss', 'val_loss', 'train_loss', 'val_acc', 'glo_score']
+        ykeys = ['val_logloss', 'train_logloss', 'val_loss',
+                 'train_loss', 'val_acc', 'glo_score']
+
+    if isinstance(ykeys, str):
+        ykeys = [ykeys]
 
     for plot_var in ykeys:
         _plot_progress('epoch', plot_var)
 
 
-def plot_weights(path, var_name ='w_orn', sort_axis=1, average=False, vlim = None, positive_cmap = True):
+def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
+                 vlim=None, positive_cmap=True):
     """Plot weights.
 
     Currently this plots OR2ORN, ORN2PN, and OR2PN
@@ -383,19 +388,15 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         for k, v in res.items():
             res[k] = res[k][ixs]
 
-
     # Sort by x_key
     if sort:
         ind_sort = np.argsort(res[x_key])
         for key, val in res.items():
             res[key] = val[ind_sort]
 
-    # Default ax_args and other values, based on x and y keys
-    if ax_args is None:
-        ax_args = _get_ax_args(x_key, y_key, n_pn=res['N_PN'][0])
-
     if logx is None:
-        logx = x_key in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold']
+        logx = x_key in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold',
+                         'N_ORN_DUPLICATION']
 
     if figsize is None:
         if x_key == 'lr':
@@ -409,116 +410,127 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         else:
             ax_box = (0.3, 0.25, 0.6, 0.65)
 
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes(ax_box, **ax_args)
-    if loop_key:
-        for x in np.unique(res[loop_key]):
-            ind = res[loop_key] == x
-            x_plot = res[x_key][ind]
-            y_plot = res[y_key][ind]
+    def _plot_results(y_key):
+        # Default ax_args and other values, based on x and y keys
+        if ax_args is None:
+            ax_args_ = _get_ax_args(x_key, y_key, n_pn=res['N_PN'][0])
+        else:
+            ax_args_ = ax_args
+
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_axes(ax_box, **ax_args_)
+        if loop_key:
+            for x in np.unique(res[loop_key]):
+                ind = res[loop_key] == x
+                x_plot = res[x_key][ind]
+                y_plot = res[y_key][ind]
+                if logx:
+                    x_plot = np.log(x_plot)
+                if logy:
+                    y_plot = np.log(y_plot)
+                if loop_key == 'lr':
+                    label = nicename(x, 'lr')
+                else:
+                    label = nicename(str(x).rsplit('/', 1)[-1])
+
+                # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
+                ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label,
+                        **plot_args)
+        else:
+            x_plot = res[x_key]
+            y_plot = res[y_key]
+            #get rid of duplicates
+            _, ix = np.unique(x_plot, return_index=True)
+            x_plot=x_plot[ix]
+            y_plot=y_plot[ix]
+
             if logx:
                 x_plot = np.log(x_plot)
             if logy:
                 y_plot = np.log(y_plot)
-            if loop_key == 'lr':
-                label = nicename(x, 'lr')
-            else:
-                label = nicename(str(x).rsplit('/', 1)[-1])
+            ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
+            if plot_actual_value:
+                for x, y in zip(x_plot, y_plot):
+                    if y > ax.get_ylim()[-1]:
+                        continue
+                    if y_key in ['val_acc', 'glo_score']:
+                        ytext = '{:0.2f}'.format(y)
+                    else:
+                        ytext = '{:0.1f}'.format(y)
+                    ax.text(x, y, ytext,
+                            horizontalalignment='center',
+                            verticalalignment='bottom')
 
-            # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
-            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label,
-                    **plot_args)
-    else:
-        x_plot = res[x_key]
-        y_plot = res[y_key]
-        #get rid of duplicates
-        _, ix = np.unique(x_plot, return_index=True)
-        x_plot=x_plot[ix]
-        y_plot=y_plot[ix]
+        if 'xticks' in ax_args_.keys():
+            xticks = ax_args_['xticks']
+        elif x_key in plot_dict.keys():
+            xticks = np.array(plot_dict[x_key])
+        else:
+            xticks = np.unique(res[x_key])
+
+        if 'yticks' in ax_args_.keys():
+            yticks = ax_args_['yticks']
+        elif y_key in plot_dict.keys():
+            yticks = np.array(plot_dict[y_key])
+        else:
+            yticks = np.unique(res[y_key])
+
+        if x_key == 'lr':
+            xticklabels = [np.format_float_scientific(x, precision=0, exp_digits=1)
+                           for x in xticks]
+        else:
+            xticklabels = [nicename(x) for x in xticks]
 
         if logx:
-            x_plot = np.log(x_plot)
+            ax.set_xticks(np.log(xticks))
+        else:
+            ax.set_xticks(xticks)
+        ax.set_xticklabels(xticklabels)
+
         if logy:
-            y_plot = np.log(y_plot)
-        ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
-        if plot_actual_value:
-            for x, y in zip(x_plot, y_plot):
-                if y > ax.get_ylim()[-1]:
-                    continue
-                if y_key == 'val_acc':
-                    ytext = '{:0.2f}'.format(y)
+            ax.set_yticks(np.log(yticks))
+            ax.set_yticklabels(yticks)
+        else:
+            ax.set_yticks(yticks)
+
+        ax.set_xlabel(nicename(x_key))
+        ax.set_ylabel(nicename(y_key))
+
+        if x_key == 'kc_inputs':
+            ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
+        elif x_key == 'N_PN':
+            ax.plot([np.log(50), np.log(50)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
+        elif x_key == 'N_KC':
+            ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
+
+        if loop_key:
+            l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 7, frameon=False)
+            l.set_title(nicename(loop_key))
+
+        figname = '_' + y_key + '_vs_' + x_key
+        if loop_key:
+            figname += '_vary' + loop_key
+        if select_dict:
+            for k, v in select_dict.items():
+                if isinstance(v, list):
+                    v = [x.rsplit('/',1)[-1] for x in v]
+                    v = str('__'.join(v))
                 else:
-                    ytext = '{:0.1f}'.format(y)
-                ax.text(x, y, ytext,
-                        horizontalalignment='center',
-                        verticalalignment='bottom')
+                    v = str(v)
+                figname += k + '_' + v + '__'
+        figname += string
 
-    if 'xticks' in ax_args.keys():
-        xticks = ax_args['xticks']
-    elif x_key in plot_dict.keys():
-        xticks = np.array(plot_dict[x_key])
-    else:
-        xticks = np.unique(res[x_key])
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        save_fig(path, figname)
 
-    if 'yticks' in ax_args.keys():
-        yticks = ax_args['yticks']
-    elif y_key in plot_dict.keys():
-        yticks = np.array(plot_dict[y_key])
-    else:
-        yticks = np.unique(res[y_key])
+    if isinstance(y_key, str):
+        y_key = [y_key]
 
-    if x_key == 'lr':
-        xticklabels = [np.format_float_scientific(x, precision=0, exp_digits=1)
-                       for x in xticks]
-    else:
-        xticklabels = [nicename(x) for x in xticks]
-
-    if logx:
-        ax.set_xticks(np.log(xticks))
-    else:
-        ax.set_xticks(xticks)
-    ax.set_xticklabels(xticklabels)
-
-    if logy:
-        ax.set_yticks(np.log(yticks))
-        ax.set_yticklabels(yticks)
-    else:
-        ax.set_yticks(yticks)
-
-    ax.set_xlabel(nicename(x_key))
-    ax.set_ylabel(nicename(y_key))
-
-    if x_key == 'kc_inputs':
-        ax.plot([7, 7], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color = 'gray')
-    elif x_key == 'N_PN':
-        ax.plot([np.log(50), np.log(50)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
-    elif x_key == 'N_KC':
-        ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
-
-    if loop_key:
-        l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 7, frameon=False)
-        l.set_title(nicename(loop_key))
-
-    figname = '_' + y_key + '_vs_' + x_key
-    if loop_key:
-        figname += '_vary' + loop_key
-    if select_dict:
-        for k, v in select_dict.items():
-            if isinstance(v, list):
-                v = [x.rsplit('/',1)[-1] for x in v]
-                v = str('__'.join(v))
-            else:
-                v = str(v)
-            figname += k + '_' + v + '__'
-    figname += string
-
-
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')
-    save_fig(path, figname)
-
+    for y_key_tmp in y_key:
+        _plot_results(y_key_tmp)
 
 if __name__ == '__main__':
     pass
