@@ -39,7 +39,7 @@ def control_orn2pn():
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['N_ORN_DUPLICATION'] = [1, 3, 10, 30]
-    hp_ranges['pn_norm_pre'] = ['None', 'batch_norm']
+    hp_ranges['pn_norm_pre'] = [None, 'batch_norm']
     hp_ranges['ORN_NOISE_STD']= [0, .1, .2]
     hp_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
     hp_ranges['lr'] = [1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4, 1e-4]

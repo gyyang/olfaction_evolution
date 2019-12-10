@@ -383,6 +383,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         for k, v in res.items():
             res[k] = res[k][ixs]
 
+
     # Sort by x_key
     if sort:
         ind_sort = np.argsort(res[x_key])
@@ -450,8 +451,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
                     ytext = '{:0.1f}'.format(y)
                 ax.text(x, y, ytext,
                         horizontalalignment='center',
-                        verticalalignment='bottom') 
-            
+                        verticalalignment='bottom')
+
     if 'xticks' in ax_args.keys():
         xticks = ax_args['xticks']
     elif x_key in plot_dict.keys():

@@ -225,7 +225,6 @@ def load_all_results(rootpath, argLast=True, ix=None,
     dirs = get_allmodeldirs(rootpath)
     from collections import defaultdict
     res = defaultdict(list)
-
     for i, d in enumerate(dirs):
         log_name = os.path.join(d, 'log.pkl')
         with open(log_name, 'rb') as f:

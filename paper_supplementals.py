@@ -105,22 +105,19 @@ if 'control_orn2pn' in experiments:
     if TRAIN:
         train(experiment_controls.control_orn2pn(), save_path=path, control=True)
     if ANALYZE:
-        default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION':10, 'lr':1e-3}
+        default = {'ORN_NOISE_STD': 0,
+                   'pn_norm_pre': 'batch_norm',
+                   'kc_dropout_rate': 0.5,
+                   'N_ORN_DUPLICATION':10,
+                   'lr':2e-3}
         ykeys = ['glo_score', 'val_acc']
 
         for yk in ykeys:
             for xk, v in default.items():
                 temp = copy.deepcopy(default)
                 temp.pop(xk)
-                if xk == 'lr':
-                    logx= True
-                else:
-                    logx = False
-                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
-                                logx=logx, ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
-
-                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk,
-                                 ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
+                sa.plot_results(path, x_key=xk, y_key=yk, select_dict=temp)
+                sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk)
 
 if 'control_pn2kc' in experiments:
     path = './files/control_pn2kc'
