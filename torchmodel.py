@@ -50,8 +50,7 @@ def _get_normalization(norm_type, num_features=None):
     if norm_type is not None:
         if norm_type == 'batch_norm':
             return nn.BatchNorm1d(num_features)
-    else:
-        return lambda x: x
+    return lambda x: x
 
 
 class Layer(nn.Module):
