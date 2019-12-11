@@ -127,8 +127,8 @@ def control_pn2kc_inhibition():
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
     hp_ranges['kc_prune_weak_weights'] = [True, False]
-    hp_ranges['kc_recinh_coeff'] = np.arange(0, 1.01, 0.2)
-    hp_ranges['kc_recinh_step'] = np.arange(1, 10, 2).astype(int)
+    hp_ranges['kc_recinh_coeff'] = list(np.arange(0, 1.01, 0.2))
+    hp_ranges['kc_recinh_step'] = list(np.arange(1, 10, 2).astype(int))
     return config, hp_ranges
 
 def control_pn2kc_prune_boolean(n_pn=50):
