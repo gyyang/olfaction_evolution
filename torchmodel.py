@@ -76,6 +76,9 @@ class Layer(nn.Module):
                  prune_threshold=None,
                  feedforward_inh=False,
                  feedforward_inh_coeff=0,
+                 recurrent_inh=False,
+                 recurrent_inh_coeff=0,
+                 recurrent_inh_step=1,
                  ):
         super(Layer, self).__init__()
         self.in_features = in_features
@@ -114,6 +117,9 @@ class Layer(nn.Module):
 
         self.feedforward_inh = feedforward_inh
         self.feedforward_inh_coeff = feedforward_inh_coeff
+        self.recurrent_inh = recurrent_inh
+        self.recurrent_inh_coeff = recurrent_inh_coeff
+        self.recurrent_inh_step = recurrent_inh_step
 
     def reset_parameters(self):
         if self.sign_constraint:
@@ -167,7 +173,17 @@ class Layer(nn.Module):
             weight = self.effective_weight
         pre_act = F.linear(input, weight, self.bias)
         pre_act_normalized = self.pre_norm(pre_act)
+
         output = self.activation(pre_act_normalized)
+
+        if self.recurrent_inh:
+            for i in range(self.recurrent_inh_step):
+                # Single unit recurrent inhibition
+                # No nonlinearity because it assumes positive input
+                rec_inh = torch.mean(output, dim=1, keepdim=True)
+                rec_inh = rec_inh * self.recurrent_inh_coeff
+                output = self.activation(pre_act_normalized - rec_inh)
+
         output_normalized = self.post_norm(output)
         output_normalized = self.dropout(output_normalized)
         return output_normalized
@@ -215,7 +231,11 @@ class FullModel(nn.Module):
                             prune_weak_weights=config.kc_prune_weak_weights,
                             prune_threshold=config.kc_prune_threshold,
                             feedforward_inh=config.kc_ffinh,
-                            feedforward_inh_coeff=config.kc_ffinh_coeff)
+                            feedforward_inh_coeff=config.kc_ffinh_coeff,
+                            recurrent_inh=config.kc_recinh,
+                            recurrent_inh_coeff=config.kc_recinh_coeff,
+                            recurrent_inh_step=config.kc_recinh_step,
+                            )
 
         if not config.train_kc_bias:
             self.layer2.bias.requires_grad = False

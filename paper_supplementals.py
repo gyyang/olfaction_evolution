@@ -170,7 +170,7 @@ if 'control_pn2kc' in experiments:
 if 'control_pn2kc_inhibition' in experiments:
     path = './files/control_pn2kc_inhibition'
     if TRAIN:
-        train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True)
+        train(experiment_controls.control_pn2kc_inhibition(), save_path=path)
     if ANALYZE:
         xkey = 'kc_ffinh_coeff'
         ykeys = ['val_acc', 'K_inferred', 'K']

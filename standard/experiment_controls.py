@@ -106,7 +106,6 @@ def control_pn2kc_inhibition():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 200
 
-    # config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
     # config.direct_glo = True
     config.skip_orn2pn = True
@@ -114,24 +113,22 @@ def control_pn2kc_inhibition():
     config.train_pn2kc = True
     config.sparse_pn2kc = False
 
-    config.kc_ffinh = True
-
     # New settings
     config.batch_size = 8192  # Much bigger batch size
     config.initializer_pn2kc = 'uniform'  # Prevent degeneration
     config.lr = 2e-3
 
-    config.kc_prune_weak_weights = True
+    # config.kc_prune_weak_weights = True
     config.initial_pn2kc = 5./config.N_PN
     config.kc_prune_threshold = 1./config.N_PN
 
+    config.kc_recinh = True
+
     # Ranges of hyperparameters to loop over
     hp_ranges = OrderedDict()
-    cs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
-          0.8, 0.9, 1.0]
-    hp_ranges['kc_ffinh_coeff'] = cs
-    # TODO: whether it's (1-2c) or 1-c seems to make a big difference. Why??
-    hp_ranges['kc_bias'] = [-1*(1-2*c) for c in cs]
+    hp_ranges['kc_prune_weak_weights'] = [True, False]
+    hp_ranges['kc_recinh_coeff'] = np.arange(0, 1.01, 0.2)
+    hp_ranges['kc_recinh_step'] = np.arange(1, 10, 2).astype(int)
     return config, hp_ranges
 
 def control_pn2kc_prune_boolean(n_pn=50):
@@ -286,35 +283,6 @@ def vary_apl(argTest=False):
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
-
-
-def vary_kc_ffinh_coeff(argTest=False):
-    """Vary APL."""
-    config = configs.FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0.
-
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
-    config.skip_orn2pn = True
-    config.kc_ffinh = True
-    config.kc_bias = 0.5
-
-    config.save_every_epoch = True
-
-    hp_ranges = OrderedDict()
-    cs = [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
-    hp_ranges['kc_ffinh_coeff'] = cs
-    hp_ranges['kc_bias'] = [-1 + 2*c for c in cs]
-    if argTest:
-        config.max_epoch = testing_epochs
-    return config, hp_ranges
-
-
-
 
 
 def pn_normalization_direct(argTest):

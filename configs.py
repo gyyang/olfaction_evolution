@@ -218,9 +218,12 @@ class FullConfig(BaseConfig):
         self.kc_prune_weak_weights = False
         self.kc_prune_threshold = 0.02
 
-        # Whether to do feedforward inhibition on KC
+        # Whether to do feedforward or recurrent inhibition on KC
         self.kc_ffinh = False
         self.kc_ffinh_coeff = 0
+        self.kc_recinh = False
+        self.kc_recinh_coeff = 0
+        self.kc_recinh_step = 10
 
         #separate optimizer
         self.separate_optimizer = False
