@@ -7,6 +7,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib import cm
 import dict_methods
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -55,7 +56,6 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         ys = log[ykey]
         xs = log[xkey]
 
-        from matplotlib import cm
         colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
 
         for x, y, c in zip(xs, ys, colors):
@@ -63,8 +63,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
 
         if legend_key is not None:
             legends = log[legend_key]
-            if legend_key == 'lr':
-                legends = [nicename(l, 'lr') for l in legends]
+            legends = [nicename(l, mode=legend_key) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
             ax.set_title(nicename(legend_key), fontsize=7)
 
@@ -133,7 +132,6 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         ys = log[ykey]
         xs = log[xkey]
 
-        from matplotlib import cm
         colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
 
         for x, y, c in zip(xs, ys, colors):
@@ -144,8 +142,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         if legend_key is not None:
             # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
             legends = log[legend_key]
-            if legend_key == 'lr':
-                legends = [nicename(l, 'lr') for l in legends]
+            legends = [nicename(l, mode=legend_key) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
             plt.title(nicename(legend_key), fontsize=7)
 
@@ -237,7 +234,6 @@ def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
         cmap = 'RdBu_r'
     im = ax.imshow(w_plot, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
                    interpolation='none')
-
 
     if var_name == 'w_orn':
         plt.title('ORN-PN connectivity after training', fontsize=7)
@@ -380,13 +376,14 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
 
     if select_dict is not None:
         res = dict_methods.filter(res, select_dict)
-        # get rid of duplicates
-        values = res[x_key]
-        if np.any(values==None):
-            values[values == None] = 'None'
-        _, ixs = np.unique(values, return_index=True)
-        for k, v in res.items():
-            res[k] = res[k][ixs]
+        # TODO: This code was here, but not sure what it does
+        # # get rid of duplicates
+        # values = res[x_key]
+        # if np.any(values==None):
+        #     values[values == None] = 'None'
+        # _, ixs = np.unique(values, return_index=True)
+        # for k, v in res.items():
+        #     res[k] = res[k][ixs]
 
     # Sort by x_key
     if sort:
@@ -420,22 +417,19 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(ax_box, **ax_args_)
         if loop_key:
-            for x in np.unique(res[loop_key]):
-                ind = res[loop_key] == x
+            loop_vals = np.unique(res[loop_key])
+            colors = [cm.cool(x) for x in np.linspace(0, 1, len(loop_vals))]
+            for loop_val, color in zip(loop_vals, colors):
+                ind = res[loop_key] == loop_val
                 x_plot = res[x_key][ind]
                 y_plot = res[y_key][ind]
                 if logx:
                     x_plot = np.log(x_plot)
                 if logy:
                     y_plot = np.log(y_plot)
-                if loop_key == 'lr':
-                    label = nicename(x, 'lr')
-                else:
-                    label = nicename(str(x).rsplit('/', 1)[-1])
-
                 # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
-                ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label,
-                        **plot_args)
+                ax.plot(x_plot, y_plot, 'o-', markersize=3, color=color,
+                        label=nicename(loop_val, mode=loop_key), **plot_args)
         else:
             x_plot = res[x_key]
             y_plot = res[y_key]
@@ -475,11 +469,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         else:
             yticks = np.unique(res[y_key])
 
-        if x_key == 'lr':
-            xticklabels = [np.format_float_scientific(x, precision=0, exp_digits=1)
-                           for x in xticks]
-        else:
-            xticklabels = [nicename(x) for x in xticks]
+        xticklabels = [nicename(x, mode=x_key) for x in xticks]
 
         if logx:
             ax.set_xticks(np.log(xticks))
@@ -504,7 +494,8 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
             ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
         if loop_key:
-            l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 7, frameon=False)
+            l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 7,
+                          frameon=False, ncol=2)
             l.set_title(nicename(loop_key))
 
         figname = '_' + y_key + '_vs_' + x_key

@@ -306,7 +306,10 @@ nicename_dict = {
         'kc_prune_threshold': 'KC prune threshold',
         'n_or_per_orn': 'Number of ORs per ORN',
         'K_smart': 'K',
-        'kc_prune_weak_weights': 'Prune PN-KC weights'
+        'kc_prune_weak_weights': 'Prune PN-KC weights',
+        'kc_recinh': 'KC recurrent inhibition',
+        'kc_recinh_coeff': 'KC rec. inh. strength',
+        'kc_recinh_step': 'KC rec. inh. step',
         }
 
 
@@ -314,6 +317,8 @@ def nicename(name, mode='dict'):
     """Return nice name for publishing."""
     if mode == 'lr':
         return np.format_float_scientific(name, precision=0, exp_digits=1)
+    elif mode == 'kc_recinh_coeff':
+        return '{:0.1f}'.format(name)
     try:
         return nicename_dict[name]
     except KeyError:

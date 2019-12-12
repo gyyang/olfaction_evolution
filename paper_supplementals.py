@@ -172,12 +172,17 @@ if 'control_pn2kc_inhibition' in experiments:
     if TRAIN:
         train(experiment_controls.control_pn2kc_inhibition(), save_path=path)
     if ANALYZE:
-        xkey = 'kc_ffinh_coeff'
-        ykeys = ['val_acc', 'K_inferred', 'K']
-        sa.plot_results(path, x_key=xkey, y_key=ykeys)
-        sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
+        xkey = 'kc_recinh_coeff'
+        ykeys = ['val_acc', 'K_inferred']
+        loop_key = 'kc_recinh_step'
+        select_dict = {'kc_prune_weak_weights': False}
+        sa.plot_results(path, x_key=xkey, y_key=ykeys, loop_key=loop_key,
+                        select_dict=select_dict)
+        select_dict['kc_recinh_step'] = 9
+        sa.plot_progress(path, ykeys=ykeys, legend_key=xkey, select_dict=select_dict)
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
-        sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res)
+        sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
+                   select_dict=select_dict)
 
 if 'control_pn2kc_prune_boolean' in experiments:
     n_pns = [int(x) for x in args.pn]
