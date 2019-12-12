@@ -130,7 +130,7 @@ def rnn_sparsity(w_glo, dir_ix, path):
     training_ix = 1
     yrange = [0.5, 0.5]
     force_thres = 0.05
-    thres = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
+    thres = standard.analysis_weight.infer_threshold(w_glo, visualize=False)
     print('thres=', str(thres))
     claw_count = np.count_nonzero(w_glo>thres,axis=0)
 

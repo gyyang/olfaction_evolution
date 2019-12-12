@@ -8,7 +8,7 @@ import tools
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.patches as patches
 from tools import save_fig
-import standard.analysis_pn2kc_training as analysis_pn2kc_training
+import standard.analysis_weight as analysis_weight
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
@@ -76,7 +76,7 @@ def _get_claws(dir, ix = 0):
         if i == 0:
             thres = THRES
         else:
-            thres = analysis_pn2kc_training.infer_threshold(wglos[i])
+            thres = analysis_weight.infer_threshold(wglos[i])
 
         wglo[np.isnan(wglo)] = 0
         wglo_binaries.append(wglo > thres)
@@ -223,7 +223,7 @@ def plot_cosine_similarity(dir, dir_ix, shuffle_arg, log= True):
             if j == 0:
                 thres = 0
             else:
-                thres = analysis_pn2kc_training.infer_threshold(wglos[j])
+                thres = analysis_weight.infer_threshold(wglos[j])
             shuffled = _shuffle(wglo_binaries[j]>thres, arg=shuffle_arg)
             shuffled_similarity, _ = _get_similarity(shuffled)
             shuffled_similarities.append(shuffled_similarity)
@@ -265,7 +265,7 @@ def plot_cosine_similarity(dir, dir_ix, shuffle_arg, log= True):
 def display_matrix(wglo):
 
     wglo[np.isnan(wglo)] = 0
-    thres = analysis_pn2kc_training.infer_threshold(wglo)
+    thres = analysis_weight.infer_threshold(wglo)
     wglo_binary = wglo > thres
     trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
     lower = np.tril(trained_counts_matrix, k=-1)

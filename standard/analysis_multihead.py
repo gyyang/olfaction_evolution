@@ -16,7 +16,7 @@ sys.path.append(rootpath)
 import dict_methods
 import task
 import tools
-import standard.analysis_pn2kc_training as analysis_pn2kc_training
+import standard.analysis_weight as analysis_weight
 from tools import save_fig
 
 mpl.rcParams['font.size'] = 7
@@ -61,7 +61,7 @@ def _get_data(path):
         thres = config.kc_prune_threshold
         print('Using KC prune threshold')
     else:
-        thres = analysis_pn2kc_training.infer_threshold(wglo)
+        thres = analysis_weight.infer_threshold(wglo)
         print('Inferred threshold', thres)
     sparsity = np.count_nonzero(wglo > thres, axis=0)
     strength_wout1 = np.linalg.norm(wout1, axis=1)
