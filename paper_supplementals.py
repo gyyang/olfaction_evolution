@@ -69,7 +69,6 @@ else:
 
 if ANALYZE:
     import standard.analysis as sa
-    import standard.analysis_pn2kc_peter
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_orn2pn as analysis_orn2pn
     import standard.analysis_activity as analysis_activity
@@ -157,7 +156,7 @@ if 'control_pn2kc' in experiments:
                     path, select_dict=temp, ykeys=[yk], legend_key=xk,
                     exclude_dict=exclude_dict)
         #
-        res = standard.analysis_pn2kc_peter.do_everything(
+        res = standard.analysis_pn2kc_training.do_everything(
             path, filter_peaks=False, redo=True)
 
         for xk, v in default.items():
@@ -180,7 +179,7 @@ if 'control_pn2kc_inhibition' in experiments:
                         select_dict=select_dict)
         select_dict['kc_recinh_step'] = 9
         sa.plot_progress(path, ykeys=ykeys, legend_key=xkey, select_dict=select_dict)
-        res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
+        res = standard.analysis_pn2kc_training.do_everything(path, filter_peaks=False, redo=True)
         sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
                    select_dict=select_dict)
 
@@ -199,7 +198,7 @@ if 'control_pn2kc_prune_boolean' in experiments:
             cur_path = path + '_' + str(n_pn)
             sa.plot_progress(cur_path, ykeys=ykeys, legend_key=xkey)
 
-            res = standard.analysis_pn2kc_peter.do_everything(
+            res = standard.analysis_pn2kc_training.do_everything(
                 cur_path, filter_peaks=False, redo=True, range=1)
             sa.plot_xy(cur_path, xkey='lin_bins_', ykey='lin_hist_',
                        legend_key=xkey, log=res)
@@ -240,7 +239,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
                     sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk],
                                      legend_key=xk, exclude_dict=exclude_dict)
             #
-            res = standard.analysis_pn2kc_peter.do_everything(
+            res = standard.analysis_pn2kc_training.do_everything(
                     cur_path, filter_peaks=False, redo=True, range=.75)
             for xk, v in default.items():
                 temp = copy.deepcopy(default)
@@ -446,7 +445,7 @@ if 'control_n_or_per_orn' in experiments:
         for ykey in ykeys:
             sa.plot_results(path, x_key=xkey, y_key=ykey)
 
-        res = standard.analysis_pn2kc_peter.do_everything(
+        res = standard.analysis_pn2kc_training.do_everything(
             path, filter_peaks=False, redo=True)
         sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey,
                    log=res, ax_args={'ylim': [0, 500]})
