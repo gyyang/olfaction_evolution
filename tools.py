@@ -249,7 +249,7 @@ def load_all_results(rootpath, argLast=True, ix=None,
                 res[key].append(val)
 
         k_smart_key = 'K' if config.kc_prune_weak_weights else 'K_inferred'
-        res['K_smart'].append(log[k_smart_key])
+        res['K_smart'].append(res[k_smart_key][-1])
 
         # Adding configuration values
         for k in dir(config):
