@@ -1,5 +1,11 @@
 """Analysis tools related to connection weights"""
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import multivariate_normal
+from sklearn.mixture import GaussianMixture
+
+THRES = 0.1
+
 
 def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
                     downsample=True):
