@@ -173,7 +173,7 @@ if 'control_pn2kc_inhibition' in experiments:
         train(experiment_controls.control_pn2kc_inhibition(), save_path=path)
     if ANALYZE:
         xkey = 'kc_recinh_coeff'
-        ykeys = ['val_acc', 'K_inferred']
+        ykeys = ['val_acc', 'K_smart']
         loop_key = 'kc_recinh_step'
         select_dict = {'kc_prune_weak_weights': False}
         sa.plot_results(path, x_key=xkey, y_key=ykeys, loop_key=loop_key,
