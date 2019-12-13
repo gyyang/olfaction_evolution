@@ -375,9 +375,6 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
     if res is None:
         res = tools.load_all_results(path)
 
-    print(res['N_KC'])
-    print(select_dict)
-
     if select_dict is not None:
         res = dict_methods.filter(res, select_dict)
         # TODO: This code was here, but not sure what it does
@@ -388,7 +385,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         # _, ixs = np.unique(values, return_index=True)
         # for k, v in res.items():
         #     res[k] = res[k][ixs]
-    print(res['N_KC'])
+
     # Sort by x_key
     if sort:
         ind_sort = np.argsort(res[x_key])
@@ -438,15 +435,17 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
             x_plot = res[x_key]
             y_plot = res[y_key]
 
-            if filter_peaks:
-                peak_ind = check_single_peak(res['lin_bins'], res['lin_hist'], res['kc_prune_threshold'])
-                x_plot = x_plot[peak_ind]
-                y_plot = y_plot[peak_ind]
-
             # Get rid of duplicates
             _, ix = np.unique(x_plot, return_index=True)
-            x_plot=x_plot[ix]
-            y_plot=y_plot[ix]
+            x_plot = x_plot[ix]
+            y_plot = y_plot[ix]
+
+            if filter_peaks:
+                peak_ind = check_single_peak(res['lin_bins'][ix],
+                                             res['lin_hist'][ix],
+                                             res['kc_prune_threshold'][ix])
+                x_plot = x_plot[peak_ind]
+                y_plot = y_plot[peak_ind]
 
             if logx:
                 x_plot = np.log(x_plot)
@@ -472,20 +471,20 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         else:
             xticks = np.unique(res[x_key])
 
+        xticklabels = [nicename(x, mode=x_key) for x in xticks]
+        xticks = np.log(xticks) if logx else xticks
+
+        ax.set_xticks(xticks)
+        x_span = xticks[-1] - xticks[0]
+        ax.set_xlim([xticks[0]-x_span*0.05, xticks[-1]+x_span*0.05])
+        ax.set_xticklabels(xticklabels)
+
         if 'yticks' in ax_args_.keys():
             yticks = ax_args_['yticks']
         elif y_key in plot_dict.keys():
             yticks = np.array(plot_dict[y_key])
         else:
             yticks = np.unique(res[y_key])
-
-        xticklabels = [nicename(x, mode=x_key) for x in xticks]
-
-        if logx:
-            ax.set_xticks(np.log(xticks))
-        else:
-            ax.set_xticks(xticks)
-        ax.set_xticklabels(xticklabels)
 
         if logy:
             ax.set_yticks(np.log(yticks))

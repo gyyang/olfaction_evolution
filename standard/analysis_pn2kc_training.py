@@ -52,9 +52,12 @@ def check_single_peak(bins, hist, threshold):
     for i, thres in enumerate(threshold):
         # find location of threshold
         ind_thres = np.where(bins[i, :-1] > thres)[0][0]
-        # with=20, heuristics
-        peaks, _ = find_peaks(hist[i][ind_thres:], width=20)
-        peak_ind[i] = len(peaks) == 1
+        # with=10, heuristics
+        hist_ = hist[i][ind_thres:]
+        peaks, properties = find_peaks(hist_, width=20)
+        # check if there's an additional peak undetected
+        peak_loc = np.argmax(hist_)
+        peak_ind[i] = len(peaks) == 1 and abs(peaks[0] - peak_loc) < 5
     return peak_ind
 
 

@@ -218,30 +218,24 @@ if 'control_pn2kc_prune_hyper' in experiments:
                        'lr': 2e-3,  # N_PN=50
                        'initial_pn2kc': 10./n_pn,
                        'kc_prune_threshold': 1./n_pn}
+
+            if n_pn == 200:
+                default['lr'] = 1e-3
         
             ykeys = ['val_acc', 'K']
-            for yk in ykeys:
-                exclude_dict = None
-                if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
-                    # TODO: Need to do this automatically
-                    if n_pn == 50:
-                        exclude_dict = {'lr': [5e-3, 1e-2, 2e-2, 5e-2]}
-                    if n_pn == 200:
-                        default['lr'] = 1e-3
-                        exclude_dict = {'lr': [2e-3, 5e-3, 1e-2, 2e-2, 5e-2]}
-        
-                for xk, v in default.items():
-                    temp = copy.deepcopy(default)
-                    temp.pop(xk)
-                    sa.plot_results(cur_path, x_key=xk, y_key=yk,
-                                    select_dict=temp, plot_actual_value=True)
-        
-                    sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk],
-                                     legend_key=xk, exclude_dict=exclude_dict)
-            #
+            for xk in default.keys():
+                temp = copy.deepcopy(default)
+                temp.pop(xk)
+                for ykey in ykeys:
+                    sa.plot_results(cur_path, x_key=xk, y_key=ykeys,
+                                    select_dict=temp, plot_actual_value=True,
+                                    filter_peaks=xk!='lr' and ykey=='K')
+                sa.plot_progress(cur_path, select_dict=temp, ykeys=ykeys,
+                                 legend_key=xk)
+
             res = standard.analysis_pn2kc_training.do_everything(
                     cur_path, filter_peaks=False, redo=True, range=.75)
-            for xk, v in default.items():
+            for xk in default.keys():
                 temp = copy.deepcopy(default)
                 temp.pop(xk)
                 sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_',
