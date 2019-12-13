@@ -10,6 +10,7 @@ import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import multivariate_normal
 from scipy.signal import savgol_filter
+from scipy.signal import find_peaks
 from sklearn.mixture import GaussianMixture
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,7 +37,28 @@ def _set_colormap(nbins):
     return cm
 
 
-def do_everything(path, filter_peaks=False, redo=False, range=2):
+def check_single_peak(bins, hist, threshold):
+    """Check if an array of histogram has double peaks.
+
+    Args:
+        bins: (n_networks, n_histogram_points)
+        hist: (n_networks, n_histogram_points)
+        threshold: (n_networks)
+
+    Returns:
+        peak_ind: bool array (n_networks), True if single peak
+    """
+    peak_ind = np.zeros_like(threshold).astype(np.bool)
+    for i, thres in enumerate(threshold):
+        # find location of threshold
+        ind_thres = np.where(bins[i, :-1] > thres)[0][0]
+        # with=20, heuristics
+        peaks, _ = find_peaks(hist[i][ind_thres:], width=20)
+        peak_ind[i] = len(peaks) == 1
+    return peak_ind
+
+
+def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=None):
     def _get_K_obsolete(res):
         # GRY: Not sure what this function is doing
         n_model, n_epoch = res['sparsity'].shape[:2]
@@ -59,6 +81,8 @@ def do_everything(path, filter_peaks=False, redo=False, range=2):
     res = defaultdict(list)
     for f in files:
         temp = tools.load_all_results(f, argLast = False)
+        if select_dict is not None:
+            temp = dict_methods.filter(temp, select_dict)
         dict_methods.chain_defaultdicts(res, temp)
 
     if redo:
@@ -73,15 +97,9 @@ def do_everything(path, filter_peaks=False, redo=False, range=2):
     badkc_ind = res['bad_KC'][:, -1] < 0.2
     acc_ind = res['train_acc'][:, -1] > 0.5
     if filter_peaks:
-        prune_th = res['kc_prune_threshold']
-        peak_ind = np.zeros_like(prune_th).astype(np.bool)
-        for i, thres in enumerate(prune_th):
-            x = np.where(res['lin_bins'][0, :-1] > prune_th[i])[0][0]
-            peak = np.argmax(res['lin_hist'][i, -1, (x - 10):])
-            if peak > 20:
-                peak_ind[i] = True
-            else:
-                peak_ind[i] = False
+        peak_ind = check_single_peak(res['lin_bins'],
+                                     res['lin_hist'][:, -1, :],  # last epoch
+                                     res['kc_prune_threshold'])
     else:
         peak_ind = np.ones_like(acc_ind)
     ind = badkc_ind * acc_ind * peak_ind

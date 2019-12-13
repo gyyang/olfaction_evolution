@@ -16,6 +16,7 @@ sys.path.append(rootpath)
 import tools
 from tools import nicename, save_fig
 import task
+from standard.analysis_pn2kc_training import check_single_peak
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -360,7 +361,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
                  logx=None, logy=False,
                  figsize=None, ax_box=None,
                  ax_args=None, plot_args={}, sort=True, res=None, string='',
-                 plot_actual_value=False):
+                 plot_actual_value=False, filter_peaks=False):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -374,6 +375,9 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
     if res is None:
         res = tools.load_all_results(path)
 
+    print(res['N_KC'])
+    print(select_dict)
+
     if select_dict is not None:
         res = dict_methods.filter(res, select_dict)
         # TODO: This code was here, but not sure what it does
@@ -384,7 +388,7 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         # _, ixs = np.unique(values, return_index=True)
         # for k, v in res.items():
         #     res[k] = res[k][ixs]
-
+    print(res['N_KC'])
     # Sort by x_key
     if sort:
         ind_sort = np.argsort(res[x_key])
@@ -433,7 +437,13 @@ def plot_results(path, x_key, y_key, loop_key=None, select_dict=None,
         else:
             x_plot = res[x_key]
             y_plot = res[y_key]
-            #get rid of duplicates
+
+            if filter_peaks:
+                peak_ind = check_single_peak(res['lin_bins'], res['lin_hist'], res['kc_prune_threshold'])
+                x_plot = x_plot[peak_ind]
+                y_plot = y_plot[peak_ind]
+
+            # Get rid of duplicates
             _, ix = np.unique(x_plot, return_index=True)
             x_plot=x_plot[ix]
             y_plot=y_plot[ix]
