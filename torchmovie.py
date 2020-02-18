@@ -124,18 +124,18 @@ def main_plot():
     x2, y2 = x2.flatten(), y2.flatten()
     
     lines = list()
-    lines += [[(0, x+10), (1, y)] for x, y in zip(x1, y1)]
-    lines += [[(1, x), (2, y*10+5)] for x, y in zip(x2, y2)]
+    lines += [[(0, x*49/29.), (1, y)] for x, y in zip(x1, y1)]
+    lines += [[(1, x), (2, y*49/4.)] for x, y in zip(x2, y2)]
     lc = mc.LineCollection(lines, linewidths=2)
     ax.add_collection(lc)
     
-    colors1 = np.array([[228,26,28],[55,126,184],[77,175,74]])/255.
+    colors1 = np.array([[228,26,28],[77,175,74],[55,126,184]])/255.
     colors2 = np.array([[27,158,119],[217,95,2],[117,112,179],
                            [231,41,138],[102,166,30]])/255.
     
     ind1 = np.array([0]*10+[1]*10+[2]*10)
-    ax.scatter([0]*w1.shape[1], np.arange(w1.shape[1])+10, color=colors1[ind1], s=4)
-    ax.scatter([2]*w2.shape[2], np.arange(w2.shape[2])*10+5, color=colors2, s=4)
+    ax.scatter([0]*w1.shape[1], np.arange(w1.shape[1])*49/29., color=colors1[ind1], s=4)
+    ax.scatter([2]*w2.shape[2], np.arange(w2.shape[2])*49/4., color=colors2, s=4)
 
     # initialization function: plot the background of each frame
 # =============================================================================
@@ -161,7 +161,7 @@ def main_plot():
     anim = animation.FuncAnimation(fig, animate,
                                frames=w1.shape[0], interval=20)
     writer = animation.writers['ffmpeg'](fps=30)
-    anim.save(os.path.join(path, 'movie.mp4'), writer=writer, dpi=200)
+    anim.save(os.path.join(path, 'movie.mp4'), writer=writer, dpi=600)
 
 if __name__ == '__main__':
     # main_train()
