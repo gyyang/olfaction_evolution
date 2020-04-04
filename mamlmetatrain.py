@@ -90,6 +90,15 @@ def train(config):
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
+
+    # n_save_every = 10
+    # ind_orn = []
+    # for i in range(50):
+    #     ind_orn += list(range(i, 500, 50))
+    # ind_orn = np.array(ind_orn)
+    # weight_layer1 = []
+    # weight_layer2 = []
+
     with tf.Session(config=tf_config) as sess:
         sess.run(tf.global_variables_initializer())
         if LOAD_DATA:
@@ -125,6 +134,12 @@ def train(config):
                 print('Training interrupted by users')
                 break
 
+
+            # if itr % n_save_every == 0:
+            #     w_orn, w_glo = sess.run([model.model.w_orn, model.model.w_glo])
+            #     weight_layer1.append(w_orn[ind_orn])
+            #     weight_layer2.append(w_glo[:,:30])
+
             if itr % PRINT_INTERVAL == 0:
                 print('Iteration ' + str(itr))
                 if itr > 0:
@@ -154,6 +169,9 @@ def train(config):
 
                     print('Meta-val')
                     print_results(res)
+
+        # np.save(os.path.join(config.save_path, 'w_layer1'), weight_layer1)
+        # np.save(os.path.join(config.save_path, 'w_layer2'), weight_layer2)
         model.save_pickle()
         model.save()
 

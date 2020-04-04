@@ -185,18 +185,18 @@ def pn_normalization(argTest):
 def metalearn(argTest=False):
     config = configs.MetaConfig()
     config.meta_lr = .001
-    config.N_CLASS = 5
+    config.N_CLASS = 10
     config.save_every_epoch = True
     config.meta_output_dimension = 5
     config.meta_batch_size = 32
     config.meta_num_samples_per_class = 32
-    config.meta_print_interval = 250
+    config.meta_print_interval = 500
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.train_kc_bias = True
 
-    config.metatrain_iterations = 20000
+    config.metatrain_iterations = 8000
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
