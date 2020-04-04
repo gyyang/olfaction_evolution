@@ -38,6 +38,11 @@ def print_results(res):
     print('Post-update val loss step 1 >> {:0.4f}.  acc >> {:0.2f}, {:0.2f}'.format(res[1][0], res[4][0][0],res[4][0][1]))
     print('Post-update val loss step {:d} >> {:0.4f}.  acc >> {:0.2f}, {:0.2f}'.format(n_steps, res[1][-1],res[4][-1][0],res[4][-1][1]))
 
+def train_from_path(path):
+    """Train from a path with a config file in it."""
+    config = tools.load_config(path)
+    train(config)
+
 def train(config):
     tf.reset_default_graph()
 

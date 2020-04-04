@@ -1,7 +1,7 @@
-import os
-import subprocess
-
 import tools
+import train
+import os
+import mamlmetatrain
 
 SBATCHPATH = './sbatch/'
 SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
@@ -10,7 +10,6 @@ PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 
 
 def basic_train(experiment, save_path):
-    import train
     config = experiment()
     config.save_path = save_path
     train.train(config)
@@ -19,9 +18,6 @@ def basic_train(experiment, save_path):
 def local_train(experiment, save_path, sequential=False, control=False,
                 train_arg=None, **kwargs):
     """Train all models locally."""
-    import train
-    import mamlmetatrain
-
     for i in range(0, 1000):
         if sequential:
             config = tools.varying_config_sequential(experiment, i)
@@ -35,14 +31,14 @@ def local_train(experiment, save_path, sequential=False, control=False,
 
             if train_arg == None:
                 train.train(config, **kwargs)
-            elif train_arg == 'metalearn':
+            elif train_arg == 'metatrain':
                 mamlmetatrain.train(config)
             else:
                 raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
 
 
 def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
-                  nodes=1, ppn=1, gpus=0, mem=4, nhours=1):
+                  nodes=1, ppn=1, gpus=0, mem=16, nhours=3):
     """
     Create a job file.
 
@@ -72,7 +68,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
             + '\n'
             # + '#SBATCH --nodes={}\n'.format(nodes)
             # + '#SBATCH --ntasks-per-node=1\n'
-            + '#SBATCH --cpus-per-task={}\n'.format(ppn)
+            # + '#SBATCH --cpus-per-task={}\n'.format(ppn)
             + '#SBATCH --mem-per-cpu={}gb\n'.format(mem)
             # + '#SBATCH --partition=xwang_gpu\n'
             + '#SBATCH --gres=gpu:1\n'
@@ -94,10 +90,13 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
     return jobfile
 
 
-def cluster_train(experiment, save_path, sequential=False, control=False,
-                  path=SCRATCHPATH, use_torch=False):
-    """Train all models on cluster."""
+import subprocess
+
+def cluster_train(experiment, save_path, sequential=False, control=False, path=SCRATCHPATH, train_arg=None):
+    """Train all models locally."""
     job_name = save_path.split('/')[-1]  # get end of path as job name
+    config = tools.varying_config(experiment, 0)
+    original_data_dir = config.data_dir[2:]  # HACK
 
     for i in range(0, 1000):
         if sequential:
@@ -110,18 +109,20 @@ def cluster_train(experiment, save_path, sequential=False, control=False,
         if config:
             config.save_path = os.path.join(path, 'files', job_name, str(i).zfill(6))
 
-            # HACK, assuming data_dir of form './files/XX'
-            config.data_dir = os.path.join(path, config.data_dir[2:])
+            # TEMPORARY HACK
+            # TODO: Fix bug when data_dir is not always the same
+            config.data_dir = os.path.join(path, original_data_dir)
             os.makedirs(config.save_path, exist_ok=True)
 
             tools.save_config(config, config.save_path)
 
             arg =  '\'' + config.save_path + '\''
 
-            if use_torch:
-                cmd = r'''python -c "import torchtrain; torchtrain.train_from_path(''' + arg + ''')"'''
+            if train_arg == 'metatrain':
+                cmd = r'''python -c "import mamlmetatrain; mamlmetatrain.train_from_path(''' + arg + ''')"'''
             else:
                 cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
+
 
             jobfile = write_jobfile(cmd, job_name + str(i))
             subprocess.call(['sbatch', jobfile])

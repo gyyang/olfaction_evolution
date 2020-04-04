@@ -220,8 +220,8 @@ class MAML:
             self.metatrain_op = optimizer.apply_gradients(gvs)
 
             training_learning_rate = True
-            update_lr_learning_rate = .01
             if training_learning_rate:
+                update_lr_learning_rate = .01
                 print(self.update_lr)
                 optimizer_lr = tf.train.AdamOptimizer(update_lr_learning_rate)
                 self.gvs_lr = gvs = optimizer_lr.compute_gradients(self.total_loss2[self.model.config.meta_num_updates - 1], self.update_lr)
