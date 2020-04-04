@@ -93,13 +93,13 @@ def main_train():
     train(config)
 
 
-def main_plot():
-    path = './files/movie'
+def main_plot(path):
     w1 = np.load(os.path.join(path, 'w_layer1.npy'))
     w2 = np.load(os.path.join(path, 'w_layer2.npy'))
+    w1 = w1[:, :30, :]
     w2 = w2[:, :, :5]
     
-    n_plot = 600
+    n_plot = 800
     # n_plot = 100
     w1 = w1[:n_plot]
     w2 = w2[:n_plot]
@@ -161,11 +161,14 @@ def main_plot():
     anim = animation.FuncAnimation(fig, animate,
                                frames=w1.shape[0], interval=20)
     writer = animation.writers['ffmpeg'](fps=30)
-    anim.save(os.path.join(path, 'movie.mp4'), writer=writer, dpi=600)
+    # anim.save(os.path.join(path, 'movie.mp4'), writer=writer, dpi=600)
+    anim.save(os.path.join(path, 'movie.mp4'), writer=writer, dpi=200)
 
 if __name__ == '__main__':
     # main_train()
-    main_plot()
-    
+    path = './files/movie/metalearning'
+    main_plot(path)
+    w1 = np.load(os.path.join(path, 'w_layer1.npy'))
+    w2 = np.load(os.path.join(path, 'w_layer2.npy'))    
 
 
