@@ -122,6 +122,16 @@ def make_vary_or_datasets():
         task.save_proto(config=task_config, seed=0, folder_name='orn'+str(n_or))
 
 
+def make_orncorr_datasets():
+    """Vary the correlation of olfactory receptor neuron activity."""
+    task_config = task.input_ProtoConfig()
+    for orn_corr in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        task_config.orn_corr = orn_corr
+        fn = 'orn_corr_{:0.2f}'.format(orn_corr)
+        task.save_proto(config=task_config, seed=0, folder_name=fn)
+        print('Done orn_corr training dataset: ', orn_corr)
+
+
 def make_multi_or_datasets():
     """Vary the number of receptors expressed in each receptor neuron."""
     task_config = task.input_ProtoConfig()
@@ -154,7 +164,8 @@ if __name__ == '__main__':
     # make_combinatorial_dataset()
     # make_small_training_set_datasets()
     # make_multi_head_dataset()
-    make_multi_or_datasets()
+    # make_multi_or_datasets()
+    make_orncorr_datasets()
     # make_vary_or_datasets()
     # temp()
 

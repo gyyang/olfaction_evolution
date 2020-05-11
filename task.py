@@ -2,6 +2,7 @@ import os
 import shutil
 
 import numpy as np
+import scipy.stats as stats
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 import tools
@@ -157,6 +158,26 @@ def _normalize(x):
     return x
 
 
+def _sample_input(n_sample, dim, rng, corr=None):
+    """Sample inputs, default uniform.
+
+    Args:
+        corr: if not None, correlation of multi-dimensional random variables
+
+    Return:
+        Y: numpy array, (n_sample, dim)
+    """
+    if corr is not None:
+        mean = np.zeros(dim)
+        cov = np.ones((dim, dim)) * corr
+        np.fill_diagonal(cov, 1)
+        Y = rng.multivariate_normal(mean, cov, n_sample)
+        Y = stats.norm.cdf(Y)
+    else:
+        Y = rng.uniform(0, 1, (n_sample, dim))
+    return Y
+
+
 def _generate_proto_threshold(
         n_orn,
         n_class,
@@ -178,6 +199,7 @@ def _generate_proto_threshold(
         n_proto_valence=None,
         has_special_odors=False,
         n_or_per_orn=1,
+        orn_corr=None,
         seed=0):
     """Activate all ORNs randomly.
 
@@ -205,6 +227,8 @@ def _generate_proto_threshold(
         n_combinatorial_classes: int, the number of combinatorial classes
         combinatorial_density: float, the density of combinatorial code
         n_proto_valence: int, the number of valence class
+        orn_corr: None or float between 0 or 1, the correlation between
+            activity of different ORNs
         seed: int, random seed to generate the dataset
 
     Returns:
@@ -268,10 +292,16 @@ def _generate_proto_threshold(
         rng.shuffle(ind_shuffle)
         val_odors = val_odors[ind_shuffle, :]
         val_labels_valence = val_labels_valence[ind_shuffle]
+        if orn_corr is not None:
+            raise ValueError('orn_corr not None not supported for multi_head')
     else:
-        prototypes = rng.uniform(0, max_activation, (n_proto, n_orn))
-        train_odors = rng.uniform(0, max_activation, (n_train, n_orn))
-        val_odors = rng.uniform(0, max_activation, (n_val, n_orn))
+        prototypes = _sample_input(n_proto, n_orn, rng=rng, corr=orn_corr)
+        train_odors = _sample_input(n_train, n_orn, rng=rng, corr=orn_corr)
+        val_odors = _sample_input(n_val, n_orn, rng=rng, corr=orn_corr)
+
+        prototypes *= max_activation
+        train_odors *= max_activation
+        val_odors *= max_activation
 
     if n_proto == n_train:
         train_odors = prototypes
@@ -470,6 +500,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         n_proto_valence=config.n_proto_valence,
         has_special_odors=config.has_special_odors,
         n_or_per_orn=config.n_or_per_orn,
+        orn_corr=config.orn_corr,
         seed=seed)
 
     if folder_name is None:

@@ -66,6 +66,9 @@ class input_ProtoConfig(BaseConfig):
         # tuple[1] = Spread, varies from (0, 1]. Defines the bimodality of the prob dist.
         self.spread_orn_activity = (False, .5)
 
+        # Whether to have correlation between ORNs
+        self.orn_corr = None
+
 
 class InputAutoEncode(BaseConfig):
     def __init__(self):
