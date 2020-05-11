@@ -3,9 +3,9 @@ import os
 import tools
 
 SBATCHPATH = './sbatch/'
-SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
-ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
-PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'
+ROBERT_SCRATCHPATH = '/share/ctn/users/gy2259/olfaction_evolution'
+PETER_SCRATCHPATH = '/share/ctn/users/yw2500/olfaction_evolution'
 
 
 def basic_train(experiment, save_path):
