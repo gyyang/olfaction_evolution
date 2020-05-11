@@ -3,9 +3,12 @@ import task
 
 seed = 0
 
+
 def make_standard_dataset():
+    """Standard dataset."""
     task_config = task.input_ProtoConfig()
     task.save_proto(config=task_config, seed=0, folder_name='standard')
+
 
 def make_primordial_dataset():
     config = configs.input_ProtoConfig()
@@ -16,30 +19,37 @@ def make_primordial_dataset():
     config.n_trueclass = 1000
     task.save_proto(config, seed=seed, folder_name='primordial')
 
-def make_relabel_datasets_large():
+
+def make_relabel_datasets(mode='small'):
+    """Generate dataset with n_trueclass, then relabel to fewer classes."""
     config = configs.input_ProtoConfig()
-    config.N_CLASS = 100
-    for i in [100, 200, 500, 1000, 2000, 5000]:
+
+    if mode == 'small':
+        relabel_class = 20
+        true_classes = [20, 40, 80, 200, 400, 800, 2000]
+    elif mode == 'large':
+        relabel_class = 100
+        true_classes = [100, 200, 500, 1000, 2000, 5000]
+    else:
+        raise ValueError('Unknown mode', mode)
+
+    config.N_CLASS = relabel_class
+    for i in true_classes:
         config.n_trueclass = i
         config.relabel = True
-        task.save_proto(config, seed=seed, folder_name= str(config.n_trueclass) + '_' + str(config.N_CLASS))
+        fn = str(config.n_trueclass) + '_' + str(config.N_CLASS)
+        task.save_proto(config, seed=seed, folder_name=fn)
         print('Done Relabel Dataset: ' + str(i))
 
-def make_relabel_datasets_small():
-    config = configs.input_ProtoConfig()
-    config.N_CLASS = 20
-    for i in [20, 40, 80, 200, 400, 800, 2000]:
-        config.n_trueclass = i
-        config.relabel = True
-        task.save_proto(config, seed=seed, folder_name= str(config.n_trueclass) + '_' + str(config.N_CLASS))
-        print('Done Relabel Dataset: ' + str(i))
 
 def make_concentration_dataset():
+    """Impose odor concentration invariance."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
     config.vary_concentration = True
     task.save_proto(config, seed=seed, folder_name='concentration')
     print('Done Concentration Dataset')
+
 
 def make_tmp_dataset():
     """Make dataset with already normalized odors."""
@@ -49,7 +59,9 @@ def make_tmp_dataset():
     task.save_proto(config=task_config, seed=0, folder_name='tmp')
     print('Done Normalized Dataset')
 
+
 def make_mask_row_dataset():
+    """Impose sparsity on ORN activation."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
     for i in [.2, .4, .6, .8, 1]:
@@ -57,36 +69,43 @@ def make_mask_row_dataset():
         task.save_proto(config, seed=seed, folder_name='mask_row_' + str(i))
     print('Done Mask Dataset')
 
+
 def make_concentration_with_mask_row_dataset():
+    """Impose sparsity on ORN activation and concentration invariance."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
     config.vary_concentration = True
     for i in [0, .3, .6, .9]:
         config.spread_orn_activity = (True, i)
-        task.save_proto(config, seed=seed, folder_name='concentration_mask_row_' + str(i))
+        fn = 'concentration_mask_row_' + str(i)
+        task.save_proto(config, seed=seed, folder_name=fn)
     print('Done Concentration_Mask Dataset')
 
+
 def make_combinatorial_dataset():
+    """Map an odor to a combinatorial code, instead of a single class."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 20
     config.n_combinatorial_classes = 20
     config.combinatorial_density = .2
     config.label_type = 'combinatorial'
-    task.save_proto(config, seed=seed,
-                    folder_name='combinatorial_' +
-                                str(config.N_CLASS) +
-                                '_' + str(config.combinatorial_density))
+    fn = 'combinatorial_' + str(config.N_CLASS) + '_' + str(config.combinatorial_density)
+    task.save_proto(config, seed=seed, folder_name=fn)
+
 
 def make_small_training_set_datasets():
+    """Dataset with fewer training samples."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
     for i in [100, 1000, 10000, 100000, 1000000]:
         config.n_train = i
-        task.save_proto(config=config, seed=0, folder_name='small_training_set_' + str(i))
+        fn = 'small_training_set_' + str(i)
+        task.save_proto(config=config, seed=0, folder_name=fn)
         print('Done small training dataset: ' + str(i))
 
 
 def make_multi_head_dataset():
+    """Simultaneous classification of odor class and valence."""
     task_config = task.input_ProtoConfig()
     task_config.label_type = 'multi_head_sparse'
     task_config.has_special_odors = True
@@ -95,20 +114,23 @@ def make_multi_head_dataset():
 
 
 def make_vary_or_datasets():
+    """Vary the number of olfactory receptors."""
     task_config = task.input_ProtoConfig()
     for n_or in [25, 125, 175]:
     # for n_or in [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
         task_config.N_ORN = n_or
         task.save_proto(config=task_config, seed=0, folder_name='orn'+str(n_or))
 
+
 def make_multi_or_datasets():
+    """Vary the number of receptors expressed in each receptor neuron."""
     task_config = task.input_ProtoConfig()
     # for n_or_per_orn in range(1, 10):
     for n_or_per_orn in [0, 50]:
         task_config.n_or_per_orn = n_or_per_orn
-        task.save_proto(
-            config=task_config, seed=0,
-            folder_name='n_or_per_orn'+str(n_or_per_orn))
+        fn = 'n_or_per_orn'+str(n_or_per_orn)
+        task.save_proto(config=task_config, seed=0, folder_name=fn)
+
 
 def temp():
     config = configs.input_ProtoConfig()
@@ -119,10 +141,11 @@ def temp():
     task.save_proto(config, seed=seed, folder_name='test')
     print('Done test dataset')
 
+
 if __name__ == '__main__':
     # make_standard_dataset()
-    # make_relabel_datasets_small()
-    # make_relabel_datasets_large()
+    # make_relabel_datasets('small')
+    # make_relabel_datasets('large')
     # make_concentration_dataset()
     # make_concentration_with_mask_row_dataset()
     # make_tmp_dataset()
