@@ -124,7 +124,7 @@ def rnn(n_pn=50):
     return config, hp_ranges
 
 train = cluster_train
-cluster_path = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+cluster_path = '/share/ctn/users/yw2500/olfaction_evolution'
 n_pns = [int(x) for x in args.pn]
 print(n_pns)
 for n_pn in n_pns:

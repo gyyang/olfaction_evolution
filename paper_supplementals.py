@@ -25,9 +25,9 @@ from standard.hyper_parameter_train import local_train, cluster_train
 import matplotlib as mpl
 import numpy as np
 
-SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
-ROBERT_SCRATCHPATH = '/axsys/scratch/ctn/users/gy2259/olfaction_evolution'
-PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
+SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'
+ROBERT_SCRATCHPATH = '/share/ctn/users/gy2259/olfaction_evolution'
+PETER_SCRATCHPATH = '/share/ctn/users/yw2500/olfaction_evolution'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
