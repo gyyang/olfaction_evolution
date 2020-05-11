@@ -23,6 +23,56 @@ def standard(argTest=False):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
+def rnn(argTest=False):
+    config = configs.FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 30
+    config.model = 'rnn'
+
+    config.NEURONS = 2500
+    config.BATCH_NORM = False
+
+    config.dropout = True
+    config.dropout_rate = 0
+    config.DIAGONAL = True
+
+    hp_ranges = OrderedDict()
+    hp_ranges['TIME_STEPS'] = [1, 2, 3]
+    hp_ranges['replicate_orn_with_tiling'] = [False, True, True]
+    hp_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
+    if argTest:
+        config.max_epoch = 16
+    return config, hp_ranges
+
+def metalearn(argTest=False):
+    config = configs.MetaConfig()
+    config.meta_lr = .001
+    config.N_CLASS = 10 #10
+    config.save_every_epoch = True
+    config.meta_batch_size = 32 #32
+    config.meta_num_samples_per_class = 8 #16
+    config.meta_print_interval = 500
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+    config.output_max_lr = 2.0 #2.0
+
+    config.metatrain_iterations = 15000
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+    config.initial_pn2kc = 0.05 #0.05
+
+    config.data_dir = './datasets/proto/meta_dataset'
+
+    hp_ranges = OrderedDict()
+    hp_ranges['dummy'] = [True]
+
+    if argTest:
+        pass
+    return config, hp_ranges
+
 def receptor(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
@@ -45,7 +95,7 @@ def receptor(argTest=False):
         config.max_epoch = 16
     return config, hp_ranges
 
-def vary_pn_configs(argTest=False):
+def vary_pn(argTest=False):
     '''
     Vary number of PNs while fixing KCs to be 2500
     Results:
@@ -69,13 +119,9 @@ def vary_pn_configs(argTest=False):
 
     return config, hp_ranges
 
-def vary_kc_configs(argTest=False):
+def vary_kc(argTest=False):
     '''
     Vary number of KCs while also training ORN2PN.
-    Results:
-        GloScore and Accuracy peaks at >2500 KCs for all noise values
-        GloScore does not depend on noise. Should be lower for higher noise values
-        GloScore depends on nKC. Should be lower for lower nKC
     '''
     config = configs.FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -182,34 +228,6 @@ def pn_normalization(argTest):
         config.max_epoch = testing_epochs
     return config, hp_ranges
 
-def metalearn(argTest=False):
-    config = configs.MetaConfig()
-    config.meta_lr = .001
-    config.N_CLASS = 5
-    config.save_every_epoch = True
-    config.meta_output_dimension = 5
-    config.meta_batch_size = 32
-    config.meta_num_samples_per_class = 32
-    config.meta_print_interval = 250
-
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.train_kc_bias = True
-
-    config.metatrain_iterations = 20000
-    config.pn_norm_pre = 'batch_norm'
-    config.kc_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
-
-    config.data_dir = './datasets/proto/test'
-
-    hp_ranges = OrderedDict()
-    hp_ranges['dummy'] = [True]
-
-    if argTest:
-        pass
-    return config, hp_ranges
 
 
 def train_multihead(argTest=False):
@@ -273,31 +291,3 @@ def train_multihead_pruning(argTest=False):
         config.max_epoch = testing_epochs
 
     return config, hp_ranges
-
-
-def train_multihead_sequential():
-    config = configs.input_ProtoConfig()
-    config.label_type = 'multi_head_sparse'
-    task.save_proto(config, folder_name='multi_head')
-
-    import train
-    config = configs.FullConfig()
-
-    config.batch_size = 256
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-
-    config.pn_norm_pre = 'batch_norm'
-    config.data_dir = './datasets/proto/multi_head'
-    config.save_path = './files/multihead_sequential/0'
-    config.save_every_epoch = True
-
-    config.max_epoch = 10
-    config.train_head1 = False
-    train.train(config)
-
-    config.max_epoch = 30
-    config.train_head1 = True
-    train.train(config, reload=True)

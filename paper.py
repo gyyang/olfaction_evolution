@@ -60,10 +60,10 @@ else:
     train = local_train
 
 # TRAIN = True
-# ANALYZE = True
 # is_test = True
-# args.experiments = ['receptor']
-
+# ANALYZE = True
+# args.experiment = ['metalearn']
+#
 if ANALYZE:
     import standard.analysis as sa
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
@@ -75,6 +75,7 @@ if ANALYZE:
     import oracle.evaluatewithnoise as evaluatewithnoise
     import analytical.numerical_test as numerical_test
     import analytical.analyze_simulation_results as analyze_simulation_results
+    import standard.analysis_rnn as analysis_rnn
 
 
 if args.experiment == 'core':
@@ -82,20 +83,19 @@ if args.experiment == 'core':
                    'receptor',
                    'vary_pn',
                    'vary_kc',
+                   'metalearn',
                    'pn_normalization',
                    'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
                    'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
-                   'controls_kc_claw', 'controls_glomeruli', 'controls_receptor',
                    'kcrole', 'kc_generalization',
-                   'multi_head', 'metalearn',
-                   'vary_n_orn', 'vary_lr_n_kc']
+                   'multi_head']
 else:
     experiments = args.experiment
 
 if 'standard' in experiments:
     path = './files/standard'
     if TRAIN:
-        train(se.standard(is_test), path)
+        train(se.standard(is_test), save_path=path, path=cluster_path)
     if ANALYZE:
         # accuracy
         sa.plot_progress(path, ykeys = ['val_acc'])
@@ -132,41 +132,54 @@ if 'receptor' in experiments:
         sa.plot_weights(path, var_name='w_glo')
 
 if 'vary_pn' in experiments:
-    # Vary nPN under different noise levels
+    # Vary nPN
     path = './files/vary_pn'
     if TRAIN:
-        train(se.vary_pn_configs(is_test), path)
+        train(se.vary_pn(is_test), save_path=path, path=cluster_path)
     if ANALYZE:
-        # sa.plot_weights(os.path.join(path,'000005'), sort_axis = 1, dir_ix=8, average=True)
-        sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD':0}),
-        # sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75})
-
-        # sa.plot_results(path, x_key='N_PN', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 loop_key='ORN_NOISE_STD', plot_args= {'alpha':.75}),
-        # sa.plot_results(path, x_key='N_PN', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 select_dict={'ORN_NOISE_STD': 0})
+        xticks = [20, 50, 100, 200, 1000]
+        ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
+        ykeys = ['val_acc', 'glo_score']
+        for ykey in ykeys:
+            sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+                            loop_key='kc_dropout_rate', logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
 if 'vary_kc' in experiments:
-    # Vary nKC under different noise levels
-    path = './files/vary_kc`'
+    # Vary nKC
+    path = './files/vary_kc'
     if TRAIN:
-        train(se.vary_kc_configs(is_test), path)
+        train(se.vary_kc(is_test), save_path=path, path=cluster_path)
     if ANALYZE:
-        # sa.plot_weights(os.path.join(path,'000002'), sort_axis=1, dir_ix=0, average=True)
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-                        select_dict={'ORN_NOISE_STD': 0})
-        # sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
-        #                 select_dict={'ORN_NOISE_STD': 0})
+        xticks = [50, 200, 1000, 2500, 10000]
+        ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
+        ykeys = ['val_acc', 'glo_score']
+        for ykey in ykeys:
+            sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+                            loop_key='kc_dropout_rate', logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
-        # # correlation and dimensionality
-        # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
-        #                 yticks=[0, .1, .2],
-        #                 ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
-        # analysis_orn2pn.get_dimensionality(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
+if 'rnn' in experiments:
+    path = './files/rnn'
+    if TRAIN:
+        train(se.rnn(is_test), save_path=path, path=cluster_path, sequential=True)
+    if ANALYZE:
+        sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
+        # analysis_rnn.analyze_t0(path, dir_ix=0)
+        analysis_rnn.analyze_t_greater(path, dir_ix=1)
+        analysis_rnn.analyze_t_greater(path, dir_ix=2)
+
+if 'metalearn' in experiments:
+    path = './files/metalearn'
+    if TRAIN:
+        train(se.metalearn(is_test), path, train_arg='metatrain', sequential=True)
+    if ANALYZE:
+        # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
+        # sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1)
+        analysis_pn2kc_training.plot_distribution(path, xrange=1)
+        analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, thres=.05)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
+        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
@@ -210,17 +223,3 @@ if 'multi_head' in experiments:
     if ANALYZE:
         # analysis_multihead.main1('multi_head')
         sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn', sort_axis=1)
-
-if 'metalearn' in experiments:
-    path = './files/metalearn'
-    if TRAIN:
-        train(se.metalearn(is_test), path, train_arg='metalearn', sequential=True)
-    if ANALYZE:
-        # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
-        sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1)
-        # analysis_pn2kc_training.plot_distribution(path, xrange=1)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, thres=.05)
-        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
-        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
-        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
-        # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
