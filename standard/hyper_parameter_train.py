@@ -1,7 +1,6 @@
-import tools
-import train
 import os
-import mamlmetatrain
+
+import tools
 
 SBATCHPATH = './sbatch/'
 SCRATCHPATH = '/axsys/scratch/ctn/projects/olfaction_evolution'
@@ -10,6 +9,8 @@ PETER_SCRATCHPATH = '/axsys/scratch/ctn/users/yw2500/olfaction_evolution'
 
 
 def basic_train(experiment, save_path):
+    import train
+
     config = experiment()
     config.save_path = save_path
     train.train(config)
@@ -18,6 +19,9 @@ def basic_train(experiment, save_path):
 def local_train(experiment, save_path, sequential=False, control=False,
                 train_arg=None, **kwargs):
     """Train all models locally."""
+    import train
+    import mamlmetatrain
+
     for i in range(0, 1000):
         if sequential:
             config = tools.varying_config_sequential(experiment, i)
