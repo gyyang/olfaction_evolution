@@ -430,6 +430,15 @@ if 'vary_init_sparse' in experiments:
     if ANALYZE:
         pass
 
+if 'vary_orn_corr' in experiments:
+    # Vary ORN correlation
+    path = './files/vary_orn_corr'
+    if TRAIN:
+        train(standard.experiment_controls.vary_orn_corr(), sequential=True,
+              save_path=path, path=cluster_path)
+    if ANALYZE:
+        pass
+
 if 'analytical' in experiments:
     if TRAIN:
         numerical_test.get_optimal_K_simulation()
