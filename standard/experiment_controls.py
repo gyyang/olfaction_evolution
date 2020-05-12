@@ -419,6 +419,6 @@ def vary_orn_corr():
     datasets = ['./datasets/proto/orn_corr_{:0.2f}'.format(c) for c in orn_corrs]
 
     hp_ranges = OrderedDict()
-    hp_ranges['orn_corrs'] = orn_corrs
+    hp_ranges['orn_corr'] = orn_corrs
     hp_ranges['data_dir'] = datasets
     return config, hp_ranges
