@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import tools
 
@@ -94,14 +95,10 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
     return jobfile
 
 
-import subprocess
-
 def cluster_train(experiment, save_path, sequential=False, control=False,
                   path=SCRATCHPATH, train_arg=None, use_torch=False):
     """Train all models locally."""
     job_name = save_path.split('/')[-1]  # get end of path as job name
-    config = tools.varying_config(experiment, 0)
-    original_data_dir = config.data_dir[2:]  # HACK
 
     for i in range(0, 1000):
         if sequential:
@@ -115,21 +112,21 @@ def cluster_train(experiment, save_path, sequential=False, control=False,
             config.save_path = os.path.join(path, 'files', job_name, str(i).zfill(6))
 
             # TEMPORARY HACK
-            # TODO: Fix bug when data_dir is not always the same
-            config.data_dir = os.path.join(path, original_data_dir)
+            # Hack: assuming data_dir of form './files/XX'
+            config.data_dir = os.path.join(path, config.data_dir[2:])
             os.makedirs(config.save_path, exist_ok=True)
 
             tools.save_config(config, config.save_path)
 
-            arg =  '\'' + config.save_path + '\''
+            arg = '\'' + config.save_path + '\''
 
             if train_arg == 'metatrain':
                 cmd = r'''python -c "import mamlmetatrain; mamlmetatrain.train_from_path(''' + arg + ''')"'''
             else:
-                if not use_torch:
-                    cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
-                else:
+                if use_torch:
                     cmd = r'''python -c "import torchtrain; torchtrain.train_from_path(''' + arg + ''')"'''
+                else:
+                    cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
 
             jobfile = write_jobfile(cmd, job_name + str(i))
             subprocess.call(['sbatch', jobfile])
