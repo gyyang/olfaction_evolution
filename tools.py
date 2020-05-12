@@ -279,6 +279,9 @@ nicename_dict = {
         'glo_score': 'GloScore',
         'or_glo_score': 'OR to ORN GloScore',
         'combined_glo_score': 'OR to PN GloScore',
+        'train_acc': 'Training Accuracy',
+        'train_loss': 'Training Loss',
+        'train_logloss': 'Log Training Loss',
         'val_acc': 'Accuracy',
         'val_loss': 'Loss',
         'val_logloss': 'Log Loss',
@@ -310,6 +313,7 @@ nicename_dict = {
         'kc_recinh': 'KC recurrent inhibition',
         'kc_recinh_coeff': 'KC rec. inh. strength',
         'kc_recinh_step': 'KC rec. inh. step',
+        'orn_corr': 'ORN correlation',
         }
 
 

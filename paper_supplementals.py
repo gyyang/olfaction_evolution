@@ -69,14 +69,16 @@ else:
 
 if ANALYZE:
     import standard.analysis as sa
-    import standard.analysis_pn2kc_peter
+    try:
+        import standard.analysis_pn2kc_peter
+    except:
+        pass
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
     import standard.analysis_activity as analysis_activity
     import standard.analysis_multihead as analysis_multihead
     import standard.analysis_metalearn as analysis_metalearn
-    import oracle.evaluatewithnoise as evaluatewithnoise
     import analytical.numerical_test as numerical_test
     import analytical.analyze_simulation_results as analyze_simulation_results
     import standard.analysis_nonnegative as analysis_nonnegative
@@ -440,7 +442,23 @@ if 'vary_orn_corr' in experiments:
         train(standard.experiment_controls.vary_orn_corr(), sequential=True,
               save_path=path)
     if ANALYZE:
-        pass
+        xkey = 'orn_corr'
+        ykeys = ['val_acc', 'K_inferred', 'glo_score']
+        progress_keys = ['val_logloss', 'train_logloss', 'val_loss',
+                         'train_loss', 'val_acc', 'glo_score', 'K_inferred']
+        for yk in ykeys:
+            if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+                ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 20, 30]
+            elif yk in ['val_acc', 'glo_score']:
+                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
+            else:
+                raise ValueError
+
+            sa.plot_results(path, x_key=xkey, y_key=yk,
+                            figsize=(3.0, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                            ax_args={'ylim': ylim, 'yticks': yticks})
+
+            sa.plot_progress(path, legend_key=xkey, ykeys=progress_keys)
 
 if 'analytical' in experiments:
     if TRAIN:
