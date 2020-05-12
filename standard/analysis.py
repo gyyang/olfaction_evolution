@@ -44,7 +44,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     if xkey == 'lr':
         rect = (0.2, 0.25, 0.75, 0.65)
     else:
-        rect = (0.3, 0.25, 0.6, 0.65)
+        rect = (0.27, 0.25, 0.65, 0.65)
 
     if xkey == 'kc_inputs':
         ax_args['xticks'] = [3, 7, 15, 30, 40, 50]
@@ -412,7 +412,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         if xkey == 'lr':
             figsize = (4.5, 1.5)
         else:
-            figsize = (2.0, 1.5)
+            figsize = (1.5, 1.5)
 
     def _plot_results(ykey):
         # Default ax_args and other values, based on x and y keys
