@@ -57,7 +57,8 @@ if use_cluster:
         cluster_train(experiment, save_path, path=cluster_path,
                       use_torch=args.torch, **kwargs)
 else:
-    train = local_train
+    def train(experiment, save_path, **kwargs):
+        local_train(experiment, save_path, use_torch=args.torch, **kwargs)
 
 # TRAIN = True
 # is_test = True
@@ -95,7 +96,7 @@ else:
 if 'standard' in experiments:
     path = './files/standard'
     if TRAIN:
-        train(se.standard(is_test), save_path=path, path=cluster_path)
+        train(se.standard(is_test), save_path=path)
     if ANALYZE:
         # accuracy
         sa.plot_progress(path, ykeys = ['val_acc'])
@@ -135,7 +136,7 @@ if 'vary_pn' in experiments:
     # Vary nPN
     path = './files/vary_pn'
     if TRAIN:
-        train(se.vary_pn(is_test), save_path=path, path=cluster_path)
+        train(se.vary_pn(is_test), save_path=path)
     if ANALYZE:
         xticks = [20, 50, 100, 200, 1000]
         ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
@@ -148,7 +149,7 @@ if 'vary_kc' in experiments:
     # Vary nKC
     path = './files/vary_kc'
     if TRAIN:
-        train(se.vary_kc(is_test), save_path=path, path=cluster_path)
+        train(se.vary_kc(is_test), save_path=path)
     if ANALYZE:
         xticks = [50, 200, 1000, 2500, 10000]
         ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
@@ -160,7 +161,7 @@ if 'vary_kc' in experiments:
 if 'rnn' in experiments:
     path = './files/rnn'
     if TRAIN:
-        train(se.rnn(is_test), save_path=path, path=cluster_path, sequential=True)
+        train(se.rnn(is_test), save_path=path, sequential=True)
     if ANALYZE:
         sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
         # analysis_rnn.analyze_t0(path, dir_ix=0)

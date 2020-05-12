@@ -65,14 +65,12 @@ if use_cluster:
         cluster_train(experiment, save_path, path=cluster_path,
                       use_torch=args.torch, **kwargs)
 else:
-    train = local_train
+    def train(experiment, save_path, **kwargs):
+        local_train(experiment, save_path, use_torch=args.torch, **kwargs)
 
 if ANALYZE:
     import standard.analysis as sa
-    try:
-        import standard.analysis_pn2kc_peter
-    except:
-        pass
+    import standard.analysis_pn2kc_peter
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
