@@ -174,20 +174,25 @@ if 'control_pn2kc_inhibition' in experiments:
     if TRAIN:
         train(experiment_controls.control_pn2kc_inhibition(), save_path=path, sequential=True)
     if ANALYZE:
-        xkey = 'w_glo_meansub_coeff'
+        xkey = 'kc_recinh_coeff'
         ykeys = ['val_acc', 'K_inferred']
+        loop_key = 'kc_recinh_step'
+        select_dict = {'kc_prune_weak_weights': False}
         for yk in ykeys:
             if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
                 ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 20, 30]
             elif yk == 'val_acc':
                 ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
 
-            sa.plot_results(path, x_key=xkey, y_key=yk,
+            sa.plot_results(path, x_key=xkey, y_key=yk, loop_key=loop_key,
+                            select_dict=select_dict,
                             figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                             ax_args={'ylim': ylim, 'yticks': yticks})
 
-            sa.plot_progress(path, ykeys=[yk], legend_key=xkey, ax_args={'ylim': ylim, 'yticks': yticks})
-        #
+            sa.plot_progress(path, ykeys=[yk], legend_key=xkey,
+                             select_dict=select_dict,
+                             ax_args={'ylim': ylim, 'yticks': yticks})
+
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
         sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
                    ax_args={'ylim':[0, 500]})
