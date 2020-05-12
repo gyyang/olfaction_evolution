@@ -18,10 +18,13 @@ def basic_train(experiment, save_path):
 
 
 def local_train(experiment, save_path, sequential=False, control=False,
-                train_arg=None, **kwargs):
+                train_arg=None, use_torch=False, **kwargs):
     """Train all models locally."""
-    import train
-    import mamlmetatrain
+    if use_torch:
+        import torchtrain as train
+    else:
+        import train
+        import mamlmetatrain
 
     for i in range(0, 1000):
         if sequential:
