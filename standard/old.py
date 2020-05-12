@@ -165,10 +165,10 @@ if 'vary_pn2kc_initial_value' in experiments:
     if TRAIN:
         local_train(experiments_controls_pn2kc.vary_pn2kc_initial_value_configs(is_test), path)
     if ANALYZE:
-        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, x_key='initial_pn2kc', dynamic_thres=True)
+        analysis_pn2kc_training.plot_pn2kc_claw_stats(path, xkey='initial_pn2kc', dynamic_thres=True)
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        sa.plot_results(path, x_key='initial_pn2kc', y_key='val_acc')
+        sa.plot_results(path, xkey='initial_pn2kc', ykey='val_acc')
 
 if 'vary_pn2kc_loss' in experiments:
     path = './files/vary_pn2kc_loss'
@@ -177,8 +177,8 @@ if 'vary_pn2kc_loss' in experiments:
     if ANALYZE:
         analysis_pn2kc_training.image_pn2kc_parameters(path)
         analysis_pn2kc_training.plot_distribution(path)
-        sa.plot_results(path, x_key='kc_loss_beta', y_key='glo_score', loop_key='kc_loss_alpha')
-        sa.plot_results(path, x_key='kc_loss_beta', y_key='val_acc', loop_key='kc_loss_alpha')
+        sa.plot_results(path, xkey='kc_loss_beta', ykey='glo_score', loop_key='kc_loss_alpha')
+        sa.plot_results(path, xkey='kc_loss_beta', ykey='val_acc', loop_key='kc_loss_alpha')
 
 if 'vary_kc_no_dropout' in experiments:
     # Vary nKC under different noise levels
@@ -187,22 +187,22 @@ if 'vary_kc_no_dropout' in experiments:
         local_train(se.vary_kc_no_dropout_configs(is_test), path)
     if ANALYZE:
         sa.plot_weights(path, sort_axis=1, dir_ix=0, average=True)
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='N_KC', ykey='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
                         select_dict={'ORN_NOISE_STD': 0})
-        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='N_KC', ykey='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
                         select_dict={'ORN_NOISE_STD': 0})
-        sa.plot_results(path, x_key='N_KC', y_key='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='N_KC', ykey='glo_score', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
                                        loop_key='ORN_NOISE_STD'),
-        sa.plot_results(path, x_key='N_KC', y_key='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='N_KC', ykey='val_acc', figsize=(1.5, 1.5), ax_box = (0.27, 0.25, 0.65, 0.65),
                                        loop_key='ORN_NOISE_STD')
 
         # # correlation and dimensionality
         # analysis_orn2pn.get_correlation_coefficients(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
+        # sa.plot_results(path, xkey='N_KC', ykey= 'glo_activity_corrcoef', select_dict={'ORN_NOISE_STD':0},
         #                 yticks=[0, .1, .2],
         #                 ax_args={'ylim':[-.05, .2],'yticks':[0, .1, .2]})
         # analysis_orn2pn.get_dimensionality(path, 'glo')
-        # sa.plot_results(path, x_key='N_KC', y_key= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
+        # sa.plot_results(path, xkey='N_KC', ykey= 'glo_dimensionality', select_dict={'ORN_NOISE_STD':0})
 
 
 def vary_kc_no_dropout_configs(argTest=False):

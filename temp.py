@@ -135,7 +135,7 @@ sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_a
 
 
 # path = r'files/cluster_fast_convergence/cluster_fast_convergence_no_bn50'
-# sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', select_dict={'ORN_NOISE_STD': 0},
+# sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss', select_dict={'ORN_NOISE_STD': 0},
 #                         figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
 #                         ax_args={'ylim':[-1, 4], 'yticks':[-1,0,1,2]})
 
@@ -146,7 +146,7 @@ sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_a
 # t = [1, 2, 10, 30, 60, 99]
 # for i in t:
 #     res = tools.load_all_results(path, argLast=False, ix=i)
-#     sa.plot_results(path, x_key='kc_inputs', y_key='val_loss',
+#     sa.plot_results(path, xkey='kc_inputs', ykey='val_loss',
 #                     select_dict={'ORN_NOISE_STD': 0}, res=res, string=str(i), yticks='', ax_args={'ylim':[-1, 4]})
 
 # np = os.path.join(path,'000000','epoch')
@@ -198,9 +198,9 @@ sa.plot_weights(os.path.join(path, folder,'epoch', ix), var_name='w_glo', sort_a
 # plt.show()
 
 # analysis_training.plot_distribution(path)
-# analysis_training.plot_pn2kc_claw_stats(path, x_key = 'n_trueclass', dynamic_thres=False)
+# analysis_training.plot_pn2kc_claw_stats(path, xkey = 'n_trueclass', dynamic_thres=False)
 # analysis_activity.sparseness_activity(path, 'glo_out')
 # analysis_activity.sparseness_activity(path, 'kc_out', activity_threshold=.01)
-# analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+# analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', xkey='n_trueclass', loop_key='kc_dropout_rate')
 
 # sa.plot_weights(path, var_name='model/layer3/kernel:0', dir_ix=0)

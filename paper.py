@@ -141,7 +141,7 @@ if 'vary_pn' in experiments:
         ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
         ykeys = ['val_acc', 'glo_score']
         for ykey in ykeys:
-            sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+            sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
                             loop_key='kc_dropout_rate', logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
 if 'vary_kc' in experiments:
@@ -154,7 +154,7 @@ if 'vary_kc' in experiments:
         ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
         ykeys = ['val_acc', 'glo_score']
         for ykey in ykeys:
-            sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+            sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
                             loop_key='kc_dropout_rate', logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
 if 'rnn' in experiments:
@@ -186,7 +186,7 @@ if 'pn_normalization' in experiments:
     if TRAIN:
         train(se.pn_normalization(is_test), path)
     if ANALYZE:
-        sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+        sa.plot_results(path, xkey='data_dir', ykey='val_acc', loop_key='pn_norm_pre',
                         select_dict={
                             'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
                             'data_dir': ['./datasets/proto/standard',
@@ -194,7 +194,7 @@ if 'pn_normalization' in experiments:
                                          ]},
                         figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), sort=False)
 
-        sa.plot_results(path, x_key='data_dir', y_key='val_acc', loop_key='pn_norm_pre',
+        sa.plot_results(path, xkey='data_dir', ykey='val_acc', loop_key='pn_norm_pre',
                         select_dict={
                             'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
                             'data_dir': ['./datasets/proto/concentration',

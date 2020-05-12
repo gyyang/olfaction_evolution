@@ -102,8 +102,8 @@ if 'control_nonnegative' in experiments:
 
         # # #sign constraint
         sa.plot_progress(path, ykeys=['glo_score','val_acc'], legend_key='sign_constraint_orn2pn')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='glo_score')
-        sa.plot_results(path, x_key='sign_constraint_orn2pn', y_key='val_acc')
+        sa.plot_results(path, xkey='sign_constraint_orn2pn', ykey='glo_score')
+        sa.plot_results(path, xkey='sign_constraint_orn2pn', ykey='val_acc')
 
 
 if 'control_orn2pn' in experiments:
@@ -123,7 +123,7 @@ if 'control_orn2pn' in experiments:
                     logx= True
                 else:
                     logx = False
-                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
+                sa.plot_results(path, xkey=xk, ykey=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), select_dict=temp,
                                 logx=logx, ax_args={'ylim':[0, 1],'yticks':[0, .25, .5, .75, 1]})
 
                 sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk,
@@ -155,7 +155,7 @@ if 'control_pn2kc' in experiments:
                     logx = True
                 else:
                     logx = False
-                sa.plot_results(path, x_key=xk, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                sa.plot_results(path, xkey=xk, ykey=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                                 select_dict=temp,
                                 logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
 
@@ -179,19 +179,11 @@ if 'control_pn2kc_inhibition' in experiments:
         loop_key = 'kc_recinh_step'
         select_dict = {'kc_prune_weak_weights': False}
         for yk in ykeys:
-            if yk in ['K_inferred', 'sparsity_inferred', 'K','sparsity']:
-                ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 20, 30]
-            elif yk == 'val_acc':
-                ylim, yticks = [0, 1], [0, .25, .5, .75, 1]
-
-            sa.plot_results(path, x_key=xkey, y_key=yk, loop_key=loop_key,
-                            select_dict=select_dict,
-                            figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                            ax_args={'ylim': ylim, 'yticks': yticks})
+            sa.plot_results(path, xkey=xkey, ykey=yk, loop_key=loop_key,
+                            select_dict=select_dict)
 
             sa.plot_progress(path, ykeys=[yk], legend_key=xkey,
-                             select_dict=select_dict,
-                             ax_args={'ylim': ylim, 'yticks': yticks})
+                             select_dict=select_dict)
 
         res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False, redo=True)
         sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_', legend_key=xkey, log=res,
@@ -247,7 +239,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
                     temp = copy.deepcopy(default)
                     temp.pop(xk)
                     logx = True
-                    # sa.plot_results(cur_path, x_key=k, y_key=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                    # sa.plot_results(cur_path, xkey=k, ykey=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                     #                 select_dict=temp,
                     #                 logx=logx, ax_args={'ylim': ylim, 'yticks': yticks})
                     #
@@ -283,10 +275,10 @@ if 'control_vary_pn' in experiments:
                 ylim, yticks = [0, 30], [0, 3, 7, 10, 15, 30]
             else:
                 ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
-            sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
+            sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
                             loop_key='kc_dropout_rate',
                             logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
-            sa.plot_results(path, x_key='N_PN', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+            sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
                             loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
                             logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
             sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN', select_dict={'kc_dropout_rate':0.5},
@@ -304,10 +296,10 @@ if 'control_vary_kc' in experiments:
         # ylim, yticks = [0, 1.1], [0, .25, .5, .75, 1]
         # xticks = [50, 200, 1000, 2500, 10000]
         # for ykey in ykeys:
-        #     sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
+        #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
         #                     loop_key='kc_dropout_rate',
         #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
-        #     sa.plot_results(path, x_key='N_KC', y_key=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+        #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
         #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
         #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
 
@@ -335,25 +327,25 @@ if 'controls_receptor' in experiments:
         local_train(experiment_controls.controls_receptor(is_test), path, control=True)
     if ANALYZE:
         default = {'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='or_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='N_ORN_DUPLICATION', ykey='or_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
-        sa.plot_results(path, x_key='or2orn_normalization', y_key='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='or2orn_normalization', ykey='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='pn_norm_pre', ykey='or_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
 
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='combined_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='N_ORN_DUPLICATION', ykey='combined_glo_score',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
-        sa.plot_results(path, x_key='or2orn_normalization', y_key='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='or2orn_normalization', ykey='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='pn_norm_pre', ykey='combined_glo_score',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
 
-        sa.plot_results(path, x_key='N_ORN_DUPLICATION', y_key='val_acc',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='N_ORN_DUPLICATION', ykey='val_acc',  figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'or2orn_normalization': True, 'pn_norm_pre':'batch_norm'}),
-        sa.plot_results(path, x_key='or2orn_normalization', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='or2orn_normalization', ykey='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'N_ORN_DUPLICATION': 10, 'pn_norm_pre':'batch_norm'})
-        sa.plot_results(path, x_key='pn_norm_pre', y_key='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+        sa.plot_results(path, xkey='pn_norm_pre', ykey='val_acc',figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                         select_dict={'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True})
 
 if 'vary_kc_claws' in experiments:
@@ -365,7 +357,7 @@ if 'vary_kc_claws' in experiments:
         t = [1, 2, 9, 19, 29, 39, 49, 59, 69]
         for i in t:
             res = tools.load_all_results(path, argLast=False, ix=i)
-            sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss',
+            sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss',
                             select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i), figsize=(2, 2),
                             ax_box=(0.27, 0.25, 0.65, 0.65))
 
@@ -374,17 +366,17 @@ if 'vary_kc_claws' in experiments:
         # import tools
         # for i in range(8):
         #     res = tools.load_all_results(path, argLast=False, ix=i)
-        #     sa.plot_results(path, x_key='kc_inputs', y_key='train_loss',
+        #     sa.plot_results(path, xkey='kc_inputs', ykey='train_loss',
         #                     select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i))
 
-        # sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', loop_key='ORN_NOISE_STD',
+        # sa.plot_results(path, xkey='kc_inputs', ykey='val_acc', loop_key='ORN_NOISE_STD',
         #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_acc', select_dict={'ORN_NOISE_STD':0},
+        sa.plot_results(path, xkey='kc_inputs', ykey='val_acc', select_dict={'ORN_NOISE_STD':0},
                         figsize=(2, 2), ax_box=(0.27, 0.25, 0.65, 0.65),)
-        # sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', loop_key='ORN_NOISE_STD',
+        # sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss', loop_key='ORN_NOISE_STD',
         #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
         #                 ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
-        sa.plot_results(path, x_key='kc_inputs', y_key='val_logloss', select_dict={'ORN_NOISE_STD': 0},
+        sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss', select_dict={'ORN_NOISE_STD': 0},
                         figsize=(2, 2), ax_box=(0.27, 0.25, 0.65, 0.65),
                         ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
 
@@ -394,9 +386,9 @@ if 'vary_kc_activity_fixed' in experiments:
     if TRAIN:
         train(se.vary_kc_activity_fixed(is_test), path)
     if ANALYZE:
-        # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
+        # sa.plot_results(path, xkey='n_trueclass', ykey='val_acc', loop_key='kc_dropout_rate')
         analysis_activity.sparseness_activity(path, 'kc_out')
-        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+        analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', xkey='n_trueclass', loop_key='kc_dropout_rate')
 
 if 'vary_kc_activity_trainable' in experiments:
     # Vary KC activity under different number of relabels
@@ -406,9 +398,9 @@ if 'vary_kc_activity_trainable' in experiments:
     if ANALYZE:
         analysis_pn2kc_training.plot_distribution(path)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True)
-        # sa.plot_results(path, x_key='n_trueclass', y_key='val_acc', loop_key='kc_dropout_rate')
+        # sa.plot_results(path, xkey='n_trueclass', ykey='val_acc', loop_key='kc_dropout_rate')
         # analysis_activity.sparseness_activity(path, 'kc_out')
-        # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', x_key='n_trueclass', loop_key='kc_dropout_rate')
+        # analysis_activity.plot_mean_activity_sparseness(path, 'kc_out', xkey='n_trueclass', loop_key='kc_dropout_rate')
 
 if 'apl' in experiments:
     # Adding inhibitory APL unit.
@@ -459,7 +451,7 @@ if 'vary_orn_corr' in experiments:
             else:
                 raise ValueError
 
-            sa.plot_results(path, x_key=xkey, y_key=yk,
+            sa.plot_results(path, xkey=xkey, ykey=yk,
                             figsize=(3.0, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                             ax_args={'ylim': ylim, 'yticks': yticks})
 

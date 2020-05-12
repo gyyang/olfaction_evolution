@@ -160,7 +160,7 @@ def sparseness_activity(save_path, arg, activity_threshold=0.,
                       ylabel='Number of '+name+'s', xrange=zticks)
 
 
-def plot_mean_activity_sparseness(save_path, arg, x_key,
+def plot_mean_activity_sparseness(save_path, arg, xkey,
                                   loop_key=None, select_dict=None):
     dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
 
@@ -181,7 +181,7 @@ def plot_mean_activity_sparseness(save_path, arg, x_key,
         config = tools.load_config(d)
         setattr(config, arg + '_sparse_mean', mean_sparseness[i])
         tools.save_config(config, d)
-    sa.plot_results(save_path, x_key= x_key, y_key= arg + '_sparse_mean',
+    sa.plot_results(save_path, xkey= xkey, ykey= arg + '_sparse_mean',
                     ax_args= {'yticks': [0, .2, .4, .6, .8]},
                     figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
                     loop_key=loop_key,
