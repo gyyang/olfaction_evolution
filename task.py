@@ -161,6 +161,12 @@ def _normalize(x):
 def _sample_input(n_sample, dim, rng, corr=None):
     """Sample inputs, default uniform.
 
+    For generating multi-variate random variables with uniform (0, 1) marginal
+    and specified correlation, see for references:
+    http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.48.281&rep=rep1&type=pdf
+    https://stats.stackexchange.com/questions/66610/
+    generate-pairs-of-random-numbers-uniformly-distributed-and-correlated
+
     Args:
         corr: if not None, correlation of multi-dimensional random variables
 
@@ -169,7 +175,7 @@ def _sample_input(n_sample, dim, rng, corr=None):
     """
     if corr is not None:
         mean = np.zeros(dim)
-        cov = np.ones((dim, dim)) * corr
+        cov = np.ones((dim, dim)) * 2 * np.sin(corr * np.pi / 6)
         np.fill_diagonal(cov, 1)
         Y = rng.multivariate_normal(mean, cov, n_sample)
         Y = stats.norm.cdf(Y)
