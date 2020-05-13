@@ -181,7 +181,7 @@ class FullConfig(BaseConfig):
         # If True, ORN --> PN connections are positive
         self.sign_constraint_pn2kc = True
         # If True, PN --> KC connections are trainable
-        self.train_pn2kc = False
+        self.train_pn2kc = True
         # If True, PN --> KC connections are sparse
         self.sparse_pn2kc = True
         # If True, PN --> KC connections are mean-subtracted (sum of all connections onto every KC is 0)

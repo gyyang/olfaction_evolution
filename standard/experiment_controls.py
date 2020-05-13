@@ -14,8 +14,6 @@ def control_nonnegative():
     config = FullConfig()
     config.max_epoch = 30
     config.pn_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
     config.data_dir = './datasets/proto/standard'
 
     config_ranges = OrderedDict()
@@ -32,6 +30,8 @@ def control_orn2pn():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
     config.pn_norm_pre = 'batch_norm'
+
+    config.train_pn2kc = False
 
     # New settings
     config.batch_size = 8192  # Much bigger batch size
@@ -63,8 +63,6 @@ def control_pn2kc_backup():
     config.N_ORN_DUPLICATION = 1
     config.direct_glo = True
     # config.pn_norm_pre = 'batch_norm'
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
@@ -90,8 +88,6 @@ def control_pn2kc():
     config.N_ORN_DUPLICATION = 1
     config.direct_glo = True  # skip_orn2pn has same effect
     config.pn_norm_pre = 'batch_norm'
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
 
     # New settings
     config.batch_size = 8192  # Much bigger batch size
@@ -121,8 +117,6 @@ def control_pn2kc_inhibition():
     # config.direct_glo = True
     config.skip_orn2pn = True
     config.pn_norm_pre = 'batch_norm'
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
 
     # New settings
     config.batch_size = 8192  # Much bigger batch size
@@ -155,8 +149,6 @@ def control_pn2kc_prune_boolean(n_pn=50):
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0.
     config.skip_orn2pn = True
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
     config.pn_norm_pre = 'batch_norm'
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1./n_pn
@@ -189,8 +181,6 @@ def control_pn2kc_prune_hyper(n_pn=50):
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0.
     config.skip_orn2pn = True
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
     config.pn_norm_pre = 'batch_norm'
 
     config.kc_prune_weak_weights = True
@@ -217,8 +207,6 @@ def control_vary_kc():
     config.max_epoch = 30
     config.pn_norm_pre = 'batch_norm'
 
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
     config_ranges = OrderedDict()
     config_ranges['N_KC'] = [50, 100, 200, 400, 1000, 2500, 5000, 10000, 20000]
     config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
@@ -233,8 +221,6 @@ def control_vary_pn():
     config.max_epoch = 30
     config.pn_norm_pre = 'batch_norm'
 
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
     config_ranges = OrderedDict()
     config_ranges['N_PN'] = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
     config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
@@ -246,6 +232,8 @@ def controls_receptor():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
+
+    config.train_pn2kc = False
 
     config.receptor_layer = True
     config.or2orn_normalization = True
@@ -272,8 +260,6 @@ def vary_init_sparse():
     config.ORN_NOISE_STD = 0
 
     config.pn_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
 
     config.data_dir = './datasets/proto/standard'
     config.save_every_epoch = True
@@ -292,8 +278,6 @@ def vary_apl():
 
     config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
 
     config.save_every_epoch = True
 
@@ -311,6 +295,7 @@ def pn_normalization_direct():
     '''
     config = FullConfig()
     config.skip_orn2pn = True
+    config.train_pn2kc = False
     config.max_epoch = 30
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
@@ -341,8 +326,6 @@ def pn_normalization_direct():
 
 def train_claw_configs():
     '''
-    NOTE: this should be trained with varying_config_sequential
-
     Train (with or without loss) or fix connections from PN2KC while skipping ORN2PN
     Results:
         Accuracy from training PN2KC weights = fixed PN2KC weights
@@ -376,6 +359,8 @@ def vary_claw_configs():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
 
+    config.train_pn2kc = False
+
     config.direct_glo = True
     config.pn_norm_pre = 'batch_norm' #not necessary, but for standardization
 
@@ -402,9 +387,6 @@ def control_n_or_per_orn():
     config.initial_pn2kc = 10. / config.N_PN
     config.initializer_pn2kc = 'uniform'
 
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-
     config_ranges = OrderedDict()
     config_ranges['n_or_per_orn'] = list(range(1, 10))
     config_ranges['data_dir'] = ['./datasets/proto/n_or_per_orn'+str(n)
@@ -425,9 +407,6 @@ def vary_orn_corr():
     config.lr = 2 * 1e-3
     config.initial_pn2kc = 10. / config.N_PN
     config.initializer_pn2kc = 'uniform'
-
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
 
     orn_corrs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     datasets = ['./datasets/proto/orn_corr_{:0.2f}'.format(c) for c in orn_corrs]

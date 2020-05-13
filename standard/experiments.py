@@ -1,3 +1,9 @@
+"""Experiments and corresponding analysis.
+
+Each experiment is described by a function that returns a list of configurations
+function name is the experiment name
+"""
+
 from collections.__init__ import OrderedDict
 
 from configs import FullConfig, MetaConfig
@@ -10,8 +16,6 @@ def standard():
     config.max_epoch = 100
 
     config.pn_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
     config.initial_pn2kc = 0.1
     config.save_every_epoch = False
 
@@ -34,13 +38,14 @@ def receptor():
     config.N_ORN_DUPLICATION = 10
     config.ORN_NOISE_STD = 0.2
 
-    config.kc_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
+    # config.kc_norm_pre = 'batch_norm'
+    # config.pn_norm_pre = 'batch_norm'
 
     config.data_dir = './datasets/proto/standard'
     config_ranges = OrderedDict()
-    config_ranges['sign_constraint_orn2pn'] = [True]
+    # config_ranges['sign_constraint_orn2pn'] = [True]
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    config_ranges['kc_norm_pre'] = [None, 'batch_norm']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -84,8 +89,6 @@ def metalearn():
     config.metatrain_iterations = 15000
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
     config.initial_pn2kc = 0.05 #0.05
 
     config.data_dir = './datasets/proto/meta_dataset'
@@ -110,9 +113,6 @@ def vary_pn():
     config.max_epoch = 30
     config.pn_norm_pre = 'batch_norm'
 
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-
     config_ranges = OrderedDict()
     config_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
 
@@ -128,9 +128,6 @@ def vary_kc():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
     config.pn_norm_pre = 'batch_norm'
-
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
@@ -155,6 +152,8 @@ def vary_kc_activity_fixed():
     config.direct_glo = True
     config.pn_norm_pre = 'batch_norm'
     config.save_every_epoch = True
+
+    config.train_pn2kc = False
 
     # config.train_pn2kc = True
     # config.sparse_pn2kc = False
@@ -181,8 +180,6 @@ def vary_kc_activity_trainable():
     config.pn_norm_pre = 'batch_norm'
     config.save_every_epoch = True
 
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
     # config.extra_layer = True
     # config.extra_layer_neurons = 200
 
@@ -205,6 +202,8 @@ def pn_normalization():
     config.direct_glo = True
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
+
+    config.train_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
@@ -230,8 +229,6 @@ def train_multihead():
     config.batch_size = 256
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
 
     config.save_every_epoch = False
     # config.initial_pn2kc = .1
@@ -259,8 +256,6 @@ def train_multihead_pruning():
     config.batch_size = 256
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
 
     config.save_every_epoch = False
     config.initial_pn2kc = 10./config.N_PN
