@@ -93,14 +93,13 @@ if 'standard' in experiments:
         train(se.standard(is_test), save_path=path)
     if ANALYZE:
         # accuracy
-        sa.plot_progress(path, ykeys = ['val_acc'])
+        sa.plot_progress(path, ykeys=['val_acc', 'glo_score', 'K_inferred'])
 
         # orn-pn
         sa.plot_weights(os.path.join(path,'000000'), var_name='w_orn', sort_axis=1)
-        sa.plot_progress(path, ykeys = ['glo_score'])
         try:
-            analysis_orn2pn.correlation_across_epochs(path, arg = 'weight')
-            analysis_orn2pn.correlation_across_epochs(path, arg = 'activity')
+            analysis_orn2pn.correlation_across_epochs(path, arg='weight')
+            analysis_orn2pn.correlation_across_epochs(path, arg='activity')
         except ModuleNotFoundError:
             pass
 
@@ -108,9 +107,9 @@ if 'standard' in experiments:
         sa.plot_weights(os.path.join(path,'000000'), var_name='w_glo')
 
         # pn-kc K
-        analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=False)
-        analysis_pn2kc_training.plot_distribution(path, dir_ix=0, xrange=1.5, log=True)
-        analysis_pn2kc_training.plot_sparsity(path, dir_ix=0, dynamic_thres=True, epoch=-1)
+        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)
+        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, epoch=-1)
 
         # pn-kc random
         analysis_pn2kc_random.plot_cosine_similarity(path, dir_ix= 0, shuffle_arg='preserve', log=False)
@@ -123,11 +122,17 @@ if 'receptor' in experiments:
     if TRAIN:
         train(se.receptor(is_test), path)
     if ANALYZE:
-        path = os.path.join(path,'000000')
-        sa.plot_weights(path, var_name='w_or', sort_axis=0)
-        sa.plot_weights(path, var_name='w_orn', sort_axis=1)
-        sa.plot_weights(path, var_name='w_combined')
-        sa.plot_weights(path, var_name='w_glo')
+        sa.plot_progress(path, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+
+        for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
+            sort_axis = 0 if var_name == 'w_or' else 1
+            sa.plot_weights(os.path.join(path, '000000'),
+                            var_name='w_or', sort_axis=sort_axis)
+
+        # pn-kc K
+        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)
+        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
+        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, epoch=-1)
 
 if 'vary_pn' in experiments:
     # Vary nPN
