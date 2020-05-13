@@ -70,12 +70,6 @@ if ANALYZE:
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
-    import standard.analysis_activity as analysis_activity
-    import standard.analysis_multihead as analysis_multihead
-    import standard.analysis_metalearn as analysis_metalearn
-    import oracle.evaluatewithnoise as evaluatewithnoise
-    import analytical.numerical_test as numerical_test
-    import analytical.analyze_simulation_results as analyze_simulation_results
     import standard.analysis_rnn as analysis_rnn
 
 
@@ -104,8 +98,11 @@ if 'standard' in experiments:
         # orn-pn
         sa.plot_weights(os.path.join(path,'000000'), var_name='w_orn', sort_axis=1)
         sa.plot_progress(path, ykeys = ['glo_score'])
-        analysis_orn2pn.correlation_across_epochs(path, arg = 'weight')
-        analysis_orn2pn.correlation_across_epochs(path, arg = 'activity')
+        try:
+            analysis_orn2pn.correlation_across_epochs(path, arg = 'weight')
+            analysis_orn2pn.correlation_across_epochs(path, arg = 'activity')
+        except ModuleNotFoundError:
+            pass
 
         # pn-kc
         sa.plot_weights(os.path.join(path,'000000'), var_name='w_glo')

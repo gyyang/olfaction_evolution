@@ -2,7 +2,6 @@ import os
 import task
 import numpy as np
 import tools
-import model as network_models
 import standard.analysis_pn2kc_training
 import matplotlib.pyplot as plt
 
@@ -40,6 +39,8 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extr
 
 def _load_activity(save_path):
     import tensorflow as tf
+    import model as network_models
+
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
     config.data_dir = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\datasets\proto\orn50'

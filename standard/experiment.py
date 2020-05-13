@@ -8,13 +8,13 @@ testing_epochs = 16
 def standard(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 16
+    config.max_epoch = 100
 
     config.pn_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
     config.train_pn2kc = True
-    config.initial_pn2kc = 0.06
-    config.save_every_epoch = True
+    config.initial_pn2kc = 0.1
+    config.save_every_epoch = False
 
     config.data_dir = './datasets/proto/standard'
     hp_ranges = OrderedDict()
