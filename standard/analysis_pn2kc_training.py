@@ -19,7 +19,7 @@ sys.path.append(rootpath)
 import tools
 from tools import save_fig
 import dict_methods
-from standard.analysis_weight import infer_threshold
+from standard.analysis_weight import infer_threshold, fit_bimodal
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -301,25 +301,18 @@ def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0, approximate
     if approximate:
         x = np.asarray(data).flatten()
         x = np.log(x + 1e-10)
-        x = x[:, np.newaxis]
-        clf = GaussianMixture(n_components=2)
-        clf.fit(x)
-        x_tmp = np.linspace(x.min(), x.max(), 1000)
+        x_plot, pdf1, pdf2, clf = fit_bimodal(x)
 
-        pdf1 = multivariate_normal.pdf(x_tmp, clf.means_[0],
-                                           clf.covariances_[0]) * clf.weights_[0]
-        pdf2 = multivariate_normal.pdf(x_tmp, clf.means_[1],
-                                           clf.covariances_[1]) * clf.weights_[1]
-
-        ax.plot(x_tmp, pdf1, linestyle='--', linewidth=1, alpha = 1)
-        ax.plot(x_tmp, pdf2, linestyle='--', linewidth=1, alpha = 1)
+        ax.plot(x_plot, pdf1, linestyle='--', linewidth=1, alpha = 1)
+        ax.plot(x_plot, pdf2, linestyle='--', linewidth=1, alpha = 1)
         # ax.plot(x_tmp, pdf1 + pdf2, color='black', linewidth=1, alpha = .5)
 
     split = os.path.split(savename)
     tools.save_fig(split[0], split[1])
 
 
-def _plot_distribution(data, savename, xrange, yrange, broken_axis=True, cutoff = None):
+def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
+                       cutoff=None, approximate=True):
     fig = plt.figure(figsize=(2, 1.5))
     if not broken_axis:
         ax = fig.add_axes([0.25, 0.25, 0.6, 0.6])
