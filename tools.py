@@ -86,7 +86,7 @@ def vary_config(base_config, config_ranges, mode):
     # Automatic set names for configs
     # configs = autoname(configs, config_diffs)
     for i, config in enumerate(configs):
-        config['model_name'] = str(i).zfill(6)  # default name
+        config.model_name = str(i).zfill(6)  # default name
     return configs
 
 
@@ -125,16 +125,19 @@ def _vary_config_combinatorial(base_config, config_ranges):
 
     configs, config_diffs = list(), list()
     for i in range(n_max):
+        new_config = deepcopy(base_config)
+
         config_diff = dict()
         indices = np.unravel_index(i, dims=dims)
         # Set up new config
         for key, index in zip(keys, indices):
-            config_diff[key] = config_ranges[key][index]
+            val = config_ranges[key][index]
+            setattr(new_config, key, val)
+            config_diff[key] = val
+
+        configs.append(new_config)
         config_diffs.append(config_diff)
 
-        new_config = deepcopy(base_config)
-        new_config.update(config_diff)
-        configs.append(new_config)
     return configs, config_diffs
 
 
@@ -160,14 +163,15 @@ def _vary_config_sequential(base_config, config_ranges):
 
     configs, config_diffs = list(), list()
     for i in range(n_max):
+        new_config = deepcopy(base_config)
         config_diff = dict()
         for key in keys:
-            config_diff[key] = config_ranges[key][i]
-        config_diffs.append(config_diff)
+            val = config_ranges[key][i]
+            setattr(new_config, key, val)
+            config_diff[key] = val
 
-        new_config = deepcopy(base_config)
-        new_config.update(config_diff)
         configs.append(new_config)
+        config_diffs.append(config_diff)
 
     return configs, config_diffs
 
@@ -195,6 +199,8 @@ def _vary_config_control(base_config, config_ranges):
 
     configs, config_diffs = list(), list()
     for i in range(n_max):
+        new_config = deepcopy(base_config)
+
         index = i
         for j, dim in enumerate(dims):
             if index >= dim:
@@ -204,12 +210,14 @@ def _vary_config_control(base_config, config_ranges):
 
         config_diff = dict()
         key = keys[j]
-        config_diff[key] = config_ranges[key][i]
+
+        val = config_ranges[key][i]
+        setattr(new_config, key, val)
+        config_diff[key] = val
+
+        configs.append(new_config)
         config_diffs.append(config_diff)
 
-        new_config = deepcopy(base_config)
-        new_config.update(config_diff)
-        configs.append(new_config)
     return configs, config_diffs
 
 
@@ -262,107 +270,107 @@ def load_pickle(dir, var):
                 print(var + ' is not in directory:' + d)
     return out
 
-
-def varying_config(experiment, i):
-    """Training a specific hyperparameter settings.
-
-    Args:
-        experiment: a tuple (config, hp_ranges)
-        i: integer, indexing the specific hyperparameter setting to be used
-
-       hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1], there are 8 possible combinations
-
-    Return:
-        config: new configuration
-    """
-    # Ranges of hyperparameters to loop over
-    config_, hp_ranges = experiment
-    config = deepcopy(config_)
-
-    # Unravel the input index
-    keys = hp_ranges.keys()
-    dims = [len(hp_ranges[k]) for k in keys]
-    n_max = np.prod(dims)
-    indices = np.unravel_index(i % n_max, dims=dims)
-
-    if i >= n_max:
-        return False
-
-    # Set up new hyperparameter
-    for key, index in zip(keys, indices):
-        setattr(config, key, hp_ranges[key][index])
-    return config
-
-
-def varying_config_sequential(experiment, i):
-    """Training specific combinations of hyper-parameter settings
-
-    Args:
-        experiment: a tuple (config, hp_ranges)
-        i: integer, indexing the specific hyperparameter settings to be used
-
-       unlike varying_config, this function does not iterate through all possible
-       hyper-parameter combinations.
-
-       hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
-       possible combinations are {'a':0,'b':0,'c':0}, and {'a':1,'b':1,'c':1}
-
-    Returns:
-        config: new configuration
-    """
-    config_, hp_ranges = experiment
-    config = deepcopy(config_)
-
-    # Unravel the input index
-    keys = hp_ranges.keys()
-    dims = [len(hp_ranges[k]) for k in keys]
-    n_max = dims[0]
-
-    if i >= n_max:
-        return False
-
-    for key in keys:
-        setattr(config, key, hp_ranges[key][i])
-    return config
-
-def varying_config_control(experiment, i):
-    """Training each hyper-parameter independently
-
-    Args:
-        experiment: a tuple (config, hp_ranges)
-        i: integer, indexing the specific hyperparameter settings to be used
-
-       unlike varying_config, this function does not iterate through all possible
-       hyper-parameter combinations.
-
-       default: a=0, b=0, c=0
-       hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
-       possible combinations are {'a':0,1},{'b':0,1}, {'c':0,1}
-
-    Returns:
-        config: new configuration
-    """
-    config_, hp_ranges = experiment
-    config = deepcopy(config_)
-
-    # Unravel the input index
-    keys = list(hp_ranges.keys())
-    dims = [len(hp_ranges[k]) for k in keys]
-    n_max = np.sum(dims)
-
-    if i >= n_max:
-        return False
-
-    for j, d in enumerate(dims):
-        if i >= d:
-            i-= d
-        else:
-            break
-
-    key = keys[j]
-    setattr(config, key, hp_ranges[key][i])
-    print('key:{}, value: {}'.format(key, hp_ranges[key][i]))
-    return config
+#
+# def varying_config(experiment, i):
+#     """Training a specific hyperparameter settings.
+#
+#     Args:
+#         experiment: a tuple (config, hp_ranges)
+#         i: integer, indexing the specific hyperparameter setting to be used
+#
+#        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1], there are 8 possible combinations
+#
+#     Return:
+#         config: new configuration
+#     """
+#     # Ranges of hyperparameters to loop over
+#     config_, hp_ranges = experiment
+#     config = deepcopy(config_)
+#
+#     # Unravel the input index
+#     keys = hp_ranges.keys()
+#     dims = [len(hp_ranges[k]) for k in keys]
+#     n_max = np.prod(dims)
+#     indices = np.unravel_index(i % n_max, dims=dims)
+#
+#     if i >= n_max:
+#         return False
+#
+#     # Set up new hyperparameter
+#     for key, index in zip(keys, indices):
+#         setattr(config, key, hp_ranges[key][index])
+#     return config
+#
+#
+# def varying_config_sequential(experiment, i):
+#     """Training specific combinations of hyper-parameter settings
+#
+#     Args:
+#         experiment: a tuple (config, hp_ranges)
+#         i: integer, indexing the specific hyperparameter settings to be used
+#
+#        unlike varying_config, this function does not iterate through all possible
+#        hyper-parameter combinations.
+#
+#        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
+#        possible combinations are {'a':0,'b':0,'c':0}, and {'a':1,'b':1,'c':1}
+#
+#     Returns:
+#         config: new configuration
+#     """
+#     config_, hp_ranges = experiment
+#     config = deepcopy(config_)
+#
+#     # Unravel the input index
+#     keys = hp_ranges.keys()
+#     dims = [len(hp_ranges[k]) for k in keys]
+#     n_max = dims[0]
+#
+#     if i >= n_max:
+#         return False
+#
+#     for key in keys:
+#         setattr(config, key, hp_ranges[key][i])
+#     return config
+#
+# def varying_config_control(experiment, i):
+#     """Training each hyper-parameter independently
+#
+#     Args:
+#         experiment: a tuple (config, hp_ranges)
+#         i: integer, indexing the specific hyperparameter settings to be used
+#
+#        unlike varying_config, this function does not iterate through all possible
+#        hyper-parameter combinations.
+#
+#        default: a=0, b=0, c=0
+#        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
+#        possible combinations are {'a':0,1},{'b':0,1}, {'c':0,1}
+#
+#     Returns:
+#         config: new configuration
+#     """
+#     config_, hp_ranges = experiment
+#     config = deepcopy(config_)
+#
+#     # Unravel the input index
+#     keys = list(hp_ranges.keys())
+#     dims = [len(hp_ranges[k]) for k in keys]
+#     n_max = np.sum(dims)
+#
+#     if i >= n_max:
+#         return False
+#
+#     for j, d in enumerate(dims):
+#         if i >= d:
+#             i-= d
+#         else:
+#             break
+#
+#     key = keys[j]
+#     setattr(config, key, hp_ranges[key][i])
+#     print('key:{}, value: {}'.format(key, hp_ranges[key][i]))
+#     return config
 
 
 def load_all_results(rootpath, argLast=True, ix=None,

@@ -125,7 +125,7 @@ if 'receptor' in experiments:
         for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
             sort_axis = 0 if var_name == 'w_or' else 1
             sa.plot_weights(os.path.join(path, '000000'),
-                            var_name='w_or', sort_axis=sort_axis)
+                            var_name=var_name, sort_axis=sort_axis)
 
         # pn-kc K
         analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)

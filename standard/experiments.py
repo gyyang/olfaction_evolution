@@ -1,13 +1,10 @@
 from collections.__init__ import OrderedDict
-import task
+
 from configs import FullConfig, MetaConfig
 from tools import vary_config
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-
-testing_epochs = 16
 
 
-def standard(argTest=False):
+def standard():
     """Standard training setting"""
     config = FullConfig()
     config.max_epoch = 100
@@ -21,14 +18,12 @@ def standard(argTest=False):
     config.data_dir = './datasets/proto/standard'
     config_ranges = OrderedDict()
     config_ranges['dummy'] = [True]
-    if argTest:
-        config.max_epoch = testing_epochs
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def receptor(argTest=False):
+def receptor():
     """Standard training setting with full network including receptors."""
     config = FullConfig()
     config.max_epoch = 50
@@ -46,14 +41,12 @@ def receptor(argTest=False):
     config.data_dir = './datasets/proto/standard'
     config_ranges = OrderedDict()
     config_ranges['sign_constraint_orn2pn'] = [True]
-    if argTest:
-        config.max_epoch = 16
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def rnn(argTest=False):
+def rnn():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
@@ -70,13 +63,12 @@ def rnn(argTest=False):
     config_ranges['TIME_STEPS'] = [1, 2, 3]
     config_ranges['replicate_orn_with_tiling'] = [False, True, True]
     config_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
-    if argTest:
-        config.max_epoch = 16
+
     configs = vary_config(config, config_ranges, mode='sequential')
     return configs
 
 
-def metalearn(argTest=False):
+def metalearn():
     config = MetaConfig()
     config.meta_lr = .001
     config.N_CLASS = 10 #10
@@ -101,13 +93,11 @@ def metalearn(argTest=False):
     config_ranges = OrderedDict()
     config_ranges['dummy'] = [True]
 
-    if argTest:
-        pass
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def vary_pn(argTest=False):
+def vary_pn():
     '''
     Vary number of PNs while fixing KCs to be 2500
     Results:
@@ -126,14 +116,11 @@ def vary_pn(argTest=False):
     config_ranges = OrderedDict()
     config_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
 
-    if argTest:
-        config.max_epoch = testing_epochs
-
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def vary_kc(argTest=False):
+def vary_kc():
     '''
     Vary number of KCs while also training ORN2PN.
     '''
@@ -149,13 +136,11 @@ def vary_kc(argTest=False):
     config_ranges = OrderedDict()
     config_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
 
-    if argTest:
-        config.max_epoch = testing_epochs
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def vary_kc_activity_fixed(argTest):
+def vary_kc_activity_fixed():
     #TODO: use this one or the other one below
     '''
 
@@ -181,21 +166,13 @@ def vary_kc_activity_fixed(argTest):
     config_ranges['kc_dropout_rate'] = [0, .5]
     x = [100, 200, 500, 1000, 2000, 5000]
     config_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
-    if argTest:
-        config_ranges['kc_dropout_rate'] = [0, .5]
-        x = [100, 200, 500, 1000]
-        config_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
-        config.max_epoch = testing_epochs
     configs = vary_config(config, config_ranges, mode='combinatorial')
+
     return configs
 
 
-def vary_kc_activity_trainable(argTest):
-    '''
-
-    :param argTest:
-    :return:
-    '''
+def vary_kc_activity_trainable():
+    ''''''
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
@@ -213,22 +190,14 @@ def vary_kc_activity_trainable(argTest):
     config_ranges['kc_dropout_rate'] = [0, .5]
     x = [100, 200, 500, 1000, 2000, 5000]
     config_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
-    if argTest:
-        config_ranges['kc_dropout_rate'] = [.5]
-        x = [100, 200, 500, 1000]
-        config_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
-        config.max_epoch = testing_epochs
+
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def pn_normalization(argTest):
+def pn_normalization():
     '''
     Assesses the effect of PN normalization on glo score and performance
-    Results:
-
-    :param argTest:
-    :return:
     '''
     config = FullConfig()
     config.max_epoch = 15
@@ -243,13 +212,12 @@ def pn_normalization(argTest):
     datasets = ['./datasets/proto/concentration_mask_row_' + str(s) for s in i]
     config_ranges['data_dir'] = ['./datasets/proto/standard'] + ['./datasets/proto/concentration'] + datasets
     config_ranges['pn_norm_pre'] = ['None','biology','fixed_activity']
-    if argTest:
-        config.max_epoch = testing_epochs
+
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def train_multihead(argTest=False):
+def train_multihead():
     '''
 
     '''
@@ -276,13 +244,12 @@ def train_multihead(argTest=False):
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
     config_ranges['dummy'] = [0, 1, 2]
-    if argTest:
-        config.max_epoch = testing_epochs
+
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def train_multihead_pruning(argTest=False):
+def train_multihead_pruning():
     '''
 
     '''
@@ -306,7 +273,6 @@ def train_multihead_pruning(argTest=False):
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
     config_ranges['dummy'] = [0, 1, 2]
-    if argTest:
-        config.max_epoch = testing_epochs
+
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs

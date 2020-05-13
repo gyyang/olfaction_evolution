@@ -2,6 +2,7 @@ import os
 import subprocess
 
 import standard.experiments as experiments
+import standard.experiment_controls as experiment_controls
 import tools
 
 SBATCHPATH = './sbatch/'
@@ -126,7 +127,20 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
         testing: bool, whether to test run
     """
     print('Training {:s} experiment'.format(experiment))
-    configs = getattr(experiments, experiment)()
+    experiment_files = [experiments, experiment_controls]
+
+    experiment_found = False
+    for experiment_file in experiment_files:
+        try:
+            configs = getattr(experiment_file, experiment)()
+            experiment_found = True
+            break
+        except AttributeError:
+            experiment_found = False
+
+    if not experiment_found:
+        raise ValueError('Experiment not found: ', experiment)
+
     for config in configs:
         config.experiment_name = experiment
         if testing:

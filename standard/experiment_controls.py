@@ -242,7 +242,7 @@ def control_vary_pn():
     return configs
 
 #TODO
-def controls_receptor(argTest=False):
+def controls_receptor():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
@@ -260,14 +260,11 @@ def controls_receptor(argTest=False):
     config_ranges['or2orn_normalization'] = [False, True]
     config_ranges['pn_norm_pre'] = ['None', 'batch_norm']
 
-    if argTest:
-        config.max_epoch = testing_epochs
-
     configs = vary_config(config, config_ranges, mode='control')
     return configs
 
 
-def vary_init_sparse(argTest=False):
+def vary_init_sparse():
     """Vary if initialization is dense or sparse"""
     config = FullConfig()
     config.max_epoch = 100
@@ -282,14 +279,12 @@ def vary_init_sparse(argTest=False):
     config.save_every_epoch = True
     config_ranges = OrderedDict()
     config_ranges['initializer_pn2kc'] = ['constant', 'single_strong']
-    if argTest:
-        config.max_epoch = testing_epochs
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def vary_apl(argTest=False):
+def vary_apl():
     """Vary APL."""
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -305,19 +300,14 @@ def vary_apl(argTest=False):
     config_ranges = OrderedDict()
     config_ranges['apl'] = [False, True]
     config_ranges['kc_norm_pre'] = [None, 'batch_norm']
-    if argTest:
-        config.max_epoch = testing_epochs
+
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def pn_normalization_direct(argTest):
+def pn_normalization_direct():
     '''
     Assesses the effect of PN normalization on glo score and performance
-    Results:
-
-    :param argTest:
-    :return:
     '''
     config = FullConfig()
     config.skip_orn2pn = True
@@ -328,8 +318,7 @@ def pn_normalization_direct(argTest):
                              # './datasets/proto/standard',
                              ]
     config_ranges['pn_norm_post'] = ['custom', 'None']
-    if argTest:
-        config.max_epoch = testing_epochs
+
     # TODO: hyperparameter search
     # try:
     #     rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
@@ -350,7 +339,7 @@ def pn_normalization_direct(argTest):
     return configs
 
 
-def train_claw_configs(argTest=False):
+def train_claw_configs():
     '''
     NOTE: this should be trained with varying_config_sequential
 
@@ -372,13 +361,11 @@ def train_claw_configs(argTest=False):
     config_ranges['sparse_pn2kc'] = [False, True]
     config_ranges['train_kc_bias'] = [False, True]
 
-    if argTest:
-        config.max_epoch = testing_epochs
     configs = vary_config(config, config_ranges, mode='sequential')
     return configs
 
 
-def vary_claw_configs(argTest=False):
+def vary_claw_configs():
     '''
     Vary number of inputs to KCs while skipping ORN2PN layer
     Results:
@@ -397,10 +384,6 @@ def vary_claw_configs(argTest=False):
     config_ranges['kc_inputs'] = list(range(1,15, 2)) + list(range(15,30, 3)) + \
                              list(range(30, 50, 5))
     config_ranges['ORN_NOISE_STD'] = [0, 0.25, 0.5]
-    if argTest:
-        config.max_epoch = 70
-        config_ranges['kc_inputs'] = [1, 3, 5, 7, 10, 15, 20, 30]
-        config_ranges['ORN_NOISE_STD'] = [0]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
