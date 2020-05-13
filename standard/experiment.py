@@ -5,10 +5,11 @@ import configs
 
 testing_epochs = 16
 
+
 def standard(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 20
+    config.max_epoch = 100
 
     config.pn_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
@@ -22,6 +23,30 @@ def standard(argTest=False):
     if argTest:
         config.max_epoch = testing_epochs
     return config, hp_ranges
+
+
+def receptor(argTest=False):
+    """Standard training setting with full network including receptors."""
+    config = configs.FullConfig()
+    config.max_epoch = 50
+
+    config.receptor_layer = True
+    config.or2orn_normalization = True
+    config.replicate_orn_with_tiling= True
+    config.N_ORN_DUPLICATION = 10
+    config.ORN_NOISE_STD = 0.2
+
+    config.kc_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
+
+    config.data_dir = './datasets/proto/standard'
+    hp_ranges = OrderedDict()
+    hp_ranges['sign_constraint_orn2pn'] = [True]
+    if argTest:
+        config.max_epoch = 16
+    return config, hp_ranges
+
 
 def rnn(argTest=False):
     config = configs.FullConfig()
@@ -73,27 +98,7 @@ def metalearn(argTest=False):
         pass
     return config, hp_ranges
 
-def receptor(argTest=False):
-    """Standard training setting"""
-    config = configs.FullConfig()
-    config.max_epoch = 30
 
-    config.receptor_layer = True
-    config.or2orn_normalization = True
-    config.replicate_orn_with_tiling= True
-    config.N_ORN_DUPLICATION = 10
-    config.ORN_NOISE_STD = 0.2
-
-    config.kc_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
-
-    config.data_dir = './datasets/proto/standard'
-    hp_ranges = OrderedDict()
-    hp_ranges['sign_constraint_orn2pn'] = [True]
-    if argTest:
-        config.max_epoch = 16
-    return config, hp_ranges
 
 def vary_pn(argTest=False):
     '''

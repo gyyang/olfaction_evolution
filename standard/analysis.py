@@ -209,7 +209,11 @@ def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
     print('Plotting ' + var_name + ' from ' + model_dir)
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
-        w_plot = var_dict[var_name]
+        if var_name == 'w_combined':
+            w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
+        else:
+            w_plot = var_dict[var_name]
+
 
     # if not hasattr(config, 'receptor_layer') or config.receptor_layer == False:
     #     if config.replicate_orn_with_tiling:

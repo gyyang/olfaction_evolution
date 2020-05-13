@@ -79,6 +79,7 @@ class Layer(nn.Module):
                  recurrent_inh=False,
                  recurrent_inh_coeff=0,
                  recurrent_inh_step=1,
+                 weight_norm=False,
                  ):
         super(Layer, self).__init__()
         self.in_features = in_features
@@ -121,6 +122,9 @@ class Layer(nn.Module):
         self.recurrent_inh_coeff = recurrent_inh_coeff
         self.recurrent_inh_step = recurrent_inh_step
 
+        # Weight normalization
+        self.weight_norm = weight_norm
+
     def reset_parameters(self):
         if self.sign_constraint:
             self._reset_sign_constraint_parameters()
@@ -159,6 +163,11 @@ class Layer(nn.Module):
         if self.prune_weak_weights:
             not_pruned = (weight > self.prune_threshold)
             weight = weight * not_pruned
+
+        if self.weight_norm:
+            # Renormalize weights
+            sums = torch.sum(weight, dim=1, keepdim=True)
+            weight = torch.div(weight, sums)
 
         return weight
 
@@ -204,6 +213,15 @@ class FullModel(nn.Module):
 
         n_orn = config.N_ORN * config.N_ORN_DUPLICATION
 
+        if config.receptor_layer:
+            self.layer0 = Layer(
+                config.N_ORN, n_orn,
+                weight_initializer=config.initializer_or2orn,
+                sign_constraint=config.sign_constraint_or2orn,
+                bias=config.or_bias,
+                weight_norm=True,
+            )
+
         self.layer1 = Layer(n_orn, config.N_PN,
                             weight_initializer=config.initializer_orn2pn,
                             weight_initial_value=config.initial_orn2pn,
@@ -245,12 +263,17 @@ class FullModel(nn.Module):
 
     def forward(self, x, target):
         # Process ORNs
-        if self.config.N_ORN_DUPLICATION > 1:
-            x = x.repeat(1, self.config.N_ORN_DUPLICATION)
-        if self.config.ORN_NOISE_STD > 0:
-            x += torch.randn_like(x) * self.config.ORN_NOISE_STD
+        if self.config.receptor_layer:
+            act0 = self.layer0(x)
+        else:
+            act0 = x
+            if self.config.N_ORN_DUPLICATION > 1:
+                act0 = act0.repeat(1, self.config.N_ORN_DUPLICATION)
 
-        act1 = self.layer1(x)
+        if self.config.ORN_NOISE_STD > 0:
+            act0 += torch.randn_like(act0) * self.config.ORN_NOISE_STD
+
+        act1 = self.layer1(act0)
         act2 = self.layer2(act1)
         y = self.layer3(act2)
         loss = self.loss(y, target)
@@ -258,6 +281,13 @@ class FullModel(nn.Module):
             _, pred = torch.max(y, 1)
             acc = (pred == target).sum().item() / target.size(0)
         return {'loss': loss, 'acc': acc, 'kc': act2}
+
+    @property
+    def w_or(self):
+        if self.config.receptor_layer:
+            return self.layer0.effective_weight.data.cpu().numpy().T
+        else:
+            return None
 
     @property
     def w_orn(self):
@@ -286,6 +316,8 @@ class FullModel(nn.Module):
         for name, param in self.named_parameters():
             var_dict[name] = param.data.cpu().numpy()
 
+        if self.w_or is not None:
+            var_dict['w_or'] = self.w_or
         var_dict['w_orn'] = self.w_orn
         var_dict['w_glo'] = self.w_glo
         with open(fname, 'wb') as f:

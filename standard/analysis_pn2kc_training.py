@@ -118,13 +118,13 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
     return res
 
 
-def plot_distribution(dir, dir_ix, epoch=None, xrange=1.0, log=False):
-    dir_folder = tools._get_alldirs(dir, model=True, sort=True)[dir_ix]
+def plot_distribution(dir, dir_ix=0, epoch=None, xrange=1.0, log=False):
+    dir_folder = tools.get_allmodeldirs(dir)[dir_ix]
     folder = os.path.split(dir_folder)[-1]
     experiment = os.path.split(dir)[-1]
 
     if epoch is not None:
-        dir_folder = tools._get_alldirs(os.path.join(dir_folder, 'epoch'), model=True, sort=True)[epoch]
+        dir_folder = tools.get_allmodeldirs(os.path.join(dir_folder, 'epoch'))[epoch]
 
     try:
         w = tools.load_pickle(dir_folder, 'w_glo')[0]
@@ -168,6 +168,7 @@ def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
     return sparsity
 
+
 def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     w[np.isnan(w)] = 0
 
@@ -188,13 +189,14 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(dir, dir_ix, epoch=None, dynamic_thres=False, visualize=False, thres=THRES, xrange=50, plot=True):
-    dir_folder = tools._get_alldirs(dir, model=True, sort=True)[dir_ix]
+def plot_sparsity(dir, dir_ix=0, epoch=None, dynamic_thres=False,
+                  visualize=False, thres=THRES, xrange=50, plot=True):
+    dir_folder = tools.get_allmodeldirs(dir)[dir_ix]
     folder = os.path.split(dir_folder)[-1]
     experiment = os.path.split(dir)[-1]
 
     if epoch is not None and epoch != -1:
-        dir_folder = tools._get_alldirs(os.path.join(dir_folder, 'epoch'), model=True, sort=True)[epoch]
+        dir_folder = tools.get_allmodeldirs(os.path.join(dir_folder, 'epoch'))[epoch]
 
     try:
         w = tools.load_pickle(dir_folder, 'w_glo')[0]
