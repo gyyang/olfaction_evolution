@@ -3,7 +3,8 @@ import os
 
 class BaseConfig(object):
     def __init__(self):
-        pass
+        self.experiment_name = None
+        self.model_name = None
 
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
@@ -94,6 +95,7 @@ class SingleLayerConfig(BaseConfig):
         self.max_epoch = 100
         self.batch_size = 256
         self.save_path = './files/peter_tmp'
+
 
 class FullConfig(BaseConfig):
     def __init__(self):

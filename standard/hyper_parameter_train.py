@@ -1,24 +1,14 @@
 import os
 import subprocess
 
+import standard.experiments as experiments
 import tools
 
 SBATCHPATH = './sbatch/'
 SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'
-ROBERT_SCRATCHPATH = '/share/ctn/users/gy2259/olfaction_evolution'
-PETER_SCRATCHPATH = '/share/ctn/users/yw2500/olfaction_evolution'
 
 
-def basic_train(experiment, save_path):
-    import train
-
-    config = experiment()
-    config.save_path = save_path
-    train.train(config)
-
-
-def local_train(experiment, save_path, sequential=False, control=False,
-                train_arg=None, use_torch=False, **kwargs):
+def local_train(config, path=None, train_arg=None, use_torch=False, **kwargs):
     """Train all models locally."""
     if use_torch:
         import torchtrain as train
@@ -26,26 +16,22 @@ def local_train(experiment, save_path, sequential=False, control=False,
         import train
         import mamlmetatrain
 
-    for i in range(0, 1000):
-        if sequential:
-            config = tools.varying_config_sequential(experiment, i)
-        elif control:
-            config = tools.varying_config_control(experiment, i)
-        else:
-            config = tools.varying_config(experiment, i)
-        if config:
-            print('[***] Hyper-parameter: %2d' % i)
-            config.save_path = os.path.join(save_path, str(i).zfill(6))
+    if path is None:
+        path = './'
 
-            if train_arg == None:
-                train.train(config, **kwargs)
-            elif train_arg == 'metatrain':
-                mamlmetatrain.train(config)
-            else:
-                raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
+    experiment_name = config.experiment_name
+    model_name = config.model_name
+    config.save_path = os.path.join(path, 'files', experiment_name, model_name)
+
+    if train_arg is None:
+        train.train(config, **kwargs)
+    elif train_arg == 'metatrain':
+        mamlmetatrain.train(config)
+    else:
+        raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
 
 
-def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
+def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH,
                   nodes=1, ppn=1, gpus=0, mem=16, nhours=3):
     """
     Create a job file.
@@ -98,38 +84,57 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH, scratchpath=SCRATCHPATH,
     return jobfile
 
 
-def cluster_train(experiment, save_path, sequential=False, control=False,
-                  path=SCRATCHPATH, train_arg=None, use_torch=False):
+def cluster_train(config, path, train_arg=None, use_torch=False):
     """Train all models locally."""
-    job_name = save_path.split('/')[-1]  # get end of path as job name
+    experiment_name = config.experiment_name
+    model_name = config.model_name
 
-    for i in range(0, 1000):
-        if sequential:
-            config = tools.varying_config_sequential(experiment, i)
-        elif control:
-            config = tools.varying_config_control(experiment, i)
+    config.save_path = os.path.join(path, 'files', experiment_name, model_name)
+    os.makedirs(config.save_path, exist_ok=True)
+
+    # TEMPORARY HACK
+    # Hack: assuming data_dir of form './files/XX'
+    config.data_dir = os.path.join(path, config.data_dir[2:])
+
+    tools.save_config(config, config.save_path)
+
+    arg = '\'' + config.save_path + '\''
+
+    if train_arg == 'metatrain':
+        cmd = r'''python -c "import mamlmetatrain; mamlmetatrain.train_from_path(''' + arg + ''')"'''
+    else:
+        if use_torch:
+            cmd = r'''python -c "import torchtrain; torchtrain.train_from_path(''' + arg + ''')"'''
         else:
-            config = tools.varying_config(experiment, i)
+            cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
 
-        if config:
-            config.save_path = os.path.join(path, 'files', job_name, str(i).zfill(6))
+    jobfile = write_jobfile(cmd, jobname=experiment_name + '_' + model_name)
+    subprocess.call(['sbatch', jobfile])
 
-            # TEMPORARY HACK
-            # Hack: assuming data_dir of form './files/XX'
-            config.data_dir = os.path.join(path, config.data_dir[2:])
-            os.makedirs(config.save_path, exist_ok=True)
 
-            tools.save_config(config, config.save_path)
+def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
+                     use_torch=False, testing=False, **kwargs):
+    """Train model across platforms given experiment name.
 
-            arg = '\'' + config.save_path + '\''
+    Args:
+        experiment: str, name of experiment to be run
+            must correspond to a function in experiments.py
+        use_cluster: bool, whether to run experiments on cluster
+        path: str, path to save models and config
+        train_arg: None or str
+        use_torch: bool, whether to use pytorch
+        testing: bool, whether to test run
+    """
+    print('Training {:s} experiment'.format(experiment))
+    configs = getattr(experiments, experiment)()
+    for config in configs:
+        config.experiment_name = experiment
+        if testing:
+            config.max_epoch = 3
 
-            if train_arg == 'metatrain':
-                cmd = r'''python -c "import mamlmetatrain; mamlmetatrain.train_from_path(''' + arg + ''')"'''
-            else:
-                if use_torch:
-                    cmd = r'''python -c "import torchtrain; torchtrain.train_from_path(''' + arg + ''')"'''
-                else:
-                    cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
-
-            jobfile = write_jobfile(cmd, job_name + str(i))
-            subprocess.call(['sbatch', jobfile])
+        if use_cluster:
+            cluster_train(config, path=path, train_arg=train_arg,
+                          use_torch=use_torch)
+        else:
+            local_train(config, path=path, train_arg=train_arg,
+                        use_torch=use_torch, **kwargs)

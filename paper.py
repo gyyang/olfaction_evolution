@@ -16,8 +16,7 @@ python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
 import os
 import argparse
 
-import standard.experiment as se
-from standard.hyper_parameter_train import local_train, cluster_train
+from standard.hyper_parameter_train import train_experiment
 import matplotlib as mpl
 
 SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'
@@ -53,12 +52,9 @@ if use_cluster:
     else:
         cluster_path = SCRATCHPATH
 
-    def train(experiment, save_path, **kwargs):
-        cluster_train(experiment, save_path, path=cluster_path,
-                      use_torch=args.torch, **kwargs)
+    save_path = cluster_path
 else:
-    def train(experiment, save_path, **kwargs):
-        local_train(experiment, save_path, use_torch=args.torch, **kwargs)
+    save_path = './'
 
 # TRAIN = True
 # is_test = True
@@ -87,10 +83,14 @@ if args.experiment == 'core':
 else:
     experiments = args.experiment
 
+if TRAIN:
+    for experiment in experiments:
+        train_experiment(experiment, use_cluster=use_cluster, path=save_path,
+                         use_torch=args.torch, testing=is_test)
+
+
 if 'standard' in experiments:
     path = './files/standard'
-    if TRAIN:
-        train(se.standard(is_test), save_path=path)
     if ANALYZE:
         # accuracy
         sa.plot_progress(path, ykeys=['val_acc', 'glo_score', 'K_inferred'])
@@ -119,8 +119,6 @@ if 'standard' in experiments:
 
 if 'receptor' in experiments:
     path = './files/receptor'
-    if TRAIN:
-        train(se.receptor(is_test), path)
     if ANALYZE:
         sa.plot_progress(path, ykeys=['val_acc', 'glo_score', 'K_inferred'])
 
@@ -137,8 +135,6 @@ if 'receptor' in experiments:
 if 'vary_pn' in experiments:
     # Vary nPN
     path = './files/vary_pn'
-    if TRAIN:
-        train(se.vary_pn(is_test), save_path=path)
     if ANALYZE:
         xticks = [20, 50, 100, 200, 1000]
         ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
@@ -150,8 +146,6 @@ if 'vary_pn' in experiments:
 if 'vary_kc' in experiments:
     # Vary nKC
     path = './files/vary_kc'
-    if TRAIN:
-        train(se.vary_kc(is_test), save_path=path)
     if ANALYZE:
         xticks = [50, 200, 1000, 2500, 10000]
         ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
@@ -162,8 +156,6 @@ if 'vary_kc' in experiments:
 
 if 'rnn' in experiments:
     path = './files/rnn'
-    if TRAIN:
-        train(se.rnn(is_test), save_path=path, sequential=True)
     if ANALYZE:
         sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
         # analysis_rnn.analyze_t0(path, dir_ix=0)
@@ -172,8 +164,6 @@ if 'rnn' in experiments:
 
 if 'metalearn' in experiments:
     path = './files/metalearn'
-    if TRAIN:
-        train(se.metalearn(is_test), path, train_arg='metatrain', sequential=True)
     if ANALYZE:
         # sa.plot_weights(path, var_name='w_orn', sort_axis=1, dir_ix=-0, average=False)
         # sa.plot_weights(os.path.join(path, '0','epoch','2000'), var_name='w_glo', sort_axis=-1)
@@ -186,8 +176,6 @@ if 'metalearn' in experiments:
 
 if 'pn_normalization' in experiments:
     path = './files/pn_normalization'
-    if TRAIN:
-        train(se.pn_normalization(is_test), path)
     if ANALYZE:
         sa.plot_results(path, xkey='data_dir', ykey='val_acc', loop_key='pn_norm_pre',
                         select_dict={
@@ -221,8 +209,6 @@ if 'pn_normalization' in experiments:
         
 if 'multi_head' in experiments:
     path = './files/multi_head'
-    if TRAIN:
-        train(se.train_multihead(is_test), path)
     if ANALYZE:
         # analysis_multihead.main1('multi_head')
         sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn', sort_axis=1)
