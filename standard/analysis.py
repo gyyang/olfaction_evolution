@@ -187,7 +187,6 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
             figname += '_epoch_range_' + str(epoch_range[1])
         save_fig(save_path, figname)
 
-
     if ykeys is None:
         ykeys = ['val_logloss', 'train_logloss', 'val_loss',
                  'train_loss', 'val_acc', 'glo_score']
@@ -235,40 +234,40 @@ def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
         pass
 
     if var_name == 'w_glo':
-        w_plot = w_plot[:,:20]
+        w_plot = w_plot[:, :20]
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
     fig = plt.figure(figsize=(2.6, 2.6))
     ax = fig.add_axes(rect)
 
-    max = np.max(abs(w_plot))
+    w_max = np.max(abs(w_plot))
     if not vlim:
-        vlim = [0, np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)]
+        vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
 
+    cmap = plt.get_cmap('RdBu_r')
     if positive_cmap:
-        cmap = tools.get_colormap()
-    else:
-        cmap = 'RdBu_r'
-    im = ax.imshow(w_plot, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
+        cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
+
+    im = ax.imshow(w_plot.T, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
                    interpolation='none')
 
     if var_name == 'w_orn':
         plt.title('ORN-PN connectivity after training', fontsize=7)
-        ax.set_xlabel('To PNs', labelpad=-5)
-        ax.set_ylabel('From ORNs', labelpad=-5)
+        ax.set_ylabel('To PNs', labelpad=-5)
+        ax.set_xlabel('From ORNs', labelpad=-5)
     elif var_name == 'w_or':
         plt.title('OR-ORN expression array after training', fontsize=7)
-        ax.set_xlabel('To ORNs', labelpad=-5)
-        ax.set_ylabel('From ORs', labelpad=-5)
+        ax.set_ylabel('To ORNs', labelpad=-5)
+        ax.set_xlabel('From ORs', labelpad=-5)
     elif var_name == 'w_glo':
         plt.title('PN-KC connectivity after training', fontsize=7)
-        ax.set_xlabel('To KCs', labelpad=-5)
-        ax.set_ylabel('from PNs', labelpad=-5)
+        ax.set_ylabel('To KCs', labelpad=-5)
+        ax.set_xlabel('from PNs', labelpad=-5)
     elif var_name == 'w_combined':
         plt.title('OR-PN combined connectivity', fontsize=7)
-        ax.set_xlabel('To PNs', labelpad=-5)
-        ax.set_ylabel('From ORs', labelpad=-5)
+        ax.set_ylabel('To PNs', labelpad=-5)
+        ax.set_xlabel('From ORs', labelpad=-5)
     else:
         print('unknown variable name for weight matrix: {}'.format(var_name))
 
@@ -276,10 +275,10 @@ def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
     for loc in ['bottom', 'top', 'left', 'right']:
         ax.spines[loc].set_visible(False)
     ax.tick_params('both', length=0)
-    ax.set_xticks([0, w_plot.shape[1]])
-    ax.set_yticks([0, w_plot.shape[0]])
+    ax.set_yticks([0, w_plot.shape[1]])
+    ax.set_xticks([0, w_plot.shape[0]])
     ax = fig.add_axes(rect_cb)
-    cb = plt.colorbar(im, cax=ax, ticks=[vlim[0], vlim[1]])
+    cb = plt.colorbar(im, cax=ax, ticks=vlim)
     cb.outline.set_linewidth(0.5)
     cb.set_label('Weight', fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
@@ -296,6 +295,7 @@ def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
     #     fig = plt.figure(figsize=(2, 2))
     #     plt.hist(var_dict[key].flatten())
     #     plt.title(key)
+
 
 def load_activity(save_path, lesion_kwargs=None):
     '''

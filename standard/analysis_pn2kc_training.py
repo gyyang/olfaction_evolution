@@ -146,12 +146,15 @@ def plot_distribution(dir, dir_ix, epoch=None, xrange=1.0, log=False):
         approximate = True
 
     save_path = os.path.join(figpath, experiment)
-    save_name = os.path.join(save_path, '_' + folder + '_distribution'  + string)
-    if log == False:
-        _plot_distribution(distribution, save_name, cutoff = cutoff, xrange= xrange, yrange=5000)
+    save_name = os.path.join(save_path, '_' + folder + '_')
+    if log:
+        save_name += 'log_'
+    save_name += 'distribution'  + string
+    if not log:
+        _plot_distribution(distribution, save_name, cutoff=cutoff, xrange=xrange, yrange=5000)
     else:
-        _plot_log_distribution(distribution, save_name, cutoff = cutoff,
-                               xrange= xrange, yrange=5000, approximate=approximate)
+        _plot_log_distribution(distribution, save_name, cutoff=cutoff,
+                               xrange=xrange, yrange=5000, approximate=approximate)
 
 
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
@@ -185,12 +188,12 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(dir, dir_ix, epoch=None, dynamic_thres=False, visualize=False, thres=THRES, xrange = 50, plot=True):
+def plot_sparsity(dir, dir_ix, epoch=None, dynamic_thres=False, visualize=False, thres=THRES, xrange=50, plot=True):
     dir_folder = tools._get_alldirs(dir, model=True, sort=True)[dir_ix]
     folder = os.path.split(dir_folder)[-1]
     experiment = os.path.split(dir)[-1]
 
-    if epoch is not None:
+    if epoch is not None and epoch != -1:
         dir_folder = tools._get_alldirs(os.path.join(dir_folder, 'epoch'), model=True, sort=True)[epoch]
 
     try:
@@ -237,7 +240,8 @@ def _plot_sparsity(data, savename, xrange=50, yrange=.5):
     split = os.path.split(savename)
     tools.save_fig(split[0], split[1])
 
-def _plot_log_distribution(data, savename, xrange, yrange, cutoff = 0, approximate=True):
+
+def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0, approximate=True):
     # if visualize:
     #     bins = np.linspace(x.min(), x.max(), 100)
     #     fig = plt.figure(figsize=(3, 3))

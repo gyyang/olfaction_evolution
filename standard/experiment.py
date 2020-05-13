@@ -8,7 +8,7 @@ testing_epochs = 16
 def standard(argTest=False):
     """Standard training setting"""
     config = configs.FullConfig()
-    config.max_epoch = 100
+    config.max_epoch = 20
 
     config.pn_norm_pre = 'batch_norm'
     config.sparse_pn2kc = False
