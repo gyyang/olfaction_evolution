@@ -19,17 +19,13 @@ import argparse
 from standard.experiment_utils import train_experiment, analyze_experiment
 import matplotlib as mpl
 
-SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'
-ROBERT_SCRATCHPATH = '/share/ctn/users/gy2259/olfaction_evolution'
-PETER_SCRATCHPATH = '/share/ctn/users/yw2500/olfaction_evolution'
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
 parser.add_argument('-t', '--train', help='Training', action='store_true')
 parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
-parser.add_argument('-cp', '--clusterpath', help='cluster path', default=SCRATCHPATH)
+parser.add_argument('-u', '--user', help='user', default='default')
 parser.add_argument('-c','--cluster', help='Use cluster?', action='store_true')
 parser.add_argument('--torch', help='Use torch', action='store_true')
 args = parser.parse_args()
@@ -42,15 +38,15 @@ mpl.rcParams['font.family'] = 'arial'
 for item in args.__dict__.items():
     print(item)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
-TRAIN, ANALYZE, is_test, use_cluster, cluster_path = args.train, args.analyze, args.testing, args.cluster, args.clusterpath
+TRAIN, ANALYZE, is_test, use_cluster, user = args.train, args.analyze, args.testing, args.cluster, args.user
 
 if use_cluster:
-    if cluster_path == 'peter' or cluster_path == 'pw':
-        cluster_path = PETER_SCRATCHPATH
-    elif cluster_path == 'robert' or cluster_path == 'gry':
-        cluster_path = ROBERT_SCRATCHPATH
+    if user in ['peter', 'pw']:
+        cluster_path = '/share/ctn/users/yw2500/olfaction_evolution'
+    elif user in ['robert', 'gry']:
+        cluster_path = '/share/ctn/users/gy2259/olfaction_evolution'
     else:
-        cluster_path = SCRATCHPATH
+        cluster_path = '/share/ctn/projects/olfaction_evolution'
 
     save_path = cluster_path
 else:
