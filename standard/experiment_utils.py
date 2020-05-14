@@ -145,7 +145,7 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
     for config in configs:
         config.experiment_name = experiment
         if testing:
-            config.max_epoch = 3
+            config.max_epoch = 2
 
         if use_cluster:
             cluster_train(config, path=path, train_arg=train_arg,

@@ -16,7 +16,7 @@ python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
 import os
 import argparse
 
-from standard.hyper_parameter_train import train_experiment, analyze_experiment
+from standard.experiment_utils import train_experiment, analyze_experiment
 import matplotlib as mpl
 
 SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'

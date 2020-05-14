@@ -195,7 +195,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         _plot_progress('epoch', plot_var)
 
 
-def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
+def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
                  vlim=None, positive_cmap=True):
     """Plot weights.
 
@@ -211,18 +211,13 @@ def plot_weights(path, var_name='w_orn', sort_axis=1, average=False,
         else:
             w_plot = var_dict[var_name]
 
-
-    # if not hasattr(config, 'receptor_layer') or config.receptor_layer == False:
-    #     if config.replicate_orn_with_tiling:
-    #         weight = np.reshape(
-    #             weight, (config.N_ORN_DUPLICATION, config.N_ORN, config.N_PN))
-    #         weight = np.swapaxes(weight, 0, 1)
-    #         weight = np.reshape(weight, (-1, config.N_PN))
-
     if average:
         w_orn_by_pn = tools._reshape_worn(w_plot, 50)
         w_plot = w_orn_by_pn.mean(axis=0)
     # Sort for visualization
+    if sort_axis == 'auto':
+        sort_axis = 0 if var_name == 'w_or' else 1
+
     if sort_axis == 0:
         ind_max = np.argmax(w_plot, axis=0)
         ind_sort = np.argsort(ind_max)

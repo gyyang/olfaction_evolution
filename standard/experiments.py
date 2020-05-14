@@ -99,9 +99,7 @@ def receptor_analysis(path):
                      legend_key='pn_norm_pre')
 
     for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
-        sort_axis = 0 if var_name == 'w_or' else 1
-        sa.plot_weights(modeldirs[0],
-                        var_name=var_name, sort_axis=sort_axis)
+        sa.plot_weights(modeldirs[0], var_name=var_name)
 
     # pn-kc K
     analysis_pn2kc_training.plot_distribution(modeldirs[0], xrange=1.5, log=False)
@@ -199,14 +197,10 @@ def vary_pn():
 
 def vary_pn_analysis(path):
     xticks = [20, 50, 100, 200, 1000]
-    ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
     ykeys = ['val_acc', 'glo_score']
-    for ykey in ykeys:
-        sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75),
-                        ax_box=(0.25, 0.25, 0.65, 0.65),
-                        loop_key='kc_dropout_rate', logx=True,
-                        ax_args={'ylim': ylim, 'yticks': yticks,
-                                 'xticks': xticks})
+    sa.plot_results(path, xkey='N_PN', ykey=ykeys, figsize=(1.75, 1.75),
+                    loop_key='kc_dropout_rate', logx=True,
+                    ax_args={'xticks': xticks})
 
 
 def vary_kc():
