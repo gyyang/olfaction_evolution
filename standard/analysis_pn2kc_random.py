@@ -71,9 +71,8 @@ def _extract_paircounts(mat):
     return counts, counts_matrix
 
 
-def _get_claws(dir, ix = 0):
-    dirs = [os.path.join(dir, n) for n in os.listdir(dir)]
-    wglos = tools.load_pickle(os.path.join(dirs[ix], 'epoch'), 'w_glo')
+def _get_claws(dir):
+    wglos = tools.load_pickle(os.path.join(dir, 'epoch'), 'w_glo')
     wglo_binaries = []
     for i, wglo in enumerate(wglos):
         if i == 0:
@@ -88,9 +87,9 @@ def _get_claws(dir, ix = 0):
 
 
 #frequency of identical pairs vs shuffled
-def pair_distribution(dir, dir_ix, shuffle_arg):
+def pair_distribution(dir, shuffle_arg):
     bin_range = 150
-    wglo_binaries, _ = _get_claws(dir, dir_ix)
+    wglo_binaries, _ = _get_claws(dir)
     wglo_binary = wglo_binaries[-1]
 
     trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
@@ -129,12 +128,12 @@ def pair_distribution(dir, dir_ix, shuffle_arg):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    save_fig(dir, '_' + str(dir_ix) + '_pair_distribution_' + shuffle_arg)
+    save_fig(dir, 'pair_distribution_' + shuffle_arg)
 
 
 # distribution of connections is not a bernoulli distribution, but is more compact
-def claw_distribution(dir, dir_ix, shuffle_arg):
-    wglo_binaries, _ = _get_claws(dir, dir_ix)
+def claw_distribution(dir, shuffle_arg):
+    wglo_binaries, _ = _get_claws(dir)
     wglo_binary = wglo_binaries[-1]
     sparsity = np.count_nonzero(wglo_binary > 0, axis= 0)
 
@@ -169,12 +168,12 @@ def claw_distribution(dir, dir_ix, shuffle_arg):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    save_fig(dir, '_' + str(dir_ix) + '_claw_distribution_' + shuffle_arg)
+    save_fig(dir, 'claw_distribution_' + shuffle_arg)
 
 
 #all PNs make the same number of connections onto KCs
-def plot_distribution(dir, dir_ix):
-    wglo_binaries, _ = _get_claws(dir, dir_ix)
+def plot_distribution(dir):
+    wglo_binaries, _ = _get_claws(dir)
     wglo_binary = wglo_binaries[-1]
 
     weights_per_pn = np.mean(wglo_binary, axis=1)
@@ -202,12 +201,12 @@ def plot_distribution(dir, dir_ix):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    save_fig(dir, '_' + str(dir_ix) + '_pn_distribution')
+    save_fig(dir, 'pn_distribution')
 
 
 # average correlation of weights between KCs decrease as a function of training
 # and is similar to shuffled weights with the same connection probability
-def plot_cosine_similarity(dir, dir_ix, shuffle_arg, log=True):
+def plot_cosine_similarity(dir, shuffle_arg, log=True):
     def _get_similarity(mat):
         similarity_matrix = cosine_similarity(mat)
         diag_mask = ~np.eye(similarity_matrix.shape[0], dtype=bool)
@@ -215,7 +214,7 @@ def plot_cosine_similarity(dir, dir_ix, shuffle_arg, log=True):
         average_correlation = np.mean(corrs)
         return average_correlation, similarity_matrix
 
-    wglo_binaries, wglos = _get_claws(dir, ix=dir_ix)
+    wglo_binaries, wglos = _get_claws(dir)
     y = []
     for wglo in wglo_binaries:
         corr, similarity_matrix = _get_similarity(np.transpose(wglo))
@@ -266,7 +265,7 @@ def plot_cosine_similarity(dir, dir_ix, shuffle_arg, log=True):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    save_fig(dir, '_' + str(dir_ix) + '_cosine_similarity_' + shuffle_arg, dpi=500)
+    save_fig(dir, 'cosine_similarity_' + shuffle_arg, dpi=500)
 
 
 def display_matrix(wglo):

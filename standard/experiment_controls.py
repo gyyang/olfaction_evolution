@@ -1,10 +1,27 @@
 from collections import OrderedDict
+import os
+import copy
 
 import numpy as np
 
 from configs import FullConfig
 from tools import vary_config
+import tools
 
+try:
+    import standard.analysis as sa
+    import standard.analysis_pn2kc_peter
+    import standard.analysis_pn2kc_training as analysis_pn2kc_training
+    import standard.analysis_pn2kc_random as analysis_pn2kc_random
+    import standard.analysis_orn2pn as analysis_orn2pn
+    import standard.analysis_activity as analysis_activity
+    import standard.analysis_multihead as analysis_multihead
+    import standard.analysis_metalearn as analysis_metalearn
+    import analytical.numerical_test as numerical_test
+    import analytical.analyze_simulation_results as analyze_simulation_results
+    import standard.analysis_nonnegative as analysis_nonnegative
+except ImportError as e:
+    print(e)
 
 testing_epochs = 12
 
@@ -21,6 +38,21 @@ def control_nonnegative():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_nonnegative_analysis(path):
+    sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
+    sa.plot_weights(os.path.join(path, '000001'), sort_axis=1, average=False,
+                    positive_cmap=False, vlim=[-1, 1])
+    for ix in range(0, 2):
+        standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='ortho')
+        standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='corr')
+
+    # # #sign constraint
+    sa.plot_progress(path, ykeys=['glo_score', 'val_acc'],
+                     legend_key='sign_constraint_orn2pn')
+    sa.plot_results(path, xkey='sign_constraint_orn2pn', ykey='glo_score')
+    sa.plot_results(path, xkey='sign_constraint_orn2pn', ykey='val_acc')
 
 
 def control_orn2pn():
@@ -49,6 +81,25 @@ def control_orn2pn():
 
     configs = vary_config(config, config_ranges, mode='control')
     return configs
+
+
+def control_orn2pn_analysis(path):
+    default = {'ORN_NOISE_STD': 0, 'pn_norm_pre': 'batch_norm',
+               'kc_dropout_rate': 0.5, 'N_ORN_DUPLICATION': 10, 'lr': 1e-3}
+    ykeys = ['glo_score', 'val_acc']
+
+    for yk in ykeys:
+        for xk, v in default.items():
+            temp = copy.deepcopy(default)
+            temp.pop(xk)
+            if xk == 'lr':
+                logx = True
+            else:
+                logx = False
+            sa.plot_results(path, xkey=xk, ykey=yk,
+                            select_dict=temp, logx=logx)
+
+            sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk)
 
 
 def control_pn2kc_backup():
@@ -108,6 +159,39 @@ def control_pn2kc():
     return configs
 
 
+def control_pn2kc_analysis(path):
+    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3,
+               'initial_pn2kc': 0, 'train_kc_bias': True}
+    ykeys = ['val_acc', 'K_inferred']
+
+    for yk in ykeys:
+        exclude_dict = None
+        if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+            exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
+
+        for xk, v in default.items():
+            temp = copy.deepcopy(default)
+            temp.pop(xk)
+            if xk == 'lr':
+                logx = True
+            else:
+                logx = False
+            sa.plot_results(path, xkey=xk, ykey=yk,
+                            select_dict=temp, logx=logx)
+
+            sa.plot_progress(path, select_dict=temp, ykeys=[yk],
+                             legend_key=xk, exclude_dict=exclude_dict)
+    #
+    res = standard.analysis_pn2kc_peter.do_everything(path, filter_peaks=False,
+                                                      redo=True)
+    for xk, v in default.items():
+        temp = copy.deepcopy(default)
+        temp.pop(xk)
+        sa.plot_xy(path, select_dict=temp, xkey='lin_bins_', ykey='lin_hist_',
+                   legend_key=xk, log=res,
+                   ax_args={'ylim': [0, 500]})
+
+
 def control_pn2kc_inhibition():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -136,6 +220,27 @@ def control_pn2kc_inhibition():
     config_ranges['kc_recinh_step'] = list(range(1, 10, 2))
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_pn2kc_inhibition_analysis(path):
+    xkey = 'kc_recinh_coeff'
+    ykeys = ['val_acc', 'K_inferred']
+    # loop_key = 'kc_recinh_step'
+    loop_key = None
+    select_dict = {'kc_prune_weak_weights': False, 'kc_recinh_step': 9}
+    for yk in ykeys:
+        sa.plot_results(path, xkey=xkey, ykey=yk, loop_key=loop_key,
+                        select_dict=select_dict)
+
+        sa.plot_progress(path, ykeys=[yk], legend_key=xkey,
+                         select_dict=select_dict)
+
+    res = standard.analysis_pn2kc_peter.do_everything(path,
+                                                      filter_peaks=False,
+                                                      redo=True)
+    sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_',
+               legend_key=xkey, log=res,
+               ax_args={'ylim': [0, 500]})
 
 
 def control_pn2kc_prune_boolean(n_pn=50):
@@ -167,6 +272,22 @@ def control_pn2kc_prune_boolean(n_pn=50):
     config_ranges['kc_prune_weak_weights'] = [False, True]
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_pn2kc_prune_boolean_analysis(path, n_pns):
+    xkey = 'kc_prune_weak_weights'
+    ykeys = ['val_acc', 'K_inferred', 'K']
+    for n_pn in n_pns:
+        cur_path = path + '_' + str(n_pn)
+        for yk in ykeys:
+            sa.plot_progress(cur_path, ykeys=[yk], legend_key=xkey)
+
+        res = standard.analysis_pn2kc_peter.do_everything(cur_path,
+                                                          filter_peaks=False,
+                                                          redo=True, range=1)
+        sa.plot_xy(cur_path, xkey='lin_bins_', ykey='lin_hist_',
+                   legend_key=xkey, log=res,
+                   ax_args={'ylim': [0, 500]})
 
 
 def control_pn2kc_prune_hyper(n_pn=50):
@@ -201,6 +322,39 @@ def control_pn2kc_prune_hyper(n_pn=50):
     return configs
 
 
+def control_pn2kc_prune_hyper_analysis(path, n_pns):
+    for n_pn in n_pns:
+        cur_path = path + '_' + str(n_pn)
+        default = {'N_KC': 2500, 'lr': 1e-3, 'initial_pn2kc': 4. / n_pn,
+                   'kc_prune_threshold': 1. / n_pn}
+        ykeys = ['val_acc', 'K']
+        for yk in ykeys:
+            exclude_dict = None
+            if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+                # exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
+                pass
+
+            for xk, v in default.items():
+                temp = copy.deepcopy(default)
+                temp.pop(xk)
+                logx = True
+                # sa.plot_results(cur_path, xkey=k, ykey=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                #                 select_dict=temp,
+                #                 logx=logx)
+                #
+                # sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict)
+        #
+        res = standard.analysis_pn2kc_peter.do_everything(cur_path,
+                                                          filter_peaks=True,
+                                                          redo=True, range=.75)
+        for xk, v in default.items():
+            temp = copy.deepcopy(default)
+            temp.pop(xk)
+            sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_',
+                       ykey='lin_hist_', legend_key=xk, log=res,
+                       ax_args={'ylim': [0, 500]})
+
+
 def control_vary_kc():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -215,6 +369,22 @@ def control_vary_kc():
     return configs
 
 
+def control_vary_kc_analysis(path):
+    sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
+    sa.plot_weights(os.path.join(path, '000021'), sort_axis=1, average=False)
+    # default = {'kc_dropout_rate': 0.5, 'N_KC':2500}
+    # ykeys = ['val_acc', 'glo_score']
+    # ylim, yticks = [0, 1.1], [0, .25, .5, .75, 1]
+    # xticks = [50, 200, 1000, 2500, 10000]
+    # for ykey in ykeys:
+    #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
+    #                     loop_key='kc_dropout_rate',
+    #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
+    #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
+    #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
+    #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
+
+
 def control_vary_pn():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -226,6 +396,38 @@ def control_vary_pn():
     config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_vary_pn_analysis(path):
+    sa.plot_weights(os.path.join(path, '000004'), sort_axis=1, average=False)
+    sa.plot_weights(os.path.join(path, '000010'), sort_axis=1, average=False,
+                    vlim=[0, 5])
+    sa.plot_weights(os.path.join(path, '000022'), sort_axis=1, average=False,
+                    vlim=[0, 5])
+
+    ix = 22
+    ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(path, ix, cutoff=.9,
+                                                         shuffle=False)
+    analysis_orn2pn.multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad)
+    analysis_orn2pn.multiglo_lesion(path, ix, ix_good, ix_bad)
+
+    default = {'kc_dropout_rate': 0.5, 'N_PN': 50}
+    ykeys = ['val_acc', 'glo_score']
+    xticks = [20, 50, 100, 200, 1000]
+    for ykey in ykeys:
+        sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75),
+                        ax_box=(0.3, 0.3, 0.65, 0.65),
+                        loop_key='kc_dropout_rate',
+                        logx=True, ax_args={'xticks': xticks},
+                        plot_args={'alpha': 0.7})
+        sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75),
+                        ax_box=(0.25, 0.25, 0.65, 0.65),
+                        loop_key='kc_dropout_rate',
+                        select_dict={'kc_dropout_rate': 0.5},
+                        logx=True, ax_args={'xticks': xticks})
+        sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN',
+                         select_dict={'kc_dropout_rate': 0.5})
+
 
 #TODO
 def controls_receptor():
@@ -250,6 +452,41 @@ def controls_receptor():
 
     configs = vary_config(config, config_ranges, mode='control')
     return configs
+
+
+def controls_receptor_analysis(path):
+    default = {'N_ORN_DUPLICATION': 10, 'or2orn_normalization': True,
+               'pn_norm_pre': 'batch_norm'}
+    sa.plot_results(path, xkey='N_ORN_DUPLICATION', ykey='or_glo_score',
+                    select_dict={'or2orn_normalization': True,
+                                 'pn_norm_pre': 'batch_norm'}),
+    sa.plot_results(path, xkey='or2orn_normalization', ykey='or_glo_score',
+                    select_dict={'N_ORN_DUPLICATION': 10,
+                                 'pn_norm_pre': 'batch_norm'})
+    sa.plot_results(path, xkey='pn_norm_pre', ykey='or_glo_score',
+                    select_dict={'N_ORN_DUPLICATION': 10,
+                                 'or2orn_normalization': True})
+
+    sa.plot_results(path, xkey='N_ORN_DUPLICATION', ykey='combined_glo_score',
+                    select_dict={'or2orn_normalization': True,
+                                 'pn_norm_pre': 'batch_norm'}),
+    sa.plot_results(path, xkey='or2orn_normalization',
+                    ykey='combined_glo_score',
+                    select_dict={'N_ORN_DUPLICATION': 10,
+                                 'pn_norm_pre': 'batch_norm'})
+    sa.plot_results(path, xkey='pn_norm_pre', ykey='combined_glo_score',
+                    select_dict={'N_ORN_DUPLICATION': 10,
+                                 'or2orn_normalization': True})
+
+    sa.plot_results(path, xkey='N_ORN_DUPLICATION', ykey='val_acc',
+                    select_dict={'or2orn_normalization': True,
+                                 'pn_norm_pre': 'batch_norm'}),
+    sa.plot_results(path, xkey='or2orn_normalization', ykey='val_acc',
+                    select_dict={'N_ORN_DUPLICATION': 10,
+                                 'pn_norm_pre': 'batch_norm'})
+    sa.plot_results(path, xkey='pn_norm_pre', ykey='val_acc',
+                    select_dict={'N_ORN_DUPLICATION': 10,
+                                 'or2orn_normalization': True})
 
 
 def vary_init_sparse():
@@ -287,6 +524,16 @@ def vary_apl():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def vary_apl_analysis(path):
+    analysis_activity.sparseness_activity(
+        path, 'kc_out', activity_threshold=0., lesion_kwargs=None)
+    lk = {'name': 'model/apl2kc/kernel:0',
+          'units': 0, 'arg': 'outbound'}
+    analysis_activity.sparseness_activity(
+        path, 'kc_out', activity_threshold=0., lesion_kwargs=lk,
+        figname='lesion_apl_')
 
 
 def pn_normalization_direct():
@@ -348,7 +595,7 @@ def train_claw_configs():
     return configs
 
 
-def vary_claw_configs():
+def vary_kc_claws():
     '''
     Vary number of inputs to KCs while skipping ORN2PN layer
     Results:
@@ -372,6 +619,38 @@ def vary_claw_configs():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def vary_kc_claws_analysis(path):
+    t = [1, 2, 9, 19, 29, 39, 49, 59, 69]
+    for i in t:
+        res = tools.load_all_results(path, argLast=False, ix=i)
+        sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss',
+                        select_dict={'ORN_NOISE_STD': 0}, res=res,
+                        string=str(i), figsize=(2, 2))
+
+    sa.plot_progress(path, select_dict={'kc_inputs': [7, 15, 30],
+                                        'ORN_NOISE_STD': 0},
+                     legends=['7', '15', '30'])
+    # analysis_activity.sparseness_activity(path, 'kc_out')
+    # import tools
+    # for i in range(8):
+    #     res = tools.load_all_results(path, argLast=False, ix=i)
+    #     sa.plot_results(path, xkey='kc_inputs', ykey='train_loss',
+    #                     select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i))
+
+    # sa.plot_results(path, xkey='kc_inputs', ykey='val_acc', loop_key='ORN_NOISE_STD',
+    #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
+    sa.plot_results(path, xkey='kc_inputs', ykey='val_acc',
+                    select_dict={'ORN_NOISE_STD': 0},
+                    figsize=(2, 2))
+    # sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss', loop_key='ORN_NOISE_STD',
+    #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+    #                 ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
+    sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss',
+                    select_dict={'ORN_NOISE_STD': 0},
+                    figsize=(2, 2),
+                    ax_args={'ylim': [-1, 2], 'yticks': [-1, 0, 1, 2]})
 
 
 def control_n_or_per_orn():
@@ -416,3 +695,13 @@ def vary_orn_corr():
     config_ranges['data_dir'] = datasets
     configs = vary_config(config, config_ranges, mode='sequential')
     return configs
+
+
+def vary_orn_corr_analysis(path):
+    xkey = 'orn_corr'
+    ykeys = ['val_acc', 'K_inferred', 'glo_score']
+    progress_keys = ['val_logloss', 'train_logloss', 'val_loss',
+                     'train_loss', 'val_acc', 'glo_score', 'K_inferred']
+    for yk in ykeys:
+        sa.plot_results(path, xkey=xkey, ykey=yk, figsize=(3.0, 1.5))
+        sa.plot_progress(path, legend_key=xkey, ykeys=progress_keys)

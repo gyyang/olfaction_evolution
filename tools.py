@@ -263,6 +263,8 @@ def _get_alldirs(dir, model, sort):
 
 def get_allmodeldirs(dir, select_dict=None, exclude_dict=None):
     dirs = _get_alldirs(dir, model=True, sort=True)
+    if select_dict is None and exclude_dict is None:
+        return dirs
     new_dirs = []
     for d in dirs:
         config = load_config(d)
