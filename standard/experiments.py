@@ -4,10 +4,18 @@ Each experiment is described by a function that returns a list of configurations
 function name is the experiment name
 """
 
+import os
 from collections.__init__ import OrderedDict
 
 from configs import FullConfig, MetaConfig
 from tools import vary_config
+import tools
+
+import standard.analysis as sa
+import standard.analysis_pn2kc_training as analysis_pn2kc_training
+import standard.analysis_pn2kc_random as analysis_pn2kc_random
+import standard.analysis_orn2pn as analysis_orn2pn
+import standard.analysis_rnn as analysis_rnn
 
 
 def standard():
@@ -49,6 +57,22 @@ def receptor():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def receptor_analysis(path):
+    modeldirs = tools.get_allmodeldirs(path, select_dict={'kc_norm_pre': 'batch_norm'})
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'],
+                     legend_key='pn_norm_pre')
+
+    for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
+        sort_axis = 0 if var_name == 'w_or' else 1
+        sa.plot_weights(modeldirs[0],
+                        var_name=var_name, sort_axis=sort_axis)
+
+    # pn-kc K
+    analysis_pn2kc_training.plot_distribution(modeldirs[0], xrange=1.5, log=False)
+    analysis_pn2kc_training.plot_distribution(modeldirs[0], xrange=1.5, log=True)
+    analysis_pn2kc_training.plot_sparsity(modeldirs[0], dynamic_thres=True, epoch=-1)
 
 
 def rnn():

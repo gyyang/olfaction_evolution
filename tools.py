@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import colors
 
+import dict_methods
 
 rootpath = os.path.dirname(os.path.abspath(__file__))
 FIGPATH = os.path.join(rootpath, 'figures')
@@ -17,11 +18,20 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 
-def save_fig(save_path, str='', dpi=300, pdf=True, show=False):
-    save_name = os.path.split(save_path)[-1]
+def save_fig(save_path, figname='', dpi=300, pdf=True, show=False):
+    # For backward compatability
+    if isinstance(save_path, str):
+        save_name = os.path.split(save_path)[-1]
+    else:
+        # save_path is a list of model paths
+        print(save_path[0])
+        # ugly hack to get experiment name
+        save_name = os.path.split(os.path.split(save_path[0])[-2])[-1]
+        print(save_name)
+
     path = os.path.join(FIGPATH, save_name)
     os.makedirs(path, exist_ok=True)
-    figname = os.path.join(path, save_name + str)
+    figname = os.path.join(path, save_name + figname)
     plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
     print('Figure saved at: ' + figname)
 
@@ -251,8 +261,44 @@ def _get_alldirs(dir, model, sort):
     return dirs
 
 
-def get_allmodeldirs(dir):
-    return _get_alldirs(dir, model=True, sort=True)
+def get_allmodeldirs(dir, select_dict=None, exclude_dict=None):
+    dirs = _get_alldirs(dir, model=True, sort=True)
+    new_dirs = []
+    for d in dirs:
+        config = load_config(d)
+        selected = True
+        excluded = False
+        if select_dict is not None:
+            for key, val in select_dict.items():
+                if getattr(config, key) != val:
+                    selected = False
+                    break
+
+        if exclude_dict is not None:
+            for key, val in exclude_dict.items():
+                if getattr(config, key) == val:
+                    excluded = True
+                    break
+
+        if selected and not excluded:
+            new_dirs.append(d)
+
+    return new_dirs
+
+
+def get_experiment_name(model_path):
+    """Get experiment name for saving."""
+    if _islikemodeldir(model_path):
+        config = load_config(model_path)
+        experiment_name = config.experiment_name
+        if experiment_name is None:
+            # model_path is assumed to be experiment_name/model_name
+            experiment_name = os.path.normpath(model_path).split(os.path.sep)[-2]
+    else:
+        # Assume this is path to experiment
+        experiment_name = os.path.split(model_path)[-1]
+
+    return experiment_name
 
 
 def load_pickle(dir, var):
@@ -373,17 +419,22 @@ def load_pickle(dir, var):
 #     return config
 
 
-def load_all_results(rootpath, argLast=True, ix=None,
+def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix=None,
                      exclude_early_models=True):
     """Load results from path.
 
     Args:
-        rootpath: root path of all models loading results from
+        path: str or list, if str, root path of all models loading results from
+            if list, directories of all models
 
     Returns:
         res: dictionary of numpy arrays, containing information from all models
     """
-    dirs = get_allmodeldirs(rootpath)
+    if isinstance(path, str):
+        dirs = get_allmodeldirs(path)
+    else:
+        dirs = path
+
     from collections import defaultdict
     res = defaultdict(list)
     for i, d in enumerate(dirs):
@@ -428,6 +479,9 @@ def load_all_results(rootpath, argLast=True, ix=None,
     except AttributeError:
         print('''Could not compute log loss.
               Most likely models have not finished training.''')
+
+    res = dict_methods.filter(res, select_dict)
+    res = dict_methods.exclude(res, exclude_dict)
     return res
 
 
@@ -460,6 +514,7 @@ nicename_dict = {
         'lr': 'Learning rate',
         'train_kc_bias': 'Training KC bias',
         'pn_norm_pre': 'PN normalization',
+        'kc_norm_pre': 'KC normalization',
         'batch_norm': 'Batch Norm',
         'kc_dropout_rate': 'KC dropout rate',
         'pn_dropout_rate': 'PN dropout rate',
@@ -484,10 +539,8 @@ def nicename(name, mode='dict'):
         return np.format_float_scientific(name, precision=0, exp_digits=1)
     elif mode == 'kc_recinh_coeff':
         return '{:0.1f}'.format(name)
-    try:
-        return nicename_dict[name]
-    except KeyError:
-        return name
+    else:
+        return nicename_dict.get(name, name)  # get(key, default value)
 
 
 # colors from https://visme.co/blog/color-combinations/ # 14

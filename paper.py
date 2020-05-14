@@ -16,7 +16,7 @@ python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
 import os
 import argparse
 
-from standard.hyper_parameter_train import train_experiment
+from standard.hyper_parameter_train import train_experiment, analyze_experiment
 import matplotlib as mpl
 
 SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'
@@ -77,7 +77,8 @@ if args.experiment == 'core':
                    'metalearn',
                    'pn_normalization',
                    'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
-                   'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws', 'random_kc_claws', 'train_orn2pn2kc',
+                   'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws',
+                   'random_kc_claws', 'train_orn2pn2kc',
                    'kcrole', 'kc_generalization',
                    'multi_head']
 else:
@@ -87,6 +88,10 @@ if TRAIN:
     for experiment in experiments:
         train_experiment(experiment, use_cluster=use_cluster, path=save_path,
                          use_torch=args.torch, testing=is_test)
+
+if ANALYZE:
+    for experiment in experiments:
+        analyze_experiment(experiment)
 
 
 if 'standard' in experiments:
@@ -106,7 +111,7 @@ if 'standard' in experiments:
         # pn-kc
         sa.plot_weights(os.path.join(path,'000000'), var_name='w_glo')
 
-        # pn-kc K
+        # pn-kc
         analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)
         analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, epoch=-1)
@@ -117,20 +122,20 @@ if 'standard' in experiments:
         analysis_pn2kc_random.claw_distribution(path, dir_ix= 0, shuffle_arg='random')
         analysis_pn2kc_random.pair_distribution(path, dir_ix= 0, shuffle_arg='preserve')
 
-if 'receptor' in experiments:
-    path = './files/receptor'
-    if ANALYZE:
-        sa.plot_progress(path, ykeys=['val_acc', 'glo_score', 'K_inferred'])
-
-        for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
-            sort_axis = 0 if var_name == 'w_or' else 1
-            sa.plot_weights(os.path.join(path, '000000'),
-                            var_name=var_name, sort_axis=sort_axis)
-
-        # pn-kc K
-        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)
-        analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
-        analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, epoch=-1)
+# if 'receptor' in experiments:
+#     path = './files/receptor'
+#     if ANALYZE:
+#         sa.plot_progress(path, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+#
+#         for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
+#             sort_axis = 0 if var_name == 'w_or' else 1
+#             sa.plot_weights(os.path.join(path, '000000'),
+#                             var_name=var_name, sort_axis=sort_axis)
+#
+#         # pn-kc K
+#         analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=False)
+#         analysis_pn2kc_training.plot_distribution(path, xrange=1.5, log=True)
+#         analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True, epoch=-1)
 
 if 'vary_pn' in experiments:
     # Vary nPN

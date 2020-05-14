@@ -152,3 +152,21 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
         else:
             local_train(config, path=path, train_arg=train_arg,
                         use_torch=use_torch, **kwargs)
+
+
+def analyze_experiment(experiment):
+    path = './files/' + experiment
+
+    experiment_files = [experiments, experiment_controls]
+
+    experiment_found = False
+    for experiment_file in experiment_files:
+        try:
+            getattr(experiment_file, experiment + '_analysis')(path)
+            experiment_found = True
+            break
+        except AttributeError:
+            experiment_found = False
+
+    if not experiment_found:
+        print('Analysis not found for experiment', experiment)

@@ -83,9 +83,7 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
     files = glob.glob(d)
     res = defaultdict(list)
     for f in files:
-        temp = tools.load_all_results(f, argLast = False)
-        if select_dict is not None:
-            temp = dict_methods.filter(temp, select_dict)
+        temp = tools.load_all_results(f, argLast=False, select_dict=select_dict)
         dict_methods.chain_defaultdicts(res, temp)
 
     if redo:
@@ -118,18 +116,17 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
     return res
 
 
-def plot_distribution(dir, dir_ix=0, epoch=None, xrange=1.0, log=False):
-    dir_folder = tools.get_allmodeldirs(dir)[dir_ix]
-    folder = os.path.split(dir_folder)[-1]
-    experiment = os.path.split(dir)[-1]
+def plot_distribution(dir, epoch=None, xrange=1.0, log=False):
+    """Plot weight distribution from a single model path."""
+    model_name = os.path.split(dir)[-1]
 
     if epoch is not None:
-        dir_folder = tools.get_allmodeldirs(os.path.join(dir_folder, 'epoch'))[epoch]
+        dir = tools.get_allmodeldirs(os.path.join(dir, 'epoch'))[epoch]
 
     try:
-        w = tools.load_pickle(dir_folder, 'w_glo')[0]
+        w = tools.load_pickle(dir, 'w_glo')[0]
     except KeyError:
-        w = tools.load_pickle(dir_folder, 'w_kc')[0]
+        w = tools.load_pickle(dir, 'w_kc')[0]
     w[np.isnan(w)] = 0
     distribution = w.flatten()
 
@@ -145,8 +142,8 @@ def plot_distribution(dir, dir_ix=0, epoch=None, xrange=1.0, log=False):
         cutoff = infer_threshold(distribution)
         approximate = True
 
-    save_path = os.path.join(figpath, experiment)
-    save_name = os.path.join(save_path, '_' + folder + '_')
+    save_path = os.path.join(figpath, tools.get_experiment_name(dir))
+    save_name = os.path.join(save_path, '_' + model_name + '_')
     if log:
         save_name += 'log_'
     save_name += 'distribution'  + string
@@ -189,19 +186,17 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(dir, dir_ix=0, epoch=None, dynamic_thres=False,
+def plot_sparsity(dir, epoch=None, dynamic_thres=False,
                   visualize=False, thres=THRES, xrange=50, plot=True):
-    dir_folder = tools.get_allmodeldirs(dir)[dir_ix]
-    folder = os.path.split(dir_folder)[-1]
-    experiment = os.path.split(dir)[-1]
+    model_name = os.path.split(dir)[-1]
 
     if epoch is not None and epoch != -1:
-        dir_folder = tools.get_allmodeldirs(os.path.join(dir_folder, 'epoch'))[epoch]
+        dir = tools.get_allmodeldirs(os.path.join(dir, 'epoch'))[epoch]
 
     try:
-        w = tools.load_pickle(dir_folder, 'w_glo')[0]
+        w = tools.load_pickle(dir, 'w_glo')[0]
     except KeyError:
-        w = tools.load_pickle(dir_folder, 'w_kc')[0]
+        w = tools.load_pickle(dir, 'w_kc')[0]
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
 
     if plot:
@@ -214,8 +209,8 @@ def plot_sparsity(dir, dir_ix=0, epoch=None, dynamic_thres=False,
             yrange = 1
         else:
             yrange = 0.5
-        save_path = os.path.join(figpath, experiment)
-        save_name = os.path.join(save_path, '_' + folder + '_sparsity' + string)
+        save_path = os.path.join(figpath, tools.get_experiment_name(dir))
+        save_name = os.path.join(save_path, '_' + model_name + '_sparsity' + string)
         _plot_sparsity(sparsity, save_name, yrange= yrange, xrange=xrange)
     return sparsity
 

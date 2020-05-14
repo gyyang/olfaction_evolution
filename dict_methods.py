@@ -4,7 +4,8 @@ from scipy import stats as sstats
 from collections import defaultdict
 import itertools
 
-def filter(res, filter_dict):
+
+def filter(res, filter_dict=None):
     '''
     Filter results to only include entries containing the key, value pairs in select_dict
     For example, select_dict = {'day', 0} will filter all data from res whose key 'day' == 0
@@ -12,6 +13,8 @@ def filter(res, filter_dict):
     :param filter_dict:
     :return: a copy of res with filter applied
     '''
+    if filter_dict is None:
+        return res
     out = copy.copy(res)
     list_of_ixs = []
     for key, vals in filter_dict.items():
@@ -22,7 +25,10 @@ def filter(res, filter_dict):
         out[key] = value[select_ixs]
     return out
 
-def exclude(res, exclude_dict):
+
+def exclude(res, exclude_dict=None):
+    if exclude_dict is None:
+        return res
     out = copy.copy(res)
     list_of_ixs = []
     for key, vals in exclude_dict.items():

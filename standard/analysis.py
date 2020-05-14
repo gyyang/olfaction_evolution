@@ -122,11 +122,9 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         Fixed to allow for multiple plots
     """
 
-    log = tools.load_all_results(save_path, argLast=False)
-    if select_dict is not None:
-        log = dict_methods.filter(log, select_dict)
-    if exclude_dict is not None:
-        log = dict_methods.exclude(log, exclude_dict)
+    log = tools.load_all_results(save_path, argLast=False,
+                                 select_dict=select_dict,
+                                 exclude_dict=exclude_dict)
 
     # get rid of duplicates
     if legend_key:
@@ -155,13 +153,12 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         for x, y, c in zip(xs, ys, colors):
             if epoch_range:
                 x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
-            ax.plot(x, y, alpha=alpha, color = c, linewidth=1)
+            ax.plot(x, y, alpha=alpha, color=c, linewidth=1)
 
         if legend_key is not None:
-            # ax.legend(legends, loc=1, bbox_to_anchor=(1.05, 1.2), fontsize=4)
             legends = log[legend_key]
-            legends = [nicename(l, mode=legend_key) for l in legends]
-            ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
+            legends = [nicename(l) for l in legends]
+            ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
             plt.title(nicename(legend_key), fontsize=7)
 
         ax.set_xlabel(nicename(xkey))
@@ -362,6 +359,7 @@ def load_activity(save_path, lesion_kwargs=None):
     # plt.show()
     return glo_in, glo_out, kc_in, kc_out, results
 
+
 def plot_activity(save_path):
     glo_in, glo_out, kc_in, kc_out, results = load_activity(save_path)
     save_name = save_path.split('/')[-1]
@@ -394,10 +392,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         logy: bool, if True, use log x-axis
     """
     if res is None:
-        res = tools.load_all_results(path)
-
-    if select_dict is not None:
-        res = dict_methods.filter(res, select_dict)
+        res = tools.load_all_results(path, select_dict=select_dict)
 
     if plot_args is None:
         plot_args = {}
