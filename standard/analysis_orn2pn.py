@@ -59,7 +59,7 @@ def correlation_across_epochs(save_path, legend = None, arg = 'weight'):
         # # Reload the network and analyze activity
         config = tools.load_config(config_path)
         config.data_dir = config.data_dir  # hack
-        train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
+        train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
         tf.reset_default_graph()
         CurrentModel = FullModel
@@ -220,8 +220,7 @@ def _lesion_multiglomerular_pn(path, units):
     config.dataset = 'proto'
     config.data_dir = './datasets/proto/standard'
     config.save_path = path
-    train_x, train_y, val_x, val_y = task.load_data(
-        config.dataset, config.data_dir)
+    train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
     # Build validation model
     val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)

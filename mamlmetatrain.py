@@ -56,7 +56,7 @@ def train(config):
 
     PRINT_INTERVAL = config.meta_print_interval
     if LOAD_DATA:
-        train_x, train_y = load_data(None, './datasets/proto/meta_proto')
+        train_x, train_y = load_data('./datasets/proto/meta_proto')
         # Build train model
         train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
         train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)

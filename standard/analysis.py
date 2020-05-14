@@ -14,8 +14,7 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 import tools
-from tools import nicename, save_fig
-import task
+from tools import nicename
 from standard.analysis_pn2kc_training import check_single_peak
 
 mpl.rcParams['font.size'] = 7
@@ -99,7 +98,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         if select_dict:
             for k, v in select_dict.items():
                 figname += k + '_' + str(v) + '_'
-        save_fig(save_path, figname)
+        tools.save_fig(save_path, figname)
 
     if log is None:
         log = tools.load_all_results(save_path, argLast=False)
@@ -182,7 +181,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
         if epoch_range:
             figname += '_epoch_range_' + str(epoch_range[1])
-        save_fig(save_path, figname)
+        tools.save_fig(save_path, figname)
 
     if ykeys is None:
         ykeys = ['val_logloss', 'train_logloss', 'val_loss',
@@ -277,7 +276,8 @@ def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
     plt.axis('tight')
     var_name = var_name.replace('/','_')
     var_name = var_name.replace(':','_')
-    save_fig(os.path.split(path)[0], '_' + var_name + '_' + os.path.split(path)[1])
+    tools.save_fig(tools.get_experiment_name(path),
+             '_' + var_name + '_' + tools.get_model_name(path))
 
 
     # Plot distribution of various connections
@@ -439,7 +439,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        save_fig(path, figname)
+        tools.save_fig(path, figname)
 
     if isinstance(ykey, str):
         ykey = [ykey]

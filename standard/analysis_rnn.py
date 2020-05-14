@@ -44,7 +44,7 @@ def _load_activity(save_path):
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
     config.data_dir = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\datasets\proto\orn50'
-    train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
+    train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
     tf.reset_default_graph()
     CurrentModel = network_models.RNN

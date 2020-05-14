@@ -52,7 +52,7 @@ def train(config, reload=False, save_everytrainloss=False):
     tools.save_config(config, save_path=config.save_path)
 
     # Load dataset
-    train_x, train_y, val_x, val_y = task.load_data(config.dataset, config.data_dir)
+    train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
     batch_size = config.batch_size
     if 'n_batch' in dir(config):

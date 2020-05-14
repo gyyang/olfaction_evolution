@@ -34,8 +34,7 @@ dataset_config = tools.load_config(config.data_dir)
 dataset_config.update(config)
 config = dataset_config
 
-train_x, train_y, val_x, val_y = task.load_data(config.dataset,
-                                                data_dir)
+train_x, train_y, val_x, val_y = task.load_data(data_dir)
 # Build train model
 train_x_ph = tf.placeholder(train_x.dtype, train_x.shape)
 train_y_ph = tf.placeholder(train_y.dtype, train_y.shape)

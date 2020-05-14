@@ -32,8 +32,7 @@ def load_activity_tf(save_path, lesion_kwargs=None):
     config.label_type = 'sparse'
 
     # Load dataset
-    data_dir = rootpath + config.data_dir[1:]  # this is a hack as well
-    train_x, train_y, val_x, val_y = task.load_data(config.dataset, data_dir)
+    train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
     tf.reset_default_graph()
     if config.model == 'full':
@@ -78,8 +77,7 @@ def load_activity_torch(save_path, lesion_kwargs=None):
     config = tools.load_config(save_path)
 
     # Load dataset
-    data_dir = './' + config.data_dir[1:]  # this is a hack as well
-    train_x, train_y, val_x, val_y = task.load_data(config.dataset, data_dir)
+    train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = FullModel(config=config)

@@ -137,7 +137,7 @@ def evaluate_weight_perturb(values, modelname, model_dir, n_rep=1, dataset='val'
     config.save_path = rootpath + config.save_path[1:]
 
     if config.data_dir != data_dir:
-        train_x, train_y, val_x, val_y = task.load_data('proto', config.data_dir)
+        train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
     else:
         train_x, train_y, val_x, val_y = TRAIN_X, TRAIN_Y, VAL_X, VAL_Y
 
@@ -730,7 +730,7 @@ if __name__ == '__main__':
     # TODO: Make sure this works for dataset is different
     # data_dir = os.path.join(rootpath, 'datasets', 'proto', 'small')
     data_dir = os.path.join(rootpath, 'datasets', 'proto', 'standard')
-    TRAIN_X, TRAIN_Y, VAL_X, VAL_Y = task.load_data('proto', data_dir)
+    TRAIN_X, TRAIN_Y, VAL_X, VAL_Y = task.load_data(data_dir)
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     path = '../files/vary_kc_claws_new'

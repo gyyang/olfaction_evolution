@@ -20,8 +20,7 @@ class DataGenerator(object):
             num_class=2,
             dim_output=2,
     ):
-        train_x, train_y, val_x, val_y = task.load_data(
-            'proto', dataset)
+        train_x, train_y, val_x, val_y = task.load_data(dataset)
 
         self.meta_bs = meta_batch_size
         self.batch_size = batch_size
@@ -177,7 +176,7 @@ def save_proto(config=None, seed=0, folder_name=None):
     return folder_path
 
 
-def load_data(dataset, data_dir):
+def load_data(data_dir):
     """Load dataset."""
     names = ['train_x', 'train_y']
     return [np.load(os.path.join(data_dir, name + '.npy')) for name in names]

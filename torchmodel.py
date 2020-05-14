@@ -317,8 +317,12 @@ class FullModel(nn.Module):
         torch.save(self.state_dict(), fname)
 
     def load(self, epoch=None):
-
         save_path = self.config.save_path
+        if not os.path.exists(save_path):
+            # datasets are usually stored like path/files/experiment/model
+            paths = ['.'] + os.path.normpath(save_path).split(os.path.sep)[-3:]
+            save_path = os.path.join(*paths)
+
         if epoch is not None:
             save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
         fname = os.path.join(save_path, 'model.pt')

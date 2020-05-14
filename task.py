@@ -582,18 +582,19 @@ def save_autoencode(config=None, seed=0, folder_name=None):
     return folder_path
 
 
-
-def load_data(dataset, data_dir):
+def load_data(data_dir):
     """Load dataset."""
+    if not os.path.exists(data_dir):
+        # datasets are usually stored like path/datasets/proto/name
+        paths = ['.'] + os.path.normpath(data_dir).split(os.path.sep)[-3:]
+        data_dir = os.path.join(*paths)
+
     def _load_proto(path):
         """Load dataset from numpy format."""
         names = ['train_x', 'train_y', 'val_x', 'val_y']
         return [np.load(os.path.join(path, name + '.npy')) for name in names]
 
-    if dataset in ['proto', 'autoencode']:
-            train_x, train_y, val_x, val_y = _load_proto(data_dir)
-    else:
-        raise ValueError('Unknown dataset type ' + str(dataset))
+    train_x, train_y, val_x, val_y = _load_proto(data_dir)
     return train_x, train_y, val_x, val_y
 
 

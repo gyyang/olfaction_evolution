@@ -7,7 +7,7 @@ def _distance_preserve(x_arg, y_arg):
     save_path = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\files\pn_normalization\000010'
     data_dir = r'C:\Users\Peter\PycharmProjects\olfaction_evolution\datasets\proto\standard'
     config = tools.load_config(save_path)
-    train_x, train_y, val_x, val_y = task.load_data(config.dataset, data_dir)
+    train_x, train_y, val_x, val_y = task.load_data(data_dir)
 
     import tensorflow as tf
     from model import FullModel

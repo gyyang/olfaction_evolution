@@ -212,8 +212,7 @@ def lesion_analysis(config, units=None):
     tf.reset_default_graph()
 
     # Load dataset
-    train_x, train_y, val_x, val_y = task.load_data(
-            config.dataset, config.data_dir)
+    train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
     # Build validation model
     val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
