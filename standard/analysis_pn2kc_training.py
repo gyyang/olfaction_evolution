@@ -116,9 +116,9 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
     return res
 
 
-def plot_distribution(dir, epoch=None, xrange=1.0, log=False):
+def plot_distribution(dir, epoch=None, xrange=1.0):
     """Plot weight distribution from a single model path."""
-    model_name = os.path.split(dir)[-1]
+    model_name = tools.get_model_name(dir)
 
     if epoch is not None:
         dir = tools.get_allmodeldirs(os.path.join(dir, 'epoch'))[epoch]
@@ -144,14 +144,13 @@ def plot_distribution(dir, epoch=None, xrange=1.0, log=False):
 
     save_path = os.path.join(figpath, tools.get_experiment_name(dir))
     save_name = os.path.join(save_path, '_' + model_name + '_')
-    if log:
-        save_name += 'log_'
-    save_name += 'distribution'  + string
-    if not log:
-        _plot_distribution(distribution, save_name, cutoff=cutoff, xrange=xrange, yrange=5000)
-    else:
-        _plot_log_distribution(distribution, save_name, cutoff=cutoff,
-                               xrange=xrange, yrange=5000, approximate=approximate)
+
+    _plot_distribution(
+        distribution, save_name + 'distribution' + string,
+        cutoff=cutoff, xrange=xrange, yrange=5000)
+    _plot_log_distribution(
+        distribution, save_name + 'log_distribution' + string,
+        cutoff=cutoff, xrange=xrange, yrange=5000, approximate=approximate)
 
 
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
@@ -188,7 +187,7 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
 
 def plot_sparsity(dir, epoch=None, dynamic_thres=False,
                   visualize=False, thres=THRES, xrange=50, plot=True):
-    model_name = os.path.split(dir)[-1]
+    model_name = tools.get_model_name(dir)
 
     if epoch is not None and epoch != -1:
         dir = tools.get_allmodeldirs(os.path.join(dir, 'epoch'))[epoch]

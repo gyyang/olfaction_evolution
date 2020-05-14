@@ -58,8 +58,7 @@ def standard_analysis(path):
     sa.plot_weights(dir, var_name='w_glo')
 
     # pn-kc
-    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=False)
-    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=True)
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
 
     # pn-kc random
@@ -110,8 +109,7 @@ def receptor_analysis(path):
     #     sa.plot_weights(dir, var_name=var_name)
     #
     # # pn-kc K
-    # analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=False)
-    # analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=True)
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
 
     # Activity
