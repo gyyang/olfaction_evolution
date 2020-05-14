@@ -3,14 +3,14 @@ import subprocess
 
 import standard.experiments as experiments
 import standard.experiment_controls as experiment_controls
-
 import tools
+import settings
 
 SBATCHPATH = './sbatch/'
-SCRATCHPATH = '/share/ctn/projects/olfaction_evolution'
 
+use_torch = settings.use_torch
 
-def local_train(config, path=None, train_arg=None, use_torch=False, **kwargs):
+def local_train(config, path=None, train_arg=None, **kwargs):
     """Train all models locally."""
     if use_torch:
         import torchtrain as train
@@ -86,7 +86,7 @@ def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH,
     return jobfile
 
 
-def cluster_train(config, path, train_arg=None, use_torch=False):
+def cluster_train(config, path, train_arg=None):
     """Train all models locally."""
     experiment_name = config.experiment_name
     model_name = config.model_name
@@ -115,7 +115,7 @@ def cluster_train(config, path, train_arg=None, use_torch=False):
 
 
 def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
-                     use_torch=False, testing=False, **kwargs):
+                     testing=False, **kwargs):
     """Train model across platforms given experiment name.
 
     Args:
@@ -124,7 +124,6 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
         use_cluster: bool, whether to run experiments on cluster
         path: str, path to save models and config
         train_arg: None or str
-        use_torch: bool, whether to use pytorch
         testing: bool, whether to test run
     """
     print('Training {:s} experiment'.format(experiment))
@@ -148,11 +147,9 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
             config.max_epoch = 2
 
         if use_cluster:
-            cluster_train(config, path=path, train_arg=train_arg,
-                          use_torch=use_torch)
+            cluster_train(config, path=path, train_arg=train_arg)
         else:
-            local_train(config, path=path, train_arg=train_arg,
-                        use_torch=use_torch, **kwargs)
+            local_train(config, path=path, train_arg=train_arg, **kwargs)
 
 
 def analyze_experiment(experiment):

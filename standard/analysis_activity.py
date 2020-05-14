@@ -8,11 +8,15 @@ import standard.analysis as sa
 from tools import nicename
 import tools
 import task
+import settings
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
+
+
+use_torch = settings.use_torch
 
 
 def load_activity_tf(save_path, lesion_kwargs=None):
@@ -61,20 +65,10 @@ def load_activity_tf(save_path, lesion_kwargs=None):
         glo_out, glo_in, kc_in, kc_out, logits = sess.run(
             [model.glo, model.glo_in, model.kc_in, model.kc, model.logits],
             {val_x_ph: val_x, val_y_ph: val_y})
-        results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
+        # results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
 
-    # to_show = 100
-    # plt.subplot(1, 2, 1)
-    # if val_y.ndim == 1:
-    #     mat = np.zeros_like(logits[:to_show])
-    #     mat[np.arange(to_show), val_y[:to_show]] = 1
-    #     plt.imshow(mat)
-    # else:
-    #     plt.imshow(val_y[:to_show,:])
-    # plt.subplot(1,2,2)
-    # plt.imshow(logits[:to_show,:])
-    # plt.show()
-    return glo_in, glo_out, kc_in, kc_out, results
+    return {'glo_in': glo_in, 'glo': glo_out,
+            'kc_in': kc_in, 'kc': kc_out}
 
 
 def load_activity_torch(save_path, lesion_kwargs=None):
@@ -82,7 +76,6 @@ def load_activity_torch(save_path, lesion_kwargs=None):
     from torchmodel import FullModel
     # # Reload the network and analyze activity
     config = tools.load_config(save_path)
-    config.label_type = 'sparse'
 
     # Load dataset
     data_dir = './' + config.data_dir[1:]  # this is a hack as well
@@ -92,43 +85,25 @@ def load_activity_torch(save_path, lesion_kwargs=None):
     model = FullModel(config=config)
     model.load()
     model.to(device)
+    model.readout()
 
     # validation
     val_data = torch.from_numpy(val_x).float().to(device)
     val_target = torch.from_numpy(val_y).long().to(device)
     with torch.no_grad():
         model.eval()
-        res_val = model(val_data, val_target)
+        results = model(val_data, val_target)
 
-    # # Build validation model
-    # val_x_ph = tf.placeholder(val_x.dtype, val_x.shape)
-    # val_y_ph = tf.placeholder(val_y.dtype, val_y.shape)
-    # model = CurrentModel(val_x_ph, val_y_ph, config=config, training=False)
-    # # model.save_path = rootpath + model.save_path[1:]
-    # model.save_path = save_path
-    #
-    # tf_config = tf.ConfigProto()
-    # tf_config.gpu_options.allow_growth = True
-    # with tf.Session(config=tf_config) as sess:
-    #     sess.run(tf.global_variables_initializer())
-    #     sess.run(tf.local_variables_initializer())
-    #     model.load()
-    #
-    #     if lesion_kwargs:
-    #         model.lesion_units(**lesion_kwargs)
-    #
-    #     # Validation
-    #     glo_out, glo_in, kc_in, kc_out, logits = sess.run(
-    #         [model.glo, model.glo_in, model.kc_in, model.kc, model.logits],
-    #         {val_x_ph: val_x, val_y_ph: val_y})
-    #     results = sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
+    for key, val in results.items():
+        try:
+            results[key] = val.numpy()
+        except AttributeError:
+            pass
 
-    return res_val
-    # return glo_in, glo_out, kc_in, kc_out, results
+    return results
 
 
 def load_activity(save_path, lesion_kwargs=None):
-    use_torch = False
     if use_torch:
         return load_activity_torch(save_path, lesion_kwargs)
     else:
@@ -136,15 +111,15 @@ def load_activity(save_path, lesion_kwargs=None):
 
 
 def plot_activity(save_path):
-    glo_in, glo_out, kc_in, kc_out, results = load_activity(save_path)
+    results = load_activity(save_path)
     save_name = save_path.split('/')[-1]
     plt.figure()
-    plt.hist(glo_out.flatten(), bins=100)
+    plt.hist(results['glo'].flatten(), bins=100)
     plt.title('Glo activity distribution')
     tools.save_fig(save_path, save_name + '_pn_activity')
 
     plt.figure()
-    plt.hist(kc_out.flatten(), bins=100)
+    plt.hist(results['kc'].flatten(), bins=100)
     plt.title('KC activity distribution')
     tools.save_fig(save_path, save_name + '_kc_activity')
 
@@ -184,18 +159,15 @@ def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
 
     dirs = tools.get_allmodeldirs(save_path)
     for i, d in enumerate(dirs):
-        glo_in, glo_out, kc_out, results = load_activity(d)
-
+        results = load_activity(d)
+        data = results[arg]
         if arg == 'glo_in':
-            data = glo_in
             xlabel = 'PN Input'
             zticks = [0, 4]
-        elif arg == 'glo_out':
-            data = glo_out
+        elif arg == 'glo':
             xlabel = 'PN'
             zticks = [0, 4]
-        elif arg == 'kc_out':
-            data = kc_out
+        elif arg == 'kc':
             xlabel = 'KC'
             zticks = [0, 1]
         else:
@@ -236,23 +208,22 @@ def _distribution(data, save_path, name, xlabel, ylabel, xrange):
 def distribution_activity(save_path, arg):
     dirs = tools.get_allmodeldirs(save_path)
     for i, d in enumerate(dirs):
-        glo_in, glo_out, kc_out, results = load_activity(d)
+        results = load_activity(d)
+        data = results[arg].flatten()
         if arg == 'glo_in':
-            data = glo_in.flatten()
             xlabel = 'PN Input'
             zticks = [-10, 10]
-        elif arg == 'glo_out':
-            data = glo_out.flatten()
+        elif arg == 'glo':
             xlabel = 'PN Activity'
             zticks = [0, 10]
-        elif arg == 'kc_out':
-            data = kc_out.flatten()
+        elif arg == 'kc':
             xlabel = 'KC Activity'
             zticks = [0, 2]
         else:
             raise ValueError('data type not recognized for image plotting: {}'.format(arg))
         ylabel = 'Number of Cells'
-        _distribution(data, save_path, name= 'dist_' + arg + '_' + str(i), xlabel=xlabel, ylabel=ylabel, xrange=zticks)
+        _distribution(data, save_path, name= 'dist_' + arg + '_' + str(i),
+                      xlabel=xlabel, ylabel=ylabel, xrange=zticks)
 
 
 def sparseness_activity(save_path, arg, activity_threshold=0.,
@@ -266,17 +237,16 @@ def sparseness_activity(save_path, arg, activity_threshold=0.,
     if tools._islikemodeldir(save_path):
         dirs = [save_path]
     else:
-        dirs = tools._get_alldirs(save_path, model=True, sort=True)
+        dirs = tools.get_allmodeldirs(save_path)
     if figname is None:
         figname = ''
     for i, d in enumerate(dirs):
-        glo_in, glo_out, kc_out, results = load_activity(d, lesion_kwargs)
-        if arg == 'glo_out':
-            data = glo_out
+        results = load_activity(d, lesion_kwargs)
+        data = results[arg]
+        if arg == 'glo':
             name = 'PN'
             zticks = [-0.1, 1]
-        elif arg == 'kc_out':
-            data = kc_out
+        elif arg == 'kc':
             name = 'KC'
             zticks = [-0.1, 1]
         else:
@@ -303,17 +273,12 @@ def sparseness_activity(save_path, arg, activity_threshold=0.,
 
 def plot_mean_activity_sparseness(save_path, arg, xkey,
                                   loop_key=None, select_dict=None):
-    dirs = [os.path.join(save_path, n) for n in os.listdir(save_path)]
+    dirs = tools.get_allmodeldirs(save_path)
 
     mean_sparseness = []
     for i, d in enumerate(dirs):
-        glo_in, glo_out, kc_out, results = load_activity(d)
-        if arg == 'glo_out':
-            data = glo_out
-        elif arg == 'kc_out':
-            data = kc_out
-        else:
-            raise ValueError('data type not recognized for image plotting: {}'.format(arg))
+        results = load_activity(d)
+        data = results[arg]
         activity_threshold = 0
         data = np.count_nonzero(data > activity_threshold, axis=1) / data.shape[1]
         mean_sparseness.append(data.mean())

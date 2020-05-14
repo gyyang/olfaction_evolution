@@ -1,16 +1,16 @@
 """File that summarizes all key results.
 
+To run specific experiments (e.g. orn2pn, vary_pn), run
+python main.py --train --analyze --experiment orn2pn vary_pn
+
 To train and analyze all models quickly, run in command line
-python paper.py -d=0 --train --analyze --testing
+python main.py --train --analyze --testing
 
 To reproduce the results from paper, run
-python paper.py -d=0 --train --analyze
+python main.py --train --analyze
 
 To analyze pretrained networks, run
-python paper.py -d=0 --analyze
-
-To run specific experiments (e.g. orn2pn, vary_pn), run
-python paper.py -d=0 --train --analyze --experiment orn2pn vary_pn
+python main.py --analyze
 """
 
 import os
@@ -19,15 +19,15 @@ import argparse
 from standard.experiment_utils import train_experiment, analyze_experiment
 import matplotlib as mpl
 
+import settings
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
 parser.add_argument('-t', '--train', help='Training', action='store_true')
 parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
 parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
-parser.add_argument('-u', '--user', help='user', default='default')
 parser.add_argument('-c','--cluster', help='Use cluster?', action='store_true')
-parser.add_argument('--torch', help='Use torch', action='store_true')
 args = parser.parse_args()
 
 mpl.rcParams['font.size'] = 7
@@ -38,22 +38,15 @@ mpl.rcParams['font.family'] = 'arial'
 for item in args.__dict__.items():
     print(item)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
-TRAIN, ANALYZE, is_test, use_cluster, user = args.train, args.analyze, args.testing, args.cluster, args.user
+TRAIN, ANALYZE, testing, use_cluster = args.train, args.analyze, args.testing, args.cluster
 
 if use_cluster:
-    if user in ['peter', 'pw']:
-        cluster_path = '/share/ctn/users/yw2500/olfaction_evolution'
-    elif user in ['robert', 'gry']:
-        cluster_path = '/share/ctn/users/gy2259/olfaction_evolution'
-    else:
-        cluster_path = '/share/ctn/projects/olfaction_evolution'
-
-    save_path = cluster_path
+    save_path = settings.cluster_path
 else:
     save_path = './'
 
 # TRAIN = True
-# is_test = True
+# testing = True
 # ANALYZE = True
 # args.experiment = ['metalearn']
 #
@@ -85,7 +78,7 @@ else:
 if TRAIN:
     for experiment in experiments:
         train_experiment(experiment, use_cluster=use_cluster, path=save_path,
-                         use_torch=args.torch, testing=is_test)
+                         testing=testing)
 
 if ANALYZE:
     for experiment in experiments:

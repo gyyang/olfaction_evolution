@@ -528,11 +528,11 @@ def vary_apl():
 
 def vary_apl_analysis(path):
     analysis_activity.sparseness_activity(
-        path, 'kc_out', activity_threshold=0., lesion_kwargs=None)
+        path, 'kc', activity_threshold=0., lesion_kwargs=None)
     lk = {'name': 'model/apl2kc/kernel:0',
           'units': 0, 'arg': 'outbound'}
     analysis_activity.sparseness_activity(
-        path, 'kc_out', activity_threshold=0., lesion_kwargs=lk,
+        path, 'kc', activity_threshold=0., lesion_kwargs=lk,
         figname='lesion_apl_')
 
 
@@ -632,7 +632,7 @@ def vary_kc_claws_analysis(path):
     sa.plot_progress(path, select_dict={'kc_inputs': [7, 15, 30],
                                         'ORN_NOISE_STD': 0},
                      legends=['7', '15', '30'])
-    # analysis_activity.sparseness_activity(path, 'kc_out')
+    # analysis_activity.sparseness_activity(path, 'kc')
     # import tools
     # for i in range(8):
     #     res = tools.load_all_results(path, argLast=False, ix=i)

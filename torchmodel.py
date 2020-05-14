@@ -261,6 +261,11 @@ class FullModel(nn.Module):
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
 
+        self._readout = False
+
+    def readout(self, is_readout=True):
+        self._readout = is_readout
+
     def forward(self, x, target):
         # Process ORNs
         if self.config.receptor_layer:
@@ -280,7 +285,12 @@ class FullModel(nn.Module):
         with torch.no_grad():
             _, pred = torch.max(y, 1)
             acc = (pred == target).sum().item() / target.size(0)
-        return {'loss': loss, 'acc': acc, 'kc': act2}
+        results = {'loss': loss, 'acc': acc, 'kc': act2}
+
+        if self._readout:
+            results['glo'] = act1
+
+        return results
 
     @property
     def w_or(self):
