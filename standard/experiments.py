@@ -69,9 +69,8 @@ def standard_analysis(path):
     # analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
 
     # Activity
-    analysis_activity.distribution_activity(path, 'glo')
-    # analysis_activity.distribution_activity(path, 'kc')
-    # analysis_activity.sparseness_activity(path, 'kc')
+    analysis_activity.distribution_activity(path, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(path, ['glo', 'kc'])
 
 
 def receptor():

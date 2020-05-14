@@ -181,15 +181,18 @@ def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
         _image(data, zticks=zticks, name = 'image_' + arg + '_' + str(i), xlabel=xlabel, ylabel='Odors')
 
 
-def _distribution(data, save_path, name, xlabel, ylabel, xrange):
+def _distribution(data, save_path, name, xlabel, ylabel, xrange=None,
+                  density=False):
     fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_axes((0.27, 0.25, 0.65, 0.65))
-    plt.hist(data, bins=30, range=[xrange[0], xrange[1]], density=False, align='left')
+    plt.hist(data, bins=30, range=xrange, density=density, align='left')
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 2))
 
     # xticks = np.linspace(xrange[0], xrange[1], 5)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    plt.xlim(xrange)
+    if xrange is not None:
+        plt.xlim(xrange)
     # ax.set_xticks(xticks)
     plt.locator_params(axis='x', nbins=3)
     plt.locator_params(axis='y', nbins=3)
@@ -205,70 +208,62 @@ def _distribution(data, save_path, name, xlabel, ylabel, xrange):
     tools.save_fig(save_path, '_' + name, pdf=True)
 
 
-def distribution_activity(save_path, arg):
+def distribution_activity(save_path, var_names=None):
     dirs = tools.get_allmodeldirs(save_path)
+    if var_names is None:
+        var_names = ['kc', 'glo']
+    elif isinstance(var_names, str):
+        var_names = [var_names]
+
     for i, d in enumerate(dirs):
         results = load_activity(d)
-        data = results[arg].flatten()
-        if arg == 'glo_in':
-            xlabel = 'PN Input'
-            zticks = [-10, 10]
-        elif arg == 'glo':
-            xlabel = 'PN Activity'
-            zticks = [0, 10]
-        elif arg == 'kc':
-            xlabel = 'KC Activity'
-            zticks = [0, 2]
-        else:
-            raise ValueError('data type not recognized for image plotting: {}'.format(arg))
-        ylabel = 'Number of Cells'
-        _distribution(data, save_path, name= 'dist_' + arg + '_' + str(i),
-                      xlabel=xlabel, ylabel=ylabel, xrange=zticks)
+        for var_name in var_names:
+            data = results[var_name].flatten()
+            xlabel = tools.nicename(var_name)
+            ylabel = 'Distribution'
+            name = 'dist_' + var_name + '_' + str(i)
+            _distribution(data, save_path, name=name, density=True,
+                          xlabel=xlabel, ylabel=ylabel)
 
 
-def sparseness_activity(save_path, arg, activity_threshold=0.,
+def sparseness_activity(save_path, var_names, activity_threshold=0.,
                         lesion_kwargs=None, figname=None):
     """Plot the sparseness of activity.
 
     Args:
-        path: model path
+        save_path: model path
         arg: str, the activity to plot
     """
-    if tools._islikemodeldir(save_path):
-        dirs = [save_path]
-    else:
-        dirs = tools.get_allmodeldirs(save_path)
+    dirs = tools.get_allmodeldirs(save_path)
     if figname is None:
         figname = ''
+
+    if isinstance(var_names, str):
+        var_names = [var_names]
+
     for i, d in enumerate(dirs):
         results = load_activity(d, lesion_kwargs)
-        data = results[arg]
-        if arg == 'glo':
-            name = 'PN'
-            zticks = [-0.1, 1]
-        elif arg == 'kc':
-            name = 'KC'
-            zticks = [-0.1, 1]
-        else:
-            raise ValueError('data type not recognized for image plotting: {}'.format(arg))
+        for var_name in var_names:
+            data = results[var_name]
+            xrange = [-0.05, 1.05]
+            if var_name == 'glo':
+                name = 'PN'
+            elif var_name == 'kc':
+                name = 'KC'
+            else:
+                raise ValueError('Unknown var name', var_name)
 
-        # plt.figure()
-        # plt.hist(data.flatten())
-        # plt.xlabel('Activity')
-        # plt.ylabel('Odors')
-        # plt.show()
+            data1 = np.mean(data > activity_threshold, axis=1)
+            figname_new = figname + 'spars_' + var_name + '_' + str(i)
+            _distribution(data1, save_path, name=figname_new, density=False,
+                          xlabel='Fraction of Active '+name+'s',
+                          ylabel='Number of Odors', xrange=xrange)
 
-        data1 = np.mean(data > activity_threshold, axis=1)
-        figname_new = figname + 'spars_' + arg + '_' + str(i)
-        _distribution(data1, save_path, name=figname_new,
-                      xlabel='Fraction of Active '+name+'s',
-                      ylabel='Number of Odors', xrange=zticks)
-
-        data2 = np.mean(data > activity_threshold, axis=0)
-        figname_new = figname + 'spars_' + arg + '2_' + str(i)
-        _distribution(data2, save_path, name=figname_new,
-                      xlabel='Fraction of Odors',
-                      ylabel='Number of '+name+'s', xrange=zticks)
+            data2 = np.mean(data > activity_threshold, axis=0)
+            figname_new = figname + 'spars_' + var_name + '2_' + str(i)
+            _distribution(data2, save_path, name=figname_new, density=False,
+                          xlabel='Fraction of Odors',
+                          ylabel='Number of '+name+'s', xrange=xrange)
 
 
 def plot_mean_activity_sparseness(save_path, arg, xkey,

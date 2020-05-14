@@ -536,6 +536,10 @@ nicename_dict = {
     'w_or': 'OR-ORN expression',
     'w_glo': 'PN-KC connectivity',
     'w_combined': 'OR-PN effective connectivity',
+    'glo_in': 'PN Input',
+    'glo': 'PN Activity',
+    'kc_in': 'KC Input',
+    'kc': 'KC Activity',
 }
 
 
