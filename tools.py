@@ -303,6 +303,21 @@ def get_experiment_name(model_path):
     return experiment_name
 
 
+def get_model_name(model_path):
+    """Get model name for saving."""
+    if _islikemodeldir(model_path):
+        config = load_config(model_path)
+        model_name = config.model_name
+        if model_name is None:
+            # model_path is assumed to be experiment_name/model_name
+            model_name = os.path.split(model_path)[-1]
+    else:
+        # Assume this is path to experiment
+        model_name = os.path.split(model_path)[-1]
+
+    return model_name
+
+
 def load_pickle(dir, var):
     """Load pickle by epoch in sorted order."""
     out = []

@@ -42,31 +42,32 @@ def standard():
 def standard_analysis(path):
     modeldirs = tools.get_allmodeldirs(path)
     dir = modeldirs[0]
+
     # accuracy
-    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
-    #
-    # # orn-pn
-    # sa.plot_weights(dir, var_name='w_orn', sort_axis=1)
-    # try:
-    #     analysis_orn2pn.correlation_across_epochs(path, arg='weight')
-    #     analysis_orn2pn.correlation_across_epochs(path, arg='activity')
-    # except ModuleNotFoundError:
-    #     pass
-    #
-    # # pn-kc
-    # sa.plot_weights(dir, var_name='w_glo')
-    #
-    # # pn-kc
-    # analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=False)
-    # analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=True)
-    # analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
-    #
-    # # pn-kc random
-    # analysis_pn2kc_random.plot_cosine_similarity(
-    #     dir, shuffle_arg='preserve', log=False)
-    # analysis_pn2kc_random.plot_distribution(dir)
-    # analysis_pn2kc_random.claw_distribution(dir, shuffle_arg='random')
-    # analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+
+    # orn-pn
+    sa.plot_weights(dir, var_name='w_orn', sort_axis=1)
+    try:
+        analysis_orn2pn.correlation_across_epochs(path, arg='weight')
+        analysis_orn2pn.correlation_across_epochs(path, arg='activity')
+    except ModuleNotFoundError:
+        pass
+
+    # pn-kc
+    sa.plot_weights(dir, var_name='w_glo')
+
+    # pn-kc
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=False)
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=True)
+    analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
+
+    # pn-kc random
+    analysis_pn2kc_random.plot_cosine_similarity(
+        dir, shuffle_arg='preserve', log=False)
+    analysis_pn2kc_random.plot_distribution(dir)
+    analysis_pn2kc_random.claw_distribution(dir, shuffle_arg='random')
+    analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
 
     # Activity
     analysis_activity.distribution_activity(path, ['glo', 'kc'])
@@ -103,18 +104,19 @@ def receptor_analysis(path):
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'],
                      legend_key='pn_norm_pre')
 
+    dir = modeldirs[0]
+
     for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
-        sa.plot_weights(modeldirs[0], var_name=var_name)
+        sa.plot_weights(dir, var_name=var_name)
 
     # pn-kc K
-    analysis_pn2kc_training.plot_distribution(modeldirs[0], xrange=1.5, log=False)
-    analysis_pn2kc_training.plot_distribution(modeldirs[0], xrange=1.5, log=True)
-    analysis_pn2kc_training.plot_sparsity(modeldirs[0], dynamic_thres=True, epoch=-1)
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=False)
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5, log=True)
+    analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
 
     # Activity
-    analysis_activity.distribution_activity(path, 'glo')
-    analysis_activity.distribution_activity(path, 'kc')
-    analysis_activity.sparseness_activity(path, 'kc')
+    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
 
 
 def rnn():

@@ -215,14 +215,15 @@ def distribution_activity(save_path, var_names=None):
     elif isinstance(var_names, str):
         var_names = [var_names]
 
-    for i, d in enumerate(dirs):
+    for d in dirs:
         results = load_activity(d)
         for var_name in var_names:
             data = results[var_name].flatten()
             xlabel = tools.nicename(var_name)
             ylabel = 'Distribution'
-            name = 'dist_' + var_name + '_' + str(i)
-            _distribution(data, save_path, name=name, density=True,
+            name = 'dist_' + var_name + '_' + tools.get_model_name(d)
+            figpath = tools.get_experiment_name(d)
+            _distribution(data, figpath, name=name, density=True,
                           xlabel=xlabel, ylabel=ylabel)
 
 
@@ -241,7 +242,7 @@ def sparseness_activity(save_path, var_names, activity_threshold=0.,
     if isinstance(var_names, str):
         var_names = [var_names]
 
-    for i, d in enumerate(dirs):
+    for d in dirs:
         results = load_activity(d, lesion_kwargs)
         for var_name in var_names:
             data = results[var_name]
@@ -253,15 +254,17 @@ def sparseness_activity(save_path, var_names, activity_threshold=0.,
             else:
                 raise ValueError('Unknown var name', var_name)
 
+            figpath = tools.get_experiment_name(d)
+
             data1 = np.mean(data > activity_threshold, axis=1)
-            figname_new = figname + 'spars_' + var_name + '_' + str(i)
-            _distribution(data1, save_path, name=figname_new, density=False,
+            fname = figname + 'spars_' + var_name + '_' + tools.get_model_name(d)
+            _distribution(data1, figpath, name=fname, density=False,
                           xlabel='Fraction of Active '+name+'s',
                           ylabel='Number of Odors', xrange=xrange)
 
             data2 = np.mean(data > activity_threshold, axis=0)
-            figname_new = figname + 'spars_' + var_name + '2_' + str(i)
-            _distribution(data2, save_path, name=figname_new, density=False,
+            fname = figname + 'spars_' + var_name + '2_' + tools.get_model_name(d)
+            _distribution(data2, figpath, name=fname, density=False,
                           xlabel='Fraction of Odors',
                           ylabel='Number of '+name+'s', xrange=xrange)
 
