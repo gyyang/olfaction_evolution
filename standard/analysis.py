@@ -84,12 +84,12 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
             legends = log[legend_key]
             legends = [nicename(l, mode=legend_key) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
-            ax.set_title(nicename(legend_key), fontsize=7)
+            ax.set_title(nicename(legend_key))
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
         if ykey == 'val_acc' and log[ykey].shape[0] == 1:
-            plt.title('Final accuracy {:0.3f}'.format(log[ykey][0,-1]), fontsize=7)
+            plt.title('Final accuracy {:0.3f}'.format(log[ykey][0,-1]))
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
@@ -159,12 +159,12 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
             legends = log[legend_key]
             legends = [nicename(l) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
-            plt.title(nicename(legend_key), fontsize=7)
+            plt.title(nicename(legend_key))
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
         if ykey == 'val_acc' and log[ykey].shape[0] == 1:
-            plt.title('Final accuracy {:0.3f}'.format(log[ykey][0,-1]), fontsize=7)
+            plt.title('Final accuracy {:0.3f}'.format(log[ykey][0,-1]))
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
@@ -246,26 +246,22 @@ def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
         cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
 
     im = ax.imshow(w_plot.T, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
-                   interpolation='none')
+                   interpolation='nearest',
+                   extent=(-0.5, w_plot.shape[1], w_plot.shape[0]-0.5, +0.5))
 
     if var_name == 'w_orn':
-        plt.title('ORN-PN connectivity after training', fontsize=7)
-        ax.set_ylabel('To PNs', labelpad=-5)
-        ax.set_xlabel('From ORNs', labelpad=-5)
+        y_label, x_label = 'To PNs', 'From ORNs'
     elif var_name == 'w_or':
-        plt.title('OR-ORN expression array after training', fontsize=7)
-        ax.set_ylabel('To ORNs', labelpad=-5)
-        ax.set_xlabel('From ORs', labelpad=-5)
+        y_label, x_label = 'To ORNs', 'From ORs'
     elif var_name == 'w_glo':
-        plt.title('PN-KC connectivity after training', fontsize=7)
-        ax.set_ylabel('To KCs', labelpad=-5)
-        ax.set_xlabel('from PNs', labelpad=-5)
+        y_label, x_label = 'To KCs', 'from PNs'
     elif var_name == 'w_combined':
-        plt.title('OR-PN combined connectivity', fontsize=7)
-        ax.set_ylabel('To PNs', labelpad=-5)
-        ax.set_xlabel('From ORs', labelpad=-5)
+        y_label, x_label = 'To PNs', 'From ORs'
     else:
-        print('unknown variable name for weight matrix: {}'.format(var_name))
+        raise ValueError('unknown variable name for weight matrix: {}'.format(var_name))
+    ax.set_ylabel(y_label, labelpad=-5)
+    ax.set_xlabel(x_label, labelpad=-5)
+    plt.title(tools.nicename(var_name))
 
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
@@ -276,8 +272,8 @@ def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
     ax = fig.add_axes(rect_cb)
     cb = plt.colorbar(im, cax=ax, ticks=vlim)
     cb.outline.set_linewidth(0.5)
-    cb.set_label('Weight', fontsize=7, labelpad=-10)
-    plt.tick_params(axis='both', which='major', labelsize=7)
+    cb.set_label('Weight', labelpad=-10)
+    plt.tick_params(axis='both', which='major')
     plt.axis('tight')
     var_name = var_name.replace('/','_')
     var_name = var_name.replace(':','_')
