@@ -93,7 +93,8 @@ def receptor():
 
 
 def receptor_analysis(path):
-    modeldirs = tools.get_allmodeldirs(path, select_dict={'kc_norm_pre': 'batch_norm'})
+    modeldirs = tools.get_allmodeldirs(path, select_dict={'kc_norm_pre': 'batch_norm',
+                                                          'pn_norm_pre': None})
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'],
                      legend_key='pn_norm_pre')
 

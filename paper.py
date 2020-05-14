@@ -81,6 +81,8 @@ if args.experiment == 'core':
                    'random_kc_claws', 'train_orn2pn2kc',
                    'kcrole', 'kc_generalization',
                    'multi_head']
+elif args.experiment == 'supplement':
+    experiments = []
 else:
     experiments = args.experiment
 

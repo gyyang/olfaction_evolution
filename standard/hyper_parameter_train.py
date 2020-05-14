@@ -3,6 +3,7 @@ import subprocess
 
 import standard.experiments as experiments
 import standard.experiment_controls as experiment_controls
+
 import tools
 
 SBATCHPATH = './sbatch/'
@@ -131,11 +132,11 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
 
     experiment_found = False
     for experiment_file in experiment_files:
-        try:
+        if experiment in dir(experiment_file):
             configs = getattr(experiment_file, experiment)()
             experiment_found = True
             break
-        except AttributeError:
+        else:
             experiment_found = False
 
     if not experiment_found:
@@ -161,11 +162,11 @@ def analyze_experiment(experiment):
 
     experiment_found = False
     for experiment_file in experiment_files:
-        try:
+        if (experiment + '_analysis') in dir(experiment_file):
             getattr(experiment_file, experiment + '_analysis')(path)
             experiment_found = True
             break
-        except AttributeError:
+        else:
             experiment_found = False
 
     if not experiment_found:
