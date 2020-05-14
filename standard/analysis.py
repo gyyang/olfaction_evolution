@@ -247,7 +247,7 @@ def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
 
     im = ax.imshow(w_plot.T, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
                    interpolation='nearest',
-                   extent=(-0.5, w_plot.shape[1], w_plot.shape[0]-0.5, +0.5))
+                   extent=(-0.5, w_plot.shape[0]+0.5, w_plot.shape[1]-0.5, +0.5))
 
     if var_name == 'w_orn':
         y_label, x_label = 'To PNs', 'From ORNs'
