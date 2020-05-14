@@ -299,7 +299,23 @@ class FullModel(nn.Module):
         return self.layer2.effective_weight.data.cpu().numpy().T
 
     def save(self, epoch=None):
-        print('Model not saved in pytorch format')
+        save_path = self.config.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+        os.makedirs(save_path, exist_ok=True)
+        fname = os.path.join(save_path, 'model.pt')
+        torch.save(self.state_dict(), fname)
+
+    def load(self, epoch=None):
+
+        save_path = self.config.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+        fname = os.path.join(save_path, 'model.pt')
+        if not torch.cuda.is_available():
+            self.load_state_dict(torch.load(fname, map_location=torch.device('cpu')))
+        else:
+            self.load_state_dict(torch.load(fname))
 
     def save_pickle(self, epoch=None):
         """Save model using pickle.
