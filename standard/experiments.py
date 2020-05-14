@@ -76,7 +76,7 @@ def standard_analysis(path):
 def receptor():
     """Standard training setting with full network including receptors."""
     config = FullConfig()
-    config.max_epoch = 50
+    config.max_epoch = 30
 
     config.receptor_layer = True
     config.or2orn_normalization = True
@@ -89,7 +89,7 @@ def receptor():
 
     config.data_dir = './datasets/proto/standard'
     config_ranges = OrderedDict()
-    # config_ranges['sign_constraint_orn2pn'] = [True]
+    config_ranges['ORN_NOISE_STD'] = [0, 0.1, 0.2]
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     config_ranges['kc_norm_pre'] = [None, 'batch_norm']
 
