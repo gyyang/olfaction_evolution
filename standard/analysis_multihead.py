@@ -61,7 +61,7 @@ def _get_data(path):
         thres = config.kc_prune_threshold
         print('Using KC prune threshold')
     else:
-        thres = analysis_weight.infer_threshold(wglo)
+        thres, _ = analysis_weight.infer_threshold(wglo)
         print('Inferred threshold', thres)
     sparsity = np.count_nonzero(wglo > thres, axis=0)
     strength_wout1 = np.linalg.norm(wout1, axis=1)

@@ -78,7 +78,7 @@ def _get_claws(dir):
         if i == 0:
             thres = THRES
         else:
-            thres = analysis_weight.infer_threshold(wglos[i])
+            thres, _ = analysis_weight.infer_threshold(wglos[i])
 
         wglo[np.isnan(wglo)] = 0
         wglo_binaries.append(wglo > thres)
@@ -228,7 +228,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log=True):
             if j == 0:
                 thres = 0
             else:
-                thres = analysis_weight.infer_threshold(wglos[j])
+                thres, _ = analysis_weight.infer_threshold(wglos[j])
             shuffled = _shuffle(wglo_binaries[j]>thres, arg=shuffle_arg)
             shuffled_similarity, _ = _get_similarity(shuffled)
             shuffled_similarities.append(shuffled_similarity)
@@ -271,7 +271,7 @@ def plot_cosine_similarity(dir, shuffle_arg, log=True):
 def display_matrix(wglo):
 
     wglo[np.isnan(wglo)] = 0
-    thres = analysis_weight.infer_threshold(wglo)
+    thres, _ = analysis_weight.infer_threshold(wglo)
     wglo_binary = wglo > thres
     trained_counts, trained_counts_matrix = _extract_paircounts(wglo_binary)
     lower = np.tril(trained_counts_matrix, k=-1)

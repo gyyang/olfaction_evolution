@@ -67,7 +67,7 @@ def rnn_distribution(w_glo, dir_ix, path):
     standard.analysis_pn2kc_training._plot_distribution(w_glo.flatten(), savename= n, xrange=1.0, yrange=5000)
 
 def rnn_sparsity(w_glo, dir_ix, path):
-    thres = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
+    thres, _ = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
     claw_count = np.count_nonzero(w_glo>thres,axis=0)
     n = os.path.join(path, '__' + str(dir_ix) + '_sparsity')
     standard.analysis_pn2kc_training._plot_sparsity(claw_count, savename= n, yrange = 0.5)

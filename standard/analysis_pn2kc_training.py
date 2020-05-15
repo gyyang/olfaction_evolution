@@ -136,11 +136,9 @@ def plot_distribution(dir, epoch=None, xrange=1.0):
         string = ''
 
     if epoch == 0:
-        cutoff = None
-        approximate = False
+        cutoff, res_fit = None, None
     else:
-        cutoff = infer_threshold(distribution)
-        approximate = True
+        cutoff, res_fit = infer_threshold(distribution)
 
     save_path = os.path.join(figpath, tools.get_experiment_name(dir))
     save_name = os.path.join(save_path, '_' + model_name + '_')
@@ -150,7 +148,7 @@ def plot_distribution(dir, epoch=None, xrange=1.0):
         cutoff=cutoff, xrange=xrange, yrange=5000)
     _plot_log_distribution(
         distribution, save_name + 'log_distribution' + string,
-        cutoff=cutoff, xrange=xrange, yrange=5000, approximate=approximate)
+        cutoff=cutoff, xrange=xrange, yrange=5000, res_fit=res_fit)
 
 
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
@@ -175,7 +173,7 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
         thres = None
     else:
         thres = dynamic_thres
-    thres = infer_threshold(w, visualize=visualize, force_thres=thres)
+    thres, _ = infer_threshold(w, visualize=visualize, force_thres=thres)
     if dynamic_thres:
         print('dynamic thres = {:0.5f}'.format(thres))
     else:
@@ -237,30 +235,8 @@ def _plot_sparsity(data, savename, xrange=50, yrange=.5):
     tools.save_fig(split[0], split[1])
 
 
-def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0, approximate=True):
-    # if visualize:
-    #     bins = np.linspace(x.min(), x.max(), 100)
-    #     fig = plt.figure(figsize=(3, 3))
-    #     ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    #     ax.hist(x[:, 0], bins=bins, density=True)
-    #     if force_thres is None:
-    #         pdf = pdf1 + pdf2
-    #         ax.plot(x_tmp, pdf)
-    #     ax.plot([thres_, thres_], [0, 1])
-    #
-    #     if use_logx:
-    #         x = np.exp(x)
-    #         thres_ = np.exp(thres_)
-    #         bins = np.linspace(x.min(), x.max(), 100)
-    #         fig = plt.figure(figsize=(3, 3))
-    #         ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    #         ax.hist(x[:, 0], bins=bins, density=True)
-    #         ax.plot([thres_, thres_], [0, 1])
-    #         # ax.set_ylim([0, 1])
-
-
-
-    # y = np.log(data)
+def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0,
+                           res_fit=None):
     x = np.log(data + 1e-10)
 
     xticks = ['$10^{-6}$','$10^{-4}$', '.01', '1']
@@ -268,11 +244,11 @@ def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0, approximate
 
     fig = plt.figure(figsize=(2, 1.5))
     ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
-    if approximate:
-        plt.hist(x, bins=50, range = [-12, 3], density=True)
+    if res_fit is not None:
+        plt.hist(x, bins=50, range=[-12, 3], density=True)
     else:
         weights = np.ones_like(x) / float(len(x))
-        plt.hist(x, bins=50, range = [-12, 3], weights=weights)
+        plt.hist(x, bins=50, range=[-12, 3], weights=weights)
     ax.set_xlabel('PN to KC Weight')
     ax.set_ylabel('Distribution of Connections')
     ax.set_xticks(xticks_log)
@@ -294,14 +270,10 @@ def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0, approximate
         cutoff = np.log(cutoff)
         ax.plot([cutoff, cutoff], [0, plt.ylim()[1]], '--', color='gray', linewidth=1)
 
-    if approximate:
-        x = np.asarray(data).flatten()
-        x = np.log(x + 1e-10)
-        x_plot, pdf1, pdf2, clf = fit_bimodal(x)
-
-        ax.plot(x_plot, pdf1, linestyle='--', linewidth=1, alpha = 1)
-        ax.plot(x_plot, pdf2, linestyle='--', linewidth=1, alpha = 1)
-        # ax.plot(x_tmp, pdf1 + pdf2, color='black', linewidth=1, alpha = .5)
+    if res_fit is not None:
+        for i in range(res_fit['n_modal']):
+            ax.plot(res_fit['x_plot'], res_fit['pdfs'][i],
+                    linestyle='--', linewidth=1, alpha=1)
 
     split = os.path.split(savename)
     tools.save_fig(split[0], split[1])
