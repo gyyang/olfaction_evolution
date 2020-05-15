@@ -219,7 +219,7 @@ class FullModel(nn.Module):
                 weight_initializer=config.initializer_or2orn,
                 sign_constraint=config.sign_constraint_or2orn,
                 bias=config.or_bias,
-                weight_norm=True,
+                weight_norm=config.or2orn_normalization,
             )
 
         self.layer1 = Layer(n_orn, config.N_PN,
@@ -232,7 +232,7 @@ class FullModel(nn.Module):
                             dropout_rate=config.pn_dropout_rate,
                             prune_weak_weights=config.pn_prune_weak_weights,
                             prune_threshold=config.pn_prune_threshold,
-                            weight_norm=True,
+                            weight_norm=config.orn2pn_normalization,
                             )
 
         if config.skip_orn2pn or config.direct_glo:  # make these two the same

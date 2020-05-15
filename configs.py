@@ -137,7 +137,7 @@ class FullConfig(BaseConfig):
         # If True, OR --> ORN connections are positive
         self.sign_constraint_or2orn = True
         # If True, normalize by or2orn weight matrix by L1 norm (sum of weights onto every ORN add up to 1)
-        self.or2orn_normalization = True
+        self.or2orn_normalization = False
         # If True, add bias to receptor weights
         self.or_bias = False
         # ORN normalization. orn never experiences nonlinearity so no distinction between pre and post
@@ -166,6 +166,8 @@ class FullConfig(BaseConfig):
         self.pn_dropout = False
         # dropout rate for pns
         self.pn_dropout_rate = .2
+        # If True, normalize orn2pn weight matrix by L1 norm (sum of weights onto every PN add up to 1)
+        self.orn2pn_normalization = False
 
         self.pn_prune_weak_weights = False
         self.pn_prune_threshold = .05

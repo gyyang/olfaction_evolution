@@ -80,6 +80,7 @@ def receptor():
 
     config.receptor_layer = True
     config.or2orn_normalization = True
+    config.orn2pn_normalization = True
     config.replicate_orn_with_tiling= True
     config.N_ORN_DUPLICATION = 10
     config.ORN_NOISE_STD = 0.2
