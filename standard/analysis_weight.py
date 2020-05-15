@@ -31,11 +31,12 @@ def fit_bimodal(x):
     return x_plot, pdf1, pdf2, clf
 
 
-def fit_multimodal(x, verbose=True):
+def fit_multimodal(x, max_n_modal=2, verbose=True):
     """Fit multimodal distribution to data.
 
     Args:
         x: np array of data
+        max_n_modal: int, maximum number of modal
         verbose: bool
 
     Return:
@@ -45,7 +46,7 @@ def fit_multimodal(x, verbose=True):
         clf: classifier object
     """
     x = x[:, np.newaxis]
-    n_modals = [1, 2, 3]
+    n_modals = range(1, max_n_modal+1)
     clfs = []
     bics = []
     for n_modal in n_modals:

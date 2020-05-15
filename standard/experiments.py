@@ -62,11 +62,11 @@ def standard_analysis(path):
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
 
     # pn-kc random
-    analysis_pn2kc_random.plot_cosine_similarity(
-        dir, shuffle_arg='preserve', log=False)
-    analysis_pn2kc_random.plot_distribution(dir)
-    analysis_pn2kc_random.claw_distribution(dir, shuffle_arg='random')
-    analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
+    # analysis_pn2kc_random.plot_cosine_similarity(
+    #     dir, shuffle_arg='preserve', log=False)
+    # analysis_pn2kc_random.plot_distribution(dir)
+    # analysis_pn2kc_random.claw_distribution(dir, shuffle_arg='random')
+    # analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
 
     # Activity
     analysis_activity.distribution_activity(path, ['glo', 'kc'])
