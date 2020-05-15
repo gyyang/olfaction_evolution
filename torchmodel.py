@@ -231,7 +231,9 @@ class FullModel(nn.Module):
                             dropout=config.pn_dropout,
                             dropout_rate=config.pn_dropout_rate,
                             prune_weak_weights=config.pn_prune_weak_weights,
-                            prune_threshold=config.pn_prune_threshold)
+                            prune_threshold=config.pn_prune_threshold,
+                            weight_norm=True,
+                            )
 
         if config.skip_orn2pn or config.direct_glo:  # make these two the same
             init.eye_(self.layer1.weight.data)

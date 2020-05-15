@@ -98,23 +98,24 @@ def receptor():
 
 
 def receptor_analysis(path):
-    modeldirs = tools.get_allmodeldirs(path, select_dict={'kc_norm_pre': 'batch_norm',
-                                                          'pn_norm_pre': None})
+    select_dict = dict()
+    select_dict['kc_norm_pre'] = 'batch_norm'
+    select_dict['ORN_NOISE_STD'] = 0.2
+    select_dict['pn_norm_pre'] = None
+    modeldirs = tools.get_allmodeldirs(path, select_dict=select_dict)
     dir = modeldirs[0]
 
-    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'],
-    #                  legend_key='pn_norm_pre')
-    #
-    # for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
-    #     sa.plot_weights(dir, var_name=var_name)
-    #
-    # # pn-kc K
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'],
+                     legend_key='pn_norm_pre')
+
+    for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
+        sa.plot_weights(dir, var_name=var_name)
+
     analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
 
-    # Activity
-    # analysis_activity.distribution_activity(dir, ['glo', 'kc'])
-    # analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
 
 
 def rnn():
