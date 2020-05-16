@@ -31,7 +31,7 @@ def fit_bimodal(x):
     return x_plot, pdf1, pdf2, clf
 
 
-def fit_multimodal(x, max_n_modal=2, verbose=True):
+def fit_multimodal(x, max_n_modal=2, verbose=False):
     """Fit multimodal distribution to data.
 
     Args:

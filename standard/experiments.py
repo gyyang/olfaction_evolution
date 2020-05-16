@@ -359,37 +359,30 @@ def pn_normalization_analysis(path):
     # analysis_activity.sparseness_activity(path, 'kc')
 
 
-def train_multihead():
-    '''
-
-    '''
-    # config = configs.input_ProtoConfig()
-    # config.label_type = 'multi_head_sparse'
-    # task.save_proto(config, folder_name='multi_head')
-
+def multihead():
+    """Multi-task classification."""
     config = FullConfig()
     config.max_epoch = 30
-    config.batch_size = 256
     config.N_ORN_DUPLICATION = 1
     config.ORN_NOISE_STD = 0
+    config.pn_norm_pre = 'batch_norm'
+    config.initial_pn2kc = 0.1
 
     config.save_every_epoch = False
-    # config.initial_pn2kc = .1
-    # config.train_kc_bias = False
-    # config.kc_loss = False
 
     config.data_dir = './datasets/proto/multi_head'
 
     config_ranges = OrderedDict()
-    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
-    config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
-    config_ranges['dummy'] = [0, 1, 2]
+    # config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    # config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
+    # config_ranges['dummy'] = [0, 1, 2]
+    config_ranges['dummy'] = [0]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
-def multi_head(path):
+def multihead_analysis(path):
     # analysis_multihead.main1('multi_head')
     sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn',
                     sort_axis=1)
