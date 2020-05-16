@@ -333,6 +333,17 @@ class FullModel(nn.Module):
     def w_glo(self):
         return self.layer2.effective_weight.data.cpu().numpy().T
 
+    @property
+    def w_out(self):
+        return self.layer3.weight.data.cpu().numpy().T
+
+    @property
+    def w_out2(self):
+        if self.multihead:
+            return self.layer3_2.weight.data.cpu().numpy().T
+        else:
+            return None
+
     def save(self, epoch=None):
         save_path = self.config.save_path
         if epoch is not None:
@@ -375,6 +386,10 @@ class FullModel(nn.Module):
             var_dict['w_or'] = self.w_or
         var_dict['w_orn'] = self.w_orn
         var_dict['w_glo'] = self.w_glo
+        var_dict['w_out'] = self.w_out
+        if self.multihead:
+            var_dict['w_out2'] = self.w_out2
+
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)

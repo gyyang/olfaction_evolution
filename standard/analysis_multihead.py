@@ -48,12 +48,13 @@ def _get_data(path):
             The rows are input degree, conn. to valence, conn. to identity
         data_norm: normalized array
     """
-    # TODO: clean up these paths
-    # d = os.path.join(path, '000000', 'epoch')
-    # d = os.path.join(path, 'epoch')
     d = path
-    wout1 = tools.load_pickle(d, 'model/layer3/kernel:0')[-1]
-    wout2 = tools.load_pickle(d, 'model/layer3_2/kernel:0')[-1]
+    try:
+        wout1 = tools.load_pickle(d, 'model/layer3/kernel:0')[-1]
+        wout2 = tools.load_pickle(d, 'model/layer3_2/kernel:0')[-1]
+    except IndexError:
+        wout1 = tools.load_pickle(d, 'w_out')[-1]
+        wout2 = tools.load_pickle(d, 'w_out2')[-1]
     wglo = tools.load_pickle(d, 'w_glo')[-1]
     config = tools.load_config(d)
 
@@ -77,7 +78,7 @@ def _get_groups(data_norm, config, n_clusters=2):
     labels = KMeans(n_clusters=n_clusters, random_state=0).fit_predict(data_norm)
     label_inds = np.arange(n_clusters)
     group_sizes = np.array([np.sum(labels==ind) for ind in label_inds])
-    ind_sort = np.argsort(group_sizes)
+    ind_sort = np.argsort(group_sizes)[::-1]
     label_inds = [label_inds[i] for i in ind_sort]
     groups = [np.arange(config.N_KC)[labels==l] for l in label_inds]
     print('Group sizes', group_sizes[ind_sort])
@@ -357,18 +358,13 @@ def _plot_hist(name, ylim_heads, acc_plot,
     return fig
 
 
-def analyze_example_network(arg='multi_head', foldername=None, fix_cluster=None):
+def analyze_example_network(path, arg='multi_head', fix_cluster=None):
     if arg == 'metatrain':
-        if foldername is None:
-            foldername = 'metatrain'
         ylim_heads = (.5, .5)
     else:
-        if foldername is None:
-            foldername = 'multi_head'
         ylim_heads = (0, .8)
 
-    path = os.path.join(rootpath, 'files', foldername)
-    figpath = os.path.join(rootpath, 'figures', foldername)
+    figpath = os.path.join(rootpath, 'figures', tools.get_experiment_name(path))
     
     res = tools.load_all_results(path)
     select_dict = {'lr': 0.001, 'pn_norm_pre': 'batch_norm'}

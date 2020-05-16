@@ -18,6 +18,7 @@ try:
     import standard.analysis_orn2pn as analysis_orn2pn
     import standard.analysis_rnn as analysis_rnn
     import standard.analysis_activity as analysis_activity
+    import standard.analysis_multihead as analysis_multihead
 except ImportError as e:
     print(e)
 
@@ -383,9 +384,10 @@ def multihead():
 
 
 def multihead_analysis(path):
-    # analysis_multihead.main1('multi_head')
-    sa.plot_weights(os.path.join(path, '000000'), var_name='w_orn',
-                    sort_axis=1)
+    modeldirs = tools.get_allmodeldirs(path)
+    dir = modeldirs[0]
+    analysis_multihead.analyze_example_network(path, arg='multi_head')
+    sa.plot_weights(dir, var_name=['w_orn', 'w_glo'])
 
 
 def train_multihead_pruning():
