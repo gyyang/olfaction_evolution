@@ -376,10 +376,14 @@ def multihead():
     config.data_dir = './datasets/proto/multi_head'
 
     config_ranges = OrderedDict()
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5 * 1e-4]
+    config_ranges['initial_pn2kc'] = [0.05, 0.1]
+
     # config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     # config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
     # config_ranges['dummy'] = [0, 1, 2]
-    config_ranges['dummy'] = [0]
+    # config_ranges['dummy'] = [0]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
