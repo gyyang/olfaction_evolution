@@ -10,14 +10,12 @@ To train models quickly, run in command line
 python main.py --train experiment_name --testing
 """
 
+import platform
 import os
 import argparse
 
-import matplotlib as mpl
-
 from standard.experiment_utils import train_experiment, analyze_experiment
 from paper_datasets import make_dataset
-import settings
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
@@ -25,13 +23,7 @@ parser.add_argument('-t', '--train', nargs='+', help='Train experiments', defaul
 parser.add_argument('-a', '--analyze', nargs='+', help='Analyze experiments', default=[])
 parser.add_argument('-data', '--dataset', nargs='+', help='Make datasets', default=[])
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
-parser.add_argument('-c','--cluster', help='Use cluster?', action='store_true')
 args = parser.parse_args()
-
-mpl.rcParams['font.size'] = 7
-mpl.rcParams['pdf.fonttype'] = 42
-mpl.rcParams['ps.fonttype'] = 42
-mpl.rcParams['font.family'] = 'arial'
 
 for item in args.__dict__.items():
     print(item)
@@ -41,12 +33,7 @@ experiments2train = args.train
 experiments2analyze = args.analyze
 datasets = args.dataset
 testing = args.testing
-use_cluster = args.cluster
-
-if use_cluster:
-    save_path = settings.cluster_path
-else:
-    save_path = './'
+use_cluster = 'columbia' in platform.node()  # on columbia cluster
 
 if 'core' in experiments2train:
     experiments2train = [
@@ -66,8 +53,7 @@ if 'supplement' in experiments2train:
     experiments2train = []  # To be added
 
 for experiment in experiments2train:
-    train_experiment(experiment, use_cluster=use_cluster, path=save_path,
-                     testing=testing)
+    train_experiment(experiment, use_cluster=use_cluster, testing=testing)
 
 for experiment in experiments2analyze:
     analyze_experiment(experiment)

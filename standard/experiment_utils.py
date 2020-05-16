@@ -1,14 +1,15 @@
 import os
 import subprocess
+from pathlib import Path
 
 import standard.experiments as experiments
 import standard.experiment_controls as experiment_controls
 import tools
 import settings
 
-SBATCHPATH = './sbatch/'
 
 use_torch = settings.use_torch
+
 
 def local_train(config, path=None, train_arg=None, **kwargs):
     """Train all models locally."""
@@ -33,7 +34,7 @@ def local_train(config, path=None, train_arg=None, **kwargs):
         raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
 
 
-def write_jobfile(cmd, jobname, sbatchpath=SBATCHPATH,
+def write_jobfile(cmd, jobname, sbatchpath='./sbatch/',
                   nodes=1, ppn=1, gpus=0, mem=16, nhours=3):
     """
     Create a job file.
@@ -126,6 +127,13 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
         train_arg: None or str
         testing: bool, whether to test run
     """
+    if path is None:
+        # Default path
+        if use_cluster:
+            path = settings.cluster_path
+        else:
+            path = Path('./')
+
     print('Training {:s} experiment'.format(experiment))
     experiment_files = [experiments, experiment_controls]
 

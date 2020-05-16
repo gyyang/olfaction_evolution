@@ -18,6 +18,7 @@ import task
 import tools
 import standard.analysis_weight as analysis_weight
 from tools import save_fig
+import settings
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -40,7 +41,7 @@ def _fix_config(config):
     return config
 
 
-def _get_data(path):
+def _get_data(modeldir):
     """Load data.
     
     Returns:
@@ -48,15 +49,15 @@ def _get_data(path):
             The rows are input degree, conn. to valence, conn. to identity
         data_norm: normalized array
     """
-    d = path
-    try:
-        wout1 = tools.load_pickle(d, 'model/layer3/kernel:0')[-1]
-        wout2 = tools.load_pickle(d, 'model/layer3_2/kernel:0')[-1]
-    except IndexError:
-        wout1 = tools.load_pickle(d, 'w_out')[-1]
-        wout2 = tools.load_pickle(d, 'w_out2')[-1]
-    wglo = tools.load_pickle(d, 'w_glo')[-1]
-    config = tools.load_config(d)
+    if settings.use_torch:
+        wout1 = tools.load_pickle(modeldir, 'w_out')[-1]
+        wout2 = tools.load_pickle(modeldir, 'w_out2')[-1]
+    else:
+        wout1 = tools.load_pickle(modeldir, 'model/layer3/kernel:0')[-1]
+        wout2 = tools.load_pickle(modeldir, 'model/layer3_2/kernel:0')[-1]
+
+    wglo = tools.load_pickle(modeldir, 'w_glo')[-1]
+    config = tools.load_config(modeldir)
 
     if config.kc_prune_weak_weights:
         thres = config.kc_prune_threshold
@@ -74,13 +75,22 @@ def _get_data(path):
     return data, data_norm
 
 
-def _get_groups(data_norm, config, n_clusters=2):
+def _get_groups(data_norm, n_clusters=2):
+    """Get groups based on data_norm.
+
+    Args:
+        data_norm: np array (n_units, n_features)
+        n_cluster: int, number of clusters to use
+
+    Returns:
+        groups: list of np index arrays
+    """
     labels = KMeans(n_clusters=n_clusters, random_state=0).fit_predict(data_norm)
     label_inds = np.arange(n_clusters)
-    group_sizes = np.array([np.sum(labels==ind) for ind in label_inds])
+    group_sizes = np.array([np.sum(labels == ind) for ind in label_inds])
     ind_sort = np.argsort(group_sizes)[::-1]
     label_inds = [label_inds[i] for i in ind_sort]
-    groups = [np.arange(config.N_KC)[labels==l] for l in label_inds]
+    groups = [np.arange(len(labels))[labels == l] for l in label_inds]
     print('Group sizes', group_sizes[ind_sort])
     return groups
 
@@ -296,8 +306,8 @@ def meta_lesion_analysis(config, units=None):
         return (val_acc, val_acc2)
 
 
-def _get_lesion_acc(path, groups, arg='multi_head'):
-    config = tools.load_config(path)
+def _get_lesion_acc(modeldir, groups, arg='multi_head'):
+    config = tools.load_config(modeldir)
     config = _fix_config(config)
     val_accs = list()
     val_acc2s = list()
@@ -371,34 +381,23 @@ def _plot_hist(name, ylim_heads, acc_plot,
     return fig
 
 
-def analyze_example_network(path, arg='multi_head', fix_cluster=None):
+def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
+    """Analyze example network for multi-head analysis."""
     if arg == 'metatrain':
         ylim_heads = (.5, .5)
     else:
         ylim_heads = (0, .8)
 
-    figpath = os.path.join(rootpath, 'figures', tools.get_experiment_name(path))
-    
-    res = tools.load_all_results(path)
-    select_dict = {'lr': 0.001, 'pn_norm_pre': 'batch_norm'}
-    # select_dict = {'lr': 0.001, 'pn_norm_pre': None}
-    res = dict_methods.filter(res, select_dict)
-    subdirs = [p.split('/')[-1] for p in res['save_path']]
-    subdir = subdirs[0]
+    figpath = os.path.join(rootpath, 'figures', tools.get_experiment_name(modeldir))
 
-    subpath = os.path.join(path, subdir)
-    # subpath = path
-    config = tools.load_config(subpath)
-    print('Learning rate', config.lr)
-    print('PN norm', config.pn_norm_pre)
-    config = _fix_config(config)
+    data, data_norm = _get_data(modeldir)
 
-    data, data_norm = _get_data(subpath)
-    
-    optim_n_clusters = _compute_silouette_score(data_norm, figpath)
     if fix_cluster is not None:
         optim_n_clusters = fix_cluster
-    groups = _get_groups(data_norm, config, n_clusters=optim_n_clusters)
+    else:
+        optim_n_clusters = _compute_silouette_score(data_norm, figpath)
+
+    groups = _get_groups(data_norm, n_clusters=optim_n_clusters)
     
 # =============================================================================
 #     _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label,
@@ -412,50 +411,32 @@ def analyze_example_network(path, arg='multi_head', fix_cluster=None):
     name_pre = 'cluster'+str(optim_n_clusters)
     _plot_all_density(data, groups, xind=0, yind=1, figpath=figpath, name_pre=name_pre)
     _plot_all_density(data, groups, xind=2, yind=1, figpath=figpath, name_pre=name_pre)
-    
-    val_accs, val_acc2s = _get_lesion_acc(subpath, groups, arg=arg)
+
+    val_accs, val_acc2s = _get_lesion_acc(modeldir, groups, arg=arg)
     for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
         fig = _plot_hist(head, ylim_heads, val_acc[:, np.newaxis])
         save_fig(figpath, 'example_cluster'+str(optim_n_clusters)+'_lesion'+head)
 
 
-def analyze_many_networks_lesion(arg='multi_head', foldername=None):
+def analyze_many_networks_lesion(modeldirs, arg='multi_head'):
     if arg == 'metatrain':
-        if foldername is None:
-            foldername = 'metatrain'
         ylim_heads = (.5, .5)
     else:
-        if foldername is None:
-            foldername = 'multi_head'
         ylim_heads = (0, .8)
 
-    path = os.path.join(rootpath, 'files', foldername)
-    figpath = os.path.join(rootpath, 'figures', foldername)
-    
-    res = tools.load_all_results(path)
-    select_dict = {'lr': 0.001, 'pn_norm_pre': 'batch_norm'}
-    # select_dict = {'lr': 0.001, 'pn_norm_pre': None}
-    res = dict_methods.filter(res, select_dict)
-    subdirs = [p.split('/')[-1] for p in res['save_path']]
+    figpath = os.path.join(rootpath, 'figures', tools.get_experiment_name(modeldirs[0]))
 
     val_accs, val_acc2s = list(), list()
-    for subdir in subdirs:
-        subpath = os.path.join(path, subdir)
-        # subpath = path
-        config = tools.load_config(subpath)
-        config = _fix_config(config)
-        print('Learning rate', config.lr)
-        print('PN norm', config.pn_norm_pre)
-    
-        data, data_norm = _get_data(subpath)
-        groups = _get_groups(data_norm, config, n_clusters=2)
-        val_accs_tmp, val_acc2s_tmp = _get_lesion_acc(subpath, groups, arg=arg)
+    for modeldir in modeldirs:
+        data, data_norm = _get_data(modeldir)
+        groups = _get_groups(data_norm, n_clusters=2)
+        val_accs_tmp, val_acc2s_tmp = _get_lesion_acc(modeldir, groups, arg=arg)
         val_accs.append(val_accs_tmp)
         val_acc2s.append(val_acc2s_tmp)
         
     val_accs = np.array(val_accs).T
     val_acc2s = np.array(val_acc2s).T
-    
+
     for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
         fig = _plot_hist(head, ylim_heads, val_acc)
         save_fig(figpath, 'population_lesion'+head)

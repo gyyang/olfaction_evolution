@@ -194,29 +194,44 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         _plot_progress('epoch', plot_var)
 
 
-def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
-                 vlim=None, positive_cmap=True):
-    """Plot weights.
+def plot_weights(modeldir, var_name=None, sort_axis='auto',
+                 average=False, vlim=None):
+    """Plot weights of a model."""
+    if var_name is None:
+        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo']
+    elif isinstance(var_name, str):
+        var_name = [var_name]
 
-    Currently this plots OR2ORN, ORN2PN, and OR2PN
-    """
+    for v in var_name:
+        if sort_axis == 'auto':
+            _sort_axis = 0 if v == 'w_or' else 1
+        else:
+            _sort_axis = sort_axis
+
+        _plot_weights(modeldir, v, _sort_axis, average=average, vlim=vlim)
+
+
+def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
+                  vlim=None):
+    """Plot weights."""
     # Load network at the end of training
-    model_dir = os.path.join(path, 'model.pkl')
+    model_dir = os.path.join(modeldir, 'model.pkl')
     print('Plotting ' + var_name + ' from ' + model_dir)
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
-        if var_name == 'w_combined':
-            w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
-        else:
-            w_plot = var_dict[var_name]
+        try:
+            if var_name == 'w_combined':
+                w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
+            else:
+                w_plot = var_dict[var_name]
+        except KeyError:
+            # Weight doesn't exist, return
+            return
 
     if average:
         w_orn_by_pn = tools._reshape_worn(w_plot, 50)
         w_plot = w_orn_by_pn.mean(axis=0)
     # Sort for visualization
-    if sort_axis == 'auto':
-        sort_axis = 0 if var_name == 'w_or' else 1
-
     if sort_axis == 0:
         ind_max = np.argmax(w_plot, axis=0)
         ind_sort = np.argsort(ind_max)
@@ -241,6 +256,7 @@ def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
         vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
 
     cmap = plt.get_cmap('RdBu_r')
+    positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
     if positive_cmap:
         cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
 
@@ -276,8 +292,8 @@ def plot_weights(path, var_name='w_orn', sort_axis='auto', average=False,
     plt.axis('tight')
     var_name = var_name.replace('/','_')
     var_name = var_name.replace(':','_')
-    tools.save_fig(tools.get_experiment_name(path),
-             '_' + var_name + '_' + tools.get_model_name(path))
+    tools.save_fig(tools.get_experiment_name(modeldir),
+             '_' + var_name + '_' + tools.get_model_name(modeldir))
 
 
     # Plot distribution of various connections

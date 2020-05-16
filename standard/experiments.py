@@ -49,16 +49,14 @@ def standard_analysis(path):
     # accuracy
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
 
-    # orn-pn
-    sa.plot_weights(dir, var_name='w_orn', sort_axis=1)
+    # weight matrices
+    sa.plot_weights(dir)
+
     try:
         analysis_orn2pn.correlation_across_epochs(path, arg='weight')
         analysis_orn2pn.correlation_across_epochs(path, arg='activity')
     except ModuleNotFoundError:
         pass
-
-    # pn-kc
-    sa.plot_weights(dir, var_name='w_glo')
 
     # pn-kc
     analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
@@ -112,8 +110,7 @@ def receptor_analysis(path):
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'],
                      legend_key='pn_norm_pre')
 
-    for var_name in ['w_or', 'w_orn', 'w_combined', 'w_glo']:
-        sa.plot_weights(dir, var_name=var_name)
+    sa.plot_weights(dir)
 
     analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
@@ -390,11 +387,20 @@ def multihead():
 
 
 def multihead_analysis(path):
-    modeldirs = tools.get_allmodeldirs(path)
+    select_dict = dict()
+    select_dict['pn_norm_pre'] = 'batch_norm'
+    select_dict['lr'] = 2e-3
+    select_dict['initial_pn2kc'] = 0.1
+    modeldirs = tools.get_allmodeldirs(path, select_dict=select_dict)
     dir = modeldirs[0]
-    analysis_multihead.analyze_example_network(path, arg='multi_head')
-    for var_name in ['w_orn', 'w_glo']:
-        sa.plot_weights(dir, var_name=var_name)
+    analysis_multihead.analyze_example_network(dir)
+
+    sa.plot_weights(dir)
+    # Activity
+    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+
+    # analysis_multihead.analyze_many_networks_lesion(modeldirs)
 
 
 def train_multihead_pruning():
