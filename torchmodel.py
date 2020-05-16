@@ -210,6 +210,7 @@ class FullModel(nn.Module):
             config = FullConfig
 
         self.config = config
+        self.multihead = config.label_type == 'multi_head_sparse'
 
         n_orn = config.N_ORN * config.N_ORN_DUPLICATION
 
@@ -263,6 +264,10 @@ class FullModel(nn.Module):
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
 
+        if self.multihead:
+            self.layer3_2 = nn.Linear(config.N_KC, config.n_class_valence)
+            self.loss_2 = nn.CrossEntropyLoss()
+
         self._readout = False
 
     def readout(self, is_readout=True):
@@ -283,11 +288,29 @@ class FullModel(nn.Module):
         act1 = self.layer1(act0)
         act2 = self.layer2(act1)
         y = self.layer3(act2)
-        loss = self.loss(y, target)
-        with torch.no_grad():
-            _, pred = torch.max(y, 1)
-            acc = (pred == target).sum().item() / target.size(0)
-        results = {'loss': loss, 'acc': acc, 'kc': act2}
+
+        if self.multihead:
+            target1, target2 = target[:, 0], target[:, 1]
+            loss = self.loss(y, target1)
+
+            y_2 = self.layer3_2(act2)
+            loss_2 = self.loss_2(y_2, target2)
+            with torch.no_grad():
+                _, pred = torch.max(y, 1)
+                acc = (pred == target1).sum().item() / target1.size(0)
+
+                _, pred_2 = torch.max(y_2, 1)
+                acc2 = (pred_2 == target2).sum().item() / target2.size(0)
+            results = {'loss': loss + loss_2, 'acc': (acc + acc2) / 2,
+                       'loss_1': loss, 'acc1': acc,
+                       'loss_2': loss_2, 'acc2': acc2, 'kc': act2}
+        else:
+            # Regular network
+            loss = self.loss(y, target)
+            with torch.no_grad():
+                _, pred = torch.max(y, 1)
+                acc = (pred == target).sum().item() / target.size(0)
+            results = {'loss': loss, 'acc': acc, 'kc': act2}
 
         if self._readout:
             results['glo'] = act1
