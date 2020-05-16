@@ -2,9 +2,11 @@
 
 Each experiment is described by a function that returns a list of configurations
 function name is the experiment name
+
+Analysis functions by convention are named
+def name_analysis()
 """
 
-import os
 from collections.__init__ import OrderedDict
 
 from configs import FullConfig, MetaConfig
