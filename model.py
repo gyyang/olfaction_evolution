@@ -52,6 +52,8 @@ class Model(object):
         Args:
             name: name of the layer to lesion
             units : can be None, an integer index, or a list of integer indices
+            verbose: bool
+            arg: 'outbound' or 'inbound', lesion outgoing or incoming units
         """
         sess = tf.get_default_session()
         # Convert to numpy array

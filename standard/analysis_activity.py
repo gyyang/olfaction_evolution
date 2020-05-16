@@ -73,22 +73,27 @@ def load_activity_tf(save_path, lesion_kwargs=None):
 def load_activity_torch(save_path, lesion_kwargs=None):
     import torch
     from torchmodel import FullModel
-    # # Reload the network and analyze activity
+    # Reload the network and analyze activity
     config = tools.load_config(save_path)
 
     # Load dataset
     train_x, train_y, val_x, val_y = task.load_data(config.data_dir)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = FullModel(config=config)
-    model.load()
-    model.to(device)
-    model.readout()
-
-    # validation
-    val_data = torch.from_numpy(val_x).float().to(device)
-    val_target = torch.from_numpy(val_y).long().to(device)
     with torch.no_grad():
+        model = FullModel(config=config)
+        model.load()
+        model.to(device)
+        model.readout()
+
+        if lesion_kwargs is not None:
+            for key, val in lesion_kwargs.items():
+                model.lesion_units(key, val)
+
+        # validation
+        val_data = torch.from_numpy(val_x).float().to(device)
+        val_target = torch.from_numpy(val_y).long().to(device)
+
         model.eval()
         results = model(val_data, val_target)
 

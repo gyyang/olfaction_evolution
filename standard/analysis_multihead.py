@@ -204,9 +204,21 @@ def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
     fig, ax = _plot_density(Zsum, xind, yind)
     ax = add_text(ax)
     save_fig(figpath, name_pre+'_group_sum')
-    
+
 
 def lesion_analysis(config, units=None):
+    import settings
+    if settings.use_torch:
+        from standard.analysis_activity import load_activity_torch
+        lesion_kwargs = {}
+        results = load_activity_torch(config.save_path,
+                                      lesion_kwargs=lesion_kwargs)
+        return results['acc1'], results['acc2']
+    else:
+        return lesion_analysis_tf(config, units)
+
+
+def lesion_analysis_tf(config, units=None):
     import tensorflow as tf
     from model import FullModel
 

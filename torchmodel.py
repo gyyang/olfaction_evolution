@@ -270,6 +270,9 @@ class FullModel(nn.Module):
 
         self._readout = False
 
+        # Record origianl weights for lesioning
+        self._original_weights = {}
+
     def readout(self, is_readout=True):
         self._readout = is_readout
 
@@ -393,3 +396,40 @@ class FullModel(nn.Module):
         with open(fname, 'wb') as f:
             pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Model weights saved in path: %s" % save_path)
+
+    def lesion_units(self, name, units, verbose=False, arg='outbound'):
+        """Lesion units given by units.
+
+        Args:
+            name: name of the layer to lesion
+            units : can be None, an integer index, or a list of integer indices
+            verbose: bool
+            arg: 'outbound' or 'inbound', lesion outgoing or incoming units
+        """
+        # Convert to numpy array
+        if units is None:
+            return
+        elif not hasattr(units, '__iter__'):
+            units = np.array([units])
+        else:
+            units = np.array(units)
+
+        layer = getattr(self, name)
+        if name not in self._original_weights:
+            # weight not recorded yet
+            self._original_weights[name] = layer.weight.clone().detach()
+
+        original_weight = self._original_weights[name]
+
+        layer.weight.copy_(original_weight)
+
+        if arg == 'outbound':
+            layer.weight.data[:, units] = 0
+        elif arg == 'inbound':
+            layer.weight.data[units, :] = 0
+        else:
+            raise ValueError('did not recognize lesion argument: {}'.format(arg))
+
+        if verbose:
+            print('Lesioned units:')
+            print(units)
