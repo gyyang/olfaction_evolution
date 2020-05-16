@@ -373,7 +373,7 @@ def multihead():
 
     config.save_every_epoch = False
 
-    config.data_dir = './datasets/proto/multi_head'
+    config.data_dir = './datasets/proto/multihead'
 
     config_ranges = OrderedDict()
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
