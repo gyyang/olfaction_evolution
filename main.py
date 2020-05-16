@@ -1,32 +1,30 @@
 """File that summarizes all key results.
 
-To run specific experiments (e.g. orn2pn, vary_pn), run
-python main.py --train --analyze --experiment orn2pn vary_pn
+To train specific experiments (e.g. orn2pn, vary_pn), run
+python main.py --train experiment_name
 
-To train and analyze all models quickly, run in command line
-python main.py --train --analyze --testing
+To analyze specific experiments (e.g. orn2pn, vary_pn), run
+python main.py --analyze experiment_name
 
-To reproduce the results from paper, run
-python main.py --train --analyze
-
-To analyze pretrained networks, run
-python main.py --analyze
+To train models quickly, run in command line
+python main.py --train experiment_name --testing
 """
 
 import os
 import argparse
 
-from standard.experiment_utils import train_experiment, analyze_experiment
 import matplotlib as mpl
 
+from standard.experiment_utils import train_experiment, analyze_experiment
+from paper_datasets import make_dataset
 import settings
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--device', help='CUDA device number', default=0, type=int)
-parser.add_argument('-t', '--train', help='Training', action='store_true')
-parser.add_argument('-a', '--analyze', help='Analyzing', action='store_true')
+parser.add_argument('-t', '--train', nargs='+', help='Train experiments', default=[])
+parser.add_argument('-a', '--analyze', nargs='+', help='Analyze experiments', default=[])
+parser.add_argument('-data', '--dataset', nargs='+', help='Make datasets', default=[])
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
-parser.add_argument('-e','--experiment', nargs='+', help='Experiments', default='core')
 parser.add_argument('-c','--cluster', help='Use cluster?', action='store_true')
 args = parser.parse_args()
 
@@ -38,51 +36,44 @@ mpl.rcParams['font.family'] = 'arial'
 for item in args.__dict__.items():
     print(item)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
-TRAIN, ANALYZE, testing, use_cluster = args.train, args.analyze, args.testing, args.cluster
+
+experiments2train = args.train
+experiments2analyze = args.analyze
+datasets = args.dataset
+testing = args.testing
+use_cluster = args.cluster
 
 if use_cluster:
     save_path = settings.cluster_path
 else:
     save_path = './'
 
-# TRAIN = True
-# testing = True
-# ANALYZE = True
-# args.experiment = ['metalearn']
-#
-if ANALYZE:
-    import standard.analysis as sa
-    import standard.analysis_pn2kc_training as analysis_pn2kc_training
-    import standard.analysis_pn2kc_random as analysis_pn2kc_random
-    import standard.analysis_orn2pn as analysis_orn2pn
-    import standard.analysis_rnn as analysis_rnn
+if 'core' in experiments2train:
+    experiments2train = [
+        'standard',
+        'receptor',
+        'vary_pn',
+        'vary_kc',
+        'metalearn',
+        'pn_normalization',
+        'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
+        'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws',
+        'random_kc_claws', 'train_orn2pn2kc',
+        'kcrole', 'kc_generalization',
+        'multi_head']
 
+if 'supplement' in experiments2train:
+    experiments2train = []  # To be added
 
-if args.experiment == 'core':
-    experiments = ['standard',
-                   'receptor',
-                   'vary_pn',
-                   'vary_kc',
-                   'metalearn',
-                   'pn_normalization',
-                   'vary_kc_activity_fixed', 'vary_kc_activity_trainable',
-                   'vary_kc_claws', 'vary_kc_claws_new','train_kc_claws',
-                   'random_kc_claws', 'train_orn2pn2kc',
-                   'kcrole', 'kc_generalization',
-                   'multi_head']
-elif args.experiment == 'supplement':
-    experiments = []
-else:
-    experiments = args.experiment
+for experiment in experiments2train:
+    train_experiment(experiment, use_cluster=use_cluster, path=save_path,
+                     testing=testing)
 
-if TRAIN:
-    for experiment in experiments:
-        train_experiment(experiment, use_cluster=use_cluster, path=save_path,
-                         testing=testing)
+for experiment in experiments2analyze:
+    analyze_experiment(experiment)
 
-if ANALYZE:
-    for experiment in experiments:
-        analyze_experiment(experiment)
+for dataset in datasets:
+    make_dataset(dataset)
 
 
 # if 'standard' in experiments:

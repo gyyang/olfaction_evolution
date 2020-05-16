@@ -210,11 +210,12 @@ def lesion_analysis(config, units=None):
     import settings
     if settings.use_torch:
         from standard.analysis_activity import load_activity_torch
-        lesion_kwargs = {}
+        lesion_kwargs = {'layer3': units, 'layer3_2': units}
         results = load_activity_torch(config.save_path,
                                       lesion_kwargs=lesion_kwargs)
         return results['acc1'], results['acc2']
     else:
+        # TODO: replace with load activity
         return lesion_analysis_tf(config, units)
 
 

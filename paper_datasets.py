@@ -1,3 +1,9 @@
+"""Functions to generate dataset.
+
+Convention is to name a function
+def make_datasetname_dataset()
+"""
+
 import configs
 import task
 
@@ -20,7 +26,7 @@ def make_primordial_dataset():
     task.save_proto(config, seed=seed, folder_name='primordial')
 
 
-def make_relabel_datasets(mode='small'):
+def make_relabel_dataset(mode='small'):
     """Generate dataset with n_trueclass, then relabel to fewer classes."""
     config = configs.input_ProtoConfig()
 
@@ -93,7 +99,7 @@ def make_combinatorial_dataset():
     task.save_proto(config, seed=seed, folder_name=fn)
 
 
-def make_small_training_set_datasets():
+def make_small_training_set_dataset():
     """Dataset with fewer training samples."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
@@ -104,16 +110,16 @@ def make_small_training_set_datasets():
         print('Done small training dataset: ' + str(i))
 
 
-def make_multi_head_dataset():
+def make_multihead_dataset():
     """Simultaneous classification of odor class and valence."""
     task_config = task.input_ProtoConfig()
     task_config.label_type = 'multi_head_sparse'
     task_config.has_special_odors = True
     task_config.n_proto_valence = 5
-    task.save_proto(config=task_config, seed=0, folder_name='multi_head')
+    task.save_proto(config=task_config, seed=0, folder_name='multihead')
 
 
-def make_vary_or_datasets():
+def make_vary_or_dataset():
     """Vary the number of olfactory receptors."""
     task_config = task.input_ProtoConfig()
     for n_or in [25, 125, 175]:
@@ -122,7 +128,7 @@ def make_vary_or_datasets():
         task.save_proto(config=task_config, seed=0, folder_name='orn'+str(n_or))
 
 
-def make_orncorr_datasets():
+def make_orncorr_dataset():
     """Vary the correlation of olfactory receptor neuron activity."""
     task_config = task.input_ProtoConfig()
     for orn_corr in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
@@ -132,7 +138,7 @@ def make_orncorr_datasets():
         print('Done orn_corr training dataset: ', orn_corr)
 
 
-def make_multi_or_datasets():
+def make_multi_or_dataset():
     """Vary the number of receptors expressed in each receptor neuron."""
     task_config = task.input_ProtoConfig()
     # for n_or_per_orn in range(1, 10):
@@ -152,20 +158,8 @@ def temp():
     print('Done test dataset')
 
 
-if __name__ == '__main__':
-    # make_standard_dataset()
-    # make_relabel_datasets('small')
-    # make_relabel_datasets('large')
-    # make_concentration_dataset()
-    # make_concentration_with_mask_row_dataset()
-    # make_tmp_dataset()
-    # make_primordial_dataset()
-    # make_mask_row_dataset()
-    # make_combinatorial_dataset()
-    # make_small_training_set_datasets()
-    # make_multi_head_dataset()
-    # make_multi_or_datasets()
-    make_orncorr_datasets()
-    # make_vary_or_datasets()
-    # temp()
+def make_dataset(dataset_name):
+    func_name = 'make_' + dataset_name + '_dataset'
+    globals()[func_name]()  # call function by the name func_name
+
 

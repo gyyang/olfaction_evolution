@@ -132,6 +132,7 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
     experiment_found = False
     for experiment_file in experiment_files:
         if experiment in dir(experiment_file):
+            # Get list of configurations from experiment function
             configs = getattr(experiment_file, experiment)()
             experiment_found = True
             break

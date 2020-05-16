@@ -82,7 +82,7 @@ def receptor():
     config.receptor_layer = True
     config.or2orn_normalization = True
     config.orn2pn_normalization = True
-    config.replicate_orn_with_tiling= True
+    config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
     config.ORN_NOISE_STD = 0.2
 
@@ -387,7 +387,8 @@ def multihead_analysis(path):
     modeldirs = tools.get_allmodeldirs(path)
     dir = modeldirs[0]
     analysis_multihead.analyze_example_network(path, arg='multi_head')
-    sa.plot_weights(dir, var_name=['w_orn', 'w_glo'])
+    for var_name in ['w_orn', 'w_glo']:
+        sa.plot_weights(dir, var_name=var_name)
 
 
 def train_multihead_pruning():
