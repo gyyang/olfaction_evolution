@@ -377,28 +377,26 @@ def multihead():
     config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4]
     config_ranges['initial_pn2kc'] = [0.05, 0.1]
 
-    # config_ranges['pn_norm_pre'] = [None, 'batch_norm']
-    # config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
-    # config_ranges['dummy'] = [0, 1, 2]
-
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
 def multihead_analysis(path):
-    select_dict = dict()
-    # select_dict['pn_norm_pre'] = None
-    # select_dict['lr'] = 1e-3
-    # select_dict['initial_pn2kc'] = 0.1
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.75)
+    modeldirs = tools.get_modeldirs(path, acc_min=0.75)
     analysis_multihead.analyze_many_networks_lesion(modeldirs)
 
-    # dir = modeldirs[0]
-    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
-    # analysis_multihead.analyze_example_network(dir)
-    # sa.plot_weights(dir)
-    # analysis_activity.distribution_activity(dir, ['glo', 'kc'])
-    # analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+    select_dict = dict()
+    select_dict['pn_norm_pre'] = 'batch_norm'
+    select_dict['lr'] = 1e-3
+    select_dict['initial_pn2kc'] = 0.1
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict,
+                                    acc_min=0.75)
+    dir = modeldirs[0]
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
+    sa.plot_weights(dir)
+    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+    analysis_multihead.analyze_example_network(dir)
 
 
 def train_multihead_pruning():

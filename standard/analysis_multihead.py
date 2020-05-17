@@ -26,7 +26,7 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
 
 LABELS = ['Input degree', 'Conn. to valence', 'Conn. to identity']
-RANGES = [(0, 15), (0, 5), (0, 10)]
+RANGES = [(0, 15), (0, 7), (0, 10)]
 
 
 def _fix_config(config):
