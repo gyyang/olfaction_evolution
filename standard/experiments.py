@@ -43,7 +43,7 @@ def standard():
 
 
 def standard_analysis(path):
-    modeldirs = tools.get_allmodeldirs(path)
+    modeldirs = tools.get_modeldirs(path)
     dir = modeldirs[0]
 
     # accuracy
@@ -104,7 +104,7 @@ def receptor_analysis(path):
     select_dict['kc_norm_pre'] = 'batch_norm'
     select_dict['ORN_NOISE_STD'] = 0.2
     select_dict['pn_norm_pre'] = None
-    modeldirs = tools.get_allmodeldirs(path, select_dict=select_dict)
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     dir = modeldirs[0]
 
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'],
@@ -390,8 +390,7 @@ def multihead_analysis(path):
     # select_dict['pn_norm_pre'] = None
     # select_dict['lr'] = 1e-3
     # select_dict['initial_pn2kc'] = 0.1
-    modeldirs = tools.get_allmodeldirs(path, select_dict=select_dict,
-                                       acc_min=0.75)
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.75)
     analysis_multihead.analyze_many_networks_lesion(modeldirs)
 
     # dir = modeldirs[0]

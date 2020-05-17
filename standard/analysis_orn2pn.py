@@ -88,7 +88,7 @@ def correlation_across_epochs(save_path, legend = None, arg = 'weight'):
     ys = []
     for i, d in enumerate(dirs):
         list_of_corr_coef = []
-        epoch_dirs = tools.get_allmodeldirs(os.path.join(d,'epoch'))
+        epoch_dirs = tools.get_modeldirs(os.path.join(d,'epoch'))
         for epoch_dir in epoch_dirs:
             if arg == 'weight':
                 data = tools.load_pickle(epoch_dir, 'w_orn')[0]

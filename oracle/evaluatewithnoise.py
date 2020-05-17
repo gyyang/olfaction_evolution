@@ -403,7 +403,7 @@ def evaluate_across_epochs(path, values=None, select_dict=None, dataset='val', m
                           file=None, n_rep=1, epoch=None, multidirection=False):
     """Evaluate models from the same root directory."""
     name = 'weight_perturb'
-    model_dirs = tools.get_allmodeldirs(path)
+    model_dirs = tools.get_modeldirs(path)
     model_dir = model_dirs[0]
 
     loss_dict = {}
@@ -411,7 +411,7 @@ def evaluate_across_epochs(path, values=None, select_dict=None, dataset='val', m
 
     model_var = 'epoch'
     models = list()
-    epochs = len(tools.get_allmodeldirs(os.path.join(model_dir,'epoch')))
+    epochs = len(tools.get_modeldirs(os.path.join(model_dir,'epoch')))
 
     if mode == 'angle':
         raise NotImplementedError('Not implemented yet')
@@ -458,7 +458,7 @@ def evaluate_acrossmodels(path, values=None, select_dict=None, dataset='val',
     """
     name = 'weight_perturb'
 
-    model_dirs = tools.get_allmodeldirs(path)
+    model_dirs = tools.get_modeldirs(path)
 
     loss_dict = {}
     acc_dict = {}

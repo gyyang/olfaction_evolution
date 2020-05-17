@@ -121,7 +121,7 @@ def plot_distribution(dir, epoch=None, xrange=1.0):
     model_name = tools.get_model_name(dir)
 
     if epoch is not None:
-        dir = tools.get_allmodeldirs(os.path.join(dir, 'epoch'))[epoch]
+        dir = tools.get_modeldirs(os.path.join(dir, 'epoch'))[epoch]
 
     try:
         w = tools.load_pickle(dir, 'w_glo')[0]
@@ -188,7 +188,7 @@ def plot_sparsity(dir, epoch=None, dynamic_thres=False,
     model_name = tools.get_model_name(dir)
 
     if epoch is not None and epoch != -1:
-        dir = tools.get_allmodeldirs(os.path.join(dir, 'epoch'))[epoch]
+        dir = tools.get_modeldirs(os.path.join(dir, 'epoch'))[epoch]
 
     try:
         w = tools.load_pickle(dir, 'w_glo')[0]

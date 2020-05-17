@@ -160,7 +160,7 @@ def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
         plt.axis('tight')
         tools.save_fig(save_path, '_' + name, pdf=False)
 
-    dirs = tools.get_allmodeldirs(save_path)
+    dirs = tools.get_modeldirs(save_path)
     for i, d in enumerate(dirs):
         results = load_activity(d)
         data = results[arg]
@@ -212,7 +212,7 @@ def _distribution(data, save_path, name, xlabel, ylabel, xrange=None,
 
 
 def distribution_activity(save_path, var_names=None):
-    dirs = tools.get_allmodeldirs(save_path)
+    dirs = tools.get_modeldirs(save_path)
     if var_names is None:
         var_names = ['kc', 'glo']
     elif isinstance(var_names, str):
@@ -238,7 +238,7 @@ def sparseness_activity(save_path, var_names, activity_threshold=0.,
         save_path: model path
         arg: str, the activity to plot
     """
-    dirs = tools.get_allmodeldirs(save_path)
+    dirs = tools.get_modeldirs(save_path)
     if figname is None:
         figname = ''
 
@@ -274,7 +274,7 @@ def sparseness_activity(save_path, var_names, activity_threshold=0.,
 
 def plot_mean_activity_sparseness(save_path, arg, xkey,
                                   loop_key=None, select_dict=None):
-    dirs = tools.get_allmodeldirs(save_path)
+    dirs = tools.get_modeldirs(save_path)
 
     mean_sparseness = []
     for i, d in enumerate(dirs):

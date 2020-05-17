@@ -309,7 +309,7 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
     return new_dirs
 
 
-def get_allmodeldirs(path, select_dict=None, exclude_dict=None, acc_min=None):
+def get_modeldirs(path, select_dict=None, exclude_dict=None, acc_min=None):
     dirs = _get_alldirs(path, model=True, sort=True)
     if select_dict is None and exclude_dict is None:
         return dirs
@@ -351,7 +351,7 @@ def get_model_name(model_path):
 def load_pickle(dir, var):
     """Load pickle by epoch in sorted order."""
     out = []
-    dirs = get_allmodeldirs(dir)
+    dirs = get_modeldirs(dir)
     for i, d in enumerate(dirs):
         model_dir = os.path.join(d, 'model.pkl')
         with open(model_dir, 'rb') as f:
@@ -383,7 +383,7 @@ def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix
         res: dictionary of numpy arrays, containing information from all models
     """
     if isinstance(path, str):
-        dirs = get_allmodeldirs(path)
+        dirs = get_modeldirs(path)
     else:
         dirs = path
 
