@@ -97,7 +97,7 @@ def filter_modeldirs_badpeak(modeldirs, peak_threshold=0.1):
     return new_dirs
 
 
-def filter_modeldirs(modeldirs, exclude_badkc=True, exclude_badpeak=True):
+def filter_modeldirs(modeldirs, exclude_badkc=False, exclude_badpeak=False):
     """Select model directories.
 
     Args:
@@ -108,10 +108,13 @@ def filter_modeldirs(modeldirs, exclude_badkc=True, exclude_badpeak=True):
     Return:
         modeldirs: list of filtered model directories
     """
+    print('Analyzing {} model directories', len(modeldirs))
     if exclude_badkc:
         modeldirs = filter_modeldirs_badkc(modeldirs)
+        print('{} remain after filtering bad kcs'.format(len(modeldirs)))
     if exclude_badpeak:
         modeldirs = filter_modeldirs_badpeak(modeldirs)
+        print('{} remain after filtering bad peaks'.format(len(modeldirs)))
     return modeldirs
 
 

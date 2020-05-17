@@ -1,9 +1,7 @@
 import sys
 import os
-import pickle
 
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.cluster import KMeans
@@ -13,17 +11,11 @@ from sklearn.neighbors.kde import KernelDensity
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
-import dict_methods
 import task
 import tools
 import standard.analysis_weight as analysis_weight
 from tools import save_fig
 import settings
-
-mpl.rcParams['font.size'] = 7
-mpl.rcParams['pdf.fonttype'] = 42
-mpl.rcParams['ps.fonttype'] = 42
-mpl.rcParams['font.family'] = 'Arial'
 
 LABELS = ['Input degree', 'Conn. to valence', 'Conn. to identity']
 RANGES = [(0, 15), (0, 7), (0, 10)]
@@ -75,12 +67,13 @@ def _get_data(modeldir):
     return data, data_norm
 
 
-def _get_groups(data_norm, n_clusters=2):
+def _get_groups(data_norm, n_clusters=2, sortmode='head2'):
     """Get groups based on data_norm.
 
     Args:
         data_norm: np array (n_units, n_features)
-        n_cluster: int, number of clusters to use
+        n_clusters: int, number of clusters to use
+        sortmode: str, 'size' or 'head2', mode for sorting groups
 
     Returns:
         groups: list of np index arrays
@@ -88,7 +81,14 @@ def _get_groups(data_norm, n_clusters=2):
     labels = KMeans(n_clusters=n_clusters, random_state=0).fit_predict(data_norm)
     label_inds = np.arange(n_clusters)
     group_sizes = np.array([np.sum(labels == ind) for ind in label_inds])
-    ind_sort = np.argsort(group_sizes)[::-1]
+    strength_wout2 = [np.sum(data_norm[labels == ind, 1]) for ind in label_inds]
+    if sortmode == 'size':
+        ind_sort = np.argsort(group_sizes)[::-1]
+    elif sortmode == 'head2':
+        ind_sort = np.argsort(strength_wout2)
+    else:
+        raise ValueError('Unknown sort mode', sortmode)
+
     label_inds = [label_inds[i] for i in ind_sort]
     groups = [np.arange(len(labels))[labels == l] for l in label_inds]
     print('Group sizes', group_sizes[ind_sort])
@@ -324,26 +324,22 @@ def _get_lesion_acc(modeldir, groups, arg='multi_head'):
     return val_accs, val_acc2s
 
 
-def _plot_hist(name, ylim_heads, acc_plot,
-               plot_bar=False, plot_box=True):
+def _plot_hist(acc_plot, name, ytick_heads, plot_bar=False, plot_box=True):
     """
     Plot histogram.
     
     Args:
         name: head1 or head2
-        ylim_heads: ylim for head 1 and head 2
+        ytick_heads: ytick for head 1 and head 2
         acc_plot: np array (n_box, n_point_per_box)
     """
     if name == 'head1':
-        ylim = [ylim_heads[0], 1]
+        ytick = [ytick_heads[0], 1]
         title = 'Identity'
-        savename = 'lesion_acc_head1'
     else:
-        ylim = [ylim_heads[1], 1]  # replace with n_proto_valence
+        ytick = [ytick_heads[1], 1]  # replace with n_proto_valence
         title = 'Valence'
-        savename = 'lesion_acc_head2'
 
-    fs = 6
     width = 0.5
     fig = plt.figure(figsize=(1.2, 1.2))
     ax = fig.add_axes([0.35, 0.35, 0.6, 0.4])
@@ -354,7 +350,7 @@ def _plot_hist(name, ylim_heads, acc_plot,
     if plot_box:
         color = tools.blue
         flierprops = {'markersize': 3, 'markerfacecolor': color,
-              'markeredgecolor': 'none'}
+                      'markeredgecolor': 'none'}
         boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
         medianprops = {'color': color*0.5}
         whiskerprops = {'color': color}
@@ -366,27 +362,29 @@ def _plot_hist(name, ylim_heads, acc_plot,
     ax.set_xticks(xlocs)
     group_names = [str(i+1) for i in range(len(acc_plot))]
     ax.set_xticklabels(['None'] + group_names)
-    ax.set_xlabel('Lesioning cluster', fontsize=fs)
-    ax.set_ylabel('Accuracy', fontsize=fs)
-    ax.set_title(title, fontsize=fs)
-    ax.tick_params(axis='both', which='major', labelsize=fs)
-    plt.locator_params(axis='y',nbins=2)
+    ax.set_xlabel('Lesioning cluster')
+    ax.set_ylabel('Accuracy')
+    ax.set_title(title, fontsize=7)
+    ax.tick_params(axis='both', which='major')
+    plt.locator_params(axis='y', nbins=2)
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
     # ax.set_xlim([-0.8, len(rules_perf)-0.2])
+    dytick = (ytick[1] - ytick[0]) * 0.05
+    ylim = ytick[0] - dytick, ytick[1] + dytick
     ax.set_ylim(ylim)
-    ax.set_yticks(ylim)
+    ax.set_yticks(ytick)
     return fig
 
 
 def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
     """Analyze example network for multi-head analysis."""
     if arg == 'metatrain':
-        ylim_heads = (.5, .5)
+        ytick_heads = (.5, .5)
     else:
-        ylim_heads = (0, .8)
+        ytick_heads = (0, .8)
 
     figpath = os.path.join(rootpath, 'figures', tools.get_experiment_name(modeldir))
 
@@ -414,15 +412,15 @@ def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
 
     val_accs, val_acc2s = _get_lesion_acc(modeldir, groups, arg=arg)
     for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
-        fig = _plot_hist(head, ylim_heads, val_acc[:, np.newaxis])
+        fig = _plot_hist(val_acc[:, np.newaxis], head, ytick_heads)
         save_fig(figpath, 'example_cluster'+str(optim_n_clusters)+'_lesion'+head)
 
 
 def analyze_many_networks_lesion(modeldirs, arg='multi_head'):
     if arg == 'metatrain':
-        ylim_heads = (.5, .5)
+        ytick_heads = (.5, .5)
     else:
-        ylim_heads = (0, .8)
+        ytick_heads = (0, .8)
 
     figpath = os.path.join(rootpath, 'figures', tools.get_experiment_name(modeldirs[0]))
 
@@ -438,15 +436,9 @@ def analyze_many_networks_lesion(modeldirs, arg='multi_head'):
     val_acc2s = np.array(val_acc2s).T
 
     for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
-        fig = _plot_hist(head, ylim_heads, val_acc)
+        fig = _plot_hist(val_acc, head, ytick_heads)
         save_fig(figpath, 'population_lesion'+head)
 
-
-if __name__ == '__main__':
-    analyze_example_network('multi_head', 'multi_head')
-    analyze_example_network('multi_head', 'multi_head', fix_cluster=2)
-    # analyze_many_networks_lesion('multi_head', 'multi_head')
-    pass
     
 
 
