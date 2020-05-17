@@ -52,6 +52,7 @@ class input_ProtoConfig(BaseConfig):
         self.n_class_valence = 3
         # If has_special_odors is True, then some odors will activate single ORs
         self.has_special_odors = True
+        self.special_odor_activation = 1.
         # the number of prototypes that leads to each non-neutral response
         self.n_proto_valence = 5
 

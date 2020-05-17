@@ -204,6 +204,7 @@ def _generate_proto_threshold(
         n_class_valence=None,
         n_proto_valence=None,
         has_special_odors=False,
+        special_odor_activation=0,
         n_or_per_orn=1,
         orn_corr=None,
         seed=0):
@@ -265,12 +266,13 @@ def _generate_proto_threshold(
 
     if multi_head and has_special_odors:
         # TODO(gryang): make this code not so ugly
+        # special_odor_activation = 5.
         n_neutral_odor = n_proto - (n_good_odor + n_bad_odor)
         prototypes_neutral = rng.uniform(0, max_activation, (n_neutral_odor, n_orn))
         prototypes_good = np.zeros((n_good_odor, n_orn))
-        prototypes_good[range(n_good_odor), range(n_good_odor)] = 5.
+        prototypes_good[range(n_good_odor), range(n_good_odor)] = special_odor_activation
         prototypes_bad = np.zeros((n_bad_odor, n_orn))
-        prototypes_bad[range(n_bad_odor), range(n_good_odor, n_good_odor+n_bad_odor)] = 5.
+        prototypes_bad[range(n_bad_odor), range(n_good_odor, n_good_odor+n_bad_odor)] = special_odor_activation
         prototypes = np.concatenate((prototypes_neutral, prototypes_good, prototypes_bad), axis=0)
 
         train_odors_neutral = rng.uniform(0, max_activation, (n_train_neutral, n_orn))
@@ -505,6 +507,7 @@ def save_proto(config=None, seed=0, folder_name=None):
         n_class_valence=config.n_class_valence,
         n_proto_valence=config.n_proto_valence,
         has_special_odors=config.has_special_odors,
+        special_odor_activation=config.special_odor_activation,
         n_or_per_orn=config.n_or_per_orn,
         orn_corr=config.orn_corr,
         seed=seed)
