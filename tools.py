@@ -267,7 +267,7 @@ def get_allmodeldirs(dir, select_dict=None, exclude_dict=None):
         return dirs
     new_dirs = []
     for d in dirs:
-        config = load_config(d)
+        config = load_config(d)  # epoch modeldirs have no configs
         selected = True
         excluded = False
         if select_dict is not None:
@@ -332,108 +332,6 @@ def load_pickle(dir, var):
             except:
                 print(var + ' is not in directory:' + d)
     return out
-
-#
-# def varying_config(experiment, i):
-#     """Training a specific hyperparameter settings.
-#
-#     Args:
-#         experiment: a tuple (config, hp_ranges)
-#         i: integer, indexing the specific hyperparameter setting to be used
-#
-#        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1], there are 8 possible combinations
-#
-#     Return:
-#         config: new configuration
-#     """
-#     # Ranges of hyperparameters to loop over
-#     config_, hp_ranges = experiment
-#     config = deepcopy(config_)
-#
-#     # Unravel the input index
-#     keys = hp_ranges.keys()
-#     dims = [len(hp_ranges[k]) for k in keys]
-#     n_max = np.prod(dims)
-#     indices = np.unravel_index(i % n_max, dims=dims)
-#
-#     if i >= n_max:
-#         return False
-#
-#     # Set up new hyperparameter
-#     for key, index in zip(keys, indices):
-#         setattr(config, key, hp_ranges[key][index])
-#     return config
-#
-#
-# def varying_config_sequential(experiment, i):
-#     """Training specific combinations of hyper-parameter settings
-#
-#     Args:
-#         experiment: a tuple (config, hp_ranges)
-#         i: integer, indexing the specific hyperparameter settings to be used
-#
-#        unlike varying_config, this function does not iterate through all possible
-#        hyper-parameter combinations.
-#
-#        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
-#        possible combinations are {'a':0,'b':0,'c':0}, and {'a':1,'b':1,'c':1}
-#
-#     Returns:
-#         config: new configuration
-#     """
-#     config_, hp_ranges = experiment
-#     config = deepcopy(config_)
-#
-#     # Unravel the input index
-#     keys = hp_ranges.keys()
-#     dims = [len(hp_ranges[k]) for k in keys]
-#     n_max = dims[0]
-#
-#     if i >= n_max:
-#         return False
-#
-#     for key in keys:
-#         setattr(config, key, hp_ranges[key][i])
-#     return config
-#
-# def varying_config_control(experiment, i):
-#     """Training each hyper-parameter independently
-#
-#     Args:
-#         experiment: a tuple (config, hp_ranges)
-#         i: integer, indexing the specific hyperparameter settings to be used
-#
-#        unlike varying_config, this function does not iterate through all possible
-#        hyper-parameter combinations.
-#
-#        default: a=0, b=0, c=0
-#        hp['a']=[0,1], hp['b']=[0,1], hp['c']=[0,1].
-#        possible combinations are {'a':0,1},{'b':0,1}, {'c':0,1}
-#
-#     Returns:
-#         config: new configuration
-#     """
-#     config_, hp_ranges = experiment
-#     config = deepcopy(config_)
-#
-#     # Unravel the input index
-#     keys = list(hp_ranges.keys())
-#     dims = [len(hp_ranges[k]) for k in keys]
-#     n_max = np.sum(dims)
-#
-#     if i >= n_max:
-#         return False
-#
-#     for j, d in enumerate(dims):
-#         if i >= d:
-#             i-= d
-#         else:
-#             break
-#
-#     key = keys[j]
-#     setattr(config, key, hp_ranges[key][i])
-#     print('key:{}, value: {}'.format(key, hp_ranges[key][i]))
-#     return config
 
 
 def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix=None,

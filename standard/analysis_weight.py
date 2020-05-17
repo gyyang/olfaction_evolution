@@ -7,30 +7,6 @@ from sklearn.mixture import GaussianMixture
 THRES = 0.1
 
 
-def fit_bimodal(x):
-    """Fit bimodal distribution to data.
-
-    Args:
-        x: np array of data
-
-    Return:
-        x_plot: np array
-        pdf1: np array, pdf of modal 1
-        pdf2: np array, pdf of modal 2
-        clf: classifier object
-    """
-    x = x[:, np.newaxis]
-    clf = GaussianMixture(n_components=2, means_init=[[-5], [0.]], n_init=10)
-    clf.fit(x)
-    x_plot = np.linspace(x.min(), x.max(), 1000)
-
-    pdf1 = multivariate_normal.pdf(x_plot, clf.means_[0],
-                                   clf.covariances_[0]) * clf.weights_[0]
-    pdf2 = multivariate_normal.pdf(x_plot, clf.means_[1],
-                                   clf.covariances_[1]) * clf.weights_[1]
-    return x_plot, pdf1, pdf2, clf
-
-
 def fit_multimodal(x, max_n_modal=2, verbose=False):
     """Fit multimodal distribution to data.
 
@@ -127,7 +103,6 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
         thres_ = np.log(force_thres) if use_logx else force_thres
     else:
         thres_not_found = False
-        # x_plot, pdf1, pdf2, clf = fit_bimodal(x)
         x_plot, pdfs, clf, n_modal = fit_multimodal(x)
         res_fit['x_plot'] = x_plot
         res_fit['pdfs'] = pdfs
