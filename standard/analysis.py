@@ -124,13 +124,14 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
                                  exclude_dict=exclude_dict)
 
     # get rid of duplicates
-    if legend_key:
-        values = res[legend_key]
-        if np.any(values == None):
-            values[values == None] = 'None'
-        _, ixs = np.unique(values, return_index=True)
-        for k, v in res.items():
-            res[k] = res[k][ixs]
+    # TODO: Don't remember why this is necessary, remove if not useful
+    # if legend_key:
+    #     values = res[legend_key]
+    #     if np.any(values == None):
+    #         values[values == None] = 'None'
+    #     _, ixs = np.unique(values, return_index=True)
+    #     for k, v in res.items():
+    #         res[k] = res[k][ixs]
 
     def _plot_progress(xkey, ykey):
         rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'][0])
