@@ -148,13 +148,10 @@ def standard_vary_hp():
 
 def standard_vary_hp_analysis(path):
     select_dict = {}
-    # select_dict['pn_norm_pre'] = 'batch_norm'
-    exclude_dict = {}
-    exclude_dict['kc_dropout_rate'] = 0.
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict,
-                                    exclude_dict=exclude_dict, acc_min=0.8)
-    print(len(modeldirs))
-    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.75)
+    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+        modeldirs, exclude_badkc=True, exclude_badpeak=True)
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
 
 
 def rnn():
