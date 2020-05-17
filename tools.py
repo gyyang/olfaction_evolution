@@ -1,3 +1,5 @@
+"""Tools for project."""
+
 import os
 import json
 import pickle
@@ -7,7 +9,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import colors
 
-import dict_methods
 
 rootpath = os.path.dirname(os.path.abspath(__file__))
 FIGPATH = os.path.join(rootpath, 'figures')
@@ -261,8 +262,14 @@ def _get_alldirs(dir, model, sort):
     return dirs
 
 
-def select_modeldirs(modeldirs, select_dict=None):
-    """Select model directories."""
+def select_modeldirs(modeldirs, select_dict=None, acc_min=None):
+    """Select model directories.
+
+    Args:
+        modeldirs: list of model directories
+        select_dict: dict, config must match select_dict to be selected
+        acc_min: None or float, minimum validation acc to be included
+    """
     new_dirs = []
     for d in modeldirs:
         config = load_config(d)  # epoch modeldirs have no configs
@@ -272,6 +279,11 @@ def select_modeldirs(modeldirs, select_dict=None):
                 if getattr(config, key) != val:
                     selected = False
                     break
+
+        if acc_min is not None:
+            log = load_log(d)
+            if log['val_acc'][-1] < acc_min:
+                selected = False
 
         if selected:
             new_dirs.append(d)
@@ -297,11 +309,11 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
     return new_dirs
 
 
-def get_allmodeldirs(path, select_dict=None, exclude_dict=None):
+def get_allmodeldirs(path, select_dict=None, exclude_dict=None, acc_min=None):
     dirs = _get_alldirs(path, model=True, sort=True)
     if select_dict is None and exclude_dict is None:
         return dirs
-    dirs = select_modeldirs(dirs, select_dict=select_dict)
+    dirs = select_modeldirs(dirs, select_dict=select_dict, acc_min=acc_min)
     dirs = exclude_modeldirs(dirs, exclude_dict=exclude_dict)
     return dirs
 
@@ -352,6 +364,13 @@ def load_pickle(dir, var):
     return out
 
 
+def load_log(modeldir):
+    log_name = os.path.join(modeldir, 'log.pkl')
+    with open(log_name, 'rb') as f:
+        log = pickle.load(f)
+    return log
+
+
 def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix=None,
                      exclude_early_models=True):
     """Load results from path.
@@ -374,9 +393,7 @@ def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix
     from collections import defaultdict
     res = defaultdict(list)
     for i, d in enumerate(dirs):
-        log_name = os.path.join(d, 'log.pkl')
-        with open(log_name, 'rb') as f:
-            log = pickle.load(f)
+        log = load_log(d)
         config = load_config(d)
         
         n_actual_epoch = len(log['val_acc'])

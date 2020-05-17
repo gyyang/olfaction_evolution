@@ -25,8 +25,7 @@ save_path2 = os.path.join(rootpath, 'files', save_name2)
 
 logs = list()
 for save_path in [save_path1, save_path2]:
-    with open(os.path.join(save_path, 'log.pkl'), 'rb') as f:
-        log = pickle.load(f)
+    log = tools.load_log(save_path)
     logs.append(log)
 
 config = tools.load_config(save_path)

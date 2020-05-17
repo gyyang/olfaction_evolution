@@ -19,7 +19,7 @@ sys.path.append(rootpath)
 import tools
 from tools import save_fig
 import dict_methods
-from standard.analysis_weight import infer_threshold, fit_bimodal
+from standard.analysis_weight import infer_threshold
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42

@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+import tools
+
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
@@ -23,9 +25,7 @@ for i in range(3):
 
     save_path = os.path.join(rootpath, 'files', save_name)
 
-    log_name = os.path.join(save_path, 'log.pkl')
-    with open(log_name, 'rb') as f:
-        log = pickle.load(f)
+    log = tools.load_log(save_path)
     logs.append(log)
 
 labels = ['Identity ORN-PN', 'Random ORN-PN', 'Linear read-out']

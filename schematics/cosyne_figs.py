@@ -26,9 +26,7 @@ def _load_results(save_name):
     n_pns = np.zeros(len(dirs))
     n_kcs = np.zeros(len(dirs))
     for i, d in enumerate(dirs):
-        log_name = os.path.join(d, 'log.pkl')
-        with open(log_name, 'rb') as f:
-            log = pickle.load(f)
+        log = tools.load_log(d)
         config = tools.load_config(d)
         glo_score[i] = log['glo_score'][-1]
         val_acc[i] = log['val_acc'][-1]
