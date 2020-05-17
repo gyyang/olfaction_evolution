@@ -57,6 +57,67 @@ def check_single_peak(bins, hist, threshold):
     return peak_ind
 
 
+def filter_modeldirs_badkc(modeldirs, bad_kc_threshold=0.2):
+    """Filter model dirs with too many bad KCs."""
+    new_dirs = []
+    for d in modeldirs:
+        selected = True
+        log = tools.load_log(d)
+        if log['bad_KC'][-1] > bad_kc_threshold:
+            # After training, bad KC proportion should lower 'bad_kc_threshold'
+            selected = False
+
+        if selected:
+            new_dirs.append(d)
+    return new_dirs
+
+
+def filter_modeldirs_badpeak(modeldirs, peak_threshold=0.1):
+    """Filter model dirs without a strong second peak."""
+    # TODO: Use this method throughout to replace similar methods
+    new_dirs = []
+    for d in modeldirs:
+        selected = True
+        log = tools.load_log(d)
+        config = tools.load_config(d)
+        if config.kc_prune_weak_weights:
+            thres = config.kc_prune_thresold
+        else:
+            thres = log['thres_inferred'][-1]  # last epoch
+        bins = log['lin_bins'][:-1]
+        bin_size = bins[1] - bins[0]
+        hist = log['lin_hist'][-1]  # last epoch
+        # log['lin_bins'] shape (nbin+1), log['lin_hist'] shape (n_epoch, nbin)
+        ind_thres = np.argsort(np.abs(bins - thres))[0]
+        ind_grace = int(0.01 / bin_size)  # grace distance to start find peak
+        ind_peak = np.argmax(hist[ind_thres+ind_grace:])
+        if ind_peak * bin_size <= peak_threshold:
+            # peak should be at least 'peak_threshold' away from threshold
+            selected = False
+
+        if selected:
+            new_dirs.append(d)
+    return new_dirs
+
+
+def filter_modeldirs(modeldirs, exclude_badkc=True, exclude_badpeak=True):
+    """Select model directories.
+
+    Args:
+        modeldirs: list of model directories
+        exclude_badkc: bool, if True, exclude models with too many bad KCs
+        exclude_badpeak: bool, if True, exclude models with bad peaks
+
+    Return:
+        modeldirs: list of filtered model directories
+    """
+    if exclude_badkc:
+        modeldirs = filter_modeldirs_badkc(modeldirs)
+    if exclude_badpeak:
+        modeldirs = filter_modeldirs_badpeak(modeldirs)
+    return modeldirs
+
+
 def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=None):
     def _get_K_obsolete(res):
         # GRY: Not sure what this function is doing
