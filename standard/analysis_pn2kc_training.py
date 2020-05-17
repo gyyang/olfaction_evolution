@@ -6,12 +6,9 @@ from collections import defaultdict
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap
-from scipy.stats import multivariate_normal
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
-from sklearn.mixture import GaussianMixture
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)

@@ -6,7 +6,6 @@ import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from matplotlib import cm
 import dict_methods
 
@@ -17,10 +16,6 @@ import tools
 from tools import nicename
 from standard.analysis_pn2kc_training import check_single_peak
 
-mpl.rcParams['font.size'] = 7
-mpl.rcParams['pdf.fonttype'] = 42
-mpl.rcParams['ps.fonttype'] = 42
-mpl.rcParams['font.family'] = 'arial'
 
 figpath = os.path.join(rootpath, 'figures')
 
@@ -118,24 +113,27 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
 def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
                   legend_key=None, epoch_range=None, ykeys=None, ax_args=None):
     """Plot progress through training.
-        Fixed to allow for multiple plots
+
+    Args:
+        save_path: str or list of strs
+
     """
 
-    log = tools.load_all_results(save_path, argLast=False,
+    res = tools.load_all_results(save_path, argLast=False,
                                  select_dict=select_dict,
                                  exclude_dict=exclude_dict)
 
     # get rid of duplicates
     if legend_key:
-        values = log[legend_key]
+        values = res[legend_key]
         if np.any(values == None):
             values[values == None] = 'None'
         _, ixs = np.unique(values, return_index=True)
-        for k, v in log.items():
-            log[k] = log[k][ixs]
+        for k, v in res.items():
+            res[k] = res[k][ixs]
 
     def _plot_progress(xkey, ykey):
-        rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=log['N_PN'][0])
+        rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'][0])
         if ax_args:
             ax_args_.update(ax_args)
 
@@ -144,8 +142,8 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect, **ax_args_)
 
-        ys = log[ykey]
-        xs = log[xkey]
+        ys = res[ykey]
+        xs = res[xkey]
 
         colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
 
@@ -155,15 +153,15 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
             ax.plot(x, y, alpha=alpha, color=c, linewidth=1)
 
         if legend_key is not None:
-            legends = log[legend_key]
+            legends = res[legend_key]
             legends = [nicename(l) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
             plt.title(nicename(legend_key))
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
-        if ykey == 'val_acc' and log[ykey].shape[0] == 1:
-            plt.title('Final accuracy {:0.3f}'.format(log[ykey][0,-1]))
+        if ykey == 'val_acc' and res[ykey].shape[0] == 1:
+            plt.title('Final accuracy {:0.3f}'.format(res[ykey][0,-1]))
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
@@ -172,7 +170,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         if epoch_range:
             ax.set_xlim([epoch_range[0], epoch_range[1]])
         else:
-            ax.set_xlim([-1, log[xkey][0,-1]])
+            ax.set_xlim([-1, res[xkey][0,-1]])
 
         figname = '_' + ykey
         if select_dict:
