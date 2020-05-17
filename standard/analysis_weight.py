@@ -138,11 +138,17 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
             thres_not_found = True
         else:
             diff = pdfs[0] < np.sum(pdfs[1:], axis=0)
-            try:
-                thres_ = x_plot[np.where(diff)[0][0]]
-            except IndexError:
-                print('Unable to find proper threshold, revert to default')
+            ind_diff = np.where(diff)[0]
+            if len(ind_diff) == 0:
                 thres_not_found = True
+                print('Unable to find proper threshold, revert to default')
+            else:
+                thres_ = x_plot[ind_diff[0]]
+                thres = np.exp(thres_) if use_logx else thres_
+                # empirical value, typical threshold higher than 1e-1
+                if thres < 1e-4:
+                    print('Threshold found too small {}, revert to default'.format(thres))
+                    thres_not_found = True
 
         if thres_not_found:
             thres_ = np.log(THRES) if use_logx else THRES
