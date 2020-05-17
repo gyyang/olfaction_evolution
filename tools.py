@@ -261,31 +261,49 @@ def _get_alldirs(dir, model, sort):
     return dirs
 
 
-def get_allmodeldirs(dir, select_dict=None, exclude_dict=None):
-    dirs = _get_alldirs(dir, model=True, sort=True)
-    if select_dict is None and exclude_dict is None:
-        return dirs
+def select_modeldirs(modeldirs, select_dict=None):
+    """Select model directories."""
     new_dirs = []
-    for d in dirs:
+    for d in modeldirs:
         config = load_config(d)  # epoch modeldirs have no configs
         selected = True
-        excluded = False
         if select_dict is not None:
             for key, val in select_dict.items():
                 if getattr(config, key) != val:
                     selected = False
                     break
 
+        if selected:
+            new_dirs.append(d)
+
+    return new_dirs
+
+
+def exclude_modeldirs(modeldirs, exclude_dict=None):
+    """Exclude model directories."""
+    new_dirs = []
+    for d in modeldirs:
+        config = load_config(d)  # epoch modeldirs have no configs
+        excluded = False
         if exclude_dict is not None:
             for key, val in exclude_dict.items():
                 if getattr(config, key) == val:
                     excluded = True
                     break
 
-        if selected and not excluded:
+        if not excluded:
             new_dirs.append(d)
 
     return new_dirs
+
+
+def get_allmodeldirs(path, select_dict=None, exclude_dict=None):
+    dirs = _get_alldirs(path, model=True, sort=True)
+    if select_dict is None and exclude_dict is None:
+        return dirs
+    dirs = select_modeldirs(dirs, select_dict=select_dict)
+    dirs = exclude_modeldirs(dirs, exclude_dict=exclude_dict)
+    return dirs
 
 
 def get_experiment_name(model_path):
@@ -350,6 +368,9 @@ def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix
     else:
         dirs = path
 
+    dirs = select_modeldirs(dirs, select_dict=select_dict)
+    dirs = exclude_modeldirs(dirs, exclude_dict=exclude_dict)
+
     from collections import defaultdict
     res = defaultdict(list)
     for i, d in enumerate(dirs):
@@ -395,8 +416,6 @@ def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix
         print('''Could not compute log loss.
               Most likely models have not finished training.''')
 
-    res = dict_methods.filter(res, select_dict)
-    res = dict_methods.exclude(res, exclude_dict)
     return res
 
 
