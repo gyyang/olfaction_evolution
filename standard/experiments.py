@@ -9,6 +9,8 @@ def name_analysis()
 
 from collections.__init__ import OrderedDict
 
+import numpy as np
+
 from configs import FullConfig, MetaConfig
 from tools import vary_config
 import tools
@@ -117,6 +119,31 @@ def receptor_analysis(path):
 
     analysis_activity.distribution_activity(dir, ['glo', 'kc'])
     analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+
+
+def standard_vary_hp():
+    """Vary many hyperparameters for standard setting."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 200
+
+    config.pn_norm_pre = 'batch_norm'
+
+    # New settings
+    config.batch_size = 8192  # Much bigger batch size
+    config.initial_pn2kc = 10. / config.N_PN
+    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
+    config.lr = 2e-3
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    config_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
+    config_ranges['lr'] = [1e-2, 5e-3, 2e-3, 1e-3, 5e-4]
+    config_ranges['initial_pn2kc'] = np.array([2., 5., 10., 20.]) / config.N_PN
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
 
 
 def rnn():
