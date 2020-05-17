@@ -21,14 +21,10 @@ from tools import save_fig
 import dict_methods
 from standard.analysis_weight import infer_threshold
 
-mpl.rcParams['font.size'] = 7
-mpl.rcParams['pdf.fonttype'] = 42
-mpl.rcParams['ps.fonttype'] = 42
-mpl.rcParams['font.family'] = 'arial'
-mpl.rcParams['mathtext.fontset'] = 'stix'
 
 figpath = os.path.join(rootpath, 'figures')
 THRES = 0.1
+
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
@@ -348,6 +344,7 @@ def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
 
         split = os.path.split(savename)
         tools.save_fig(split[0], split[1])
+
 
 def plot_all_K(n_orns, Ks, plot_scatter=False,
                plot_box=False, plot_data=True,

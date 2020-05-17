@@ -272,9 +272,9 @@ def select_modeldirs(modeldirs, select_dict=None, acc_min=None):
     """
     new_dirs = []
     for d in modeldirs:
-        config = load_config(d)  # epoch modeldirs have no configs
         selected = True
         if select_dict is not None:
+            config = load_config(d)  # epoch modeldirs have no configs
             for key, val in select_dict.items():
                 if getattr(config, key) != val:
                     selected = False
@@ -295,9 +295,9 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
     """Exclude model directories."""
     new_dirs = []
     for d in modeldirs:
-        config = load_config(d)  # epoch modeldirs have no configs
         excluded = False
         if exclude_dict is not None:
+            config = load_config(d)  # epoch modeldirs have no configs
             for key, val in exclude_dict.items():
                 if getattr(config, key) == val:
                     excluded = True
@@ -311,8 +311,6 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
 
 def get_modeldirs(path, select_dict=None, exclude_dict=None, acc_min=None):
     dirs = _get_alldirs(path, model=True, sort=True)
-    if select_dict is None and exclude_dict is None:
-        return dirs
     dirs = select_modeldirs(dirs, select_dict=select_dict, acc_min=acc_min)
     dirs = exclude_modeldirs(dirs, exclude_dict=exclude_dict)
     return dirs
@@ -364,10 +362,19 @@ def load_pickle(dir, var):
     return out
 
 
+def save_log(modeldir, log):
+    np.savez_compressed(os.path.join(modeldir, 'log.npz'), **log)
+
+
 def load_log(modeldir):
-    log_name = os.path.join(modeldir, 'log.pkl')
-    with open(log_name, 'rb') as f:
-        log = pickle.load(f)
+    file_np = os.path.join(modeldir, 'log.npz')
+    file_pkl = os.path.join(modeldir, 'log.pkl')
+    if os.path.isfile(file_np):
+        log = np.load(file_np)
+    else:
+        with open(file_pkl, 'rb') as f:
+            log = pickle.load(f)
+        save_log(modeldir, log)  # resave with npz
     return log
 
 

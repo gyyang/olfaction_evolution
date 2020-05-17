@@ -146,6 +146,17 @@ def standard_vary_hp():
     return configs
 
 
+def standard_vary_hp_analysis(path):
+    select_dict = {}
+    # select_dict['pn_norm_pre'] = 'batch_norm'
+    exclude_dict = {}
+    exclude_dict['kc_dropout_rate'] = 0.
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict,
+                                    exclude_dict=exclude_dict, acc_min=0.8)
+    print(len(modeldirs))
+    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+
+
 def rnn():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'

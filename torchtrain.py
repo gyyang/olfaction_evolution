@@ -84,9 +84,7 @@ def logging(log, model, res, config):
         if config.train_pn2kc:
             log = _log_full_model_train_pn2kc(log, model, res, config)
 
-    # consider json instead of pickle
-    with open(os.path.join(config.save_path, 'log.pkl'), 'wb') as f:
-        pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
+    tools.save_log(config.save_path, log)
     return log
 
 

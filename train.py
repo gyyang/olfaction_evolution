@@ -97,7 +97,6 @@ def train(config, reload=False, save_everytrainloss=False):
 
     # Make custom logger
     log = defaultdict(list)
-    log_name = os.path.join(config.save_path, 'log.pkl')  # Consider json instead of pickle
 
     glo_score_mode = 'tile' if config.replicate_orn_with_tiling else 'repeat'
 
@@ -130,9 +129,8 @@ def train(config, reload=False, save_everytrainloss=False):
         if reload:
             try:
                 model.load()
-                with open(log_name, 'rb') as f:
-                    log = pickle.load(f)
-                    start_epoch = log['epoch'][-1] + 1
+                log = tools.load_log(config.save_path)
+                start_epoch = log['epoch'][-1] + 1
             except:
                 print('No model file to be reloaded, starting anew')
 
@@ -289,8 +287,7 @@ def train(config, reload=False, save_everytrainloss=False):
                     print('Examples/second {:d}'.format(int(train_x.shape[0]/time_spent)))
                 start_time = time.time()
 
-                with open(log_name, 'wb') as f:
-                    pickle.dump(log, f, protocol=pickle.HIGHEST_PROTOCOL)
+                tools.save_log(config.save_path, log)
 
             if 'target_acc' in dir(config) and config.target_acc is not None:
                 if res['acc'] > config.target_acc:
