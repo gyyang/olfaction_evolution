@@ -17,8 +17,12 @@ import standard.analysis_weight as analysis_weight
 from tools import save_fig
 import settings
 
+
 LABELS = ['Input degree', 'Conn. to valence', 'Conn. to identity']
+TICKS = [(1, 7, 15), None, None]
 RANGES = [(0, 15), (0, 7), (0, 10)]
+LOGTICKS = [(1, 7, 50), (0.01, 0.1, 1, 10), (0.1, 1, 10)]
+LOGRANGES = [(1, 50), (0.01, 10), (0.1, 10)]
 
 
 def _fix_config(config):
@@ -149,18 +153,36 @@ def _get_density(data, X, Y, method='scipy'):
     return Z
 
 
-def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None):
+def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None, plot_log=False):
     fig = plt.figure(figsize=(1.6, 1.6))
     ax = fig.add_axes([0.25, 0.25, 0.6, 0.6])
     cmap = plt.cm.gist_earth_r
     # cmap = plt.cm.hot_r
+    # ax.imshow(np.rot90(Z), cmap=cmap, aspect='auto')
+    ranges = np.log(LOGRANGES) if plot_log else RANGES
     ax.imshow(np.rot90(Z), cmap=cmap,
-              extent=list(RANGES[xind])+list(RANGES[yind]), aspect='auto')
-    ax.set_xlim(RANGES[xind])
-    ax.set_ylim(RANGES[yind])
+              extent=list(ranges[xind])+list(ranges[yind]), aspect='auto')
+    ax.set_xlim(ranges[xind])
+    ax.set_ylim(ranges[yind])
+
     if xind == 0:
-        ax.plot([7, 7], RANGES[yind], '--', color='gray', linewidth=1)
-        ax.set_xticks([0, 7, 15])
+        vert_x = np.log(7) if plot_log else 7
+        ax.plot([vert_x, vert_x], ranges[yind], '--', color='gray', linewidth=1)
+
+    if plot_log:
+        ax.set_xticks(np.log(LOGTICKS[xind]))
+        ax.set_xticklabels(LOGTICKS[xind])
+    else:
+        if TICKS[xind]:
+            ax.set_xticks(TICKS[xind])
+
+    if plot_log:
+        ax.set_yticks(np.log(LOGTICKS[yind]))
+        ax.set_yticklabels(LOGTICKS[yind])
+    else:
+        if TICKS[yind]:
+            ax.set_yticks(TICKS[yind])
+
     plt.xlabel(LABELS[xind])
     plt.ylabel(LABELS[yind])
     [ax.spines[s].set_visible(False) for s in ['left', 'right', 'top', 'bottom']]
@@ -173,21 +195,29 @@ def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None):
 
 
 def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
-                      name_pre=None):
+                      name_pre=None, plot_log=True):
     data_plot = data[:, [xind, yind]]
-    xmin, xmax = RANGES[xind]
-    ymin, ymax = RANGES[yind]
+    if plot_log:
+        data_plot = np.log(data_plot)
+        xmin, xmax = np.log(LOGRANGES[xind])
+        ymin, ymax = np.log(LOGRANGES[yind])
+    else:
+        xmin, xmax = RANGES[xind]
+        ymin, ymax = RANGES[yind]
+
     X_orig, Y_orig = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
     
     if normalize:
         norm_mean = np.mean(data_plot, axis=0)
         norm_std = np.std(data_plot, axis=0)
         data_plot = (data_plot - norm_mean) / norm_std
-        xmin, xmax = (np.array(RANGES[xind]) - norm_mean[0]) / norm_std[0]
-        ymin, ymax = (np.array(RANGES[yind]) - norm_mean[1]) / norm_std[1]
+        xmin, xmax = (np.array([xmin, xmax]) - norm_mean[0]) / norm_std[0]
+        ymin, ymax = (np.array([ymin, ymax]) - norm_mean[1]) / norm_std[1]
     
     X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
     Z = _get_density(data_plot, X, Y)
+    for group in groups:
+        print(data_plot[group].shape)
     Zs = [_get_density(data_plot[group], X, Y) for group in groups]
     
     def add_text(ax):
@@ -197,21 +227,24 @@ def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
                     color='white')
         return ax
 
+    # original density
     if name_pre is None:
         name_pre = ''
     name_pre = name_pre + 'density_'+str(xind)+str(yind)
-    fig, ax = _plot_density(Z, xind, yind)
+    fig, ax = _plot_density(Z, xind, yind, plot_log=plot_log)
     ax = add_text(ax)
     save_fig(figpath, name_pre)
-    
+
+    # individual cluster normalized density
     Zsum = 0
     for i, Z in enumerate(Zs):
         title = 'Cluster {:d} n={:d}'.format(i+1, len(groups[i]))
-        _plot_density(Z, xind, yind, title=title)
+        _plot_density(Z, xind, yind, title=title, plot_log=plot_log)
         save_fig(figpath, name_pre+'_group'+str(i+1))
         Zsum += Z/Z.max()
 
-    fig, ax = _plot_density(Zsum, xind, yind)
+    # sum of two normalized density
+    fig, ax = _plot_density(Zsum, xind, yind, plot_log=plot_log)
     ax = add_text(ax)
     save_fig(figpath, name_pre+'_group_sum')
 
