@@ -79,7 +79,7 @@ def standard_analysis(path):
 def receptor():
     """Standard training setting with full network including receptors."""
     config = FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
 
     config.receptor_layer = True
     config.or2orn_normalization = True
