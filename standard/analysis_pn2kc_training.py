@@ -108,7 +108,7 @@ def filter_modeldirs(modeldirs, exclude_badkc=False, exclude_badpeak=False):
     Return:
         modeldirs: list of filtered model directories
     """
-    print('Analyzing {} model directories', len(modeldirs))
+    print('Analyzing {} model directories'.format(len(modeldirs)))
     if exclude_badkc:
         modeldirs = filter_modeldirs_badkc(modeldirs)
         print('{} remain after filtering bad kcs'.format(len(modeldirs)))

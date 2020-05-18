@@ -103,9 +103,9 @@ def receptor():
 
 def receptor_analysis(path):
     select_dict = dict()
-    # select_dict['kc_norm_pre'] = 'batch_norm'
-    # select_dict['ORN_NOISE_STD'] = 0.2
-    # select_dict['pn_norm_pre'] = None
+    select_dict['kc_norm_pre'] = 'batch_norm'
+    select_dict['ORN_NOISE_STD'] = 0.2
+    select_dict['pn_norm_pre'] = None
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.75)
     dir = modeldirs[0]
 
@@ -417,10 +417,10 @@ def multihead():
 
 def multihead_analysis(path):
     # this acc is average of two heads
-    # modeldirs = tools.get_modeldirs(path, acc_min=0.85)
-    # modeldirs = analysis_pn2kc_training.filter_modeldirs(
-    #     modeldirs, exclude_badkc=True)
-    # analysis_multihead.analyze_many_networks_lesion(modeldirs)
+    modeldirs = tools.get_modeldirs(path, acc_min=0.85)
+    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+        modeldirs, exclude_badkc=True)
+    analysis_multihead.analyze_many_networks_lesion(modeldirs)
 
     select_dict = {}
     select_dict['lr'] = 1e-3
@@ -429,10 +429,10 @@ def multihead_analysis(path):
     modeldirs = analysis_pn2kc_training.filter_modeldirs(
         modeldirs, exclude_badpeak=True)
     dir = modeldirs[0]
-    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
-    # sa.plot_weights(dir)
-    # analysis_activity.distribution_activity(dir, ['glo', 'kc'])
-    # analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
+    sa.plot_weights(dir)
+    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
     analysis_multihead.analyze_example_network(dir)
 
 
