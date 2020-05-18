@@ -28,13 +28,18 @@ def fit_multimodal(x, max_n_modal=2, verbose=False):
     for n_modal in n_modals:
         if n_modal == 1:
             means_init = [[-2]]
+            weights_init = [1]
         elif n_modal == 2:
             means_init = [[-5], [0.]]
+            weights_init = [.9, .1]
         elif n_modal == 3:
             means_init = [[-5], [0.], [1.5]]
+            weights_init = [.8, .1, .1]
         else:
             means_init = None
-        clf = GaussianMixture(n_components=n_modal, means_init=means_init, n_init=1)
+            weights_init = None
+        clf = GaussianMixture(n_components=n_modal, means_init=means_init,
+                              weights_init=weights_init, n_init=1)
         clf.fit(x)
         clfs.append(clf)
         bic = clf.bic(x)
@@ -97,7 +102,7 @@ def infer_threshold(x, use_logx=True, visualize=False, force_thres=None,
             x = np.random.choice(x, size=(int(1e5),))
 
     if use_logx:
-        x = np.log(x +1e-10)
+        x = np.log(x + 1e-10)
 
     if force_thres is not None:
         thres_ = np.log(force_thres) if use_logx else force_thres
