@@ -211,11 +211,10 @@ def plot_weights(modeldir, var_name=None, sort_axis='auto',
 
 
 def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
-                  vlim=None):
+                  vlim=None, binarized=False):
     """Plot weights."""
     # Load network at the end of training
     model_dir = os.path.join(modeldir, 'model.pkl')
-    print('Plotting ' + var_name + ' from ' + model_dir)
     with open(model_dir, 'rb') as f:
         var_dict = pickle.load(f)
         try:
@@ -226,6 +225,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         except KeyError:
             # Weight doesn't exist, return
             return
+    print('Plotting ' + var_name + ' from ' + model_dir)
 
     if average:
         w_orn_by_pn = tools._reshape_worn(w_plot, 50)
@@ -244,6 +244,10 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
 
     if var_name == 'w_glo':
         w_plot = w_plot[:, :20]
+
+    if binarized and var_name == 'w_glo':
+        log = tools.load_log(modeldir)
+        w_plot = (w_plot > log['thres_inferred'][-1]) * 1.0
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
@@ -293,15 +297,6 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
     var_name = var_name.replace(':','_')
     tools.save_fig(tools.get_experiment_name(modeldir),
              '_' + var_name + '_' + tools.get_model_name(modeldir))
-
-
-    # Plot distribution of various connections
-    # keys = var_dict.keys()
-    # keys = ['model/layer1/bias:0', 'model/layer2/bias:0']
-    # for key in keys:
-    #     fig = plt.figure(figsize=(2, 2))
-    #     plt.hist(var_dict[key].flatten())
-    #     plt.title(key)
 
 
 def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,

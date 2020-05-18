@@ -173,17 +173,17 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
     return res
 
 
-def plot_distribution(dir, epoch=None, xrange=1.0):
+def plot_distribution(modeldir, epoch=None, xrange=1.0):
     """Plot weight distribution from a single model path."""
-    model_name = tools.get_model_name(dir)
+    model_name = tools.get_model_name(modeldir)
 
     if epoch is not None:
-        dir = tools.get_modeldirs(os.path.join(dir, 'epoch'))[epoch]
+        modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
     try:
-        w = tools.load_pickle(dir, 'w_glo')[0]
+        w = tools.load_pickle(modeldir, 'w_glo')[0]
     except KeyError:
-        w = tools.load_pickle(dir, 'w_kc')[0]
+        w = tools.load_pickle(modeldir, 'w_kc')[0]
     w[np.isnan(w)] = 0
     distribution = w.flatten()
 
@@ -197,7 +197,7 @@ def plot_distribution(dir, epoch=None, xrange=1.0):
     else:
         cutoff, res_fit = infer_threshold(distribution)
 
-    save_path = os.path.join(figpath, tools.get_experiment_name(dir))
+    save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
     save_name = os.path.join(save_path, '_' + model_name + '_')
 
     _plot_distribution(
@@ -240,17 +240,17 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(dir, epoch=None, dynamic_thres=False,
+def plot_sparsity(modeldir, epoch=None, dynamic_thres=False,
                   visualize=False, thres=THRES, xrange=50, plot=True):
-    model_name = tools.get_model_name(dir)
+    model_name = tools.get_model_name(modeldir)
 
     if epoch is not None and epoch != -1:
-        dir = tools.get_modeldirs(os.path.join(dir, 'epoch'))[epoch]
+        modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
     try:
-        w = tools.load_pickle(dir, 'w_glo')[0]
+        w = tools.load_pickle(modeldir, 'w_glo')[0]
     except KeyError:
-        w = tools.load_pickle(dir, 'w_kc')[0]
+        w = tools.load_pickle(modeldir, 'w_kc')[0]
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
 
     if plot:
@@ -263,7 +263,7 @@ def plot_sparsity(dir, epoch=None, dynamic_thres=False,
             yrange = 1
         else:
             yrange = 0.5
-        save_path = os.path.join(figpath, tools.get_experiment_name(dir))
+        save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
         save_name = os.path.join(save_path, '_' + model_name + '_sparsity' + string)
         _plot_sparsity(sparsity, save_name, yrange= yrange, xrange=xrange)
     return sparsity
@@ -527,10 +527,3 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
     if plot_angle:
         name += '_angle'
     save_fig(path, name)
-
-# if __name__ == '__main__':
-#     dir = "../files/train_KC_claws"
-#     plot_sparsity(dir)
-#     plot_distribution(dir)
-
-
