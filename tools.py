@@ -238,8 +238,9 @@ def _islikemodeldir(d):
         files = os.listdir(d)
     except NotADirectoryError:
         return False
-    for file in files:
-        if 'model.ckpt' in file or 'log.pkl' in file or 'model.pkl' in file:
+    fs = ['model.ckpt', 'model.pkl', 'model.pt', 'log.pkl', 'log.npz']
+    for f in fs:
+        if f in files:
             return True
     return False
 
