@@ -103,13 +103,15 @@ def receptor():
 
 def receptor_analysis(path):
     select_dict = dict()
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.5)
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+
+    select_dict = dict()
     select_dict['kc_norm_pre'] = 'batch_norm'
     select_dict['ORN_NOISE_STD'] = 0.2
     select_dict['pn_norm_pre'] = None
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     dir = modeldirs[0]
-
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
 
     sa.plot_weights(dir)
 
@@ -391,6 +393,71 @@ def pn_normalization_analysis(path):
     # analysis_activity.distribution_activity(path, 'glo')
     # analysis_activity.distribution_activity(path, 'kc')
     # analysis_activity.sparseness_activity(path, 'kc')
+
+
+def vary_or_prune(n_pn=50):
+    """Training networks with different number of PNs and vary hyperparams."""
+    config = FullConfig()
+    config.max_epoch = 200
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.ORN_NOISE_STD = 0.  # No noise
+    config.skip_orn2pn = True  # Skip ORN-to-PN
+    config.pn_norm_pre = 'batch_norm'
+
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1./n_pn
+
+    # New settings
+    config.batch_size = 8192  # Much bigger batch size
+    config.initial_pn2kc = 10. / config.N_PN
+    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
+    config.lr = 2e-3
+
+    config_ranges = OrderedDict()
+    config_ranges['lr'] = [2e-2, 1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4]
+    config_ranges['N_KC'] = [2500, 5000, 10000]
+    config_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2.])/n_pn
+    config_ranges['initial_pn2kc'] = np.array([2.5, 5, 10., 20.])/n_pn
+    configs = vary_config(config, config_ranges, mode='control')
+    return configs
+
+
+def control_pn2kc_prune_hyper_analysis(path, n_pns):
+    import copy
+    for n_pn in n_pns:
+        cur_path = path + '_' + str(n_pn)
+        default = {'N_KC': 2500, 'lr': 1e-3, 'initial_pn2kc': 4. / n_pn,
+                   'kc_prune_threshold': 1. / n_pn}
+        ykeys = ['val_acc', 'K']
+        for yk in ykeys:
+            exclude_dict = None
+            if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+                # exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
+                pass
+
+            for xk, v in default.items():
+                temp = copy.deepcopy(default)
+                temp.pop(xk)
+                logx = True
+                # sa.plot_results(cur_path, xkey=k, ykey=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
+                #                 select_dict=temp,
+                #                 logx=logx)
+                #
+                # sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict)
+        #
+        res = standard.analysis_pn2kc_peter.do_everything(cur_path,
+                                                          filter_peaks=True,
+                                                          redo=True, range=.75)
+        for xk, v in default.items():
+            temp = copy.deepcopy(default)
+            temp.pop(xk)
+            sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_',
+                       ykey='lin_hist_', legend_key=xk, log=res,
+                       ax_args={'ylim': [0, 500]})
 
 
 def multihead():

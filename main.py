@@ -23,6 +23,7 @@ parser.add_argument('-t', '--train', nargs='+', help='Train experiments', defaul
 parser.add_argument('-a', '--analyze', nargs='+', help='Analyze experiments', default=[])
 parser.add_argument('-data', '--dataset', nargs='+', help='Make datasets', default=[])
 parser.add_argument('-test', '--testing', help='For debugging', action='store_true')
+parser.add_argument('-n', '--n_pn', help='Number of olfactory receptors', default=None, type=int)
 args = parser.parse_args()
 
 for item in args.__dict__.items():
@@ -33,6 +34,7 @@ experiments2train = args.train
 experiments2analyze = args.analyze
 datasets = args.dataset
 testing = args.testing
+n_pn = args.n_pn
 use_cluster = 'columbia' in platform.node()  # on columbia cluster
 
 if 'core' in experiments2train:
@@ -53,7 +55,8 @@ if 'supplement' in experiments2train:
     experiments2train = []  # To be added
 
 for experiment in experiments2train:
-    train_experiment(experiment, use_cluster=use_cluster, testing=testing)
+    train_experiment(experiment, use_cluster=use_cluster, testing=testing,
+                     n_pn=n_pn)
 
 for experiment in experiments2analyze:
     analyze_experiment(experiment)

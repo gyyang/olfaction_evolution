@@ -116,7 +116,7 @@ def cluster_train(config, path, train_arg=None):
 
 
 def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
-                     testing=False, **kwargs):
+                     testing=False, n_pn=None, **kwargs):
     """Train model across platforms given experiment name.
 
     Args:
@@ -141,7 +141,10 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
     for experiment_file in experiment_files:
         if experiment in dir(experiment_file):
             # Get list of configurations from experiment function
-            configs = getattr(experiment_file, experiment)()
+            if n_pn is None:
+                configs = getattr(experiment_file, experiment)()
+            else:
+                configs = getattr(experiment_file, experiment)(n_pn=n_pn)
             experiment_found = True
             break
         else:
