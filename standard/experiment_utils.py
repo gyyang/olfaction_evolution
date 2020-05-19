@@ -111,7 +111,8 @@ def cluster_train(config, path, train_arg=None):
         else:
             cmd = r'''python -c "import train; train.train_from_path(''' + arg + ''')"'''
 
-    jobfile = write_jobfile(cmd, jobname=experiment_name + '_' + model_name)
+    jobfile = write_jobfile(cmd, jobname=experiment_name + '_' + model_name,
+                            mem=12)
     subprocess.call(['sbatch', jobfile])
 
 

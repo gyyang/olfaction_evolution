@@ -399,6 +399,7 @@ def vary_or_prune(n_pn=50):
     """Training networks with different number of PNs and vary hyperparams."""
     config = FullConfig()
     config.max_epoch = 200
+    config.save_log_only = True
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
