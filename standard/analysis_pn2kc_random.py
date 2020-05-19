@@ -72,7 +72,7 @@ def _extract_paircounts(mat):
 
 
 def _get_claws(dir):
-    wglos = tools.load_pickle(os.path.join(dir, 'epoch'), 'w_glo')
+    wglos = tools.load_pickles(os.path.join(dir, 'epoch'), 'w_glo')
     wglo_binaries = []
     for i, wglo in enumerate(wglos):
         if i == 0:

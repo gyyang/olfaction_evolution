@@ -1,7 +1,6 @@
 """Model file."""
 
 import os
-import pickle
 
 import numpy as np
 import torch
@@ -11,7 +10,7 @@ from torch.nn import functional as F
 import math
 
 from configs import FullConfig, SingleLayerConfig
-import scipy.stats as st
+import tools
 
 
 def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
@@ -375,12 +374,6 @@ class FullModel(nn.Module):
 
         This is quite space-inefficient. But it's easier to read out.
         """
-        save_path = self.config.save_path
-        if epoch is not None:
-            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
-        os.makedirs(save_path, exist_ok=True)
-        fname = os.path.join(save_path, 'model.pkl')
-
         var_dict = dict()
         for name, param in self.named_parameters():
             var_dict[name] = param.data.cpu().numpy()
@@ -393,8 +386,8 @@ class FullModel(nn.Module):
         if self.multihead:
             var_dict['w_out2'] = self.w_out2
 
-        with open(fname, 'wb') as f:
-            pickle.dump(var_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+        save_path = self.config.save_path
+        tools.save_pickle(save_path, var_dict, epoch=epoch)
         print("Model weights saved in path: %s" % save_path)
 
     def lesion_units(self, name, units, verbose=False, arg='outbound'):

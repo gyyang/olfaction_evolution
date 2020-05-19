@@ -170,9 +170,9 @@ for dataset in datasets:
 #                                          ]},
 #                         figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65), sort=False)
 #         # import tools
-#         # rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
-#         # rho = tools.load_pickle(path, 'model/layer1/rho:0')
-#         # m = tools.load_pickle(path, 'model/layer1/m:0')
+#         # rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
+#         # rho = tools.load_pickles(path, 'model/layer1/rho:0')
+#         # m = tools.load_pickles(path, 'model/layer1/m:0')
 #         # print(rmax)
 #         # print(rho)
 #         # print(m)

@@ -19,9 +19,9 @@ def plot_weight_change_vs_meta_update_magnitude(path, mat, dir_ix, xlim = 25):
     dir = dirs[dir_ix]
     epoch_path = os.path.join(dir, 'epoch')
     lr_ix = 0
-    list_of_wglo = tools.load_pickle(epoch_path, 'w_glo')
-    list_of_worn = tools.load_pickle(epoch_path, 'w_orn')
-    list_of_lr = tools.load_pickle(epoch_path, 'model/lr:0')
+    list_of_wglo = tools.load_pickles(epoch_path, 'w_glo')
+    list_of_worn = tools.load_pickles(epoch_path, 'w_orn')
+    list_of_lr = tools.load_pickles(epoch_path, 'model/lr:0')
 
     weight_diff = []
     for i in range(len(list_of_wglo)-1):

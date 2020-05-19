@@ -346,19 +346,43 @@ def get_model_name(model_path):
     return model_name
 
 
-def load_pickle(dir, var):
+def save_pickle(modeldir, obj, epoch=None):
+    """Save model weights in numpy.
+
+    Args:
+        modeldir: str, model directory
+        obj: dictionary of numpy arrays
+        epoch: int or None, epoch of training
+    """
+    if epoch is not None:
+        modeldir = os.path.join(modeldir, 'epoch', str(epoch).zfill(4))
+    os.makedirs(modeldir, exist_ok=True)
+    fname = os.path.join(modeldir, 'model.npz')
+    np.savez_compressed(fname, **obj)
+
+
+def load_pickle(modeldir):
+    file_np = os.path.join(modeldir, 'model.npz')
+    file_pkl = os.path.join(modeldir, 'model.pkl')
+    if os.path.isfile(file_np):
+        var_dict = np.load(file_np)
+    else:
+        with open(file_pkl, 'rb') as f:
+            var_dict = pickle.load(f)
+    return var_dict
+
+
+def load_pickles(dir, var):
     """Load pickle by epoch in sorted order."""
     out = []
     dirs = get_modeldirs(dir)
     for i, d in enumerate(dirs):
-        model_dir = os.path.join(d, 'model.pkl')
-        with open(model_dir, 'rb') as f:
-            var_dict = pickle.load(f)
-            try:
-                cur_val = var_dict[var]
-                out.append(cur_val)
-            except:
-                print(var + ' is not in directory:' + d)
+        var_dict = load_pickle(d)
+        try:
+            cur_val = var_dict[var]
+            out.append(cur_val)
+        except:
+            print(var + ' is not in directory:' + d)
     return out
 
 
@@ -431,7 +455,11 @@ def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix
                 res[k].append(getattr(config, k))
 
     for key, val in res.items():
-        res[key] = np.array(val)
+        try:
+            res[key] = np.array(val)
+        except ValueError:
+            print('Cannot turn' + key +
+                  'into np array, probably non-homogeneous shape')
 
     try:
         res['val_logloss'] = np.log(res['val_loss'])

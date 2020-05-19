@@ -64,7 +64,7 @@ def do_everything(path, filter_peaks = False, redo=False, range = 2):
         chain_defaultdicts(res, temp)
 
     if redo:
-        wglos = tools.load_pickle(path, 'w_glo')
+        wglos = tools.load_pickles(path, 'w_glo')
         for i, wglo in enumerate(wglos):
             w = wglo.flatten()
             hist, bins = np.histogram(w, bins=1000, range=[0, range])

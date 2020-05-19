@@ -46,13 +46,13 @@ def _get_data(modeldir):
         data_norm: normalized array
     """
     if settings.use_torch:
-        wout1 = tools.load_pickle(modeldir, 'w_out')[-1]
-        wout2 = tools.load_pickle(modeldir, 'w_out2')[-1]
+        wout1 = tools.load_pickles(modeldir, 'w_out')[-1]
+        wout2 = tools.load_pickles(modeldir, 'w_out2')[-1]
     else:
-        wout1 = tools.load_pickle(modeldir, 'model/layer3/kernel:0')[-1]
-        wout2 = tools.load_pickle(modeldir, 'model/layer3_2/kernel:0')[-1]
+        wout1 = tools.load_pickles(modeldir, 'model/layer3/kernel:0')[-1]
+        wout2 = tools.load_pickles(modeldir, 'model/layer3_2/kernel:0')[-1]
 
-    wglo = tools.load_pickle(modeldir, 'w_glo')[-1]
+    wglo = tools.load_pickles(modeldir, 'w_glo')[-1]
     config = tools.load_config(modeldir)
 
     if config.kc_prune_weak_weights:

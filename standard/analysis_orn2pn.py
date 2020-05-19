@@ -91,7 +91,7 @@ def correlation_across_epochs(save_path, legend = None, arg = 'weight'):
         epoch_dirs = tools.get_modeldirs(os.path.join(d,'epoch'))
         for epoch_dir in epoch_dirs:
             if arg == 'weight':
-                data = tools.load_pickle(epoch_dir, 'w_orn')[0]
+                data = tools.load_pickles(epoch_dir, 'w_orn')[0]
             elif arg == 'activity':
                 glo_in, glo_out, kc_out, results = _load_epoch_activity(d, epoch_dir)
                 data = glo_out
@@ -135,7 +135,7 @@ def multiglo_gloscores(path, ix, cutoff, shuffle=False, vlim=[0, 5]):
 
         tools.save_fig(path, 'ix_' + str(ix) + '_cutoff_' + string)
 
-    w_orns = tools.load_pickle(path, 'w_orn')
+    w_orns = tools.load_pickles(path, 'w_orn')
     w_orn = w_orns[ix]
     w_orn = tools._reshape_worn(w_orn, unique_orn=50)
     w_orn = w_orn.mean(axis=0)
@@ -182,7 +182,7 @@ def multiglo_gloscores(path, ix, cutoff, shuffle=False, vlim=[0, 5]):
 
 def multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad):
     # weights
-    w_kcs = tools.load_pickle(path, 'w_glo')
+    w_kcs = tools.load_pickles(path, 'w_glo')
     w_kc = w_kcs[ix]
     sum_kc_weights = np.sum(w_kc, axis=1)
     weight_to_good = sum_kc_weights[ix_good]
@@ -274,7 +274,7 @@ def multiglo_lesion(path, ix, ix_good, ix_bad):
 
 
 def correlation_matrix(path, ix, arg ='ortho', vlim=None):
-    w_orns = tools.load_pickle(path, 'w_orn')
+    w_orns = tools.load_pickles(path, 'w_orn')
     w_orn = w_orns[ix]
 
     out = np.zeros((w_orn.shape[1], w_orn.shape[1]))

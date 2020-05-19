@@ -101,7 +101,7 @@ def analyze_t0(path, dir_ix):
     dirs = [os.path.join(path, n) for n in os.listdir(path)]
     save_path = dirs[dir_ix]
     config = tools.load_config(save_path)
-    w_rnn = tools.load_pickle(path, 'w_rnn')[dir_ix]
+    w_rnn = tools.load_pickles(path, 'w_rnn')[dir_ix]
     rnn_outputs = _load_activity(save_path)
 
     N_ORN = config.N_ORN * config.N_ORN_DUPLICATION
@@ -118,7 +118,7 @@ def analyze_t_greater(path, dir_ix, threshold = 0.05):
     dirs = [os.path.join(path, n) for n in os.listdir(path)]
     save_path = dirs[dir_ix]
     config = tools.load_config(save_path)
-    w_rnn = tools.load_pickle(path, 'w_rnn')[dir_ix]
+    w_rnn = tools.load_pickles(path, 'w_rnn')[dir_ix]
     rnn_outputs = _load_activity(save_path)
 
     N_OR = config.N_ORN

@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Oct  6 13:29:30 2019
-
-@author: robert_yang
-"""
-
-"""Specifically analyze results from vary_lr_n_kc experiments"""
+"""Analyze experiments varying number of ORs"""
 
 import os
 import sys
@@ -20,8 +14,6 @@ rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 import tools
-from tools import nicename
-from tools import save_fig
 from standard.analysis_pn2kc_training import plot_all_K
 
 

@@ -488,17 +488,17 @@ def pn_normalization_direct():
 
     # TODO: hyperparameter search
     # try:
-    #     rmax = tools.load_pickle(path, 'model/layer1/r_max:0')
+    #     rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
     #     print('rmax: {}'.format(rmax))
-    #     rho = tools.load_pickle(path, 'model/layer1/rho:0')
+    #     rho = tools.load_pickles(path, 'model/layer1/rho:0')
     #     print('rho: {}'.format(rho))
-    #     m = tools.load_pickle(path, 'model/layer1/m:0')
+    #     m = tools.load_pickles(path, 'model/layer1/m:0')
     #     print('m: {}'.format(m))
     # except:
     #     pass
     #
     # try:
-    #     gamma = tools.load_pickle(path, 'model/layer1/LayerNorm/gamma:0')
+    #     gamma = tools.load_pickles(path, 'model/layer1/LayerNorm/gamma:0')
     #     print('gamma params: {}'.format(gamma))
     # except:
     #     pass

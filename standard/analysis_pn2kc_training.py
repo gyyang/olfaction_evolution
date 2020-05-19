@@ -144,7 +144,7 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
         dict_methods.chain_defaultdicts(res, temp)
 
     if redo:
-        wglos = tools.load_pickle(path, 'w_glo')
+        wglos = tools.load_pickles(path, 'w_glo')
         for i, wglo in enumerate(wglos):
             w = wglo.flatten()
             hist, bins = np.histogram(w, bins=1000, range=[0, range])
@@ -181,9 +181,9 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0):
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
     try:
-        w = tools.load_pickle(modeldir, 'w_glo')[0]
+        w = tools.load_pickles(modeldir, 'w_glo')[0]
     except KeyError:
-        w = tools.load_pickle(modeldir, 'w_kc')[0]
+        w = tools.load_pickles(modeldir, 'w_kc')[0]
     w[np.isnan(w)] = 0
     distribution = w.flatten()
 
@@ -212,9 +212,9 @@ def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
                      thres=THRES):
     print('compute sparsity needs to be replaced')
     try:
-        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_glo')
+        wglos = tools.load_pickles(os.path.join(d, 'epoch'), 'w_glo')
     except KeyError:
-        wglos = tools.load_pickle(os.path.join(d, 'epoch'), 'w_kc')
+        wglos = tools.load_pickles(os.path.join(d, 'epoch'), 'w_kc')
     w = wglos[epoch]
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
     return sparsity
@@ -248,9 +248,9 @@ def plot_sparsity(modeldir, epoch=None, dynamic_thres=False,
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
     try:
-        w = tools.load_pickle(modeldir, 'w_glo')[0]
+        w = tools.load_pickles(modeldir, 'w_glo')[0]
     except KeyError:
-        w = tools.load_pickle(modeldir, 'w_kc')[0]
+        w = tools.load_pickles(modeldir, 'w_kc')[0]
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
 
     if plot:
