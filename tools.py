@@ -459,8 +459,8 @@ def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix
         try:
             res[key] = np.array(val)
         except ValueError:
-            print('Cannot turn' + key +
-                  'into np array, probably non-homogeneous shape')
+            print('Cannot turn ' + key +
+                  ' into np array, probably non-homogeneous shape')
 
     try:
         res['val_logloss'] = np.log(res['val_loss'])

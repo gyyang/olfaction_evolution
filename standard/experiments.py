@@ -419,12 +419,20 @@ def vary_or_prune(n_pn=50):
     config.lr = 2e-3
 
     config_ranges = OrderedDict()
+    config_ranges['N_KC'] = [10000, 5000, 2500]
     config_ranges['lr'] = [2e-2, 1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4]
-    config_ranges['N_KC'] = [2500, 5000, 10000]
     config_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2.])/n_pn
     config_ranges['initial_pn2kc'] = np.array([2.5, 5, 10., 20.])/n_pn
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def vary_or_prune_analysis(path):
+    select_dict = {}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+        modeldirs, exclude_badkc=True, exclude_badpeak=True)
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_inferred'])
 
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):

@@ -78,7 +78,7 @@ def filter_modeldirs_badpeak(modeldirs, peak_threshold=0.1):
         log = tools.load_log(d)
         config = tools.load_config(d)
         if config.kc_prune_weak_weights:
-            thres = config.kc_prune_thresold
+            thres = config.kc_prune_threshold
         else:
             thres = log['thres_inferred'][-1]  # last epoch
         bins = log['lin_bins'][:-1]

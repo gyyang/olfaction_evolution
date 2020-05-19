@@ -168,7 +168,7 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
             local_train(config, path=path, train_arg=train_arg, **kwargs)
 
 
-def analyze_experiment(experiment):
+def analyze_experiment(experiment, n_pn=None):
     path = './files/' + experiment
 
     experiment_files = [experiments, experiment_controls]
@@ -176,7 +176,11 @@ def analyze_experiment(experiment):
     experiment_found = False
     for experiment_file in experiment_files:
         if (experiment + '_analysis') in dir(experiment_file):
-            getattr(experiment_file, experiment + '_analysis')(path)
+            if n_pn is None:
+                getattr(experiment_file, experiment + '_analysis')(path)
+            else:
+                path = path + '_pn' + str(n_pn)
+                getattr(experiment_file, experiment + '_analysis')(path)
             experiment_found = True
             break
         else:

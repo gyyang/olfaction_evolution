@@ -59,7 +59,7 @@ for experiment in experiments2train:
                      n_pn=n_pn)
 
 for experiment in experiments2analyze:
-    analyze_experiment(experiment)
+    analyze_experiment(experiment, n_pn=n_pn)
 
 for dataset in datasets:
     make_dataset(dataset)
