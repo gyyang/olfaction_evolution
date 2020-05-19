@@ -422,7 +422,7 @@ def vary_or_prune(n_pn=50):
     config_ranges['N_KC'] = [2500, 5000, 10000]
     config_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2.])/n_pn
     config_ranges['initial_pn2kc'] = np.array([2.5, 5, 10., 20.])/n_pn
-    configs = vary_config(config, config_ranges, mode='control')
+    configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 

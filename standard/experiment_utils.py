@@ -154,7 +154,10 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
         raise ValueError('Experiment not found: ', experiment)
 
     for config in configs:
-        config.experiment_name = experiment
+        if n_pn is None:
+            config.experiment_name = experiment
+        else:
+            config.experiment_name = experiment + '_pn' + str(n_pn)
         if testing:
             config.max_epoch = 2
 
