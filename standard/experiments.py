@@ -49,7 +49,7 @@ def standard_analysis(path):
     dir = modeldirs[0]
 
     # accuracy
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
 
     # weight matrices
     sa.plot_weights(dir)
@@ -104,7 +104,7 @@ def receptor():
 def receptor_analysis(path):
     select_dict = dict()
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.5)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
 
     select_dict = dict()
     select_dict['kc_norm_pre'] = 'batch_norm'
@@ -152,7 +152,7 @@ def standard_vary_hp_analysis(path):
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.75)
     modeldirs = analysis_pn2kc_training.filter_modeldirs(
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_inferred'])
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
 
 
 def rnn():
@@ -432,7 +432,7 @@ def vary_or_prune_analysis(path):
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     modeldirs = analysis_pn2kc_training.filter_modeldirs(
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_inferred'])
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'])
 
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):
@@ -444,7 +444,7 @@ def control_pn2kc_prune_hyper_analysis(path, n_pns):
         ykeys = ['val_acc', 'K']
         for yk in ykeys:
             exclude_dict = None
-            if yk in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity']:
+            if yk in ['K_smart', 'sparsity_inferred', 'K', 'sparsity']:
                 # exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
                 pass
 
