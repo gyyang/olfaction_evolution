@@ -197,10 +197,9 @@ def plot_single_net(res):
     plt.ylabel('Val acc')
 
 
-
 def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
     """Plot results from all networks.
-    
+
     Args:
         n_orns: list of N_PN
         res_all: a dictionary of results. Each entry is itself a dictionary
@@ -232,13 +231,13 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
             lr_used = lr_criterion
         net_lr_used = lr == lr_used
         # print(np.min(lr))
-        
-        mean_val_acc = val_acc[net_lr_used].mean(axis=0)  
+
+        mean_val_acc = val_acc[net_lr_used].mean(axis=0)
         if epoch_name == 'max_acc':
             epoch_plot = np.argmax(mean_val_acc)
         else:
             epoch_plot = epoch_name
-        
+
         print('')
         print('N_ORN ', str(n_orn))
         print('LR used', str(lr_used), ' out of ', np.unique(res['lr']))
@@ -248,30 +247,31 @@ def plot_all_nets(n_orns, res_all, lr_criterion='max', epoch_name=5):
         print('K', K[net_lr_used, epoch_plot])
         print('Prune threshold', kc_prune_threshold[net_lr_used], ' out of ',
               np.unique(res['kc_prune_threshold']))
-        
+
         # plt.figure()
         # plt.plot(mean_val_acc[2:])
-        
-# =============================================================================
-#         plt.figure()
-#         _ = plt.plot(val_acc[net_maxlr][:, 1:].T)
-#         plt.title('N={:d}, LR={:0.1E}'.format(n_orn, np.max(lr)))
-# =============================================================================
-            
+
+        # =============================================================================
+        #         plt.figure()
+        #         _ = plt.plot(val_acc[net_maxlr][:, 1:].T)
+        #         plt.title('N={:d}, LR={:0.1E}'.format(n_orn, np.max(lr)))
+        # =============================================================================
+
         epoch_plots.append(epoch_plot)
         Ks.append(K[net_lr_used, epoch_plot])
         lr_useds.append(lr_used)
         # print('N={:d}'.format(n_orn))
         # print('Epoch used {:d}'.format(epoch_plot))
-        
-    new_Ks = np.array([K for K in Ks if len(K)>0])
-    new_n_orns = np.array([n for n, K in zip(n_orns, Ks) if len(K)>0])
+
+    new_Ks = np.array([K for K in Ks if len(K) > 0])
+    new_n_orns = np.array([n for n, K in zip(n_orns, Ks) if len(K) > 0])
     plot_all_K(new_n_orns, new_Ks, plot_box=True,
                plot_dim=True, path='manymodel')
-    plt.title(str(lr_criterion)+' LR, ' + str(epoch_name) + ' Epoch')
-    
+    plt.title(str(lr_criterion) + ' LR, ' + str(epoch_name) + ' Epoch')
+
     plot_all_K(new_n_orns, new_Ks, plot_box=True, plot_angle=True,
                path='manymodel')
+
 
 
 if __name__ == '__main__':

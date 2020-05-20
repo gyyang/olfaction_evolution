@@ -427,13 +427,31 @@ def vary_or_prune(n_pn=50):
     return configs
 
 
-def vary_or_prune_analysis(path):
-    select_dict = {}
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
-        modeldirs, exclude_badkc=True, exclude_badpeak=True)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'])
+def vary_or_prune_analysis(path, n_pn=None):
+    if n_pn is not None:
+        # Analyze individual network
+        select_dict = {}
+        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+        modeldirs = analysis_pn2kc_training.filter_modeldirs(
+            modeldirs, exclude_badkc=True, exclude_badpeak=True)
+        sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'])
 
+    else:
+        import glob
+        path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
+        folders = glob.glob(path + '*')
+        n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
+        Ks = list()
+        for n_orn in n_orns:
+            modeldirs = tools.get_modeldirs(path + str(n_orn), acc_min=0.75)
+            modeldirs = analysis_pn2kc_training.filter_modeldirs(
+                modeldirs, exclude_badkc=True, exclude_badpeak=True)
+            res = tools.load_all_results(modeldirs)
+            Ks.append(res['K_smart'])
+
+        analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
+                                           plot_dim=True,
+                                           path='vary_or_prune')
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):
     import copy

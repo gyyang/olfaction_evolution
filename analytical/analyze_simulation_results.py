@@ -96,7 +96,7 @@ def _load_result(filename, v_name='theta'):
     yerr_high = list()
     for value in xs:
         fn = filename + str(value)
-        _filename = '../files/analytical/' + fn + '.pkl'
+        _filename = './files/analytical/' + fn + '.pkl'
 
         optimal_K, conf_int, K_range = load_optimal_K(_filename, v_name=v_name)
         # print('m:' + str(value))

@@ -180,7 +180,7 @@ def analyze_experiment(experiment, n_pn=None):
                 getattr(experiment_file, experiment + '_analysis')(path)
             else:
                 path = path + '_pn' + str(n_pn)
-                getattr(experiment_file, experiment + '_analysis')(path)
+                getattr(experiment_file, experiment + '_analysis')(path, n_pn=n_pn)
             experiment_found = True
             break
         else:
