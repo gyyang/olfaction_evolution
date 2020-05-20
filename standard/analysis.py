@@ -118,6 +118,12 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         save_path: str or list of strs
 
     """
+    if ykeys is None:
+        ykeys = ['val_logloss', 'train_logloss', 'val_loss',
+                 'train_loss', 'val_acc', 'glo_score']
+
+    if isinstance(ykeys, str):
+        ykeys = [ykeys]
 
     res = tools.load_all_results(save_path, argLast=False,
                                  select_dict=select_dict,
@@ -181,13 +187,6 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         if epoch_range:
             figname += '_epoch_range_' + str(epoch_range[1])
         tools.save_fig(save_path, figname)
-
-    if ykeys is None:
-        ykeys = ['val_logloss', 'train_logloss', 'val_loss',
-                 'train_loss', 'val_acc', 'glo_score']
-
-    if isinstance(ykeys, str):
-        ykeys = [ykeys]
 
     for plot_var in ykeys:
         _plot_progress('epoch', plot_var)

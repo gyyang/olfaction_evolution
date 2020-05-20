@@ -403,8 +403,8 @@ def load_log(modeldir):
     return log
 
 
-def load_all_results(path, select_dict=None, exclude_dict=None, argLast=True, ix=None,
-                     exclude_early_models=True):
+def load_all_results(path, select_dict=None, exclude_dict=None,
+                     argLast=True, ix=None, exclude_early_models=True):
     """Load results from path.
 
     Args:
