@@ -87,8 +87,12 @@ def filter_modeldirs_badpeak(modeldirs, peak_threshold=0.1):
         # log['lin_bins'] shape (nbin+1), log['lin_hist'] shape (n_epoch, nbin)
         ind_thres = np.argsort(np.abs(bins - thres))[0]
         ind_grace = int(0.01 / bin_size)  # grace distance to start find peak
-        ind_peak = np.argmax(hist[ind_thres+ind_grace:])
-        if ind_peak * bin_size <= peak_threshold:
+        hist_abovethres = hist[ind_thres+ind_grace:]
+        ind_peak = np.argmax(hist_abovethres)
+        # Value at threshold and at peak
+        thres_value = hist_abovethres[0]
+        peak_value = hist_abovethres[ind_peak]
+        if ind_peak * bin_size <= peak_threshold or peak_value < 1.3 * thres_value:
             # peak should be at least 'peak_threshold' away from threshold
             selected = False
 
