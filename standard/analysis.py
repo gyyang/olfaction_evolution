@@ -14,7 +14,7 @@ sys.path.append(rootpath)
 
 import tools
 from tools import nicename
-from standard.analysis_pn2kc_training import check_single_peak
+# from standard.analysis_pn2kc_training import check_single_peak
 
 
 figpath = os.path.join(rootpath, 'figures')

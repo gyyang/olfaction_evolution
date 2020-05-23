@@ -113,17 +113,17 @@ def receptor_analysis(path):
     select_dict['ORN_NOISE_STD'] = 0.2
     select_dict['pn_norm_pre'] = None
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    dir = modeldirs[0]
+    modeldir = modeldirs[0]
 
-    sa.plot_weights(dir)
+    sa.plot_weights(modeldir)
 
-    analysis_pn2kc_training.plot_distribution(dir, xrange=3.0)
-    analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
+    analysis_pn2kc_training.plot_distribution(modeldir, xrange=3.0)
+    analysis_pn2kc_training.plot_sparsity(modeldir, dynamic_thres=True, epoch=-1)
 
-    analysis_pn2kc_training.plot_log_distribution_movie(dir)
+    analysis_pn2kc_training.plot_log_distribution_movie(modeldir)
 
-    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
-    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+    analysis_activity.distribution_activity(modeldir, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(modeldir, ['glo', 'kc'])
 
 
 def standard_vary_hp():
