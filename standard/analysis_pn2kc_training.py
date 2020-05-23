@@ -203,7 +203,7 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(modeldir, epoch=None, dynamic_thres=False,
+def plot_sparsity(modeldir, epoch=None, dynamic_thres=True,
                   visualize=False, thres=THRES, xrange=50, plot=True):
     model_name = tools.get_model_name(modeldir)
 
