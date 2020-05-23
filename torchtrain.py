@@ -44,8 +44,12 @@ def _log_full_model_train_pn2kc(log, model, res, config):
     log['kc_w_sum'].append(w_glo.sum(axis=0))
     # Store sparsity computed with threshold
 
-    sparsity_inferred, thres_inferred = _compute_sparsity(
-        w_glo, dynamic_thres=True)
+    if config.kc_prune_weak_weights:
+        sparsity_inferred, thres_inferred = _compute_sparsity(
+            w_glo, dynamic_thres=False, thres=config.kc_prune_threshold)
+    else:
+        sparsity_inferred, thres_inferred = _compute_sparsity(
+            w_glo, dynamic_thres=True)
     K_inferred = sparsity_inferred[sparsity_inferred > 0].mean()
     bad_KC_inferred = np.sum(
         sparsity_inferred == 0) / sparsity_inferred.size
