@@ -181,10 +181,7 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
                      thres=THRES):
     print('compute sparsity needs to be replaced')
-    try:
-        wglos = tools.load_pickles(os.path.join(d, 'epoch'), 'w_glo')
-    except KeyError:
-        wglos = tools.load_pickles(os.path.join(d, 'epoch'), 'w_kc')
+    wglos = tools.load_pickles(os.path.join(d, 'epoch'), 'w_glo')
     w = wglos[epoch]
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
     return sparsity
@@ -217,10 +214,7 @@ def plot_sparsity(modeldir, epoch=None, dynamic_thres=False,
     if epoch is not None and epoch != -1:
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
-    try:
-        w = tools.load_pickles(modeldir, 'w_glo')[0]
-    except KeyError:
-        w = tools.load_pickles(modeldir, 'w_kc')[0]
+    w = tools.load_pickles(modeldir, 'w_glo')[0]
     sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
 
     if plot:
@@ -235,7 +229,7 @@ def plot_sparsity(modeldir, epoch=None, dynamic_thres=False,
             yrange = 0.5
         save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
         save_name = os.path.join(save_path, '_' + model_name + '_sparsity' + string)
-        _plot_sparsity(sparsity, save_name, yrange= yrange, xrange=xrange)
+        _plot_sparsity(sparsity, save_name, yrange=yrange, xrange=xrange)
     return sparsity
 
 
@@ -269,10 +263,7 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0):
     if epoch is not None:
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
-    try:
-        w = tools.load_pickles(modeldir, 'w_glo')[0]
-    except KeyError:
-        w = tools.load_pickles(modeldir, 'w_kc')[0]
+    w = tools.load_pickles(modeldir, 'w_glo')[0]
     w[np.isnan(w)] = 0
     distribution = w.flatten()
 
