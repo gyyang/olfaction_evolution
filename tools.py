@@ -19,7 +19,7 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
 
-def save_fig(save_path, figname='', dpi=300, pdf=True, show=False):
+def get_figname(save_path, figname=''):
     # For backward compatability
     if isinstance(save_path, str):
         save_name = os.path.split(save_path)[-1]
@@ -33,6 +33,11 @@ def save_fig(save_path, figname='', dpi=300, pdf=True, show=False):
     path = os.path.join(FIGPATH, save_name)
     os.makedirs(path, exist_ok=True)
     figname = os.path.join(path, save_name + figname)
+    return figname
+
+
+def save_fig(save_path, figname='', dpi=300, pdf=True, show=False):
+    figname = get_figname(save_path, figname)
     plt.savefig(os.path.join(figname + '.png'), dpi=dpi)
     print('Figure saved at: ' + figname)
 

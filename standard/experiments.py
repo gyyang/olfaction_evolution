@@ -64,6 +64,8 @@ def standard_analysis(path):
     analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
 
+    analysis_pn2kc_training.plot_log_distribution_movie(dir)
+
     # pn-kc random
     # analysis_pn2kc_random.plot_cosine_similarity(
     #     dir, shuffle_arg='preserve', log=False)
@@ -117,6 +119,8 @@ def receptor_analysis(path):
 
     analysis_pn2kc_training.plot_distribution(dir, xrange=3.0)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
+
+    analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
     analysis_activity.distribution_activity(dir, ['glo', 'kc'])
     analysis_activity.sparseness_activity(dir, ['glo', 'kc'])

@@ -7,6 +7,7 @@ from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.animation as animation
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 
@@ -177,41 +178,6 @@ def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=Non
     return res
 
 
-def plot_distribution(modeldir, epoch=None, xrange=1.0):
-    """Plot weight distribution from a single model path."""
-    model_name = tools.get_model_name(modeldir)
-
-    if epoch is not None:
-        modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
-
-    try:
-        w = tools.load_pickles(modeldir, 'w_glo')[0]
-    except KeyError:
-        w = tools.load_pickles(modeldir, 'w_kc')[0]
-    w[np.isnan(w)] = 0
-    distribution = w.flatten()
-
-    if epoch is not None:
-        string = '_epoch_' + str(epoch)
-    else:
-        string = ''
-
-    if epoch == 0:
-        cutoff, res_fit = None, None
-    else:
-        cutoff, res_fit = infer_threshold(distribution)
-
-    save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
-    save_name = os.path.join(save_path, '_' + model_name + '_')
-
-    _plot_distribution(
-        distribution, save_name + 'distribution' + string,
-        cutoff=cutoff, xrange=xrange, yrange=5000)
-    _plot_log_distribution(
-        distribution, save_name + 'log_distribution' + string,
-        cutoff=cutoff, xrange=xrange, yrange=5000, res_fit=res_fit)
-
-
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
                      thres=THRES):
     print('compute sparsity needs to be replaced')
@@ -296,6 +262,41 @@ def _plot_sparsity(data, savename, xrange=50, yrange=.5):
     tools.save_fig(split[0], split[1])
 
 
+def plot_distribution(modeldir, epoch=None, xrange=1.0):
+    """Plot weight distribution from a single model path."""
+    model_name = tools.get_model_name(modeldir)
+
+    if epoch is not None:
+        modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
+
+    try:
+        w = tools.load_pickles(modeldir, 'w_glo')[0]
+    except KeyError:
+        w = tools.load_pickles(modeldir, 'w_kc')[0]
+    w[np.isnan(w)] = 0
+    distribution = w.flatten()
+
+    if epoch is not None:
+        string = '_epoch_' + str(epoch)
+    else:
+        string = ''
+
+    if epoch == 0:
+        cutoff, res_fit = None, None
+    else:
+        cutoff, res_fit = infer_threshold(distribution)
+
+    save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
+    save_name = os.path.join(save_path, '_' + model_name + '_')
+
+    _plot_distribution(
+        distribution, save_name + 'distribution' + string,
+        cutoff=cutoff, xrange=xrange, yrange=5000)
+    _plot_log_distribution(
+        distribution, save_name + 'log_distribution' + string,
+        cutoff=cutoff, xrange=xrange, yrange=5000, res_fit=res_fit)
+
+
 def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0,
                            res_fit=None):
     x = np.log(data + 1e-10)
@@ -310,6 +311,7 @@ def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0,
     else:
         weights = np.ones_like(x) / float(len(x))
         plt.hist(x, bins=50, range=[-12, 3], weights=weights)
+
     ax.set_xlabel('PN to KC Weight')
     ax.set_ylabel('Distribution of Connections')
     ax.set_xticks(xticks_log)
@@ -409,6 +411,53 @@ def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
 
         split = os.path.split(savename)
         tools.save_fig(split[0], split[1])
+
+
+def plot_log_distribution_movie(modeldir):
+    log = tools.load_log(modeldir)
+
+    xticks = ['$10^{-6}$','$10^{-4}$', '.01', '1']
+    xticks_log = np.log([1e-6, 1e-4, 1e-2, 1])
+
+    fig = plt.figure(figsize=(2, 1.5))
+    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
+
+    xdata, ydata = log['log_bins'][:-1], log['log_hist'][0]
+
+    fig = plt.figure(figsize=(2, 1.5))
+    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
+    ln, = ax.plot(xdata, ydata)
+
+    ax.set_xlabel('PN to KC Weight')
+    ax.set_ylabel('Distribution of Connections')
+    ax.set_xticks(xticks_log)
+    ax.set_xticklabels(xticks)
+
+    ymax = np.max(log['log_hist'][1:]) * 1.2
+    plt.ylim([0, ymax])
+    plt.xlim([-12, 3])
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
+    title = ax.text(0.35, 1.05, "", transform=ax.transAxes, ha='left')
+
+    # animation function.  This is called sequentially
+    def animate(i):
+        ln.set_data(xdata, log['log_hist'][i])
+        title.set_text('Epoch ' + str(i).rjust(3))
+        return ln,
+
+    # call the animator.  blit=True means only re-draw the parts that have changed.
+    n_time = log['log_hist'].shape[0]
+    anim = animation.FuncAnimation(fig, animate,
+                                   frames=n_time, interval=20, blit=True)
+    writer = animation.writers['ffmpeg'](fps=30)
+    split = os.path.split(modeldir)
+    figname = tools.get_figname(split[0], split[1])
+    anim.save(figname + 'log_distribution_movie.mp4', writer=writer, dpi=600)
 
 
 def plot_all_K(n_orns, Ks, plot_scatter=False,
