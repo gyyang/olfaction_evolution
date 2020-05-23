@@ -35,8 +35,11 @@ def _log_full_model_train_pn2kc(log, model, res, config):
     # Store distribution of flattened weigths
     log_hist, _ = np.histogram(np.log(w_glo.flatten()),
                                bins=log['log_bins'])
-    hist, _ = np.histogram(w_glo.flatten(), bins=log['lin_bins'])
+
+    lin_bins = np.linspace(0, np.max(w_glo)*1.01, 1001)
+    hist, _ = np.histogram(w_glo.flatten(), bins=lin_bins)
     log['log_hist'].append(log_hist)
+    log['lin_bins'].append(lin_bins)
     log['lin_hist'].append(hist)
     log['kc_w_sum'].append(w_glo.sum(axis=0))
     # Store sparsity computed with threshold
@@ -128,7 +131,6 @@ def train(config, reload=False, save_everytrainloss=False):
     res = {'acc': np.nan}
     total_time, start_time = 0, time.time()
 
-    log['lin_bins'] = np.linspace(0, 1, 1001)
     log['log_bins'] = np.linspace(-20, 5, 201)
     log['activity_bins'] = np.linspace(0, 1, 201)
 

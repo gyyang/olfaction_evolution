@@ -106,7 +106,7 @@ def receptor():
 def receptor_analysis(path):
     select_dict = dict()
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.5)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
+    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
 
     select_dict = dict()
     select_dict['kc_norm_pre'] = 'batch_norm'
@@ -114,7 +114,6 @@ def receptor_analysis(path):
     select_dict['pn_norm_pre'] = None
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     modeldir = modeldirs[0]
-
     sa.plot_weights(modeldir)
 
     analysis_pn2kc_training.plot_distribution(modeldir, xrange=3.0)

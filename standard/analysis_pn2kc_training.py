@@ -42,6 +42,7 @@ def check_single_peak_obsolete(bins, hist, threshold):
     Returns:
         peak_ind: bool array (n_networks), True if single peak
     """
+    # TODO: This has a problem if lin_bins doesn't cover the second peak
     peak_ind = np.zeros_like(threshold).astype(np.bool)
     for i, thres in enumerate(threshold):
         # find location of threshold
@@ -69,6 +70,7 @@ def filter_modeldirs_badkc(modeldirs, bad_kc_threshold=0.2):
 
 def has_singlepeak(modeldir, peak_threshold=0.1):
     """Check if model has a single peak."""
+    # TODO: Use this method throughout to replace similar methods
     log = tools.load_log(modeldir)
     config = tools.load_config(modeldir)
     if config.kc_prune_weak_weights:
@@ -92,9 +94,9 @@ def has_singlepeak(modeldir, peak_threshold=0.1):
     else:
         return True
 
+
 def filter_modeldirs_badpeak(modeldirs, peak_threshold=0.1):
     """Filter model dirs without a strong second peak."""
-    # TODO: Use this method throughout to replace similar methods
     return [d for d in modeldirs if has_singlepeak(d, peak_threshold)]
 
 
