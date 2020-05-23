@@ -254,6 +254,55 @@ def _plot_sparsity(data, savename, xrange=50, yrange=.5):
     tools.save_fig(split[0], split[1])
 
 
+def plot_sparsity_movie(modeldir):
+    log = tools.load_log(modeldir)
+
+    xrange = 50
+    yrange = 0.5
+
+    data = log['sparsity_inferred'][0]
+    fig = plt.figure(figsize=(2, 1.5))
+    ax = fig.add_axes([0.25, 0.25, 0.7, 0.6])
+
+    hist, bins = np.histogram(data, bins=xrange, range=[0, xrange], density=True)
+    rects = plt.bar((bins[:-1]+bins[1:])/2, hist)
+    plt.plot([7, 7], [0, yrange], '--', color='gray')
+    ax.set_xlabel('PN inputs per KC')
+    ax.set_ylabel('Fraction of KCs')
+
+    xticks = [1, 7, 15, 25, 50]
+    ax.set_xticks(xticks)
+    ax.set_yticks(np.linspace(0, yrange, 3))
+    plt.ylim([0, yrange])
+    plt.xlim([-1, xrange])
+    # plt.title(data[data > 0].mean())
+
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
+    title = ax.text(0.35, 1.05, "", transform=ax.transAxes, ha='left')
+    # animation function.  This is called sequentially
+    def animate(i):
+        hist, bins = np.histogram(log['sparsity_inferred'][i],
+                                  bins=xrange, range=[0, xrange],
+                                  density=True)
+        for rect, h in zip(rects, hist):
+            rect.set_height(h)
+        title.set_text('Epoch ' + str(i).rjust(3))
+        return rects
+
+    # call the animator.  blit=True means only re-draw the parts that have changed.
+    n_time = log['sparsity_inferred'].shape[0]
+    anim = animation.FuncAnimation(fig, animate,
+                                   frames=n_time, interval=20, blit=True)
+    writer = animation.writers['ffmpeg'](fps=30)
+    split = os.path.split(modeldir)
+    figname = tools.get_figname(split[0], split[1])
+    anim.save(figname + 'sparsity_movie.mp4', writer=writer, dpi=200)
+
+
 def plot_distribution(modeldir, epoch=None, xrange=1.0):
     """Plot weight distribution from a single model path."""
     model_name = tools.get_model_name(modeldir)
