@@ -55,6 +55,34 @@ def control_nonnegative_analysis(path):
     sa.plot_results(path, xkey='sign_constraint_orn2pn', ykey='val_acc')
 
 
+def control_standard():
+    """Control for standard ORN-PN-KC all trainable model."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 100
+
+    config.N_ORN_DUPLICATION = 10
+    config.pn_norm_pre = 'batch_norm'
+
+    # New settings
+    config.batch_size = 8192  # Much bigger batch size
+    config.initial_pn2kc = 10./config.N_PN
+    config.lr = 2e-3
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    config_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
+    config_ranges['lr'] = [2e-2, 1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4]
+    config_ranges['train_kc_bias'] = [False, True]
+    config_ranges['initial_pn2kc'] = np.array([2., 5., 10., 20.])/config.N_PN
+    config_ranges['ORN_NOISE_STD'] = [0, 0.1, 0.2]
+    # config_ranges['apl'] = [False, True]
+
+    configs = vary_config(config, config_ranges, mode='control')
+    return configs
+
+
 def control_orn2pn():
     '''
     '''

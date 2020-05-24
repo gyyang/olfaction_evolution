@@ -77,7 +77,10 @@ def has_singlepeak(modeldir, peak_threshold=0.1):
         thres = config.kc_prune_threshold
     else:
         thres = log['thres_inferred'][-1]  # last epoch
-    bins = log['lin_bins'][:-1]
+    if len(log['lin_bins'].shape) == 1:
+        bins = log['lin_bins'][:-1]
+    else:
+        bins = log['lin_bins'][-1, :-1]
     bin_size = bins[1] - bins[0]
     hist = log['lin_hist'][-1]  # last epoch
     # log['lin_bins'] shape (nbin+1), log['lin_hist'] shape (n_epoch, nbin)
