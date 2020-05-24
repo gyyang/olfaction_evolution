@@ -227,7 +227,7 @@ def _vary_config_control(base_config, config_ranges):
         config_diff = dict()
         key = keys[j]
 
-        val = config_ranges[key][i]
+        val = config_ranges[key][index]
         setattr(new_config, key, val)
         config_diff[key] = val
 
