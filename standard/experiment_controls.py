@@ -72,6 +72,7 @@ def control_standard():
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    config_ranges['kc_norm_pre'] = [None, 'batch_norm']
     config_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
     config_ranges['lr'] = [2e-2, 1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4]
     config_ranges['train_kc_bias'] = [False, True]
