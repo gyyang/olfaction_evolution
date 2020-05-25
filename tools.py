@@ -193,7 +193,10 @@ def _vary_config_sequential(base_config, config_ranges):
 
 
 def _vary_config_control(base_config, config_ranges):
-    """Return sequential configurations.
+    """Return control configurations.
+
+    Each config_range is gone through sequentially. The base_config is
+    trained only once.
 
     Args:
         base_config: dict, a base configuration
@@ -208,12 +211,21 @@ def _vary_config_control(base_config, config_ranges):
             Loops over all hyperparameters hp1, hp2 independently
         config_diffs: a list of config diff from base_config
     """
-    # Unravel the input index
     keys = list(config_ranges.keys())
-    dims = [len(config_ranges[k]) for k in keys]
+    # Remove the baseconfig value from the config_ranges
+    new_config_ranges = {}
+    for key, val in config_ranges.items():
+        base_config_val = getattr(base_config, key)
+        new_config_ranges[key] = [v for v in val if v != base_config_val]
+
+    # Unravel the input index
+    dims = [len(new_config_ranges[k]) for k in keys]
     n_max = int(np.sum(dims))
 
     configs, config_diffs = list(), list()
+    configs.append(deepcopy(base_config))
+    config_diffs.append({})
+
     for i in range(n_max):
         new_config = deepcopy(base_config)
 
@@ -227,7 +239,7 @@ def _vary_config_control(base_config, config_ranges):
         config_diff = dict()
         key = keys[j]
 
-        val = config_ranges[key][index]
+        val = new_config_ranges[key][index]
         setattr(new_config, key, val)
         config_diff[key] = val
 

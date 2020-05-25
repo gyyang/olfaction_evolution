@@ -30,7 +30,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
             ax_args['ylim'] = [0, int(0.5*n_pn ** 0.8)]
     elif ykey in ['val_acc', 'glo_score']:
         ax_args['ylim'] = [0, 1.05]
-        ax_args['yticks'] = [0, .25, .5, .75, 1]
+        ax_args['yticks'] = [0, .5, 1]
     elif ykey == 'train_logloss':
         ax_args['ylim'] = [-2, 2]
         ax_args['yticks'] = [-2, -1, 0, 1, 2]
@@ -38,7 +38,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     if xkey == 'lr':
         rect = (0.2, 0.25, 0.75, 0.65)
     else:
-        rect = (0.27, 0.25, 0.65, 0.65)
+        rect = (0.3, 0.35, 0.5, 0.55)
 
     if xkey == 'kc_inputs':
         ax_args['xticks'] = [3, 7, 15, 30, 40, 50]
@@ -301,7 +301,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
 def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                  logx=None, logy=False, figsize=None, ax_args=None,
                  plot_args=None, ax_box=None, res=None, string='',
-                 plot_actual_value=False):
+                 plot_actual_value=True):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -339,7 +339,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         if xkey == 'lr':
             figsize = (4.5, 1.5)
         else:
-            figsize = (1.5, 1.5)
+            figsize = (1.5, 1.2)
 
     def _plot_results(ykey):
         # Default ax_args and other values, based on x and y keys
@@ -393,7 +393,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                         ytext = '{:0.2f}'.format(y)
                     else:
                         ytext = '{:0.1f}'.format(y)
-                    ax.text(x, y, ytext,
+                    ax.text(x, y, ytext, fontsize=6,
                             horizontalalignment='center',
                             verticalalignment='bottom')
 
@@ -417,6 +417,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                 ax.set_yticklabels(yticks)
             else:
                 ax.set_yticks(yticks)
+        else:
+            plt.locator_params(axis='y', nbins=3)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
