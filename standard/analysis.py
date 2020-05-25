@@ -221,18 +221,16 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
                   vlim=None, binarized=False):
     """Plot weights."""
     # Load network at the end of training
-    model_dir = os.path.join(modeldir, 'model.pkl')
-    with open(model_dir, 'rb') as f:
-        var_dict = pickle.load(f)
-        try:
-            if var_name == 'w_combined':
-                w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
-            else:
-                w_plot = var_dict[var_name]
-        except KeyError:
-            # Weight doesn't exist, return
-            return
-    print('Plotting ' + var_name + ' from ' + model_dir)
+    var_dict = tools.load_pickle(modeldir)
+    try:
+        if var_name == 'w_combined':
+            w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
+        else:
+            w_plot = var_dict[var_name]
+    except KeyError:
+        # Weight doesn't exist, return
+        return
+    print('Plotting ' + var_name + ' from ' + modeldir)
 
     if average:
         w_orn_by_pn = tools._reshape_worn(w_plot, 50)
