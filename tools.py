@@ -422,7 +422,7 @@ def load_log(modeldir):
 
 def load_all_results(path, select_dict=None, exclude_dict=None,
                      argLast=True, ix=None, exclude_early_models=True,
-                     none_to_string=False):
+                     none_to_string=True):
     """Load results from path.
 
     Args:

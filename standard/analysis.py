@@ -152,6 +152,12 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         ys = res[ykey]
         xs = res[xkey]
 
+        if legend_key:
+            # Sort by legend key
+            ind_sort = np.argsort(res[legend_key])
+            xs, ys = xs[ind_sort], ys[ind_sort]
+            legends = res[legend_key][ind_sort]
+
         colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
 
         for x, y, c in zip(xs, ys, colors):
@@ -160,7 +166,6 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
             ax.plot(x, y, alpha=alpha, color=c, linewidth=1)
 
         if legend_key is not None:
-            legends = res[legend_key]
             legends = [nicename(l) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
             plt.title(nicename(legend_key))
@@ -183,6 +188,9 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         if select_dict:
             for k, v in select_dict.items():
                 figname += k + '_' + str(v) + '_'
+
+        if legend_key:
+            figname += '_' + legend_key
 
         if epoch_range:
             figname += '_epoch_range_' + str(epoch_range[1])
@@ -319,8 +327,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         ykeys = ykey
 
     if res is None:
-        res = tools.load_all_results(
-            path, select_dict=select_dict, none_to_string=True)
+        res = tools.load_all_results(path, select_dict=select_dict)
 
     tmp = res[xkey][0]
     xkey_is_string = isinstance(tmp, str) or tmp is None
