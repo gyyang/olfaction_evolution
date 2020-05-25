@@ -300,8 +300,8 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
 
 def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                  logx=None, logy=False, figsize=None, ax_args=None,
-                 plot_args=None, ax_box=None, sort=True, res=None, string='',
-                 plot_actual_value=False, filter_peaks=False):
+                 plot_args=None, ax_box=None, res=None, string='',
+                 plot_actual_value=False):
     """Plot results for varying parameters experiments.
 
     Args:
@@ -313,17 +313,23 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         logx: bool, if True, use log x-axis
         logy: bool, if True, use log x-axis
     """
+    if isinstance(ykey, str):
+        ykeys = [ykey]
+    else:
+        ykeys = ykey
+
     if res is None:
-        res = tools.load_all_results(path, select_dict=select_dict)
+        res = tools.load_all_results(
+            path, select_dict=select_dict, none_to_string=True)
+
+    tmp = res[xkey][0]
+    xkey_is_string = isinstance(tmp, str) or tmp is None
 
     if plot_args is None:
         plot_args = {}
 
-    # Sort by xkey
-    if sort:
-        ind_sort = np.argsort(res[xkey])
-        for key, val in res.items():
-            res[key] = val[ind_sort]
+    # Unique sorted xkey values
+    xvals = sorted(set(res[xkey]))
 
     if logx is None:
         logx = xkey in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold',
@@ -343,6 +349,11 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         if ax_box is not None:
             rect = ax_box
 
+        yvals = list()
+        for xval in xvals:
+            yval_tmp = res[ykey][res[xkey] == xval]
+            yvals.append(np.mean(yval_tmp))
+
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect, **ax_args_)
         if loop_key:
@@ -360,25 +371,19 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                 ax.plot(x_plot, y_plot, 'o-', markersize=3, color=color,
                         label=nicename(loop_val, mode=loop_key), **plot_args)
         else:
-            x_plot = res[xkey]
-            y_plot = res[ykey]
+            if xkey_is_string:
+                x_plot = np.arange(len(xvals))
+            else:
+                if logx:
+                    x_plot = np.log(np.array(xvals))
+                else:
+                    x_plot = xvals
 
-            # Get rid of duplicates
-            _, ix = np.unique(x_plot, return_index=True)
-            x_plot = x_plot[ix]
-            y_plot = y_plot[ix]
-
-            if filter_peaks:
-                peak_ind = check_single_peak(res['lin_bins'][ix],
-                                             res['lin_hist'][ix],
-                                             res['kc_prune_threshold'][ix])
-                x_plot = x_plot[peak_ind]
-                y_plot = y_plot[peak_ind]
-
-            if logx:
-                x_plot = np.log(x_plot)
             if logy:
-                y_plot = np.log(y_plot)
+                y_plot = np.log(yvals)
+            else:
+                y_plot = yvals
+
             ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
             if plot_actual_value:
                 for x, y in zip(x_plot, y_plot):
@@ -395,26 +400,23 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         if 'xticks' in ax_args_.keys():
             xticks = ax_args_['xticks']
         else:
-            xticks = np.unique(res[xkey])
+            xticks = x_plot
 
-        xticklabels = [nicename(x, mode=xkey) for x in xticks]
-        xticks = np.log(xticks) if logx else xticks
+        xticklabels = [nicename(x, mode=xkey) for x in xvals]
 
         ax.set_xticks(xticks)
-        x_span = xticks[-1] - xticks[0]
-        ax.set_xlim([xticks[0]-x_span*0.05, xticks[-1]+x_span*0.05])
+        # if not xkey_is_string:
+        #     x_span = xticks[-1] - xticks[0]
+        #     ax.set_xlim([xticks[0]-x_span*0.05, xticks[-1]+x_span*0.05])
         ax.set_xticklabels(xticklabels)
 
         if 'yticks' in ax_args_.keys():
             yticks = ax_args_['yticks']
-        else:
-            yticks = np.unique(res[ykey])
-
-        if logy:
-            ax.set_yticks(np.log(yticks))
-            ax.set_yticklabels(yticks)
-        else:
-            ax.set_yticks(yticks)
+            if logy:
+                ax.set_yticks(np.log(yticks))
+                ax.set_yticklabels(yticks)
+            else:
+                ax.set_yticks(yticks)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -450,11 +452,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         ax.yaxis.set_ticks_position('left')
         tools.save_fig(path, figname)
 
-    if isinstance(ykey, str):
-        ykey = [ykey]
-
-    for ykey_tmp in ykey:
-        _plot_results(ykey_tmp)
+    for ykey in ykeys:
+        _plot_results(ykey)
 
 
 if __name__ == '__main__':

@@ -83,6 +83,19 @@ def control_standard():
     return configs
 
 
+def control_standard_analysis(path):
+    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 2e-3,
+               'train_kc_bias': True, 'initial_pn2kc': 0.2, 'ORN_NOISE_STD': 0
+               }
+    ykeys = ['glo_score', 'val_acc', 'K_smart']
+    for xkey in default.keys():
+        select_dict = copy.deepcopy(default)
+        select_dict.pop(xkey)
+        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+        sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
+        sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+
+
 def control_orn2pn():
     '''
     '''

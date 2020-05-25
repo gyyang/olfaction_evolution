@@ -409,7 +409,8 @@ def load_log(modeldir):
 
 
 def load_all_results(path, select_dict=None, exclude_dict=None,
-                     argLast=True, ix=None, exclude_early_models=True):
+                     argLast=True, ix=None, exclude_early_models=True,
+                     none_to_string=False):
     """Load results from path.
 
     Args:
@@ -458,7 +459,10 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
             if k == 'coding_level':  # name conflict with log entry
                 res['coding_level_set'].append(config.coding_level)
             elif k[0] != '_':
-                res[k].append(getattr(config, k))
+                v = getattr(config, k)
+                if v is None and none_to_string:
+                    v = '_none'
+                res[k].append(v)
 
     for key, val in res.items():
         try:
@@ -478,6 +482,7 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
 
 
 nicename_dict = {
+    '_none': 'None',
     'ORN_NOISE_STD': 'Noise level',
     'N_PN': 'Number of PNs',
     'N_KC': 'Number of KCs',
