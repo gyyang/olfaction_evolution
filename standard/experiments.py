@@ -106,7 +106,7 @@ def receptor():
 def receptor_multilr():
     """Standard training setting with full network including receptors."""
     config = FullConfig()
-    config.max_epoch = 200
+    config.max_epoch = 1000
 
     config.receptor_layer = True
     config.or2orn_normalization = True
@@ -125,10 +125,11 @@ def receptor_multilr():
 
     config.data_dir = './datasets/proto/standard'
     config_ranges = OrderedDict()
-    config_ranges['ORN_NOISE_STD'] = [0, 0.1, 0.2]
+    # config_ranges['ORN_NOISE_STD'] = [0.2]
     # config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     # config_ranges['kc_norm_pre'] = [None, 'batch_norm']
-    config_ranges['layer2_lr'] = [5e-3, 2e-3, 1e-3, 5e-4, 2e-4]
+    config_ranges['lr'] = [2e-3, 2e-4]
+    config_ranges['pn2kc_lr'] = [2e-3, 2e-4]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs

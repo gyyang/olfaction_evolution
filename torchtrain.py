@@ -116,19 +116,20 @@ def train(config, reload=False, save_everytrainloss=False):
     model = FullModel(config=config)
     model.to(device)
 
-    # optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
-
     # TEMPORARY
-    my_list = ['layer2.weight', 'layer2.bias']
-    params = list(
-        filter(lambda kv: kv[0] in my_list, model.named_parameters()))
-    base_params = list(
-        filter(lambda kv: kv[0] not in my_list, model.named_parameters()))
+    if 'pn2kc_lr' in dir(config):
+        my_list = ['layer2.weight', 'layer2.bias']
+        params = list(
+            filter(lambda kv: kv[0] in my_list, model.named_parameters()))
+        base_params = list(
+            filter(lambda kv: kv[0] not in my_list, model.named_parameters()))
 
-    optimizer = torch.optim.Adam([
-        {'params': [p[1] for p in base_params]},
-        {'params': [p[1] for p in params], 'lr': config.layer2_lr}
-    ], lr=config.lr)
+        optimizer = torch.optim.Adam([
+            {'params': [p[1] for p in base_params]},
+            {'params': [p[1] for p in params], 'lr': config.pn2kc_lr}
+        ], lr=config.lr)
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
 
     train_data = torch.from_numpy(train_x).float().to(device)
     train_target = torch.from_numpy(train_y).long().to(device)
