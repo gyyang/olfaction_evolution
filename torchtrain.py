@@ -126,8 +126,8 @@ def train(config, reload=False, save_everytrainloss=False):
         filter(lambda kv: kv[0] not in my_list, model.named_parameters()))
 
     optimizer = torch.optim.Adam([
-        {'params': base_params},
-        {'params': params, 'lr': config.layer2_lr}
+        {'params': [p[1] for p in base_params]},
+        {'params': [p[1] for p in params], 'lr': config.layer2_lr}
     ], lr=config.lr)
 
     train_data = torch.from_numpy(train_x).float().to(device)
