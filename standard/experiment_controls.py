@@ -86,7 +86,8 @@ def control_standard():
 
 def control_standard_analysis(path):
     default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 2e-3,
-               'train_kc_bias': True, 'initial_pn2kc': 0.2, 'ORN_NOISE_STD': 0
+               'train_kc_bias': True, 'initial_pn2kc': 0.2, 'ORN_NOISE_STD': 0,
+               'kc_norm_pre': None,
                }
     ykeys = ['glo_score', 'val_acc', 'K_smart']
     for xkey in default.keys():
