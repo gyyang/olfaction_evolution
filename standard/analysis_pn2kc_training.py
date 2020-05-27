@@ -306,7 +306,7 @@ def plot_sparsity_movie(modeldir):
     anim.save(figname + 'sparsity_movie.mp4', writer=writer, dpi=200)
 
 
-def plot_distribution(modeldir, epoch=None, xrange=1.0):
+def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
     """Plot weight distribution from a single model path."""
     model_name = tools.get_model_name(modeldir)
 
@@ -323,23 +323,22 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0):
         string = ''
 
     if epoch == 0:
-        cutoff, res_fit = None, None
+        thres, res_fit = None, None
     else:
-        cutoff, res_fit = infer_threshold(distribution)
+        thres, res_fit = infer_threshold(distribution)
 
     save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
     save_name = os.path.join(save_path, '_' + model_name + '_')
 
     _plot_distribution(
         distribution, save_name + 'distribution' + string,
-        cutoff=cutoff, xrange=xrange, yrange=5000)
+        thres=thres, xrange=xrange, yrange=5000, **kwargs)
     _plot_log_distribution(
         distribution, save_name + 'log_distribution' + string,
-        cutoff=cutoff, xrange=xrange, yrange=5000, res_fit=res_fit)
+        thres=thres, res_fit=res_fit, **kwargs)
 
 
-def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0,
-                           res_fit=None):
+def _plot_log_distribution(data, savename, thres=0, res_fit=None, **kwargs):
     x = np.log(data + 1e-10)
 
     xticks = ['$10^{-6}$','$10^{-4}$', '.01', '1']
@@ -370,9 +369,9 @@ def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0,
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
 
-    if cutoff is not None:
-        cutoff = np.log(cutoff)
-        ax.plot([cutoff, cutoff], [0, plt.ylim()[1]], '--', color='gray', linewidth=1)
+    if thres is not None:
+        thres = np.log(thres)
+        ax.plot([thres, thres], [0, plt.ylim()[1]], '--', color='gray', linewidth=1)
 
     if res_fit is not None:
         for i in range(res_fit['n_modal']):
@@ -384,7 +383,7 @@ def _plot_log_distribution(data, savename, xrange, yrange, cutoff=0,
 
 
 def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
-                       cutoff=None, approximate=True):
+                       thres=None, approximate=True):
     fig = plt.figure(figsize=(2, 1.5))
     if not broken_axis:
         ax = fig.add_axes([0.25, 0.25, 0.6, 0.6])
@@ -406,8 +405,8 @@ def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        if cutoff is not None:
-            ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
+        if thres is not None:
+            ax.plot([thres, thres], [0, yrange], '--', color='gray')
     else:
         ax = fig.add_axes([0.25, 0.25, 0.7, 0.45])
         ax2 = fig.add_axes([0.25, 0.75, 0.7, 0.1])
@@ -446,9 +445,9 @@ def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
         ax2.set_yticks([np.max(n)])
         ax2.set_yticklabels(['{:d}K'.format(int(np.max(n)/1000))])
         ax2.set_ylim(0.9 * np.max(n), 1.1 * np.max(n))  # outliers only
-        if cutoff is not None:
-            ax.plot([cutoff, cutoff], [0, yrange], '--', color='gray')
-            ax2.plot([cutoff, cutoff], ax2.get_ylim(), '--', color='gray')
+        if thres is not None:
+            ax.plot([thres, thres], [0, yrange], '--', color='gray')
+            ax2.plot([thres, thres], ax2.get_ylim(), '--', color='gray')
 
         split = os.path.split(savename)
         tools.save_fig(split[0], split[1])

@@ -201,7 +201,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
 
 def plot_weights(modeldir, var_name=None, sort_axis='auto',
-                 average=False, vlim=None):
+                 average=False, vlim=None, **kwargs):
     """Plot weights of a model."""
     if var_name is None:
         var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo']
@@ -214,11 +214,12 @@ def plot_weights(modeldir, var_name=None, sort_axis='auto',
         else:
             _sort_axis = sort_axis
 
-        _plot_weights(modeldir, v, _sort_axis, average=average, vlim=vlim)
+        _plot_weights(modeldir, v, _sort_axis,
+                      average=average, vlim=vlim, **kwargs)
 
 
 def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
-                  vlim=None, binarized=False):
+                  vlim=None, binarized=False, title_keys=None):
     """Plot weights."""
     # Load network at the end of training
     var_dict = tools.load_pickle(modeldir)
@@ -284,7 +285,15 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         raise ValueError('unknown variable name for weight matrix: {}'.format(var_name))
     ax.set_ylabel(y_label, labelpad=-5)
     ax.set_xlabel(x_label, labelpad=-5)
-    plt.title(tools.nicename(var_name))
+    title = tools.nicename(var_name)
+    if title_keys is not None:
+        config = tools.load_config(modeldir)
+        if isinstance(title_keys, str):
+            title_keys = [title_keys]
+        for title_key in title_keys:
+            v = getattr(config, title_key)
+            title += '\n' + tools.nicename(title_key) + ':' + tools.nicename(v, 'lr')
+    plt.title(title)
 
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
