@@ -254,6 +254,13 @@ def train(config, reload=False, save_everytrainloss=False):
                                 w_orn, config.N_ORN, glo_score_mode)
                             log['sim_score'].append(sim_score)
                             print('Sim score ' + str(sim_score))
+                        else:
+                            w_orn = sess.run(model.w_orn)
+                            glo_score, _ = tools.compute_glo_score(
+                                w_orn, config.N_ORN, glo_score_mode)
+                            log['glo_score'].append(glo_score)
+                            print('Glo score ' + str(glo_score))
+
                 elif config.model == 'K':
                     K = sess.run(model.K)
                     bias = sess.run(model.b_glo)
