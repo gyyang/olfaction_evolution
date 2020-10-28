@@ -305,9 +305,10 @@ class FullModel(Model):
 
                 excludes = list()
                 if 'train_orn2pn' in dir(self.config) and not self.config.train_orn2pn:
-                    # TODO: this will also exclude batch norm vars, is that right?
                     excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                                  scope='model/layer1')
+                                                  scope='model/layer1/kernel:0')
+                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                                  scope='model/layer1/bias:0')
                 if not self.config.train_pn2kc:
                     # excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                     #                               scope='model/layer2')
@@ -510,6 +511,17 @@ class FullModel(Model):
 
             b_orn = tf.get_variable('bias', shape=(N_PN,), dtype=tf.float32,
                                     initializer= bias_initializer)
+
+            if config.orn_manual:
+                assert N_ORN == N_PN
+                random_w_orn = tf.get_variable(
+                    'kernel', shape=(N_ORN, N_PN), dtype=tf.float32,
+                    initializer=_initializer(1.0, 'uniform'))
+                identity_w_orn = np.eye(N_PN)
+                w_orn = config.orn_random_alpha * random_w_orn + \
+                        (1 - config.orn_random_alpha) * identity_w_orn
+
+
             if config.sign_constraint_orn2pn:
                 w_orn = tf.abs(w_orn)
 

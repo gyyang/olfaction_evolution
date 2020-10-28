@@ -143,6 +143,10 @@ class FullConfig(BaseConfig):
         self.or_bias = False
         # ORN normalization. orn never experiences nonlinearity so no distinction between pre and post
         self.orn_norm = None
+        # If True, set ORN weights manually
+        self.orn_manual = False
+        # Varies from 0-1. Controls the level of randomness in ORN-PN weights.
+        self.orn_random_alpha = 0
 
         # ORN--> PN connections
         # whether to dropout at ORN layer

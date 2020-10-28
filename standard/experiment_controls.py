@@ -109,10 +109,10 @@ def control_orn2pn():
     config.train_pn2kc = False
 
     # New settings
-    config.batch_size = 8192  # Much bigger batch size
+    config.batch_size = 256  # Much bigger batch size
     config.initial_pn2kc = 10. / config.N_PN
     config.initializer_pn2kc = 'uniform'  # Prevent degeneration
-    config.lr = 2e-3
+    config.lr = 1e-3
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
@@ -143,6 +143,56 @@ def control_orn2pn_analysis(path):
                             select_dict=temp, logx=logx)
 
             sa.plot_progress(path, select_dict=temp, ykeys=[yk], legend_key=xk)
+
+
+def control_orn2pn_random():
+    '''
+    '''
+    config = FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 25
+    config.N_ORN_DUPLICATION = 1
+    config.pn_norm_pre = 'batch_norm'
+    config.train_orn2pn = False
+    config.orn_manual = True
+
+    config.train_pn2kc = True
+    config.sparse_pn2kc = False
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    alpha_values = [0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    l = len(alpha_values)
+    config_ranges['orn_random_alpha'] = alpha_values * 2
+    config_ranges['train_pn2kc'] = [True] * l + [False] * l
+    config_ranges['sparse_pn2kc'] = [False] * l + [True] * l
+    configs = vary_config(config, config_ranges, mode='sequential')
+    return configs
+
+
+def control_orn2pn_random_analysis(path):
+    xks = ['orn_random_alpha', 'glo_score']
+    ykeys = ['val_acc']
+    trainable_dict = {'train_pn2kc': True, 'sparse_pn2kc': False}
+    fixed_dict = {'train_pn2kc': False, 'sparse_pn2kc': True}
+
+    for yk in ykeys:
+        for xk in xks:
+            for d in [trainable_dict, fixed_dict]:
+                sa.plot_results(path,
+                                xkey=xk,
+                                ykey=yk,
+                                select_dict=d,
+                                ax_args={'xticks': np.arange(0, 1.01, 0.2)},
+                                plot_actual_value=False)
+
+                sa.plot_progress(path,
+                                 select_dict=d,
+                                 ykeys=[yk],
+                                 legend_key='orn_random_alpha')
+
+    sa.plot_results(path, xkey='orn_random_alpha', ykey='glo_score')
+
 
 
 def control_pn2kc_backup():
@@ -203,8 +253,7 @@ def control_pn2kc():
 
 
 def control_pn2kc_analysis(path):
-    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3,
-               'initial_pn2kc': 0, 'train_kc_bias': True}
+    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3}
     ykeys = ['val_acc', 'K_inferred']
 
     for yk in ykeys:
@@ -338,6 +387,8 @@ def control_vary_kc():
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
     config.pn_norm_pre = 'batch_norm'
+    config.sparse_pn2kc = False
+    config.train_pn2kc = True
 
     config_ranges = OrderedDict()
     config_ranges['N_KC'] = [50, 100, 200, 400, 1000, 2500, 5000, 10000, 20000]
