@@ -60,6 +60,9 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         if ax_args is None:
             if ykey == 'lin_hist_':
                 ax_args_ = {'ylim': [0, 500]}
+        else:
+            ax_args_ = ax_args
+
 
         figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
@@ -413,16 +416,18 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
         if 'xticks' in ax_args_.keys():
             xticks = ax_args_['xticks']
+            ax.set_xticks(xticks)
         else:
             xticks = x_plot
+            xticklabels = [nicename(x, mode=xkey) for x in xvals]
+            ax.set_xticks(xticks)
+            ax.set_xticklabels(xticklabels)
 
-        xticklabels = [nicename(x, mode=xkey) for x in xvals]
-
-        ax.set_xticks(xticks)
+        # ax.set_xticks(xticks)
         # if not xkey_is_string:
         #     x_span = xticks[-1] - xticks[0]
         #     ax.set_xlim([xticks[0]-x_span*0.05, xticks[-1]+x_span*0.05])
-        ax.set_xticklabels(xticklabels)
+        # ax.set_xticklabels(xticklabels)
 
         if 'yticks' in ax_args_.keys():
             yticks = ax_args_['yticks']
