@@ -14,6 +14,7 @@ import numpy as np
 from configs import FullConfig, MetaConfig
 from tools import vary_config
 import tools
+import settings
 
 try:
     import standard.analysis as sa
@@ -25,6 +26,9 @@ try:
     import standard.analysis_multihead as analysis_multihead
 except ImportError as e:
     print(e)
+
+
+use_torch = settings.use_torch
 
 
 def standard():
@@ -54,11 +58,13 @@ def standard_analysis(path):
     # weight matrices
     sa.plot_weights(dir)
 
-    try:
-        analysis_orn2pn.correlation_across_epochs(path, arg='weight')
-        analysis_orn2pn.correlation_across_epochs(path, arg='activity')
-    except ModuleNotFoundError:
-        pass
+    if not use_torch:
+        # This currently doesn't work for pytorch
+        try:
+            analysis_orn2pn.correlation_across_epochs(path, arg='weight')
+            analysis_orn2pn.correlation_across_epochs(path, arg='activity')
+        except ModuleNotFoundError:
+            pass
 
     # pn-kc
     analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
@@ -101,6 +107,24 @@ def receptor():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def receptor_analysis(path):
+    select_dict = {'ORN_NOISE_STD': 0.1, 'kc_norm_pre': 'batch_norm',
+                   'pn_norm_pre': None}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    dir = modeldirs[0]
+    # accuracy
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
+
+    # weight matrices
+    sa.plot_weights(dir)
+
+    # pn-kc
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
+    analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
+
+    analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
 
 def receptor_multilr():
