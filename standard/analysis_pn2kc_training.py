@@ -382,7 +382,7 @@ def _plot_log_distribution(data, savename, thres=0, res_fit=None, **kwargs):
     tools.save_fig(split[0], split[1])
 
 
-def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
+def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=True,
                        thres=None, approximate=True):
     fig = plt.figure(figsize=(2, 1.5))
     if not broken_axis:
@@ -408,6 +408,8 @@ def _plot_distribution(data, savename, xrange, yrange, broken_axis=True,
         if thres is not None:
             ax.plot([thres, thres], [0, yrange], '--', color='gray')
     else:
+        if xrange is None:
+            xrange = np.max(data)
         ax = fig.add_axes([0.25, 0.25, 0.7, 0.45])
         ax2 = fig.add_axes([0.25, 0.75, 0.7, 0.1])
         n, bins, _ = ax2.hist(data, bins=50, range=[0, xrange], density=False)

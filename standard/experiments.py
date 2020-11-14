@@ -135,7 +135,7 @@ def receptor_multilr():
     return configs
 
 
-def receptor_analysis(path):
+def receptor_multilr_analysis(path):
     select_dict = dict()
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.5)
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
@@ -152,15 +152,15 @@ def receptor_analysis(path):
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
     for modeldir in modeldirs:
-        sa.plot_weights(modeldir)
+        # sa.plot_weights(modeldir)
 
-        analysis_pn2kc_training.plot_distribution(modeldir, xrange=3.0)
+        analysis_pn2kc_training.plot_distribution(modeldir)
         analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
 
-        analysis_pn2kc_training.plot_log_distribution_movie(modeldir)
+        # analysis_pn2kc_training.plot_log_distribution_movie(modeldir)
 
-        analysis_activity.distribution_activity(modeldir, ['glo', 'kc'])
-        analysis_activity.sparseness_activity(modeldir, ['glo', 'kc'])
+        # analysis_activity.distribution_activity(modeldir, ['glo', 'kc'])
+        # analysis_activity.sparseness_activity(modeldir, ['glo', 'kc'])
 
 
 def standard_vary_hp():

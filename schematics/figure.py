@@ -1,7 +1,5 @@
 import os
 import sys
-for p in sys.path:
-    print(p)
 from scipy.spatial import Voronoi
 from sklearn.metrics.pairwise import euclidean_distances
 import numpy as np
@@ -31,7 +29,15 @@ def _normalize(x):
     return x
 
 
-def plot_task(mode='standard', include_prototypes=False, include_data = True, prototype_marker = '^', meta_ix = 0):
+def plot_task(mode='standard', include_prototypes=False, include_data = True, 
+              prototype_marker = '^', meta_ix = 0):
+    """Plot task schematic.
+    
+    Args:
+        mode: str, standard, innate, innate2, concentration, metalearn, relabel
+    
+    """
+    np.random.seed(1)
     colors = ['c','y','m','g']
     
 # =============================================================================
@@ -45,7 +51,11 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
               np.array([255, 187, 0])/255.,  # red
               np.array([63, 104, 28])/255.,]  # green
 
+    colors = np.array([[102,194,165],[252,141,98],[141,160,203],[231,138,195],[166,216,84]])/255.
+
     size = 80
+    figsize = (1.8, 1.8)
+    ax_dim = [.2, .2, .7, .7]
     if mode == 'standard':
         proto_points = np.array([[2, 4], [4, 3], [3, 2],[1, 1]])
         texts = ['Class ' + i for i in ['A','B','C','D']]
@@ -63,47 +73,66 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
         texts = ['Class ' + labels[i] for i in ind]
         lim = 5
     elif mode == 'metalearn':
-        proto_points = [[[2, 4], [4, 3], [10, 10]], [[2, 2], [3, 4], [8, 6]], [[4, 1], [3, 2], [8, 8]]]
+        proto_points = [[[2, 4], [4, 3], [10, 10]], 
+                        [[2, 2], [3, 4], [8, 6]], 
+                        [[4, 1], [3, 2], [8, 8]]]
         proto_points = proto_points[meta_ix]
         texts = ['Class A', 'Class B', 'Class C']
         lim = 5
-        size = 10
-    elif mode == 'innate':
+        size = 100
+        figsize = (1.3, 1.3)
+        ax_dim = [.2, .2, .6, .6]
+    elif 'innate' in mode:
         innate_point = np.array([8, 0])
-        proto_points = np.array([[2, 4], [4, 3], [3, 1], innate_point])
-        texts = ['Class ' + i for i in ['A','B','C', 'D']]
+        innate_point2 = np.array([0, 8])
+        proto_points = np.array([[2, 4], [4, 3], [3, 1], innate_point, innate_point2])
+        texts = ['Class ' + i for i in ['A','B','C', 'D', 'E']]
         lim = 10
+        if mode == 'innate2':
+            colors = ([np.array([178]*3)/255.] * 3 + 
+            [np.array([228, 26, 28])/255.] + [np.array([55,126,184])/255.])
     else:
         raise ValueError('Unknown mode: ', mode)
 
-    if mode == 'innate':
+    if 'innate' in mode:
         rand_points = np.random.uniform(low=0, high=5, size=[size, 2])
         rand_innate_points = innate_point+np.random.uniform(low=0, high=2, size=[20, 2])
-        rand_points = np.concatenate((rand_points, rand_innate_points), axis=0)
+        rand_innate_points2 = innate_point2+np.random.uniform(low=0, high=2, size=[20, 2])
+        rand_points = np.concatenate((rand_points, rand_innate_points, rand_innate_points2), axis=0)
     else:
         rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
     if mode == 'concentration':
         rand_labels = get_labels(proto_points, _normalize(rand_points))
     else:
         rand_labels = get_labels(proto_points, rand_points)
+        
+    if mode == 'metalearn':
+        # Choose only 5 per class
+        inds = np.concatenate((np.where(rand_labels==0)[0][:5], 
+                              np.where(rand_labels==1)[0][:5]))
+        rand_points = rand_points[inds]
+        rand_labels = rand_labels[inds]
 
     rand_colors = [colors[i] for i in rand_labels]
     
     #plotting
-    fig = plt.figure(figsize=(1.8, 1.8))
-    ax = fig.add_axes([.2, .2, .7, .7])
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes(ax_dim)
     plt.sca(ax)
 
-    vor = Voronoi(proto_points)
-    voronoi_plot_2d(vor,
-                    ax=ax,
-                    show_vertices = False,
-                    show_points= False,
-                    line_colors='k',
-                    line_width=1)
+    if mode != 'innate2':
+        vor = Voronoi(proto_points)
+        voronoi_plot_2d(vor,
+                        ax=ax,
+                        show_vertices = False,
+                        show_points= False,
+                        line_colors='k',
+                        line_width=1)
 
     if mode == 'concentration':
         proto_points = proto_points_
+        
+    
 
     if include_prototypes:
         for c,p in zip(colors, proto_points):
@@ -115,7 +144,14 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
 
     for i, (txt,p) in enumerate(zip(texts, proto_points)):
         if mode == 'innate':
-            ax.annotate(txt, (p[0]-.3, p[1]+.35))
+            if i < 4:
+                ax.annotate(txt, (p[0]-.3, p[1]+.35))
+            else:
+                ax.annotate(txt, (p[0]+0.3, p[1]+0.3))
+        elif mode == 'innate2':
+            pass
+        elif mode == 'metalearn':
+            ax.annotate(txt, (p[0], p[1]+.35), ha='center')
         else:
             ax.annotate(txt, (p[0]-.3, p[1]-.35))
 
@@ -125,7 +161,11 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
     plt.xticks([0, lim], ['0', '1'])
     plt.yticks([0, lim], ['0', '1'])
     plt.xlabel('ORN 1 Activity', labelpad=-5)
-    plt.ylabel('ORN 2 Activity', labelpad=-5)
+    
+    if mode == 'metalearn':
+        plt.title('Training set {:d}'.format(meta_ix+1), fontsize=7)
+    if mode != 'metalearn' or meta_ix == 0:
+        plt.ylabel('ORN 2 Activity', labelpad=-5)
 
     if mode == 'metalearn':
         name_str = '_' + str(meta_ix)
@@ -139,8 +179,9 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True, pr
     
 
 if __name__ == '__main__':
-    plot_task('standard', include_prototypes=True)
+    # plot_task('standard', include_prototypes=True)
     # plot_task('innate', include_prototypes=True)
+    # plot_task('innate2', include_prototypes=True)
     # plot_task('concentration', include_prototypes=True, include_data=True)
     # plot_task('relabel', include_prototypes=True)
-    # plot_task('metalearn', include_data=True, include_prototypes=True, meta_ix=2)
+    [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]

@@ -257,7 +257,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
-    fig = plt.figure(figsize=(2.6, 2.6))
+    fig = plt.figure(figsize=(2.2, 2.2))
     ax = fig.add_axes(rect)
 
     w_max = np.max(abs(w_plot))
@@ -293,7 +293,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         for title_key in title_keys:
             v = getattr(config, title_key)
             title += '\n' + tools.nicename(title_key) + ':' + tools.nicename(v, 'lr')
-    plt.title(title)
+    plt.title(title, fontsize=7)
 
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
@@ -304,7 +304,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
     ax = fig.add_axes(rect_cb)
     cb = plt.colorbar(im, cax=ax, ticks=vlim)
     cb.outline.set_linewidth(0.5)
-    cb.set_label('Weight', labelpad=-10)
+    cb.set_label('Weight', labelpad=-7)
     plt.tick_params(axis='both', which='major')
     plt.axis('tight')
     var_name = var_name.replace('/','_')
