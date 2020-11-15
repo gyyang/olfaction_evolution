@@ -11,6 +11,7 @@ sys.path.append(rootpath)
 
 from schematics.plotVoronoi import voronoi_plot_2d
 from tools import save_fig
+from task import _sample_input
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -91,6 +92,12 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         if mode == 'innate2':
             colors = ([np.array([178]*3)/255.] * 3 + 
             [np.array([228, 26, 28])/255.] + [np.array([55,126,184])/255.])
+    elif mode == 'correlate':
+        orn_corr = 0.8
+        rng = np.random.RandomState(seed=1)
+        proto_points = _sample_input(3, 2, rng=rng, corr=orn_corr) * 5
+        texts = ['Class ' + i for i in ['A','B','C','D']]
+        lim = 5
     else:
         raise ValueError('Unknown mode: ', mode)
 
@@ -99,6 +106,8 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         rand_innate_points = innate_point+np.random.uniform(low=0, high=2, size=[20, 2])
         rand_innate_points2 = innate_point2+np.random.uniform(low=0, high=2, size=[20, 2])
         rand_points = np.concatenate((rand_points, rand_innate_points, rand_innate_points2), axis=0)
+    elif mode == 'correlate':
+        rand_points = _sample_input(size, 2, rng=rng, corr=orn_corr) * 5
     else:
         rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
     if mode == 'concentration':
@@ -150,7 +159,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
                 ax.annotate(txt, (p[0]+0.3, p[1]+0.3))
         elif mode == 'innate2':
             pass
-        elif mode == 'metalearn':
+        elif mode in ['metalearn', 'correlate']:
             ax.annotate(txt, (p[0], p[1]+.35), ha='center')
         else:
             ax.annotate(txt, (p[0]-.3, p[1]-.35))
@@ -160,13 +169,14 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     plt.ylim([0, lim])
     plt.xticks([0, lim], ['0', '1'])
     plt.yticks([0, lim], ['0', '1'])
-    plt.xlabel('ORN 1 Activity', labelpad=-5)
+    plt.xlabel('OR 1 Activity', labelpad=-5)
     
     if mode == 'metalearn':
         plt.title('Training set {:d}'.format(meta_ix+1), fontsize=7)
     if mode != 'metalearn' or meta_ix == 0:
-        plt.ylabel('ORN 2 Activity', labelpad=-5)
-
+        plt.ylabel('OR 2 Activity', labelpad=-5)
+    if mode == 'correlate':
+        plt.title('Correlation {:0.1f}'.format(orn_corr), fontsize=7)
     if mode == 'metalearn':
         name_str = '_' + str(meta_ix)
     else:
@@ -179,9 +189,11 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     
 
 if __name__ == '__main__':
+    pass
     # plot_task('standard', include_prototypes=True)
     # plot_task('innate', include_prototypes=True)
     # plot_task('innate2', include_prototypes=True)
     # plot_task('concentration', include_prototypes=True, include_data=True)
     # plot_task('relabel', include_prototypes=True)
-    [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
+    # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
+    # plot_task('correlate', include_prototypes=True)
