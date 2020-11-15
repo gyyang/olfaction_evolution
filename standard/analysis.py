@@ -204,7 +204,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
 
 def plot_weights(modeldir, var_name=None, sort_axis='auto',
-                 average=False, vlim=None, **kwargs):
+                 average=False, vlim=None, zoomin=False, **kwargs):
     """Plot weights of a model."""
     if var_name is None:
         var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo']
@@ -218,11 +218,11 @@ def plot_weights(modeldir, var_name=None, sort_axis='auto',
             _sort_axis = sort_axis
 
         _plot_weights(modeldir, v, _sort_axis,
-                      average=average, vlim=vlim, **kwargs)
+                      average=average, vlim=vlim, zoomin=zoomin, **kwargs)
 
 
 def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
-                  vlim=None, binarized=False, title_keys=None):
+                  vlim=None, binarized=False, title_keys=None, zoomin=False):
     """Plot weights."""
     # Load network at the end of training
     var_dict = tools.load_pickle(modeldir)
@@ -258,14 +258,23 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         log = tools.load_log(modeldir)
         w_plot = (w_plot > log['thres_inferred'][-1]) * 1.0
 
-    rect = [0.15, 0.15, 0.65, 0.65]
-    rect_cb = [0.82, 0.15, 0.02, 0.65]
-    fig = plt.figure(figsize=(2.2, 2.2))
-    ax = fig.add_axes(rect)
-
-    w_max = np.max(abs(w_plot))
+    # w_max = np.max(abs(w_plot))
+    w_max = np.percentile(abs(w_plot), 99)
+    print(w_max)
     if not vlim:
         vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
+
+    rect = [0.15, 0.15, 0.65, 0.65]
+    rect_cb = [0.82, 0.15, 0.02, 0.65]
+    if not zoomin:
+        figsize = (2.2, 2.2)
+    else:
+        figsize = (5.0, 5.0)  # Matplotlib wouldn't render properly if small
+        n_zoom = 10
+        w_plot = w_plot[:n_zoom, :][:, :n_zoom]
+
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes(rect)
 
     cmap = plt.get_cmap('RdBu_r')
     positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
@@ -274,46 +283,67 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
 
     im = ax.imshow(w_plot.T, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
                    interpolation='nearest',
-                   extent=(-0.5, w_plot.shape[0]+0.5, w_plot.shape[1]-0.5, +0.5))
-
-    if var_name == 'w_orn':
-        y_label, x_label = 'To PNs', 'From ORNs'
-    elif var_name == 'w_or':
-        y_label, x_label = 'To ORNs', 'From ORs'
-    elif var_name == 'w_glo':
-        y_label, x_label = 'To KCs', 'from PNs'
-    elif var_name == 'w_combined':
-        y_label, x_label = 'To PNs', 'From ORs'
-    else:
-        raise ValueError('unknown variable name for weight matrix: {}'.format(var_name))
-    ax.set_ylabel(y_label, labelpad=-5)
-    ax.set_xlabel(x_label, labelpad=-5)
-    title = tools.nicename(var_name)
-    if title_keys is not None:
-        config = tools.load_config(modeldir)
-        if isinstance(title_keys, str):
-            title_keys = [title_keys]
-        for title_key in title_keys:
-            v = getattr(config, title_key)
-            title += '\n' + tools.nicename(title_key) + ':' + tools.nicename(v, 'lr')
-    plt.title(title, fontsize=7)
+                   extent=(-0.5, w_plot.shape[0]-0.5, w_plot.shape[1]-0.5,
+                           -0.5))
 
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
         ax.spines[loc].set_visible(False)
-    ax.tick_params('both', length=0)
-    ax.set_yticks([0, w_plot.shape[1]])
-    ax.set_xticks([0, w_plot.shape[0]])
-    ax = fig.add_axes(rect_cb)
-    cb = plt.colorbar(im, cax=ax, ticks=vlim)
-    cb.outline.set_linewidth(0.5)
-    cb.set_label('Weight', labelpad=-7)
-    plt.tick_params(axis='both', which='major')
-    plt.axis('tight')
+
+    if zoomin:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        # Minor ticks
+        ax.set_xticks(np.arange(-.5, n_zoom), minor=True)
+        ax.set_yticks(np.arange(-.5, n_zoom), minor=True)
+        ax.tick_params(which='minor', length=0)
+        ax.tick_params('both', length=0)
+        # Gridlines based on minor ticks
+        ax.grid(which='minor', color='w', linestyle='-', linewidth=3)
+    else:
+        if var_name == 'w_orn':
+            y_label, x_label = 'To PNs', 'From ORNs'
+        elif var_name == 'w_or':
+            y_label, x_label = 'To ORNs', 'From ORs'
+        elif var_name == 'w_glo':
+            y_label, x_label = 'To KCs', 'from PNs'
+        elif var_name == 'w_combined':
+            y_label, x_label = 'To PNs', 'From ORs'
+        else:
+            raise ValueError(
+                'unknown variable name for weight matrix: {}'.format(var_name))
+        ax.set_ylabel(y_label, labelpad=-5)
+        ax.set_xlabel(x_label, labelpad=-5)
+        title = tools.nicename(var_name)
+        if title_keys is not None:
+            config = tools.load_config(modeldir)
+            if isinstance(title_keys, str):
+                title_keys = [title_keys]
+            for title_key in title_keys:
+                v = getattr(config, title_key)
+                title += '\n' + tools.nicename(
+                    title_key) + ':' + tools.nicename(v, 'lr')
+        plt.title(title, fontsize=7)
+
+        ax.set_xticks([0, w_plot.shape[0] - 1, w_plot.shape[0]])
+        ax.set_xticklabels(['1', str(w_plot.shape[0]), ''])
+        ax.set_yticks([0, w_plot.shape[1] - 1, w_plot.shape[1]])
+        ax.set_yticklabels(['1', str(w_plot.shape[1]), ''])
+        ax.tick_params('both', length=0)
+
+        ax = fig.add_axes(rect_cb)
+        cb = plt.colorbar(im, cax=ax, ticks=vlim)
+        cb.outline.set_linewidth(0.5)
+        cb.set_label('Weight', labelpad=-7)
+        plt.tick_params(axis='both', which='major')
+        plt.axis('tight')
+
     var_name = var_name.replace('/','_')
     var_name = var_name.replace(':','_')
-    tools.save_fig(tools.get_experiment_name(modeldir),
-             '_' + var_name + '_' + tools.get_model_name(modeldir))
+    figname = '_' + var_name + '_' + tools.get_model_name(modeldir)
+    if zoomin:
+        figname = figname + '_zoom'
+    tools.save_fig(tools.get_experiment_name(modeldir), figname)
 
 
 def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
