@@ -223,8 +223,8 @@ def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
     def add_text(ax):
         for i in range(len(groups)):
             ind = np.argmax(Zs[i])
-            ax.text(X_orig.flatten()[ind], Y_orig.flatten()[ind], str(i+1),
-                    color='white')
+            ax.text(X_orig.flatten()[ind]+0.3, Y_orig.flatten()[ind], str(i+1),
+                    color='darkblue')
         return ax
 
     # original density
@@ -393,7 +393,7 @@ def _plot_hist(acc_plot, name, ytick_heads, plot_bar=False, plot_box=True):
                    whiskerprops=whiskerprops
                    )
     ax.set_xticks(xlocs)
-    group_names = [str(i+1) for i in range(len(acc_plot))]
+    group_names = [str(i+1) for i in range(len(acc_plot) - 1)]
     ax.set_xticklabels(['None'] + group_names)
     ax.set_xlabel('Lesioning cluster')
     ax.set_ylabel('Accuracy')

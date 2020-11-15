@@ -211,18 +211,21 @@ def plot_weights(modeldir, var_name=None, sort_axis='auto',
     elif isinstance(var_name, str):
         var_name = [var_name]
 
+    config = tools.load_config(modeldir)
     for v in var_name:
+        multihead = 'multihead' in config.data_dir and v == 'w_glo'
         if sort_axis == 'auto':
             _sort_axis = 0 if v == 'w_or' else 1
         else:
             _sort_axis = sort_axis
 
-        _plot_weights(modeldir, v, _sort_axis,
-                      average=average, vlim=vlim, zoomin=zoomin, **kwargs)
+        _plot_weights(modeldir, v, _sort_axis, average=average, vlim=vlim,
+                      zoomin=zoomin, multihead=multihead, **kwargs)
 
 
 def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
-                  vlim=None, binarized=False, title_keys=None, zoomin=False):
+                  vlim=None, binarized=False, title_keys=None, zoomin=False,
+                  multihead=False):
     """Plot weights."""
     # Load network at the end of training
     var_dict = tools.load_pickle(modeldir)
@@ -240,7 +243,19 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         w_orn_by_pn = tools._reshape_worn(w_plot, 50)
         w_plot = w_orn_by_pn.mean(axis=0)
     # Sort for visualization
-    if sort_axis == 0:
+    if multihead:
+        import standard.analysis_multihead as analysis_multihead
+        data, data_norm = analysis_multihead._get_data(modeldir)
+        groups = analysis_multihead._get_groups(data_norm, n_clusters=2)
+        n_eachcluster = 10
+        # Sort KCs
+        w_plot = w_plot[:, np.concatenate((groups[0][:n_eachcluster],
+                                           groups[1][:n_eachcluster]))]
+        w_orn = var_dict['w_orn']
+        ind_sort = np.argmax(w_orn, axis=1)  # Sort PNs
+        w_plot = w_plot[ind_sort, :]
+
+    elif sort_axis == 0:
         ind_max = np.argmax(w_plot, axis=0)
         ind_sort = np.argsort(ind_max)
         w_plot = w_plot[:, ind_sort]
@@ -267,6 +282,8 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         figsize = (2.2, 2.2)
         rect = [0.15, 0.15, 0.65, 0.65]
         rect_cb = [0.82, 0.15, 0.02, 0.65]
+        rect_bottom = [0.15, 0.12, 0.65, 0.02]
+        rect_left = [0.12, 0.15, 0.02, 0.65]
     else:
         figsize = (5.0, 5.0)  # Matplotlib wouldn't render properly if small
         rect = [0.05, 0.05, 0.9, 0.9]
@@ -301,19 +318,23 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         # Gridlines based on minor ticks
         ax.grid(which='minor', color='w', linestyle='-', linewidth=3)
     else:
-        if var_name == 'w_orn':
+        labelpad = -5
+        if multihead:
+            y_label, x_label = 'To Expansion neurons', ' From PNs'
+            labelpad = 13
+        elif var_name == 'w_orn':
             y_label, x_label = 'To PNs', 'From ORNs'
         elif var_name == 'w_or':
             y_label, x_label = 'To ORNs', 'From ORs'
         elif var_name == 'w_glo':
-            y_label, x_label = 'To KCs', 'from PNs'
+            y_label, x_label = 'To KCs', 'From PNs'
         elif var_name == 'w_combined':
             y_label, x_label = 'To PNs', 'From ORs'
         else:
             raise ValueError(
                 'unknown variable name for weight matrix: {}'.format(var_name))
-        ax.set_ylabel(y_label, labelpad=-5)
-        ax.set_xlabel(x_label, labelpad=-5)
+        ax.set_ylabel(y_label, labelpad=labelpad)
+        ax.set_xlabel(x_label, labelpad=labelpad)
         title = tools.nicename(var_name)
         if title_keys is not None:
             config = tools.load_config(modeldir)
@@ -323,12 +344,18 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
                 v = getattr(config, title_key)
                 title += '\n' + tools.nicename(
                     title_key) + ':' + tools.nicename(v, 'lr')
+        if multihead:
+            title = 'PN-Expansion connectivity'
         plt.title(title, fontsize=7)
 
-        ax.set_xticks([0, w_plot.shape[0] - 1, w_plot.shape[0]])
-        ax.set_xticklabels(['1', str(w_plot.shape[0]), ''])
-        ax.set_yticks([0, w_plot.shape[1] - 1, w_plot.shape[1]])
-        ax.set_yticklabels(['1', str(w_plot.shape[1]), ''])
+        if multihead:
+            ax.set_xticks([])
+            ax.set_yticks([])
+        else:
+            ax.set_xticks([0, w_plot.shape[0] - 1, w_plot.shape[0]])
+            ax.set_xticklabels(['1', str(w_plot.shape[0]), ''])
+            ax.set_yticks([0, w_plot.shape[1] - 1, w_plot.shape[1]])
+            ax.set_yticklabels(['1', str(w_plot.shape[1]), ''])
         ax.tick_params('both', length=0)
 
         ax = fig.add_axes(rect_cb)
@@ -337,6 +364,46 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         cb.set_label('Weight', labelpad=-7)
         plt.tick_params(axis='both', which='major')
         plt.axis('tight')
+
+    if multihead:
+        def _plot_colorannot(rect, labels, colors,
+                             texts=None, orient='horizontal'):
+            """Plot color indicating groups"""
+            ax = fig.add_axes(rect)
+            for il, l in enumerate(np.unique(labels)):
+                color = colors[il]
+                ind_l = np.where(labels == l)[0][[0, -1]] + np.array([0, 1])
+                if orient == 'horizontal':
+                    ax.plot(ind_l, [0, 0], linewidth=4, solid_capstyle='butt',
+                            color=color)
+                    if texts is not None:
+                        ax.text(np.mean(ind_l), -1, texts[il], fontsize=7,
+                                ha='center', va='top', color=color)
+                else:
+                    ax.plot([0, 0], ind_l, linewidth=4, solid_capstyle='butt',
+                            color=color)
+                    if texts is not None:
+                        ax.text(-1, np.mean(ind_l), texts[il], fontsize=7,
+                                ha='right', va='center', color=color,
+                                rotation='vertical')
+            if orient == 'horizontal':
+                ax.set_xlim([0, len(labels)])
+                ax.set_ylim([-1, 1])
+            else:
+                ax.set_ylim([0, len(labels)])
+                ax.set_xlim([-1, 1])
+            ax.axis('off')
+
+        colors = np.array([[55, 126, 184], [228, 26, 28], [178, 178, 178]])/255
+        labels = np.array([0] * 5 + [1] * 5 + [2] * 40)  # From dataset
+        texts = ['Ap.', 'Av.', 'Neutral']
+        _plot_colorannot(rect_bottom, labels, colors, texts)
+        # Note: Reverse y axis
+        # Innate, flexible
+        colors = np.array([[245, 110, 128], [149, 0, 149]]) / 255
+        labels = np.array([1] * n_eachcluster + [0] * n_eachcluster)
+        texts = ['Cluster 1', 'Cluster 2']
+        _plot_colorannot(rect_left, labels, colors, texts, orient='vertical')
 
     var_name = var_name.replace('/','_')
     var_name = var_name.replace(':','_')

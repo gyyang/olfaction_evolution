@@ -119,11 +119,11 @@ def receptor_analysis(path):
 
     # weight matrices
     sa.plot_weights(dir)
+    sa.plot_weights(dir, zoomin=True)
 
     # pn-kc
     analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
-
     analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
 
