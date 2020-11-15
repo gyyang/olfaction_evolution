@@ -126,6 +126,10 @@ def receptor_analysis(path):
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
     analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
+    # Compute glo-score metric for OR-ORN connectivity
+    print('ORN score for OR-ORN connectivity',
+          tools.compute_glo_score(tools.load_pickle(dir)['w_or'], 50)[0])
+
 
 def receptor_multilr():
     """Standard training setting with full network including receptors."""
