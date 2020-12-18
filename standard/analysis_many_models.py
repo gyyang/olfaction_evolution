@@ -15,7 +15,7 @@ sys.path.append(rootpath)
 
 import tools
 from standard.analysis_pn2kc_training import plot_all_K
-
+from settings import seqcmap
 
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -138,7 +138,7 @@ def plot_single_net(res):
     lr_color = np.log(lr/lr.min())
     lr_color /= lr_color.max()
     
-    cmap = mpl.cm.get_cmap('cool')
+    cmap = seqcmap
     for var_plot, ylabel in zip([K_plot, coding_level_plot, acc_plot, valloss_plot, trainloss_plot],
                                 ['K', 'Activity density', 'Acc', 'Log Loss', 'Log Train Loss']):
         

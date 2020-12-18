@@ -15,7 +15,7 @@ sys.path.append(rootpath)
 import tools
 from tools import nicename
 # from standard.analysis_pn2kc_training import check_single_peak
-
+from settings import seqcmap
 
 figpath = os.path.join(rootpath, 'figures')
 
@@ -63,7 +63,6 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         else:
             ax_args_ = ax_args
 
-
         figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=figsize)
@@ -72,7 +71,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         ys = log[ykey]
         xs = log[xkey]
 
-        colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
+        colors = [seqcmap(x) for x in np.linspace(0, 1, len(xs))]
 
         for x, y, c in zip(xs, ys, colors):
             ax.plot(x, y, alpha= 1, color = c, linewidth=1)
@@ -161,7 +160,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
             xs, ys = xs[ind_sort], ys[ind_sort]
             legends = res[legend_key][ind_sort]
 
-        colors = [cm.cool(x) for x in np.linspace(0, 1, len(xs))]
+        colors = [seqcmap(x) for x in np.linspace(0, 1, len(xs))]
 
         for x, y, c in zip(xs, ys, colors):
             if epoch_range:
@@ -472,7 +471,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         ax = fig.add_axes(rect, **ax_args_)
         if loop_key:
             loop_vals = np.unique(res[loop_key])
-            colors = [cm.cool(x) for x in np.linspace(0, 1, len(loop_vals))]
+            colors = [seqcmap(x) for x in np.linspace(0, 1, len(loop_vals))]
             for loop_val, color in zip(loop_vals, colors):
                 ind = res[loop_key] == loop_val
                 x_plot = res[xkey][ind]

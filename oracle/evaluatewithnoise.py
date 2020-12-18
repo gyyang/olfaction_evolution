@@ -18,6 +18,7 @@ from model import FullModel
 import tools
 from tools import save_fig
 from tools import nicename
+from settings import seqcmap
 
 mpl.rcParams['font.size'] = 7
 
@@ -518,7 +519,7 @@ def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epo
     models = results['models']
 
     if len(values) > 1:
-        colors = plt.cm.cool(np.linspace(0, 1, len(values)))
+        colors = seqcmap(np.linspace(0, 1, len(values)))
     else:
         colors = [tools.blue]
 

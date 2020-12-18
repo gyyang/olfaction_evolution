@@ -224,30 +224,37 @@ def plot_sparsity(modeldir, epoch=None, dynamic_thres=True,
         else:
             string = ''
 
-        if epoch == 0:
-            yrange = 1
-        else:
-            yrange = 0.5
         save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
         save_name = os.path.join(save_path, '_' + model_name + '_sparsity' + string)
-        _plot_sparsity(sparsity, save_name, yrange=yrange, xrange=xrange)
+        _plot_sparsity(sparsity, save_name, xrange=xrange)
     return sparsity
 
 
-def _plot_sparsity(data, savename, xrange=50, yrange=.5):
+def _plot_sparsity(data, savename, xrange=50, yrange=None):
     fig = plt.figure(figsize=(2, 1.5))
     ax = fig.add_axes([0.25, 0.25, 0.7, 0.6])
     plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
-    plt.plot([7, 7], [0, yrange], '--', color='gray')
+    # plt.plot([7, 7], [0, yrange], '--', color='gray')
     ax.set_xlabel('PN inputs per KC')
     ax.set_ylabel('Fraction of KCs')
+
+    if yrange is None:
+        hist, _ = np.histogram(data, bins=xrange, range=[0, xrange],
+                               density=True)
+        vmax = np.max(hist)
+        if vmax > 0.5:
+            yrange = 1
+        elif vmax > 0.25:
+            yrange = 0.5
+        else:
+            yrange = 0.25
 
     xticks = [1, 7, 15, 25, 50]
     ax.set_xticks(xticks)
     ax.set_yticks(np.linspace(0, yrange, 3))
     plt.ylim([0, yrange])
     plt.xlim([-1, xrange])
-    plt.title(data[data>0].mean())
+    # plt.title(data[data>0].mean())
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
