@@ -113,7 +113,7 @@ class FullConfig(BaseConfig):
         self.lr = .001  # learning rate
         self.decay_steps = 1e8  # learning rate decay steps
         self.decay_rate = 1.  # learning rate decay rate, default to no decay
-        self.max_epoch = 10
+        self.max_epoch = 30
         self.batch_size = 256
         self.target_acc = None  # target accuracy
 
@@ -138,7 +138,7 @@ class FullConfig(BaseConfig):
         # If True, OR --> ORN connections are positive
         self.sign_constraint_or2orn = True
         # If True, normalize by or2orn weight matrix by L1 norm (sum of weights onto every ORN add up to 1)
-        self.or2orn_normalization = False
+        self.or2orn_normalization = True
         # If True, add bias to receptor weights
         self.or_bias = False
         # ORN normalization. orn never experiences nonlinearity so no distinction between pre and post
@@ -154,25 +154,25 @@ class FullConfig(BaseConfig):
         self.orn_dropout_rate = 0.1
 
         # Initialization method for pn2kc: can take values uniform, random, or normal
-        self.initializer_orn2pn = 'normal'
+        self.initializer_orn2pn = 'uniform'
         # If True, ORN --> PN connections are positive
         self.sign_constraint_orn2pn = True
         # If True, PN --> KC connections are trainable
         self.train_orn2pn = True
         # If True, train a direct glomeruli-like connections
-        self.direct_glo = False
+        self.skip_orn2pn = False  # Implements direct_glo in TF version
         # PN normalization before non_linearity
-        self.pn_norm_pre = None
+        self.pn_norm_pre = 'batch_norm'  # Default to BatchNorm
         # PN normalization after non_linearity
         self.pn_norm_post = None
         # If True, skip the ORN --> PN connections
-        self.skip_orn2pn = False
+        # self.skip_orn2pn = False  # TODO: Completely remove
         # dropout for pn
         self.pn_dropout = False
         # dropout rate for pns
         self.pn_dropout_rate = .2
         # If True, normalize orn2pn weight matrix by L1 norm (sum of weights onto every PN add up to 1)
-        self.orn2pn_normalization = False
+        self.orn2pn_normalization = False  # TODO: Check if works
 
         self.pn_prune_weak_weights = False
         self.pn_prune_threshold = .05
@@ -184,34 +184,25 @@ class FullConfig(BaseConfig):
         # Initialization method for pn2kc: can take values uniform, random, or normal
         self.initializer_pn2kc = 'uniform'
         # Initial value of pn2kc weights. if it is set to 0, network will initialize according to sparsity
-        self.initial_pn2kc = 0
+        self.initial_pn2kc = 0  # TODO: Need revisit, try use 0 for all
         # If True, ORN --> PN connections are positive
         self.sign_constraint_pn2kc = True
         # If True, PN --> KC connections are trainable
         self.train_pn2kc = True
         # If True, PN --> KC connections are sparse
-        self.sparse_pn2kc = True
+        self.sparse_pn2kc = False
         # If True, PN --> KC connections are mean-subtracted (sum of all connections onto every KC is 0)
         self.mean_subtract_pn2kc = False
         # If True, KC biases are trainable
         self.train_kc_bias = True
         # initial KC bias
         self.kc_bias = -1
-        # If True, PN --> KC connection weights are uniform
-        self.uniform_pn2kc = False
-        # If True, have loss on KC weights
-        self.kc_loss = False
-        # Parameters for KC loss. Only used if kc_loss = True.
-        # alpha = loss strength.
-        self.kc_loss_alpha = 1
-        # beta = when to apply loss. higher the value, the smaller the weight in which loss will be applied
-        self.kc_loss_beta = 5
         # KC normalization before non_linearity
         self.kc_norm_pre = None
         # KC normalization after non_linearity
         self.kc_norm_post = None
         # If True, add dropout to KC layer
-        self.kc_dropout = True
+        self.kc_dropout = True  # TODO: Check if necessary for K=7
         self.kc_dropout_rate = 0.5
         # If True, skip the PN --> KC connections
         self.skip_pn2kc = False
@@ -238,13 +229,16 @@ class FullConfig(BaseConfig):
         self.kc_recinh_step = 10
 
         #separate optimizer
-        self.separate_optimizer = False
-        self.separate_lr = 0.001
+        # TODO: Remove in the future
+        # self.separate_optimizer = False
+        # self.separate_lr = 0.001
 
         # New layer after KC
-        self.extra_layer = False
-        self.extra_layer_neurons = 200
+        # TODO: Remove in the future
+        # self.extra_layer = False
+        # self.extra_layer_neurons = 200
 
+        # TODO: Remove in the future
         # Output connections
         self.output_bias = True
         # If True, set the output weights to be the oracle (pattern-matching)

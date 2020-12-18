@@ -34,13 +34,13 @@ use_torch = settings.use_torch
 def standard():
     """Standard training setting"""
     config = FullConfig()
-    config.max_epoch = 100
+    # config.max_epoch = 100
 
-    config.pn_norm_pre = 'batch_norm'
-    config.initial_pn2kc = 0.1
+    # config.pn_norm_pre = 'batch_norm'
+    # config.initial_pn2kc = 0.1
     config.save_every_epoch = True
 
-    config.data_dir = './datasets/proto/standard'
+    # config.data_dir = './datasets/proto/standard'
     config_ranges = OrderedDict()
     config_ranges['dummy'] = [True]
 
@@ -87,13 +87,13 @@ def standard_analysis(path):
 def receptor():
     """Standard training setting with full network including receptors."""
     config = FullConfig()
-    config.max_epoch = 200
+    # config.max_epoch = 200
 
     config.receptor_layer = True
-    config.or2orn_normalization = True
-    config.orn2pn_normalization = True
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
+    # config.or2orn_normalization = True
+    # config.orn2pn_normalization = True
+    # config.replicate_orn_with_tiling = True
+    # config.N_ORN_DUPLICATION = 10
     config.ORN_NOISE_STD = 0.2
 
     # config.kc_norm_pre = 'batch_norm'

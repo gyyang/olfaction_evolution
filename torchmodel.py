@@ -92,7 +92,8 @@ class Layer(nn.Module):
         if weight_initial_value:
             self.weight_init_range = weight_initial_value
         else:
-            self.weight_init_range = 2. / in_features
+            # Maintains the mean activity when considering init kc bias -1
+            self.weight_init_range = 4. / in_features
         self.bias_initial_value = bias_initial_value
         self.sign_constraint = sign_constraint
         self.weight = nn.Parameter(
