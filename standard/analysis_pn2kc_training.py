@@ -22,7 +22,8 @@ from standard.analysis_weight import infer_threshold
 
 figpath = os.path.join(rootpath, 'figures')
 THRES = 0.1
-
+FIGSIZE = (1.6, 1.2)
+RECT = [0.3, 0.3, 0.65, 0.65]
 
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
@@ -231,11 +232,11 @@ def plot_sparsity(modeldir, epoch=None, dynamic_thres=True,
 
 
 def _plot_sparsity(data, savename, xrange=50, yrange=None):
-    fig = plt.figure(figsize=(2, 1.5))
-    ax = fig.add_axes([0.25, 0.25, 0.7, 0.6])
+    fig = plt.figure(figsize=FIGSIZE)
+    ax = fig.add_axes(RECT)
     plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
     # plt.plot([7, 7], [0, yrange], '--', color='gray')
-    ax.set_xlabel('PN inputs per KC')
+    ax.set_xlabel('Strong PN inputs per KC')
     ax.set_ylabel('Fraction of KCs')
 
     if yrange is None:
@@ -244,10 +245,10 @@ def _plot_sparsity(data, savename, xrange=50, yrange=None):
         vmax = np.max(hist)
         if vmax > 0.5:
             yrange = 1
-        elif vmax > 0.25:
+        elif vmax > 0.2:
             yrange = 0.5
         else:
-            yrange = 0.25
+            yrange = 0.2
 
     xticks = [1, 7, 15, 25, 50]
     ax.set_xticks(xticks)
@@ -271,8 +272,8 @@ def plot_sparsity_movie(modeldir):
     yrange = 0.5
 
     data = log['sparsity_inferred'][0]
-    fig = plt.figure(figsize=(2, 1.5))
-    ax = fig.add_axes([0.25, 0.25, 0.7, 0.6])
+    fig = plt.figure(figsize=FIGSIZE)
+    ax = fig.add_axes(RECT)
 
     hist, bins = np.histogram(data, bins=xrange, range=[0, xrange], density=True)
     rects = plt.bar((bins[:-1]+bins[1:])/2, hist)
@@ -339,7 +340,7 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
 
     _plot_distribution(
         distribution, save_name + 'distribution' + string,
-        thres=thres, xrange=xrange, yrange=5000, **kwargs)
+        thres=thres, xrange=xrange, **kwargs)
     _plot_log_distribution(
         distribution, save_name + 'log_distribution' + string,
         thres=thres, res_fit=res_fit, **kwargs)
@@ -351,8 +352,8 @@ def _plot_log_distribution(data, savename, thres=0, res_fit=None, **kwargs):
     xticks = ['$10^{-6}$','$10^{-4}$', '.01', '1']
     xticks_log = np.log([1e-6, 1e-4, 1e-2, 1])
 
-    fig = plt.figure(figsize=(2, 1.5))
-    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
+    fig = plt.figure(figsize=FIGSIZE)
+    ax = fig.add_axes(RECT)
     if res_fit is not None:
         plt.hist(x, bins=50, range=[-12, 3], density=True)
     else:
@@ -360,7 +361,7 @@ def _plot_log_distribution(data, savename, thres=0, res_fit=None, **kwargs):
         plt.hist(x, bins=50, range=[-12, 3], weights=weights)
 
     ax.set_xlabel('PN to KC Weight')
-    ax.set_ylabel('Distribution of Connections')
+    ax.set_ylabel('Dist. of Connections')
     ax.set_xticks(xticks_log)
     ax.set_xticklabels(xticks)
 
@@ -391,9 +392,11 @@ def _plot_log_distribution(data, savename, thres=0, res_fit=None, **kwargs):
 
 def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=True,
                        thres=None, approximate=True):
-    fig = plt.figure(figsize=(2, 1.5))
+    fig = plt.figure(figsize=FIGSIZE)
     if not broken_axis:
-        ax = fig.add_axes([0.25, 0.25, 0.6, 0.6])
+        if yrange is None:
+            yrange = 5000
+        ax = fig.add_axes(RECT)
         plt.hist(data, bins=50, range=[0, xrange], density=False)
         ax.set_xlabel('PN to KC Weight')
         ax.set_ylabel('Number of Connections')
@@ -417,8 +420,8 @@ def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=Tru
     else:
         if xrange is None:
             xrange = np.max(data)
-        ax = fig.add_axes([0.25, 0.25, 0.7, 0.45])
-        ax2 = fig.add_axes([0.25, 0.75, 0.7, 0.1])
+        ax = fig.add_axes([0.3, 0.3, 0.65, 0.45])
+        ax2 = fig.add_axes([0.3, 0.8, 0.65, 0.1])
         n, bins, _ = ax2.hist(data, bins=50, range=[0, xrange], density=False)
         ax.hist(data, bins=50, range=[0, xrange], density=False)
 
@@ -441,12 +444,21 @@ def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=Tru
         ax.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
 
         ax.set_xlabel('PN to KC Weight')
-        ax.set_ylabel('Number of Connections')
+        ax.set_ylabel('Number of Conn.')
         xticks = np.arange(0, xrange + 0.01, .5)
         ax.set_xticks(xticks)
         ax.set_xticklabels([str(x) for x in xticks])
-        yticks = [0, 2500, 5000]
-        yticklabels = ['0', '2.5K', '5K']
+
+        if thres is None:
+            yrange = 5000
+            yticks = [0, 2500, 5000]
+            yticklabels = ['0', '2.5K', '5K']
+        else:
+            ymax = np.round(np.max(n[bins[:-1]>thres]) * 2/1000, decimals=1)
+            yrange = 1000*ymax
+            yticks = [0, yrange]
+            yticklabels = ['0', '{:s}K'.format(str(ymax))]
+
         ax.set_yticks(yticks)
         ax.set_yticklabels(yticklabels)
         ax.set_ylim(0, yrange)  # most of the data
@@ -468,13 +480,13 @@ def plot_log_distribution_movie(modeldir):
     xticks = ['$10^{-6}$','$10^{-4}$', '.01', '1']
     xticks_log = np.log([1e-6, 1e-4, 1e-2, 1])
 
-    fig = plt.figure(figsize=(2, 1.5))
-    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
+    fig = plt.figure(figsize=FIGSIZE)
+    ax = fig.add_axes(RECT)
 
     xdata, ydata = log['log_bins'][:-1], log['log_hist'][0]
 
-    fig = plt.figure(figsize=(2, 1.5))
-    ax = fig.add_axes([0.28, 0.25, 0.6, 0.6])
+    fig = plt.figure(figsize=FIGSIZE)
+    ax = fig.add_axes(RECT)
     ln, = ax.plot(xdata, ydata)
 
     ax.set_xlabel('PN to KC Weight')
@@ -608,7 +620,7 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
          20.70314843, 27.50305499, 32.03561644]
     # ax.plot(np.log(x), np.log(y))
     ax.set_xlabel('Number of ORs (N)')
-    ax.set_ylabel('Optimal K')
+    ax.set_ylabel('Expansion Input Degree (K)')
     xticks = np.array([25, 50, 100, 200, 400, 1000, 1600])
     ax.set_xticks(np.log(xticks))
     ax.set_xticklabels([str(t) for t in xticks])

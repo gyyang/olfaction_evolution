@@ -278,11 +278,18 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
 
     if not zoomin:
-        figsize = (2.2, 2.2)
-        rect = [0.15, 0.15, 0.65, 0.65]
-        rect_cb = [0.82, 0.15, 0.02, 0.65]
-        rect_bottom = [0.15, 0.12, 0.65, 0.02]
-        rect_left = [0.12, 0.15, 0.02, 0.65]
+        if multihead:
+            figsize = (2.2, 2.2)
+            rect = [0.15, 0.15, 0.65, 0.65]
+            rect_cb = [0.82, 0.15, 0.02, 0.65]
+            rect_bottom = [0.15, 0.12, 0.65, 0.02]
+            rect_left = [0.12, 0.15, 0.02, 0.65]
+        else:
+            figsize = (1.7, 1.7)
+            rect = [0.15, 0.15, 0.6, 0.6]
+            rect_cb = [0.77, 0.15, 0.02, 0.6]
+            rect_bottom = [0.15, 0.12, 0.6, 0.02]
+            rect_left = [0.12, 0.15, 0.02, 0.6]
     else:
         figsize = (5.0, 5.0)  # Matplotlib wouldn't render properly if small
         rect = [0.05, 0.05, 0.9, 0.9]

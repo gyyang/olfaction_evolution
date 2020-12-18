@@ -151,7 +151,7 @@ def plot_optimal_K(x_name, x_vals, fnames, v_name='theta', fig=None):
                 label=labels[i], color=colors[i], zorder=zorders[i])
 
     ax.set_xlabel('Number of ORs (N)')
-    ax.set_ylabel('Optimal K')
+    ax.set_ylabel('Expansion Input Degree (K)')
     xticks = np.array([50, 100, 200, 500, 1000])
     ax.set_xticks(np.log(xticks))
     ax.set_xticklabels([str(t) for t in xticks])

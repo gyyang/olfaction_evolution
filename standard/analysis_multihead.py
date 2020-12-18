@@ -167,7 +167,7 @@ def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None, plot_l
 
     if xind == 0:
         vert_x = np.log(7) if plot_log else 7
-        ax.plot([vert_x, vert_x], ranges[yind], '--', color='gray', linewidth=1)
+        # ax.plot([vert_x, vert_x], ranges[yind], '--', color='gray', linewidth=1)
 
     if plot_log:
         ax.set_xticks(np.log(LOGTICKS[xind]))

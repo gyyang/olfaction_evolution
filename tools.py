@@ -540,7 +540,7 @@ nicename_dict = {
     'kc_recinh_step': 'KC rec. inh. step',
     'orn_corr': 'ORN correlation',
     'w_orn': 'ORN-PN connectivity',
-    'w_or': 'OR-ORN expression',
+    'w_or': 'OR-ORN connectivity',
     'w_glo': 'PN-KC connectivity',
     'w_combined': 'OR-PN effective connectivity',
     'glo_in': 'PN Input',

@@ -227,7 +227,7 @@ def main():
     ax.text(np.log(50), np.log(6), 'Caron et al. 2013', color=tools.darkblue,
             horizontalalignment='left', verticalalignment='top')
     ax.set_xlabel('Number of ORs (N)')
-    ax.set_ylabel('Optimal K')
+    ax.set_ylabel('Expansion Input Degree (K)')
     xticks = np.array([50, 100, 200, 500, 1000])
     ax.set_xticks(np.log(xticks))
     ax.set_xticklabels([str(t) for t in xticks])
@@ -275,7 +275,7 @@ def main():
                 horizontalalignment='left', verticalalignment='top')
     
         ax.set_xlabel('Number of ORs (N)')
-        ax.set_ylabel('Optimal K')
+        ax.set_ylabel('Expansion Input Degree (K)')
         xticks = np.array([50, 100, 200, 500, 1000])
         ax.set_xticks(np.log(xticks))
         ax.set_xticklabels([str(t) for t in xticks])
@@ -309,7 +309,7 @@ def main():
         ax.plot(res['log_N'], res['log_K'], markers[i], ms=mss[i],
                 label=labels[i], color=colors[i], zorder=zorders[i])
     ax.set_xlabel('Number of ORs (N)')
-    ax.set_ylabel('Optimal K')
+    ax.set_ylabel('Expansion Input Degree (K)')
     xticks = np.array([50, 100, 200, 500, 1000])
     ax.set_xticks(np.log(xticks))
     ax.set_xticklabels([str(t) for t in xticks])
