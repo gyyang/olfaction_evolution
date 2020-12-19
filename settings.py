@@ -17,5 +17,5 @@ try:
 except ImportError as e:
     print('Seaborn not available, default to matplotlib color scheme')
 
-use_torch = True
+use_torch = False
 cluster_path = '/share/ctn/users/gy2259/olfaction_evolution'

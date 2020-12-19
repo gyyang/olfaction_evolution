@@ -293,9 +293,9 @@ class FullModel(Model):
 
                 optimizer = tf.train.AdamOptimizer(learning_rate)
 
-                if self.config.separate_optimizer:
-                    lr = self.config.separate_lr
-                    optimizer1 = tf.train.AdamOptimizer(lr)
+                # if self.config.separate_optimizer:
+                #     lr = self.config.separate_lr
+                #     optimizer1 = tf.train.AdamOptimizer(lr)
 
 
 # optimizer = tf.train.AdamOptimizer(self.config.lr)
@@ -318,11 +318,11 @@ class FullModel(Model):
                     excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                                   scope= 'model/layer2/bias:0')
 
-                if self.config.separate_optimizer:
-                    excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                                  scope='model/layer3/')
-                    separate_var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                                  scope='model/layer3/')
+                # if self.config.separate_optimizer:
+                #     excludes += tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                #                                   scope='model/layer3/')
+                #     separate_var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                #                                   scope='model/layer3/')
 
                 var_list = [v for v in tf.trainable_variables() if v not in excludes]
 
@@ -335,14 +335,14 @@ class FullModel(Model):
                     self.var_names = [v.name for g, v in gvs if g is not None]
                     self.train_op = optimizer.apply_gradients(gvs, global_step=global_step)
 
-                    if self.config.separate_optimizer:
-                        gvs_ = optimizer1.compute_gradients(self.loss, var_list=separate_var_list)
-                        self.train_op1 = optimizer1.apply_gradients(gvs_, global_step=global_step)
-                        self.var_names += [v.name for g, v in gvs_ if g is not None]
-                        self.gradient_norm += [tf.norm(g) for g, v in gvs_ if g is not None]
-                        print('Separately Training Variables')
-                        for v in separate_var_list:
-                            print(v)
+                    # if self.config.separate_optimizer:
+                    #     gvs_ = optimizer1.compute_gradients(self.loss, var_list=separate_var_list)
+                    #     self.train_op1 = optimizer1.apply_gradients(gvs_, global_step=global_step)
+                    #     self.var_names += [v.name for g, v in gvs_ if g is not None]
+                    #     self.gradient_norm += [tf.norm(g) for g, v in gvs_ if g is not None]
+                    #     print('Separately Training Variables')
+                    #     for v in separate_var_list:
+                    #         print(v)
 
                 print('Training variables')
                 for v in var_list:
@@ -385,8 +385,6 @@ class FullModel(Model):
             raise ValueError("""labels are in any of the following formats:
                                 combinatorial, one_hot, sparse""")
         self.loss = class_loss
-        if config.kc_loss:
-            self.loss += self.kc_loss
         return self.loss
 
     def accuracy_func(self, logits, logits2, y):
@@ -492,7 +490,7 @@ class FullModel(Model):
         N_ORN = self.n_orn
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             if config.sign_constraint_orn2pn:
-                if config.direct_glo:
+                if config.skip_orn2pn:
                     range = _sparse_range(config.N_ORN_DUPLICATION)
                 else:
                     range = _sparse_range(N_ORN)
@@ -625,17 +623,6 @@ class FullModel(Model):
             self.weights['w_apl_out'] = w_apl2kc
             self.weights['b_apl'] = b_apl
 
-        if config.kc_loss:
-            self.kc_loss = tf.reduce_mean(tf.tanh(config.kc_loss_beta * w_glo)) * config.kc_loss_alpha
-
-        if config.extra_layer:
-            with tf.variable_scope('layer_extra', reuse=tf.AUTO_REUSE):
-                n_neurons = config.extra_layer_neurons
-                w3 = tf.get_variable('kernel', shape=(N_KC, n_neurons), dtype=tf.float32)
-                b3 = tf.get_variable('bias', shape=(n_neurons,), dtype=tf.float32)
-                self.weights['w_extra_layer'] = w3
-                self.weights['b_extra_layer'] = b3
-
         self.weights['w_glo'] = w_glo
         self.weights['b_glo'] = b_glo
         self.w_glo = w_glo
@@ -711,8 +698,6 @@ class FullModel(Model):
         with tf.variable_scope('layer1', reuse=tf.AUTO_REUSE):
             glo_in_pre = tf.matmul(orn, w_orn) + b_orn
             if config.skip_orn2pn:
-                glo_in = orn
-            elif config.direct_glo:
                 mask = np.tile(np.eye(N_PN), (config.N_ORN_DUPLICATION, 1)) / config.N_ORN_DUPLICATION
                 glo_in = tf.matmul(orn, mask.astype(np.float32))
                 glo_in = _normalize(glo_in, config.pn_norm_pre, training)
@@ -769,10 +754,6 @@ class FullModel(Model):
             if config.kc_dropout:
                 kc = tf.layers.dropout(kc, config.kc_dropout_rate, training=training)
 
-            if config.extra_layer:
-                w3 = weights['w_extra_layer']
-                b3 = weights['b_extra_layer']
-                kc = tf.nn.relu(tf.matmul(kc, w3) + b3)
         self.kc_in = kc_in
         self.kc = kc
         return kc
