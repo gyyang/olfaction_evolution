@@ -193,6 +193,7 @@ def receptor_multilr_analysis(path):
 
 def standard_vary_hp():
     """Vary many hyperparameters for standard setting."""
+    # TODO: To be replaced by control_standard
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 200

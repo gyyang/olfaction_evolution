@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import dict_methods
+from scipy.signal import savgol_filter
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
@@ -35,10 +36,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
         ax_args['ylim'] = [-2, 2]
         ax_args['yticks'] = [-2, -1, 0, 1, 2]
 
-    if xkey == 'lr':
-        rect = (0.2, 0.25, 0.75, 0.65)
-    else:
-        rect = (0.3, 0.35, 0.5, 0.55)
+    rect = (0.3, 0.35, 0.5, 0.55)
 
     if xkey == 'kc_inputs':
         ax_args['xticks'] = [3, 7, 15, 30, 40, 50]
@@ -54,8 +52,9 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     return rect, ax_args
 
 
-def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=None, log=None):
-    def _plot_progress(xkey, ykey):
+def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
+            ax_args=None, log=None):
+    def _plot_xy(xkey, ykey):
         ax_args_ = {}
         if ax_args is None:
             if ykey == 'lin_hist_':
@@ -74,12 +73,17 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         colors = [seqcmap(x) for x in np.linspace(0, 1, len(xs))]
 
         for x, y, c in zip(xs, ys, colors):
-            ax.plot(x, y, alpha= 1, color = c, linewidth=1)
+            if xkey in ['lin_bins', 'log_bins']:
+                x = (x[1:] + x[:-1])/2
+            if ykey == 'lin_hist':
+                # Smoothing
+                y = savgol_filter(y, window_length=21, polyorder=0)
+            ax.plot(x, y, alpha=1, color=c, linewidth=1)
 
         if legend_key is not None:
             legends = log[legend_key]
             legends = [nicename(l, mode=legend_key) for l in legends]
-            ax.legend(legends, fontsize=7, frameon=False, ncol= 2, loc='best')
+            ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
             ax.set_title(nicename(legend_key))
 
         ax.set_xlabel(nicename(xkey))
@@ -91,16 +95,19 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
 
-        figname = '_' + ykey
+        figname = xkey + '_' + ykey
+        if legend_key:
+            figname = figname + '_' + legend_key
         if select_dict:
             for k, v in select_dict.items():
                 figname += k + '_' + str(v) + '_'
         tools.save_fig(save_path, figname)
 
     if log is None:
-        log = tools.load_all_results(save_path, argLast=False)
+        log = tools.load_all_results(save_path, argLast=True)
     if select_dict is not None:
         log = dict_methods.filter(log, select_dict)
+
     if legend_key:
         # get rid of duplicates
         values = log[legend_key]
@@ -109,7 +116,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None, ax_args=No
         _, ixs = np.unique(values, return_index=True)
         for k, v in log.items():
             log[k] = log[k][ixs]
-    _plot_progress(xkey, ykey)
+    _plot_xy(xkey, ykey)
 
 
 def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
@@ -168,9 +175,9 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
             ax.plot(x, y, alpha=alpha, color=c, linewidth=1)
 
         if legend_key is not None:
-            legends = [nicename(l) for l in legends]
+            legends = [nicename(l, mode=legend_key) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
-            plt.title(nicename(legend_key))
+            plt.title(nicename(legend_key), fontsize=7)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
@@ -326,7 +333,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
     else:
         labelpad = -5
         if multihead:
-            y_label, x_label = 'To Expansion neurons', ' From PNs'
+            y_label, x_label = 'To Third layer neurons', ' From PNs'
             labelpad = 13
         elif var_name == 'w_orn':
             y_label, x_label = 'To PNs', 'From ORNs'
@@ -351,7 +358,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
                 title += '\n' + tools.nicename(
                     title_key) + ':' + tools.nicename(v, 'lr')
         if multihead:
-            title = 'PN-Expansion connectivity'
+            title = 'PN-Third layer connectivity'
         plt.title(title, fontsize=7)
 
         if multihead:
@@ -457,7 +464,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
     if figsize is None:
         if xkey == 'lr':
-            figsize = (4.5, 1.5)
+            figsize = (2.5, 1.2)
         else:
             figsize = (1.5, 1.2)
 

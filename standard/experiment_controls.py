@@ -60,6 +60,7 @@ def control_standard():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
+    config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
@@ -77,22 +78,34 @@ def control_standard():
 
 
 def control_standard_analysis(path):
-    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 2e-3,
-               'train_kc_bias': True, 'initial_pn2kc': 0.2, 'ORN_NOISE_STD': 0,
+    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3,
+               'train_kc_bias': True, 'initial_pn2kc': 0.08,
+               'ORN_NOISE_STD': 0,
                'kc_norm_pre': None,
                }
     ykeys = ['glo_score', 'val_acc', 'K_smart']
+
     for xkey in default.keys():
         select_dict = copy.deepcopy(default)
         select_dict.pop(xkey)
-        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-        sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
-        sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+        modeldirs = tools.get_modeldirs(
+            path, select_dict=select_dict, acc_min=0.5)
+
+        _modeldirs = analysis_pn2kc_training.filter_modeldirs(
+            modeldirs, exclude_badkc=True, exclude_badpeak=True)
+        sa.plot_results(_modeldirs, xkey=xkey, ykey=ykeys)
+        sa.plot_progress(_modeldirs, ykeys=ykeys, legend_key=xkey)
+
+        _modeldirs = modeldirs
+        sa.plot_xy(_modeldirs,
+                   xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+                   ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
 
 
 def control_orn2pn():
     '''
     '''
+    # TODO: to be removed
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
@@ -217,6 +230,7 @@ def control_pn2kc():
     '''
     New setup Robert using for torch models
     '''
+    # TODO: To be removed
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 200
@@ -245,6 +259,7 @@ def control_pn2kc():
 
 
 def control_pn2kc_analysis(path):
+    # TODO: To be removed
     default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3}
     ykeys = ['val_acc', 'K_inferred']
 
@@ -279,29 +294,24 @@ def control_pn2kc_analysis(path):
 def control_pn2kc_inhibition():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 200
+    config.max_epoch = 100
 
-    config.N_ORN_DUPLICATION = 1
+    # config.N_ORN_DUPLICATION = 1
     # config.direct_glo = True
-    config.skip_orn2pn = True
-    config.pn_norm_pre = 'batch_norm'
-
-    # New settings
-    config.batch_size = 8192  # Much bigger batch size
-    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
-    config.lr = 2e-3
-
+    # config.skip_orn2pn = True
+    # config.pn_norm_pre = 'batch_norm'
     # config.kc_prune_weak_weights = True
-    config.initial_pn2kc = 5./config.N_PN
-    config.kc_prune_threshold = 1./config.N_PN
-
+    # config.initial_pn2kc = 5./config.N_PN
+    config.initial_pn2kc = 4. / config.N_PN  # necessary for analysis
+    config.kc_prune_threshold = 1. / config.N_PN
     config.kc_recinh = True
+    config.kc_recinh_step = 10
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    config_ranges['kc_prune_weak_weights'] = [True, False]
+    # config_ranges['kc_prune_weak_weights'] = [True, False]
     config_ranges['kc_recinh_coeff'] = list(np.arange(0, 1.01, 0.2))
-    config_ranges['kc_recinh_step'] = list(range(1, 10, 2))
+    # config_ranges['kc_recinh_step'] = list(range(1, 10, 2))
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
@@ -312,18 +322,14 @@ def control_pn2kc_inhibition_analysis(path):
     # loop_key = 'kc_recinh_step'
     loop_key = None
     select_dict = {'kc_prune_weak_weights': False, 'kc_recinh_step': 9}
-    for yk in ykeys:
-        sa.plot_results(path, xkey=xkey, ykey=yk, loop_key=loop_key,
-                        select_dict=select_dict)
 
-        sa.plot_progress(path, ykeys=[yk], legend_key=xkey,
-                         select_dict=select_dict)
+    modeldirs = tools.get_modeldirs(
+        path, select_dict=select_dict, acc_min=0.5)
 
-    res = standard.analysis_pn2kc_peter.do_everything(path,
-                                                      filter_peaks=False,
-                                                      redo=True)
-    sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_',
-               legend_key=xkey, log=res,
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+
+    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
                ax_args={'ylim': [0, 500]})
 
 
