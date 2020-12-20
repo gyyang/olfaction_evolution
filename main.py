@@ -55,8 +55,12 @@ if 'supplement' in experiments2train:
     experiments2train = []  # To be added
 
 for experiment in experiments2train:
+    if experiment == 'metalearn':
+        train_args = 'metatrain'
+    else:
+        train_args = None
     train_experiment(experiment, use_cluster=use_cluster, testing=testing,
-                     n_pn=n_pn)
+                     n_pn=n_pn, train_arg=train_args)
 
 for experiment in experiments2analyze:
     analyze_experiment(experiment, n_pn=n_pn)
