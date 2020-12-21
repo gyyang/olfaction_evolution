@@ -742,15 +742,7 @@ def control_n_or_per_orn():
 def vary_orn_corr():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 200
-    config.pn_norm_pre = 'batch_norm'
-
-    config.batch_size = 8192
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.lr = 2 * 1e-3
-    config.initial_pn2kc = 10. / config.N_PN
-    config.initializer_pn2kc = 'uniform'
+    config.max_epoch = 100
 
     orn_corrs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     datasets = ['./datasets/proto/orn_corr_{:0.2f}'.format(c) for c in orn_corrs]
