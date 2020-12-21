@@ -28,7 +28,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
             ax_args['ylim'] = [0, 20]
             ax_args['yticks'] = [0, 3, 7, 10, 15, 20]
         else:
-            ax_args['ylim'] = [0, int(0.5*n_pn ** 0.8)]
+            ax_args['ylim'] = [0, int(0.5*n_pn)]
     elif ykey in ['val_acc', 'glo_score']:
         ax_args['ylim'] = [0, 1.05]
         ax_args['yticks'] = [0, .5, 1]
@@ -53,7 +53,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
 
 
 def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
-            ax_args=None, log=None):
+            ax_args=None, log=None, figsize=None):
     def _plot_xy(xkey, ykey):
         ax_args_ = {}
         if ax_args is None:
@@ -62,9 +62,9 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
         else:
             ax_args_ = ax_args
 
-        figsize = (2.5, 2)
+        _figsize = figsize or (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=_figsize)
         ax = fig.add_axes(rect, **ax_args_)
 
         ys = log[ykey]
@@ -77,14 +77,15 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
                 x = (x[1:] + x[:-1])/2
             if ykey == 'lin_hist':
                 # Smoothing
-                y = savgol_filter(y, window_length=21, polyorder=0)
+                pass
+                # y = savgol_filter(y, window_length=21, polyorder=0)
             ax.plot(x, y, alpha=1, color=c, linewidth=1)
 
         if legend_key is not None:
             legends = log[legend_key]
             legends = [nicename(l, mode=legend_key) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
-            ax.set_title(nicename(legend_key))
+            ax.set_title(nicename(legend_key), fontsize=7)
 
         ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))

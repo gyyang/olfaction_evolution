@@ -191,40 +191,6 @@ def receptor_multilr_analysis(path):
         # analysis_activity.sparseness_activity(modeldir, ['glo', 'kc'])
 
 
-def standard_vary_hp():
-    """Vary many hyperparameters for standard setting."""
-    # TODO: To be replaced by control_standard
-    config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 200
-
-    config.pn_norm_pre = 'batch_norm'
-
-    # New settings
-    config.batch_size = 8192  # Much bigger batch size
-    config.initial_pn2kc = 10. / config.N_PN
-    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
-    config.lr = 2e-3
-
-    # Ranges of hyperparameters to loop over
-    config_ranges = OrderedDict()
-    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
-    config_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
-    config_ranges['lr'] = [1e-2, 5e-3, 2e-3, 1e-3, 5e-4]
-    config_ranges['initial_pn2kc'] = np.array([2., 5., 10., 20.]) / config.N_PN
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def standard_vary_hp_analysis(path):
-    select_dict = {}
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.75)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
-        modeldirs, exclude_badkc=True, exclude_badpeak=True)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
-
-
 def rnn():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
@@ -468,43 +434,44 @@ def pn_normalization_analysis(path):
 def vary_or_prune(n_pn=50):
     """Training networks with different number of PNs and vary hyperparams."""
     config = FullConfig()
-    config.max_epoch = 200
+    config.max_epoch = 30
     config.save_log_only = True
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
 
     config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0.  # No noise
     config.skip_orn2pn = True  # Skip ORN-to-PN
-    config.pn_norm_pre = 'batch_norm'
 
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1./n_pn
 
-    # New settings
-    config.batch_size = 8192  # Much bigger batch size
-    config.initial_pn2kc = 10. / config.N_PN
-    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
-    config.lr = 2e-3
+    config.N_KC = min(40000, n_pn**2)
 
     config_ranges = OrderedDict()
-    config_ranges['N_KC'] = [10000, 5000, 2500]
-    config_ranges['lr'] = [2e-2, 1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4]
-    config_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2.])/n_pn
-    config_ranges['initial_pn2kc'] = np.array([2.5, 5, 10., 20.])/n_pn
+    config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
 def vary_or_prune_analysis(path, n_pn=None):
-    if n_pn is not None:
+    def _vary_or_prune_analysis(path, n_pn):
         # Analyze individual network
         select_dict = {}
         modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-        modeldirs = analysis_pn2kc_training.filter_modeldirs(
+        _modeldirs = analysis_pn2kc_training.filter_modeldirs(
             modeldirs, exclude_badkc=True, exclude_badpeak=True)
-        sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'])
+        sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
+                         legend_key='lr')
+
+        _modeldirs = modeldirs
+        sa.plot_xy(_modeldirs,
+                   xkey='lin_bins', ykey='lin_hist', legend_key='lr',
+                   ax_args={'ylim': [0, n_pn ** 2.2 / 5],
+                            'xlim': [0, 50 / n_pn]})
+
+    if n_pn is not None:
+        _vary_or_prune_analysis(path, n_pn)
 
     else:
         import glob
@@ -513,15 +480,23 @@ def vary_or_prune_analysis(path, n_pn=None):
         n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
         Ks = list()
         for n_orn in n_orns:
-            modeldirs = tools.get_modeldirs(path + str(n_orn), acc_min=0.75)
+            _path = path + str(n_orn)
+            # _vary_or_prune_analysis(_path, n_pn=n_orn)
+            modeldirs = tools.get_modeldirs(_path, acc_min=0.75)
             modeldirs = analysis_pn2kc_training.filter_modeldirs(
                 modeldirs, exclude_badkc=True, exclude_badpeak=True)
+
+            # Use model with highest LR among good models
+            modeldirs = tools.sort_modeldirs(modeldirs, 'lr')
+            modeldirs = [modeldirs[-1]]
+
             res = tools.load_all_results(modeldirs)
             Ks.append(res['K_smart'])
 
         analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
                                            plot_dim=True,
                                            path='vary_or_prune')
+
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):
     import copy

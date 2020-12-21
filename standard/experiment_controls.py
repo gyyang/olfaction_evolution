@@ -102,6 +102,29 @@ def control_standard_analysis(path):
                    ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
 
 
+def control_standard_prune():
+    """Control for standard ORN-PN-KC all trainable model with pruning."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 100
+    config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1./config.N_PN
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    config_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
+    config_ranges['lr'] = [1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
+    config_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2.])/config.N_PN
+    config_ranges['initial_pn2kc'] = np.array([2., 4., 8.])/config.N_PN
+
+    configs = vary_config(config, config_ranges, mode='control')
+    return configs
+
+
 def control_orn2pn():
     '''
     '''
@@ -294,16 +317,10 @@ def control_pn2kc_analysis(path):
 def control_pn2kc_inhibition():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 100
+    config.max_epoch = 30
 
-    # config.N_ORN_DUPLICATION = 1
-    # config.direct_glo = True
-    # config.skip_orn2pn = True
-    # config.pn_norm_pre = 'batch_norm'
-    # config.kc_prune_weak_weights = True
-    # config.initial_pn2kc = 5./config.N_PN
-    config.initial_pn2kc = 4. / config.N_PN  # necessary for analysis
-    config.kc_prune_threshold = 1. / config.N_PN
+    config.initial_pn2kc = 4. / config.N_PN
+    # config.kc_prune_threshold = 1. / config.N_PN
     config.kc_recinh = True
     config.kc_recinh_step = 10
 
@@ -326,7 +343,8 @@ def control_pn2kc_inhibition_analysis(path):
     modeldirs = tools.get_modeldirs(
         path, select_dict=select_dict, acc_min=0.5)
 
-    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key,
+                    figsize=(2.0, 1.2))
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
 
     sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
@@ -334,29 +352,23 @@ def control_pn2kc_inhibition_analysis(path):
 
 
 def control_pn2kc_prune_boolean(n_pn=50):
-    """Standard training setting"""
+    """Control pruning."""
     config = FullConfig()
-    config.max_epoch = 200
+    config.max_epoch = 30
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
 
     config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0.
     config.skip_orn2pn = True
-    config.pn_norm_pre = 'batch_norm'
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1./n_pn
 
-    # New settings
-    config.batch_size = 8192  # Much bigger batch size
-    config.initial_pn2kc = 10. / config.N_PN
-    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
     # Heuristics
     if n_pn > 100:
-        config.lr = 1e-3
+        config.lr = 5e-4
     else:
-        config.lr = 2e-3
+        config.lr = 1e-3
 
     config_ranges = OrderedDict()
     config_ranges['kc_prune_weak_weights'] = [False, True]
@@ -364,19 +376,16 @@ def control_pn2kc_prune_boolean(n_pn=50):
     return configs
 
 
-def control_pn2kc_prune_boolean_analysis(path, n_pns):
+def control_pn2kc_prune_boolean_analysis(path, n_pns=None):
     xkey = 'kc_prune_weak_weights'
-    ykeys = ['val_acc', 'K_inferred', 'K']
-    for n_pn in n_pns:
-        cur_path = path + '_' + str(n_pn)
-        for yk in ykeys:
-            sa.plot_progress(cur_path, ykeys=[yk], legend_key=xkey)
+    ykeys = ['val_acc', 'K_smart']
+    if n_pns is None:
+        n_pns = [50, 200]
 
-        res = standard.analysis_pn2kc_peter.do_everything(cur_path,
-                                                          filter_peaks=False,
-                                                          redo=True, range=1)
-        sa.plot_xy(cur_path, xkey='lin_bins_', ykey='lin_hist_',
-                   legend_key=xkey, log=res,
+    for n_pn in n_pns:
+        cur_path = path + '_pn' + str(n_pn)
+        sa.plot_progress(cur_path, ykeys=ykeys, legend_key=xkey)
+        sa.plot_xy(cur_path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
                    ax_args={'ylim': [0, 500]})
 
 

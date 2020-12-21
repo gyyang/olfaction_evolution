@@ -327,6 +327,17 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
     return new_dirs
 
 
+def sort_modeldirs(modeldirs, key):
+    """Sort modeldirs by value of key."""
+    val = []
+    for d in modeldirs:
+        config = load_config(d)
+        val.append(getattr(config, key))
+    ind_sort = np.argsort(val)
+    modeldirs = [modeldirs[i] for i in ind_sort]
+    return modeldirs
+
+
 def get_modeldirs(path, select_dict=None, exclude_dict=None, acc_min=None):
     dirs = _get_alldirs(path, model=True, sort=True)
     dirs = select_modeldirs(dirs, select_dict=select_dict, acc_min=acc_min)
