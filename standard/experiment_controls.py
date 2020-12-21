@@ -361,14 +361,19 @@ def control_pn2kc_prune_boolean(n_pn=50):
 
     config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1./n_pn
 
     # Heuristics
     if n_pn > 100:
-        config.lr = 5e-4
+        config.lr = 1e-4
     else:
         config.lr = 1e-3
+
+    # This is important for quantitative result
+    config.N_KC = min(40000, n_pn ** 2)
 
     config_ranges = OrderedDict()
     config_ranges['kc_prune_weak_weights'] = [False, True]

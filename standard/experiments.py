@@ -484,13 +484,13 @@ def vary_or_prune_analysis(path, n_pn=None):
         folders = glob.glob(path + '*')
         n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
         Ks = list()
-        n_orns = [25, 75, 100, 150, 200]
+        # n_orns = [25, 75, 100, 150, 200]
         for n_orn in n_orns:
             _path = path + str(n_orn)
             _vary_or_prune_analysis(_path, n_pn=n_orn)
             modeldirs = tools.get_modeldirs(_path, acc_min=0.75)
-            # modeldirs = analysis_pn2kc_training.filter_modeldirs(
-            #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
+            modeldirs = analysis_pn2kc_training.filter_modeldirs(
+                modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
             # Use model with highest LR among good models
             modeldirs = tools.sort_modeldirs(modeldirs, 'lr')
@@ -499,10 +499,10 @@ def vary_or_prune_analysis(path, n_pn=None):
             res = tools.load_all_results(modeldirs)
             Ks.append(res['K_smart'])
 
-        # for plot_dim in [False, True]:
-        #     analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
-        #                                        plot_dim=plot_dim,
-        #                                        path='vary_or_prune')
+        for plot_dim in [False, True]:
+            analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
+                                               plot_dim=plot_dim,
+                                               path='vary_or_prune')
 
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):
