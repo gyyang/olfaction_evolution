@@ -77,8 +77,8 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
                 x = (x[1:] + x[:-1])/2
             if ykey == 'lin_hist':
                 # Smoothing
-                pass
-                # y = savgol_filter(y, window_length=21, polyorder=0)
+                # pass
+                y = savgol_filter(y, window_length=21, polyorder=0)
             ax.plot(x, y, alpha=1, color=c, linewidth=1)
 
         if legend_key is not None:

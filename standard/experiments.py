@@ -462,16 +462,18 @@ def vary_or_prune_analysis(path, n_pn=None):
         # Analyze individual network
         select_dict = {}
         modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-        _modeldirs = analysis_pn2kc_training.filter_modeldirs(
-            modeldirs, exclude_badkc=True, exclude_badpeak=True)
+        _modeldirs = modeldirs
+        # _modeldirs = analysis_pn2kc_training.filter_modeldirs(
+        #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
         sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
                          legend_key='lr')
 
         _modeldirs = modeldirs
         sa.plot_xy(_modeldirs,
                    xkey='lin_bins', ykey='lin_hist', legend_key='lr',
-                   ax_args={'ylim': [0, n_pn ** 2.2 / 5],
-                            'xlim': [0, 50 / n_pn]})
+                   ax_args={'ylim': [0, n_pn ** 2.4 / 50],
+                            'xlim': [0, 8 / n_pn**0.6]})
+        # x, y lim from heuristics, exponent should sum to 2-3
 
     if n_pn is not None:
         _vary_or_prune_analysis(path, n_pn)
@@ -482,12 +484,13 @@ def vary_or_prune_analysis(path, n_pn=None):
         folders = glob.glob(path + '*')
         n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
         Ks = list()
+        n_orns = [25, 75, 100, 150, 200]
         for n_orn in n_orns:
             _path = path + str(n_orn)
-            # _vary_or_prune_analysis(_path, n_pn=n_orn)
+            _vary_or_prune_analysis(_path, n_pn=n_orn)
             modeldirs = tools.get_modeldirs(_path, acc_min=0.75)
-            modeldirs = analysis_pn2kc_training.filter_modeldirs(
-                modeldirs, exclude_badkc=True, exclude_badpeak=True)
+            # modeldirs = analysis_pn2kc_training.filter_modeldirs(
+            #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
             # Use model with highest LR among good models
             modeldirs = tools.sort_modeldirs(modeldirs, 'lr')
@@ -496,9 +499,10 @@ def vary_or_prune_analysis(path, n_pn=None):
             res = tools.load_all_results(modeldirs)
             Ks.append(res['K_smart'])
 
-        analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
-                                           plot_dim=True,
-                                           path='vary_or_prune')
+        # for plot_dim in [False, True]:
+        #     analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
+        #                                        plot_dim=plot_dim,
+        #                                        path='vary_or_prune')
 
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):

@@ -633,6 +633,7 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
     ax.set_yticks(np.log(yticks))
     ax.set_yticklabels([str(t) for t in yticks])
     ax.set_xlim(np.log([20, 1700]))
+    ax.set_ylim(np.log([2, 300]))
     
     name = 'opt_k'
     if plot_scatter:
@@ -641,6 +642,8 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         name += '_box'
     if plot_data:
         name += '_data'
+    if plot_dim:
+        name += '_dim'
     if plot_fit:
         name += '_fit'
     if plot_angle:

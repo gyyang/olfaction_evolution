@@ -354,7 +354,7 @@ def control_pn2kc_inhibition_analysis(path):
 def control_pn2kc_prune_boolean(n_pn=50):
     """Control pruning."""
     config = FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
