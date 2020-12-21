@@ -416,7 +416,7 @@ def control_vary_kc_prune(n_pn=50):
         config.lr = 1e-3
 
     config_ranges = OrderedDict()
-    config_ranges['N_KC'] = np.linspace(50, n_pn, 5, dtype=int)**2
+    config_ranges['N_KC'] = np.linspace(50, n_pn, 5, dtype=np.int)**2
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
