@@ -743,6 +743,7 @@ def vary_orn_corr():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
+    config.lr = 1e-4
 
     orn_corrs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     datasets = ['./datasets/proto/orn_corr_{:0.2f}'.format(c) for c in orn_corrs]
@@ -783,6 +784,7 @@ def vary_orn_corr_analysis(path):
     ykeys = ['val_acc', 'K_inferred', 'glo_score']
     progress_keys = ['val_logloss', 'train_logloss', 'val_loss',
                      'train_loss', 'val_acc', 'glo_score', 'K_inferred']
-    for yk in ykeys:
-        sa.plot_results(path, xkey=xkey, ykey=yk, figsize=(3.0, 1.5))
-        sa.plot_progress(path, legend_key=xkey, ykeys=progress_keys)
+    sa.plot_results(path, xkey=xkey, ykey=ykeys, figsize=(3.0, 1.5))
+    sa.plot_progress(path, legend_key=xkey, ykeys=progress_keys)
+    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+               ax_args={'ylim': [0, 500]})
