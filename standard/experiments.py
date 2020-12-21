@@ -436,7 +436,7 @@ def pn_normalization_analysis(path):
 def vary_or_prune(n_pn=50):
     """Training networks with different number of PNs and vary hyperparams."""
     config = FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
     config.save_log_only = True
 
     config.N_PN = n_pn
@@ -445,6 +445,7 @@ def vary_or_prune(n_pn=50):
     config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True  # Skip ORN-to-PN
 
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1./n_pn
 
