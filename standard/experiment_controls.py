@@ -391,7 +391,8 @@ def control_pn2kc_prune_boolean_analysis(path, n_pns=None):
         cur_path = path + '_pn' + str(n_pn)
         sa.plot_progress(cur_path, ykeys=ykeys, legend_key=xkey)
         sa.plot_xy(cur_path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
-                   ax_args={'ylim': [0, 500]})
+                   ax_args={'ylim': [0, n_pn ** 2.4 / 50],
+                            'xlim': [0, 8 / n_pn**0.6]})
 
 
 def control_vary_kc_prune(n_pn=50):
@@ -421,6 +422,16 @@ def control_vary_kc_prune(n_pn=50):
     return configs
 
 
+def control_vary_kc_prune_analysis(path, n_pns=None):
+    ykeys = ['val_acc', 'K_smart']
+    n_pns = n_pns or [200]
+    for n_pn in n_pns:
+        cur_path = path + '_pn' + str(n_pn)
+        sa.plot_progress(cur_path, legend_key='N_KC', ykeys=ykeys)
+        sa.plot_results(cur_path, xkey='N_KC', ykey=ykeys,
+                        logx=True, figsize=(2.5, 1.5))
+
+
 def control_vary_kc():
     """Vary KC without pruning, train all."""
     config = FullConfig()
@@ -436,19 +447,11 @@ def control_vary_kc():
 
 
 def control_vary_kc_analysis(path):
-    sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
-    sa.plot_weights(os.path.join(path, '000021'), sort_axis=1, average=False)
-    # default = {'kc_dropout_rate': 0.5, 'N_KC':2500}
-    # ykeys = ['val_acc', 'glo_score']
-    # ylim, yticks = [0, 1.1], [0, .25, .5, .75, 1]
-    # xticks = [50, 200, 1000, 2500, 10000]
-    # for ykey in ykeys:
-    #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
-    #                     loop_key='kc_dropout_rate',
-    #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
-    #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
-    #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
-    #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
+    ykeys = ['val_acc', 'glo_score']
+    xticks = [50, 200, 1000, 2500, 10000]
+
+    sa.plot_results(path, xkey='N_KC', ykey=ykeys, loop_key='kc_dropout_rate',
+                    logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
 
 
 def control_vary_pn():
@@ -464,34 +467,27 @@ def control_vary_pn():
 
 
 def control_vary_pn_analysis(path):
-    sa.plot_weights(os.path.join(path, '000004'), sort_axis=1, average=False)
-    sa.plot_weights(os.path.join(path, '000010'), sort_axis=1, average=False,
-                    vlim=[0, 5])
-    sa.plot_weights(os.path.join(path, '000022'), sort_axis=1, average=False,
-                    vlim=[0, 5])
-
-    ix = 22
-    ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(path, ix, cutoff=.9,
-                                                         shuffle=False)
-    analysis_orn2pn.multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad)
-    analysis_orn2pn.multiglo_lesion(path, ix, ix_good, ix_bad)
+    # TODO: bring back the analysis
+    # sa.plot_weights(os.path.join(path, '000004'), sort_axis=1, average=False)
+    # sa.plot_weights(os.path.join(path, '000010'), sort_axis=1, average=False,
+    #                 vlim=[0, 5])
+    # sa.plot_weights(os.path.join(path, '000022'), sort_axis=1, average=False,
+    #                 vlim=[0, 5])
+    #
+    # ix = 22
+    # ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(path, ix, cutoff=.9,
+    #                                                      shuffle=False)
+    # analysis_orn2pn.multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad)
+    # analysis_orn2pn.multiglo_lesion(path, ix, ix_good, ix_bad)
 
     default = {'kc_dropout_rate': 0.5, 'N_PN': 50}
     ykeys = ['val_acc', 'glo_score']
     xticks = [20, 50, 100, 200, 1000]
-    for ykey in ykeys:
-        sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75),
-                        ax_box=(0.3, 0.3, 0.65, 0.65),
-                        loop_key='kc_dropout_rate',
-                        logx=True, ax_args={'xticks': xticks},
-                        plot_args={'alpha': 0.7})
-        sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75),
-                        ax_box=(0.25, 0.25, 0.65, 0.65),
-                        loop_key='kc_dropout_rate',
-                        select_dict={'kc_dropout_rate': 0.5},
-                        logx=True, ax_args={'xticks': xticks})
-        sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN',
-                         select_dict={'kc_dropout_rate': 0.5})
+    sa.plot_results(path, xkey='N_PN', ykey=ykeys, loop_key='kc_dropout_rate',
+                    logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
+    select_dict = {'kc_dropout_rate': 0.5}
+    sa.plot_progress(path, ykeys=ykeys, legend_key='N_PN',
+                     select_dict=select_dict)
 
 
 #TODO

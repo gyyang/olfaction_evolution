@@ -36,7 +36,10 @@ def _get_ax_args(xkey, ykey, n_pn=50):
         ax_args['ylim'] = [-2, 2]
         ax_args['yticks'] = [-2, -1, 0, 1, 2]
 
-    rect = (0.3, 0.35, 0.5, 0.55)
+    if 'norm' in xkey:
+        rect = (0.3, 0.35, 0.5, 0.55)
+    else:
+        rect = (0.2, 0.35, 0.7, 0.55)
 
     if xkey == 'kc_inputs':
         ax_args['xticks'] = [3, 7, 15, 30, 40, 50]
@@ -502,15 +505,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             if xkey_is_string:
                 x_plot = np.arange(len(xvals))
             else:
-                if logx:
-                    x_plot = np.log(np.array(xvals))
-                else:
-                    x_plot = xvals
-
-            if logy:
-                y_plot = np.log(yvals)
-            else:
-                y_plot = yvals
+                x_plot = np.log(np.array(xvals)) if logx else xvals
+            y_plot = np.log(yvals) if logy else yvals
 
             ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
             if plot_actual_value:
@@ -527,12 +523,14 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
         if 'xticks' in ax_args_.keys():
             xticks = ax_args_['xticks']
-            ax.set_xticks(xticks)
         else:
-            xticks = x_plot
-            xticklabels = [nicename(x, mode=xkey) for x in xvals]
+            xticks = xvals
+        xticklabels = [nicename(x, mode=xkey) for x in xticks]
+        if logx:
+            ax.set_xticks(np.log(xticks))
+        else:
             ax.set_xticks(xticks)
-            ax.set_xticklabels(xticklabels)
+        ax.set_xticklabels(xticklabels)
 
         # ax.set_xticks(xticks)
         # if not xkey_is_string:
@@ -561,8 +559,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
         if loop_key:
-            l = ax.legend(loc=1, bbox_to_anchor=(1.0, 0.5), fontsize= 7,
-                          frameon=False, ncol=2)
+            l = ax.legend(loc='best', fontsize= 7, frameon=False, ncol=2)
             l.set_title(nicename(loop_key))
 
         figname = '_' + ykey + '_vs_' + xkey

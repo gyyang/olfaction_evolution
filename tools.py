@@ -567,6 +567,11 @@ def nicename(name, mode='dict'):
     """Return nice name for publishing."""
     if mode == 'lr':
         return np.format_float_scientific(name, precision=0, exp_digits=1)
+    elif mode in ['N_KC', 'N_PN']:
+        if name >= 1000:
+            return '{:.1f}K'.format(name/1000)
+        else:
+            return name
     elif mode == 'kc_recinh_coeff':
         return '{:0.1f}'.format(name)
     else:

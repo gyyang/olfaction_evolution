@@ -9,7 +9,7 @@ from torch.nn import init
 from torch.nn import functional as F
 import math
 
-from configs import FullConfig, SingleLayerConfig
+from configs import FullConfig, SingleLayerConfig, RNNConfig
 import tools
 
 
@@ -205,7 +205,7 @@ class Layer(nn.Module):
 
 class FullModel(nn.Module):
     def __init__(self, config=None):
-        super(FullModel, self).__init__()
+        super().__init__()
         if config is None:
             config = FullConfig
 
@@ -427,3 +427,59 @@ class FullModel(nn.Module):
         if verbose:
             print('Lesioned units:')
             print(units)
+
+
+class RNNModel(nn.Module):
+    def __init__(self, config=None):
+        super().__init__()
+        if config is None:
+            config = RNNConfig
+
+        self.config = config
+        self.n_steps = config.TIME_STEPS
+        self.hidden_units = config.NEURONS
+        hidden_units = self.hidden_units
+
+        self.rnn = Layer(
+            hidden_units, hidden_units,
+            weight_initializer=config.initializer_rec,
+            weight_initial_value=config.initial_rec,
+            sign_constraint=config.sign_constraint_rec,
+            pre_norm=config.rec_norm_pre,
+            post_norm=config.rec_norm_post,
+            dropout=config.rec_dropout,
+            dropout_rate=config.rec_dropout_rate,
+        )
+
+        self.output = nn.Linear(hidden_units, config.N_CLASS)
+        self.loss = nn.CrossEntropyLoss()
+
+    def forward(self, x, target):
+        # Process ORNs
+        act0 = x
+        if self.config.N_ORN_DUPLICATION > 1:
+            act0 = act0.repeat(1, self.config.N_ORN_DUPLICATION)
+
+        if self.config.ORN_NOISE_STD > 0:
+            act0 += torch.randn_like(act0) * self.config.ORN_NOISE_STD
+
+        act1 = torch.zeros([act0.shape(0), self.hidden_units],
+                           dtype=act0.dtype)
+        act1[:, :act0.shape(1)] = act0
+
+        for i in range(self.n_step):
+            act1 = self.rnn(act1)
+
+        y = self.output(act1)
+
+        # Regular network
+        loss = self.loss(y, target)
+        with torch.no_grad():
+            _, pred = torch.max(y, 1)
+            acc = (pred == target).sum().item() / target.size(0)
+        results = {'loss': loss, 'acc': acc}
+
+        if self._readout:
+            results['glo'] = act1
+
+        return results

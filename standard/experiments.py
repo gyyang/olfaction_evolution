@@ -11,7 +11,7 @@ from collections.__init__ import OrderedDict
 
 import numpy as np
 
-from configs import FullConfig, MetaConfig
+from configs import FullConfig, MetaConfig, RNNConfig
 from tools import vary_config
 import tools
 import settings
@@ -192,6 +192,16 @@ def receptor_multilr_analysis(path):
 
 
 def rnn():
+    config = RNNConfig()
+
+    config_ranges = OrderedDict()
+    config_ranges['TIME_STEPS'] = [1, 2, 3]
+
+    configs = vary_config(config, config_ranges, mode='sequential')
+    return configs
+
+
+def rnn_tf():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
@@ -261,61 +271,61 @@ def metalearn_analysis(path):
     # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
 
 
-def vary_pn():
-    '''
-    Vary number of PNs while fixing KCs to be 2500
-    Results:
-        GloScore should peak at PN=50, and then drop as PN > 50
-        Accuracy should plateau at PN=50
-        Results should be independent of noise
-    '''
-    config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
-
-    config_ranges = OrderedDict()
-    config_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def vary_pn_analysis(path):
-    xticks = [20, 50, 100, 200, 1000]
-    ykeys = ['val_acc', 'glo_score']
-    sa.plot_results(path, xkey='N_PN', ykey=ykeys, figsize=(1.75, 1.75),
-                    loop_key='kc_dropout_rate', logx=True,
-                    ax_args={'xticks': xticks})
-
-
-def vary_kc():
-    '''
-    Vary number of KCs while also training ORN2PN.
-    '''
-    config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
-
-    # Ranges of hyperparameters to loop over
-    config_ranges = OrderedDict()
-    config_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def vary_kc_analysis(path):
-    xticks = [50, 200, 1000, 2500, 10000]
-    ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
-    ykeys = ['val_acc', 'glo_score']
-    for ykey in ykeys:
-        sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75),
-                        ax_box=(0.25, 0.25, 0.65, 0.65),
-                        loop_key='kc_dropout_rate', logx=True,
-                        ax_args={'ylim': ylim, 'yticks': yticks,
-                                 'xticks': xticks})
+# def vary_pn():
+#     '''
+#     Vary number of PNs while fixing KCs to be 2500
+#     Results:
+#         GloScore should peak at PN=50, and then drop as PN > 50
+#         Accuracy should plateau at PN=50
+#         Results should be independent of noise
+#     '''
+#     config = FullConfig()
+#     config.data_dir = './datasets/proto/standard'
+#     config.max_epoch = 30
+#     config.pn_norm_pre = 'batch_norm'
+#
+#     config_ranges = OrderedDict()
+#     config_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
+#
+#     configs = vary_config(config, config_ranges, mode='combinatorial')
+#     return configs
+#
+#
+# def vary_pn_analysis(path):
+#     xticks = [20, 50, 100, 200, 1000]
+#     ykeys = ['val_acc', 'glo_score']
+#     sa.plot_results(path, xkey='N_PN', ykey=ykeys, figsize=(1.75, 1.75),
+#                     loop_key='kc_dropout_rate', logx=True,
+#                     ax_args={'xticks': xticks})
+#
+#
+# def vary_kc():
+#     '''
+#     Vary number of KCs while also training ORN2PN.
+#     '''
+#     config = FullConfig()
+#     config.data_dir = './datasets/proto/standard'
+#     config.max_epoch = 30
+#     config.pn_norm_pre = 'batch_norm'
+#
+#     # Ranges of hyperparameters to loop over
+#     config_ranges = OrderedDict()
+#     config_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
+#
+#     configs = vary_config(config, config_ranges, mode='combinatorial')
+#     return configs
+#
+#
+# def vary_kc_analysis(path):
+#     xticks = [50, 200, 1000, 2500, 10000]
+#     ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
+#     ykeys = ['val_acc', 'glo_score']
+#     for ykey in ykeys:
+#         sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75),
+#                         ax_box=(0.25, 0.25, 0.65, 0.65),
+#                         loop_key='kc_dropout_rate', logx=True,
+#                         ax_args={'ylim': ylim, 'yticks': yticks,
+#                                  'xticks': xticks})
 
 
 def vary_kc_activity_fixed():
