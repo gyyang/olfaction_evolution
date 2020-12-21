@@ -395,7 +395,7 @@ def control_pn2kc_prune_boolean_analysis(path, n_pns=None):
 
 
 def control_vary_kc_prune(n_pn=50):
-    """Control pruning."""
+    """Vary KC with pruning, train only PN-KC."""
     config = FullConfig()
     config.max_epoch = 100
 
@@ -422,12 +422,10 @@ def control_vary_kc_prune(n_pn=50):
 
 
 def control_vary_kc():
+    """Vary KC without pruning, train all."""
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
+    config.max_epoch = 100
 
     config_ranges = OrderedDict()
     config_ranges['N_KC'] = [50, 100, 200, 400, 1000, 2500, 5000, 10000, 20000]
