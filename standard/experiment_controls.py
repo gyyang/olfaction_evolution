@@ -367,7 +367,7 @@ def control_pn2kc_prune_boolean(n_pn=50):
     config.kc_prune_threshold = 1./n_pn
 
     # Heuristics
-    if n_pn > 100:
+    if n_pn > 50:
         config.lr = 1e-4
     else:
         config.lr = 1e-3
@@ -392,6 +392,33 @@ def control_pn2kc_prune_boolean_analysis(path, n_pns=None):
         sa.plot_progress(cur_path, ykeys=ykeys, legend_key=xkey)
         sa.plot_xy(cur_path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
                    ax_args={'ylim': [0, 500]})
+
+
+def control_vary_kc_prune(n_pn=50):
+    """Control pruning."""
+    config = FullConfig()
+    config.max_epoch = 100
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1./n_pn
+
+    # Heuristics
+    if n_pn > 50:
+        config.lr = 1e-4
+    else:
+        config.lr = 1e-3
+
+    config_ranges = OrderedDict()
+    config_ranges['N_KC'] = np.linspace(50, n_pn, 5, dtype=int)**2
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
 
 
 def control_vary_kc():
