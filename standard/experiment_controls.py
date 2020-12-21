@@ -454,8 +454,7 @@ def control_vary_kc_analysis(path):
 def control_vary_pn():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
+    config.max_epoch = 100
 
     config_ranges = OrderedDict()
     config_ranges['N_PN'] = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
