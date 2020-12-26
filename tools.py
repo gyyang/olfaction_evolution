@@ -475,7 +475,8 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
                 res[key].append(val)
 
         k_smart_key = 'K' if config.kc_prune_weak_weights else 'K_inferred'
-        res['K_smart'].append(res[k_smart_key][-1])
+        if k_smart_key in res.keys():
+            res['K_smart'].append(res[k_smart_key][-1])
 
         # Adding configuration values
         for k in dir(config):
@@ -585,6 +586,7 @@ gray = np.array([167, 156, 147])/255.
 darkblue = np.array([3, 53, 62])/255.
 green = np.array([65,89,57])/255.  # From # 24
 
+
 def _reshape_worn(w_orn, unique_orn, mode='tile'):
     """Reshape w_orn."""
     n_orn, n_pn = w_orn.shape
@@ -600,6 +602,7 @@ def _reshape_worn(w_orn, unique_orn, mode='tile'):
     else:
         raise ValueError('Unknown mode' + str(mode))
     return w_orn_by_pn
+
 
 def _reshape_worn_by_wor(w_orn, w_or):
     ind_max = np.argmax(w_or, axis=0)

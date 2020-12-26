@@ -203,7 +203,79 @@ class Layer(nn.Module):
         )
 
 
-class FullModel(nn.Module):
+class CustomModule(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self._readout = False
+        # Record original weights for lesioning
+        self._original_weights = {}
+
+    def save(self, epoch=None):
+        save_path = self.config.save_path
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+        os.makedirs(save_path, exist_ok=True)
+        fname = os.path.join(save_path, 'model.pt')
+        torch.save(self.state_dict(), fname)
+
+    def load(self, epoch=None):
+        save_path = self.config.save_path
+        if not os.path.exists(save_path):
+            # datasets are usually stored like path/files/experiment/model
+            paths = ['.'] + os.path.normpath(save_path).split(os.path.sep)[-3:]
+            save_path = os.path.join(*paths)
+
+        if epoch is not None:
+            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
+        fname = os.path.join(save_path, 'model.pt')
+        if not torch.cuda.is_available():
+            self.load_state_dict(torch.load(fname, map_location=torch.device('cpu')))
+        else:
+            self.load_state_dict(torch.load(fname))
+
+    def readout(self, is_readout=True):
+        self._readout = is_readout
+
+    def lesion_units(self, name, units, verbose=False, arg='outbound'):
+        """Lesion units given by units.
+
+        Args:
+            name: name of the layer to lesion
+            units : can be None, an integer index, or a list of integer indices
+            verbose: bool
+            arg: 'outbound' or 'inbound', lesion outgoing or incoming units
+        """
+        # Convert to numpy array
+        if units is None:
+            return
+        elif not hasattr(units, '__iter__'):
+            units = np.array([units])
+        else:
+            units = np.array(units)
+
+        layer = getattr(self, name)
+        if name not in self._original_weights:
+            # weight not recorded yet
+            self._original_weights[name] = layer.weight.clone().detach()
+
+        original_weight = self._original_weights[name]
+
+        layer.weight.copy_(original_weight)
+
+        if arg == 'outbound':
+            layer.weight.data[:, units] = 0
+        elif arg == 'inbound':
+            layer.weight.data[units, :] = 0
+        else:
+            raise ValueError('did not recognize lesion argument: {}'.format(arg))
+
+        if verbose:
+            print('Lesioned units:')
+            print(units)
+
+
+class FullModel(CustomModule):
     def __init__(self, config=None):
         super().__init__()
         if config is None:
@@ -267,14 +339,6 @@ class FullModel(nn.Module):
         if self.multihead:
             self.layer3_2 = nn.Linear(config.N_KC, config.n_class_valence)
             self.loss_2 = nn.CrossEntropyLoss()
-
-        self._readout = False
-
-        # Record origianl weights for lesioning
-        self._original_weights = {}
-
-    def readout(self, is_readout=True):
-        self._readout = is_readout
 
     def forward(self, x, target):
         # Process ORNs
@@ -347,29 +411,6 @@ class FullModel(nn.Module):
         else:
             return None
 
-    def save(self, epoch=None):
-        save_path = self.config.save_path
-        if epoch is not None:
-            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
-        os.makedirs(save_path, exist_ok=True)
-        fname = os.path.join(save_path, 'model.pt')
-        torch.save(self.state_dict(), fname)
-
-    def load(self, epoch=None):
-        save_path = self.config.save_path
-        if not os.path.exists(save_path):
-            # datasets are usually stored like path/files/experiment/model
-            paths = ['.'] + os.path.normpath(save_path).split(os.path.sep)[-3:]
-            save_path = os.path.join(*paths)
-
-        if epoch is not None:
-            save_path = os.path.join(save_path, 'epoch', str(epoch).zfill(4))
-        fname = os.path.join(save_path, 'model.pt')
-        if not torch.cuda.is_available():
-            self.load_state_dict(torch.load(fname, map_location=torch.device('cpu')))
-        else:
-            self.load_state_dict(torch.load(fname))
-
     def save_pickle(self, epoch=None):
         """Save model using pickle.
 
@@ -391,45 +432,8 @@ class FullModel(nn.Module):
         tools.save_pickle(save_path, var_dict, epoch=epoch)
         print("Model weights saved in path: %s" % save_path)
 
-    def lesion_units(self, name, units, verbose=False, arg='outbound'):
-        """Lesion units given by units.
 
-        Args:
-            name: name of the layer to lesion
-            units : can be None, an integer index, or a list of integer indices
-            verbose: bool
-            arg: 'outbound' or 'inbound', lesion outgoing or incoming units
-        """
-        # Convert to numpy array
-        if units is None:
-            return
-        elif not hasattr(units, '__iter__'):
-            units = np.array([units])
-        else:
-            units = np.array(units)
-
-        layer = getattr(self, name)
-        if name not in self._original_weights:
-            # weight not recorded yet
-            self._original_weights[name] = layer.weight.clone().detach()
-
-        original_weight = self._original_weights[name]
-
-        layer.weight.copy_(original_weight)
-
-        if arg == 'outbound':
-            layer.weight.data[:, units] = 0
-        elif arg == 'inbound':
-            layer.weight.data[units, :] = 0
-        else:
-            raise ValueError('did not recognize lesion argument: {}'.format(arg))
-
-        if verbose:
-            print('Lesioned units:')
-            print(units)
-
-
-class RNNModel(nn.Module):
+class RNNModel(CustomModule):
     def __init__(self, config=None):
         super().__init__()
         if config is None:
@@ -450,9 +454,19 @@ class RNNModel(nn.Module):
             dropout=config.rec_dropout,
             dropout_rate=config.rec_dropout_rate,
         )
+        if config.diagonal:
+            self.rnn.weight.data.fill_diagonal_(1.)  # set diagonal to 1
 
         self.output = nn.Linear(hidden_units, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
+
+    @property
+    def w_rnn(self):
+        return self.rnn.effective_weight.data.cpu().numpy().T
+
+    @property
+    def w_out(self):
+        return self.output.weight.data.cpu().numpy().T
 
     def forward(self, x, target):
         # Process ORNs
@@ -463,12 +477,18 @@ class RNNModel(nn.Module):
         if self.config.ORN_NOISE_STD > 0:
             act0 += torch.randn_like(act0) * self.config.ORN_NOISE_STD
 
-        act1 = torch.zeros([act0.shape(0), self.hidden_units],
-                           dtype=act0.dtype)
-        act1[:, :act0.shape(1)] = act0
+        # Set first N_ORN neurons to be odor activated
+        act1 = torch.zeros([act0.shape[0], self.hidden_units],
+                           dtype=act0.dtype).to(act0.device)
+        act1[:, :act0.shape[1]] = act0
 
-        for i in range(self.n_step):
+        results = dict()
+        if self._readout:
+            results['rnn_outputs'] = [act1.cpu().numpy()]
+        for i in range(self.n_steps):
             act1 = self.rnn(act1)
+            if self._readout:
+                results['rnn_outputs'].append(act1.cpu().numpy())
 
         y = self.output(act1)
 
@@ -477,9 +497,31 @@ class RNNModel(nn.Module):
         with torch.no_grad():
             _, pred = torch.max(y, 1)
             acc = (pred == target).sum().item() / target.size(0)
-        results = {'loss': loss, 'acc': acc}
-
-        if self._readout:
-            results['glo'] = act1
+        results.update({'loss': loss, 'acc': acc})
 
         return results
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        var_dict = dict()
+        for name, param in self.named_parameters():
+            var_dict[name] = param.data.cpu().numpy()
+
+        var_dict['w_rnn'] = self.w_rnn
+        var_dict['w_out'] = self.w_out
+
+        save_path = self.config.save_path
+        tools.save_pickle(save_path, var_dict, epoch=epoch)
+        print("Model weights saved in path: %s" % save_path)
+
+
+def get_model(config):
+    if config.model == 'full':
+        return FullModel(config=config)
+    elif config.model == 'rnn':
+        return RNNModel(config=config)
+    else:
+        raise ValueError('Unknown model type', config.model)

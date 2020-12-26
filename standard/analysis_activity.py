@@ -72,7 +72,7 @@ def load_activity_tf(save_path, lesion_kwargs=None):
 
 def load_activity_torch(save_path, lesion_kwargs=None):
     import torch
-    from torchmodel import FullModel
+    from torchmodel import get_model
     # Reload the network and analyze activity
     config = tools.load_config(save_path)
 
@@ -81,7 +81,7 @@ def load_activity_torch(save_path, lesion_kwargs=None):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     with torch.no_grad():
-        model = FullModel(config=config)
+        model = get_model(config)
         model.load()
         model.to(device)
         model.readout()
@@ -102,6 +102,7 @@ def load_activity_torch(save_path, lesion_kwargs=None):
             results[key] = val.numpy()
         except AttributeError:
             pass
+        results[key] = np.array(results[key])
 
     return results
 

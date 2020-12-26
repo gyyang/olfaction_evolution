@@ -1,9 +1,17 @@
 import os
-import task
 import numpy as np
+import matplotlib.pyplot as plt
+
+import sys
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)
+
+import task
 import tools
 import standard.analysis_pn2kc_training
-import matplotlib.pyplot as plt
+import settings
+
+use_torch = settings.use_torch
 
 def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extra_str ='', vlim = None):
     rect = [0.2, 0.15, 0.6, 0.6]
@@ -13,7 +21,11 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extr
     if vlim == None:
         vlim = np.round(np.max(abs(w_plot)), decimals=1)
 
-    cmap = tools.get_colormap()
+    cmap = plt.get_cmap('RdBu_r')
+    positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
+    if positive_cmap:
+        cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
+
     im = ax.imshow(w_plot, cmap=cmap, vmin=0, vmax=vlim,
                    interpolation='none')
     plt.axis('tight')
@@ -37,7 +49,8 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path, xticks=None, extr
     plt.axis('tight')
     tools.save_fig(save_path, '__' + str(dir_ix) + '_' + y_label + '_' + x_label + '_' + extra_str, dpi=400)
 
-def _load_activity(save_path):
+
+def _load_activity_tf(save_path):
     import tensorflow as tf
     import model as network_models
 
@@ -62,15 +75,27 @@ def _load_activity(save_path):
         rnn_outputs = sess.run(model.rnn_outputs, {val_x_ph: val_x, val_y_ph: val_y})
     return rnn_outputs
 
+
+def _load_activity(save_path):
+    if use_torch:
+        from standard.analysis_activity import load_activity_torch
+        results = load_activity_torch(save_path)
+        return results['rnn_outputs']
+    else:
+        return _load_activity_tf(save_path)
+
+
 def rnn_distribution(w_glo, dir_ix, path):
     n = os.path.join(path, '__' + str(dir_ix) + '_distribution')
     standard.analysis_pn2kc_training._plot_distribution(w_glo.flatten(), savename= n, xrange=1.0, yrange=5000)
+
 
 def rnn_sparsity(w_glo, dir_ix, path):
     thres, _ = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
     claw_count = np.count_nonzero(w_glo>thres,axis=0)
     n = os.path.join(path, '__' + str(dir_ix) + '_sparsity')
     standard.analysis_pn2kc_training._plot_sparsity(claw_count, savename= n, yrange = 0.5)
+
 
 def plot_activity(rnn_outputs, dir_ix, threshold, path):
     ## plot summary
@@ -245,11 +270,18 @@ def analyze_t_greater(path, dir_ix, threshold = 0.05):
     # _easy_weights(w_orn, y_label='ORN', x_label='PN', dir_ix=dir_ix, save_path=path)
     # _easy_weights(w_glo, y_label='PN', x_label='KC', dir_ix=dir_ix, save_path=path)
     # _easy_weights(w_glo_sorted, y_label='PN', x_label='KC_sorted', dir_ix=dir_ix, save_path=path)
-#
-# path = './files/RNN'
-# dir_ix = 0
-#
-# if dir_ix == 0:
-#     analyze_t0(path, dir_ix)
-# else:
-#     analyze_t_greater(path, dir_ix)
+
+if __name__ == '__main__':
+
+
+    path = '../files/rnn'
+
+    from standard.analysis_activity import load_activity_torch
+
+    modeldir = tools.get_modeldirs(path)[0]
+    results = load_activity_torch(modeldir)
+    # dir_ix = 1
+    # if dir_ix == 0:
+    #     analyze_t0(path, dir_ix)
+    # else:
+    #     analyze_t_greater(path, dir_ix)

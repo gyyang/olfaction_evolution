@@ -10,7 +10,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 import task
-from torchmodel import FullModel
+from torchmodel import get_model
 from configs import FullConfig, SingleLayerConfig
 import tools
 from standard.analysis_pn2kc_training import _compute_sparsity
@@ -113,7 +113,7 @@ def train(config, reload=False, save_everytrainloss=False):
 
     batch_size = config.batch_size
 
-    model = FullModel(config=config)
+    model = get_model(config)
     model.to(device)
 
     # TEMPORARY

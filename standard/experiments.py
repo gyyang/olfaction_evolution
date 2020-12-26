@@ -193,15 +193,21 @@ def receptor_multilr_analysis(path):
 
 def rnn():
     config = RNNConfig()
+    config.max_epoch = 30
+    config.rec_dropout = False
+    config.rec_norm_pre = None
+    config.diagonal = True
+    config.ORN_NOISE_STD = 0.1
 
     config_ranges = OrderedDict()
-    config_ranges['TIME_STEPS'] = [1, 2, 3]
+    config_ranges['TIME_STEPS'] = [2]
 
     configs = vary_config(config, config_ranges, mode='sequential')
     return configs
 
 
 def rnn_tf():
+    # TODO: To be removed in the future
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 30
@@ -224,10 +230,10 @@ def rnn_tf():
 
 
 def rnn_analysis(path):
-    sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
+    # sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
     # analysis_rnn.analyze_t0(path, dir_ix=0)
     analysis_rnn.analyze_t_greater(path, dir_ix=1)
-    analysis_rnn.analyze_t_greater(path, dir_ix=2)
+    # analysis_rnn.analyze_t_greater(path, dir_ix=2)
 
 
 def metalearn():

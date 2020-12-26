@@ -299,6 +299,8 @@ class RNNConfig(BaseConfig):
         self.rec_dropout = True
         # dropout rate for pns
         self.rec_dropout_rate = .0
+        # Initialize rec weight as diagonal matrix
+        self.diagonal = False
 
 
 
