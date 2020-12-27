@@ -169,6 +169,7 @@ if __name__ == '__main__':
 
     # modeldir = tools.get_modeldirs(path)[0]
     # results = load_activity_torch(modeldir)
+    select_dict = {'rec_dropout_rate': 0.5}
     dir_ix = 0
 # =============================================================================
 #     if dir_ix == 0:
@@ -178,8 +179,7 @@ if __name__ == '__main__':
 # =============================================================================
     threshold = 0.05
 
-    dirs = tools.get_modeldirs(path)
-    save_path = dirs[dir_ix]
+    save_path = tools.get_modeldirs(path, select_dict=select_dict)[0]
     config = tools.load_config(save_path)
     w_rnn = tools.load_pickle(save_path)['w_rnn']  # (from, to)
     rnn_outputs = _load_activity(save_path)  # (time step, odor, neuron)

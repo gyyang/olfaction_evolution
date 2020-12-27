@@ -194,15 +194,17 @@ def receptor_multilr_analysis(path):
 def rnn():
     config = RNNConfig()
     config.max_epoch = 30
-    config.rec_dropout = False
+    config.rec_dropout = True
+    config.rec_dropout_rate = 0.5
     config.rec_norm_pre = None
     config.diagonal = True
-    config.ORN_NOISE_STD = 0.1
+    config.ORN_NOISE_STD = 0.0
 
     config_ranges = OrderedDict()
     config_ranges['TIME_STEPS'] = [2]
+    config_ranges['rec_dropout_rate'] = [0.1, 0.2, 0.3, 0.4, 0.5]
 
-    configs = vary_config(config, config_ranges, mode='sequential')
+    configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 

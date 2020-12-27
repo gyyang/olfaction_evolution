@@ -452,6 +452,7 @@ class RNNModel(CustomModule):
             pre_norm=config.rec_norm_pre,
             post_norm=config.rec_norm_post,
             dropout=config.rec_dropout,
+            # dropout=False,
             dropout_rate=config.rec_dropout_rate,
         )
         if config.diagonal:
@@ -459,6 +460,9 @@ class RNNModel(CustomModule):
 
         self.output = nn.Linear(hidden_units, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
+
+        # TODO: temp
+        # self.dropout = nn.Dropout(p=config.rec_dropout_rate)
 
     @property
     def w_rnn(self):
@@ -489,6 +493,9 @@ class RNNModel(CustomModule):
             act1 = self.rnn(act1)
             if self._readout:
                 results['rnn_outputs'].append(act1.cpu().numpy())
+
+        # TODO: temp
+        # act1 = self.dropout(act1)
 
         y = self.output(act1)
 
