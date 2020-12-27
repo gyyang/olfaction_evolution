@@ -201,8 +201,8 @@ def rnn():
     config.ORN_NOISE_STD = 0.0
 
     config_ranges = OrderedDict()
-    config_ranges['TIME_STEPS'] = [2]
-    config_ranges['rec_dropout_rate'] = [0.1, 0.2, 0.3, 0.4, 0.5]
+    config_ranges['TIME_STEPS'] = [1, 2, 3]
+    config_ranges['rec_dropout_rate'] = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs

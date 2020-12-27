@@ -451,8 +451,8 @@ class RNNModel(CustomModule):
             sign_constraint=config.sign_constraint_rec,
             pre_norm=config.rec_norm_pre,
             post_norm=config.rec_norm_post,
-            dropout=config.rec_dropout,
-            # dropout=False,
+            # dropout=config.rec_dropout,
+            dropout=False,
             dropout_rate=config.rec_dropout_rate,
         )
         if config.diagonal:
@@ -462,7 +462,10 @@ class RNNModel(CustomModule):
         self.loss = nn.CrossEntropyLoss()
 
         # TODO: temp
-        # self.dropout = nn.Dropout(p=config.rec_dropout_rate)
+        if config.rec_dropout:
+            self.dropout = nn.Dropout(p=config.rec_dropout_rate)
+        else:
+            self.dropout = nn.Identity()
 
     @property
     def w_rnn(self):
@@ -495,7 +498,7 @@ class RNNModel(CustomModule):
                 results['rnn_outputs'].append(act1.cpu().numpy())
 
         # TODO: temp
-        # act1 = self.dropout(act1)
+        act1 = self.dropout(act1)
 
         y = self.output(act1)
 
