@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     # modeldir = tools.get_modeldirs(path)[0]
     # results = load_activity_torch(modeldir)
-    select_dict = {'rec_dropout_rate': 0.5}
+    select_dict = {'rec_dropout_rate': 0.3, 'TIME_STEPS': 2}
     dir_ix = 0
 # =============================================================================
 #     if dir_ix == 0:

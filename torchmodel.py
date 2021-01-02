@@ -79,6 +79,8 @@ class Layer(nn.Module):
                  recurrent_inh_coeff=0,
                  recurrent_inh_step=1,
                  weight_norm=False,
+                 weight_dropout=False,
+                 weight_dropout_rate=None,
                  ):
         super(Layer, self).__init__()
         self.in_features = in_features
@@ -113,8 +115,11 @@ class Layer(nn.Module):
 
         self.reset_parameters()
 
-        # self.w_dropout = nn.Dropout(p=0.1)
-        self.w_dropout = nn.Identity()
+        if weight_dropout:
+            self.weight_dropout = True
+            self.w_dropout = nn.Dropout(p=weight_dropout_rate)
+        else:
+            self.weight_dropout = False
 
         self.feedforward_inh = feedforward_inh
         self.feedforward_inh_coeff = feedforward_inh_coeff
@@ -180,6 +185,10 @@ class Layer(nn.Module):
                       torch.mean(self.effective_weight))
         else:
             weight = self.effective_weight
+
+        if self.weight_dropout:
+            weight = self.w_dropout(weight)
+
         pre_act = F.linear(input, weight, self.bias)
         pre_act_normalized = self.pre_norm(pre_act)
 
@@ -451,8 +460,8 @@ class RNNModel(CustomModule):
             sign_constraint=config.sign_constraint_rec,
             pre_norm=config.rec_norm_pre,
             post_norm=config.rec_norm_post,
-            # dropout=config.rec_dropout,
-            dropout=False,
+            dropout=config.rec_dropout,
+            # dropout=False,
             dropout_rate=config.rec_dropout_rate,
         )
         if config.diagonal:
@@ -462,10 +471,10 @@ class RNNModel(CustomModule):
         self.loss = nn.CrossEntropyLoss()
 
         # TODO: temp
-        if config.rec_dropout:
-            self.dropout = nn.Dropout(p=config.rec_dropout_rate)
-        else:
-            self.dropout = nn.Identity()
+        # if config.rec_dropout:
+        #     self.dropout = nn.Dropout(p=config.rec_dropout_rate)
+        # else:
+        #     self.dropout = nn.Identity()
 
     @property
     def w_rnn(self):
@@ -498,7 +507,7 @@ class RNNModel(CustomModule):
                 results['rnn_outputs'].append(act1.cpu().numpy())
 
         # TODO: temp
-        act1 = self.dropout(act1)
+        # act1 = self.dropout(act1)
 
         y = self.output(act1)
 
