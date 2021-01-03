@@ -36,10 +36,11 @@ def _get_ax_args(xkey, ykey, n_pn=50):
         ax_args['ylim'] = [-2, 2]
         ax_args['yticks'] = [-2, -1, 0, 1, 2]
 
-    if 'norm' in xkey:
-        rect = (0.3, 0.35, 0.5, 0.55)
-    else:
+    if xkey == 'lr':
+        # rect = (0.3, 0.35, 0.5, 0.55)
         rect = (0.2, 0.35, 0.7, 0.55)
+    else:
+        rect = (0.3, 0.35, 0.5, 0.55)
 
     if xkey == 'kc_inputs':
         ax_args['xticks'] = [3, 7, 15, 30, 40, 50]

@@ -29,7 +29,7 @@ testing_epochs = 12
 def control_relabel():
     """Standard training setting"""
     config = FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
 
     relabel_class = 100
     true_classes = [100, 200, 500, 1000]
@@ -44,6 +44,18 @@ def control_relabel():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_relabel_prune():
+    """Control for standard ORN-PN-KC all trainable model with pruning."""
+    new_configs = []
+    for config in control_relabel():
+        config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
+        config.kc_prune_weak_weights = True
+        config.kc_prune_threshold = 1./config.N_PN
+        new_configs.append(config)
+
+    return new_configs
 
 
 def control_relabel_analysis(path):
