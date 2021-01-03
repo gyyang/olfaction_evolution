@@ -464,7 +464,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
     if logx is None:
         logx = xkey in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold',
-                         'N_ORN_DUPLICATION']
+                         'N_ORN_DUPLICATION', 'n_trueclass']
 
     if figsize is None:
         if xkey == 'lr':
@@ -513,7 +513,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                 for x, y in zip(x_plot, y_plot):
                     if y > ax.get_ylim()[-1]:
                         continue
-                    if ykey in ['val_acc', 'glo_score']:
+                    if ykey in ['val_acc', 'glo_score', 'coding_level']:
                         ytext = '{:0.2f}'.format(y)
                     else:
                         ytext = '{:0.1f}'.format(y)

@@ -78,6 +78,11 @@ def load_config(save_path):
     for key, val in config_dict.items():
         setattr(config, key, val)
 
+    try:
+        config.n_trueclass_ratio = config.n_trueclass / config.N_CLASS
+    except AttributeError:
+        pass
+
     return config
 
 
@@ -536,7 +541,8 @@ nicename_dict = {
     'mean_claw': 'Average Number of KC Claws',
     'zero_claw': 'Fraction of KC with No Input',
     'kc_out_sparse_mean': 'Fraction of Active KCs',
-    'n_trueclass': 'Odor Prototypes Per Class',
+    'n_trueclass': 'Number of Odor Prototypes',
+    'n_trueclass_ratio': 'Odor Prototypes Per Class',
     'weight_perturb': 'Weight Perturb.',
     'lr': 'Learning rate',
     'train_kc_bias': 'Training KC bias',
@@ -581,6 +587,10 @@ def nicename(name, mode='dict'):
             return name
     elif mode == 'kc_recinh_coeff':
         return '{:0.1f}'.format(name)
+    elif mode == 'coding_level':
+        return '{:0.2f}'.format(name)
+    elif mode == 'n_trueclass_ratio':
+        return '{:d}'.format(int(name))
     else:
         return nicename_dict.get(name, name)  # get(key, default value)
 

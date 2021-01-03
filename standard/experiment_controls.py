@@ -26,6 +26,36 @@ except ImportError as e:
 testing_epochs = 12
 
 
+def control_relabel():
+    """Standard training setting"""
+    config = FullConfig()
+    config.max_epoch = 30
+
+    relabel_class = 100
+    true_classes = [100, 200, 500, 1000]
+
+    data_dirs = []
+    for true_class in true_classes:
+        d = 'relabel_' + str(true_class) + '_' + str(relabel_class)
+        data_dirs.append('./datasets/proto/' + d)
+
+    config_ranges = OrderedDict()
+    config_ranges['data_dir'] = data_dirs
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_relabel_analysis(path):
+    xkey = 'n_trueclass_ratio'
+    ykeys = ['coding_level', 'glo_score', 'val_acc', 'K_smart']
+    sa.plot_results(path, xkey=xkey, ykey=ykeys)
+    sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
+    sa.plot_xy(path,
+               xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+               ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
+
+
 def control_nonnegative():
     """Standard training setting"""
     config = FullConfig()
