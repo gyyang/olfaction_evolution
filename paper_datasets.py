@@ -43,7 +43,7 @@ def make_relabel_dataset(mode='small'):
     for i in true_classes:
         config.n_trueclass = i
         config.relabel = True
-        fn = str(config.n_trueclass) + '_' + str(config.N_CLASS)
+        fn = 'relabel_' + str(config.n_trueclass) + '_' + str(config.N_CLASS)
         task.save_proto(config, seed=seed, folder_name=fn)
         print('Done Relabel Dataset: ' + str(i))
 
