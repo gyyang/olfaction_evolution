@@ -67,8 +67,14 @@ def load_config(save_path):
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
 
-    # config = configs.BaseConfig()
-    config = configs.FullConfig()
+    model_type = config_dict.get('model', None)
+    if model_type == 'full':
+        config = configs.FullConfig()
+    elif model_type == 'rnn':
+        config = configs.RNNConfig()
+    else:
+        config = configs.MetaConfig()
+
     for key, val in config_dict.items():
         setattr(config, key, val)
 
