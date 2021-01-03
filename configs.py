@@ -301,6 +301,9 @@ class RNNConfig(BaseConfig):
         self.rec_dropout_rate = .0
         # Initialize rec weight as diagonal matrix
         self.diagonal = False
+        # Weight dropout
+        self.weight_dropout = False
+        self.weight_dropout_rate = 0.
 
 
 

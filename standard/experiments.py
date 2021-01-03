@@ -208,6 +208,24 @@ def rnn():
     return configs
 
 
+def rnn_wdropout():
+    # TEMPORARY
+    config = RNNConfig()
+    config.max_epoch = 30
+    config.rec_dropout = False
+    config.weight_dropout = True
+    config.rec_norm_pre = None
+    config.diagonal = True
+    config.ORN_NOISE_STD = 0.0
+
+    config_ranges = OrderedDict()
+    config_ranges['TIME_STEPS'] = [2]
+    config_ranges['weight_dropout_rate'] = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
 def rnn_tf():
     # TODO: To be removed in the future
     config = FullConfig()
