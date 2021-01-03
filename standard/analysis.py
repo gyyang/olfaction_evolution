@@ -29,7 +29,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
             ax_args['yticks'] = [0, 3, 7, 10, 15, 20]
         else:
             ax_args['ylim'] = [0, int(0.5*n_pn)]
-    elif ykey in ['val_acc', 'glo_score']:
+    elif ykey in ['val_acc', 'glo_score', 'coding_level']:
         ax_args['ylim'] = [0, 1.05]
         ax_args['yticks'] = [0, .5, 1]
     elif ykey == 'train_logloss':
@@ -524,12 +524,9 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         if 'xticks' in ax_args_.keys():
             xticks = ax_args_['xticks']
         else:
-            xticks = xvals
-        xticklabels = [nicename(x, mode=xkey) for x in xticks]
-        if logx:
-            ax.set_xticks(np.log(xticks))
-        else:
-            ax.set_xticks(xticks)
+            xticks = x_plot
+        xticklabels = [nicename(x, mode=xkey) for x in xvals]
+        ax.set_xticks(xticks)
         ax.set_xticklabels(xticklabels)
 
         # ax.set_xticks(xticks)
