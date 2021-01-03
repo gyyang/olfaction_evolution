@@ -50,6 +50,7 @@ def control_relabel_prune():
     """Control for standard ORN-PN-KC all trainable model with pruning."""
     new_configs = []
     for config in control_relabel():
+        config.lr = 2e-4  # made smaller to improve separation
         config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
         config.kc_prune_weak_weights = True
         config.kc_prune_threshold = 1./config.N_PN
@@ -66,6 +67,10 @@ def control_relabel_analysis(path):
     sa.plot_xy(path,
                xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
                ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
+
+
+def control_relabel_prune_analysis(path):
+    control_relabel_analysis(path)
 
 
 def control_nonnegative():
