@@ -59,18 +59,25 @@ def control_relabel_prune():
     return new_configs
 
 
-def control_relabel_analysis(path):
+def _control_relabel_analysis(path, ax_args=None):
     xkey = 'n_trueclass_ratio'
     ykeys = ['coding_level', 'glo_score', 'val_acc', 'K_smart']
     sa.plot_results(path, xkey=xkey, ykey=ykeys)
     sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
     sa.plot_xy(path,
                xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
-               ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
+               ax_args=ax_args)
+    analysis_activity.sparseness_activity(path, 'kc')
+
+
+def control_relabel_analysis(path):
+    _control_relabel_analysis(
+        path, ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
 
 
 def control_relabel_prune_analysis(path):
-    control_relabel_analysis(path)
+    _control_relabel_analysis(
+        path, ax_args={'ylim': [0, 80], 'xlim': [0, 0.5]})
 
 
 def control_nonnegative():

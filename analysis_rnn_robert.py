@@ -163,13 +163,15 @@ def analyze_t0(path, dir_ix):
 if __name__ == '__main__':
 
 
-    path = './files/rnn'
+    # path = './files/rnn'
+    path = './files/rnn_wdropout'
 
     from standard.analysis_activity import load_activity_torch
 
     # modeldir = tools.get_modeldirs(path)[0]
     # results = load_activity_torch(modeldir)
-    select_dict = {'rec_dropout_rate': 0.1, 'TIME_STEPS': 2}
+    # select_dict = {'rec_dropout_rate': 0.1, 'TIME_STEPS': 2}
+    select_dict = {'weight_dropout_rate': 0.0, 'TIME_STEPS': 2}
     dir_ix = 0
 # =============================================================================
 #     if dir_ix == 0:
