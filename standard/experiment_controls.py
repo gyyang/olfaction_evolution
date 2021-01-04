@@ -51,7 +51,7 @@ def control_relabel_prune():
     new_configs = []
     for config in control_relabel():
         config.lr = 2e-4  # made smaller to improve separation
-        config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
+        config.initial_pn2kc = 4./config.N_PN  # for clarity
         config.kc_prune_weak_weights = True
         config.kc_prune_threshold = 1./config.N_PN
         new_configs.append(config)
@@ -542,6 +542,23 @@ def control_vary_pn_analysis(path):
     select_dict = {'kc_dropout_rate': 0.5}
     sa.plot_progress(path, ykeys=ykeys, legend_key='N_PN',
                      select_dict=select_dict)
+
+
+def control_vary_pn_relabel():
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_500_100'
+    config.max_epoch = 100
+
+    config.lr = 2e-4  # made smaller to improve separation
+    config.initial_pn2kc = 4. / config.N_PN  # for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config_ranges = OrderedDict()
+    config_ranges['N_PN'] = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
 
 
 #TODO
