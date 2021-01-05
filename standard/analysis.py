@@ -465,7 +465,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
     if logx is None:
         logx = xkey in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold',
-                         'N_ORN_DUPLICATION', 'n_trueclass']
+                         'N_ORN_DUPLICATION', 'n_trueclass',
+                        'n_trueclass_ratio']
 
     if figsize is None:
         if xkey == 'lr':
@@ -524,9 +525,12 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
         if 'xticks' in ax_args_.keys():
             xticks = ax_args_['xticks']
+            xticklabels = [nicename(x, mode=xkey) for x in xticks]
+            if logx:
+                xticks = np.log(xticks)
         else:
             xticks = x_plot
-        xticklabels = [nicename(x, mode=xkey) for x in xvals]
+            xticklabels = [nicename(x, mode=xkey) for x in xvals]
         ax.set_xticks(xticks)
         ax.set_xticklabels(xticklabels)
 

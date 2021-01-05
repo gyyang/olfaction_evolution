@@ -561,6 +561,10 @@ def control_vary_pn_relabel():
     return configs
 
 
+def control_vary_pn_relabel_analysis(path):
+    control_vary_pn_analysis(path)
+
+
 #TODO
 def controls_receptor():
     config = FullConfig()
