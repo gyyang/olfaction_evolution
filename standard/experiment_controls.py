@@ -4,7 +4,7 @@ import copy
 
 import numpy as np
 
-from configs import FullConfig
+from configs import FullConfig, SingleLayerConfig
 from tools import vary_config
 import tools
 
@@ -79,6 +79,25 @@ def control_relabel_analysis(path):
 def control_relabel_prune_analysis(path):
     _control_relabel_analysis(
         path, ax_args={'ylim': [0, 80], 'xlim': [0, 0.5]})
+
+
+def control_relabel_singlelayer():
+    config = SingleLayerConfig()
+    config.max_epoch = 10
+
+    relabel_class = 100
+    true_classes = [100, 200, 500, 1000]
+
+    data_dirs = []
+    for true_class in true_classes:
+        d = 'relabel_' + str(true_class) + '_' + str(relabel_class)
+        data_dirs.append('./datasets/proto/' + d)
+
+    config_ranges = OrderedDict()
+    config_ranges['data_dir'] = data_dirs
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
 
 
 def control_nonnegative():
@@ -512,6 +531,28 @@ def control_vary_kc_analysis(path):
         select_dict = {'N_KC': n_kc, 'kc_dropout_rate': 0.5}
         modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
         sa.plot_weights(modeldir, sort_axis=1, average=False)
+
+
+def contro_vary_kc_relabel():
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_500_100'
+    config.max_epoch = 100
+
+    config.lr = 2e-4  # made smaller to improve separation
+    config.initial_pn2kc = 4. / config.N_PN  # for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config_ranges = OrderedDict()
+    config_ranges['N_KC'] = [50, 100, 200, 400, 1000, 2500, 5000, 10000, 20000]
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_vary_kc_relabel_analysis(path):
+    control_vary_kc_analysis(path)
 
 
 def control_vary_pn():

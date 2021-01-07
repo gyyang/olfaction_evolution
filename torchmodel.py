@@ -288,7 +288,7 @@ class FullModel(CustomModule):
     def __init__(self, config=None):
         super().__init__()
         if config is None:
-            config = FullConfig
+            config = FullConfig()
 
         self.config = config
         self.multihead = config.label_type == 'multi_head_sparse'
@@ -442,6 +442,53 @@ class FullModel(CustomModule):
         print("Model weights saved in path: %s" % save_path)
 
 
+class SingleLayerModel(CustomModule):
+    def __init__(self, config=None):
+        super().__init__()
+        if config is None:
+            config = SingleLayerConfig()
+
+        self.config = config
+
+        n_orn = config.N_ORN * config.N_ORN_DUPLICATION
+
+        self.layer = nn.Linear(n_orn, config.N_CLASS)
+        self.loss = nn.CrossEntropyLoss()
+
+    def forward(self, x, target):
+        # Process ORNs
+
+        act0 = x
+        if self.config.N_ORN_DUPLICATION > 1:
+            act0 = act0.repeat(1, self.config.N_ORN_DUPLICATION)
+        y = self.layer(act0)
+
+        # Regular network
+        loss = self.loss(y, target)
+        with torch.no_grad():
+            _, pred = torch.max(y, 1)
+            acc = (pred == target).sum().item() / target.size(0)
+        results = {'loss': loss, 'acc': acc}
+
+        if self._readout:
+            results['y'] = y
+
+        return results
+
+    def save_pickle(self, epoch=None):
+        """Save model using pickle.
+
+        This is quite space-inefficient. But it's easier to read out.
+        """
+        var_dict = dict()
+        for name, param in self.named_parameters():
+            var_dict[name] = param.data.cpu().numpy()
+
+        save_path = self.config.save_path
+        tools.save_pickle(save_path, var_dict, epoch=epoch)
+        print("Model weights saved in path: %s" % save_path)
+
+
 class RNNModel(CustomModule):
     def __init__(self, config=None):
         super().__init__()
@@ -544,5 +591,7 @@ def get_model(config):
         return FullModel(config=config)
     elif config.model == 'rnn':
         return RNNModel(config=config)
+    elif config.model == 'singlelayer':
+        return SingleLayerModel(config=config)
     else:
         raise ValueError('Unknown model type', config.model)

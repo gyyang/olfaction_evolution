@@ -95,7 +95,7 @@ class SingleLayerConfig(BaseConfig):
         self.lr = .001
         self.max_epoch = 100
         self.batch_size = 256
-        self.save_path = './files/peter_tmp'
+        self.save_path = './files/test'
 
 
 class FullConfig(BaseConfig):
