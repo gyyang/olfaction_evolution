@@ -11,7 +11,7 @@ from collections.__init__ import OrderedDict
 
 import numpy as np
 
-from configs import FullConfig, MetaConfig, RNNConfig
+from configs import FullConfig, MetaConfig, RNNConfig, SingleLayerConfig
 from tools import vary_config
 import tools
 import settings
@@ -129,6 +129,18 @@ def receptor_analysis(path):
     # Compute glo-score metric for OR-ORN connectivity
     print('ORN score for OR-ORN connectivity',
           tools.compute_glo_score(tools.load_pickle(dir)['w_or'], 50)[0])
+
+
+def singlelayer():
+    """Standard single layer training setting"""
+    config = SingleLayerConfig()
+    config.max_epoch = 30
+
+    config_ranges = OrderedDict()
+    config_ranges['dummy'] = [True]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
 
 
 def receptor_multilr():

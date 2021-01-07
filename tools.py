@@ -467,7 +467,7 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
     for i, d in enumerate(dirs):
         log = load_log(d)
         config = load_config(d)
-        
+
         n_actual_epoch = len(log['val_acc'])
         
         if exclude_early_models and n_actual_epoch < config.max_epoch:
@@ -554,9 +554,9 @@ nicename_dict = {
     'pn_dropout_rate': 'PN dropout rate',
     'K_inferred': 'K',
     'K': 'fixed threshold K',
-    'lin_hist_': 'Number',
+    'lin_hist_': 'Distribution',
     'lin_bins_': 'PN to KC Weight',
-    'lin_hist': 'Number',
+    'lin_hist': 'Distribution',
     'lin_bins': 'PN to KC Weight',
     'kc_prune_threshold': 'KC prune threshold',
     'n_or_per_orn': 'Number of ORs per ORN',

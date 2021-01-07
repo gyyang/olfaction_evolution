@@ -241,7 +241,11 @@ def sparseness_activity(save_path, var_names, activity_threshold=0.,
         save_path: model path
         arg: str, the activity to plot
     """
-    dirs = tools.get_modeldirs(save_path)
+    if isinstance(save_path, str):
+        dirs = tools.get_modeldirs(save_path)
+    else:
+        dirs = save_path
+
     if figname is None:
         figname = ''
 

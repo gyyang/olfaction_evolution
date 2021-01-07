@@ -91,6 +91,7 @@ class SingleLayerConfig(BaseConfig):
     def __init__(self):
         super(SingleLayerConfig, self).__init__()
         self.dataset = 'proto'
+        self.data_dir = './datasets/proto/standard'
         self.model = 'singlelayer'
         self.lr = .001
         self.max_epoch = 100

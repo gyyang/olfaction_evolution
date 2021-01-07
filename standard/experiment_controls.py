@@ -63,27 +63,43 @@ def control_relabel_prune():
 def _control_relabel_analysis(path, ax_args=None):
     xkey = 'n_trueclass_ratio'
     ykeys = ['coding_level', 'glo_score', 'val_acc', 'K_smart']
-    sa.plot_results(path, xkey=xkey, ykey=ykeys)
-    sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
-    sa.plot_xy(path,
+    select_dict = {'kc_dropout_rate': 0.5}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+    sa.plot_xy(modeldirs,
                xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
                ax_args=ax_args)
-    analysis_activity.sparseness_activity(path, 'kc')
+    analysis_activity.sparseness_activity(modeldirs, 'kc')
+
+    select_dict = None
+    ykeys = 'val_acc'
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                    loop_key='kc_dropout_rate')
+
+    select_dict = {'n_trueclass_ratio': 5}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_xy(modeldirs,
+               xkey='lin_bins', ykey='lin_hist', legend_key='kc_dropout_rate',
+               ax_args=ax_args)
+    ykeys = ['coding_level', 'glo_score', 'val_acc', 'K_smart']
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='kc_dropout_rate')
 
 
 def control_relabel_analysis(path):
     _control_relabel_analysis(
-        path, ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
+        path, ax_args={'ylim': [0, 200000], 'xlim': [0, 2.5]})
 
 
 def control_relabel_prune_analysis(path):
     _control_relabel_analysis(
-        path, ax_args={'ylim': [0, 80], 'xlim': [0, 0.5]})
+        path, ax_args={'xlim': [0, 0.5]})
 
 
 def control_relabel_singlelayer():
     config = SingleLayerConfig()
-    config.max_epoch = 10
+    config.max_epoch = 100
 
     relabel_class = 100
     true_classes = [100, 200, 500, 1000]
@@ -98,6 +114,13 @@ def control_relabel_singlelayer():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_relabel_singlelayer_analysis(path):
+    xkey = 'n_trueclass_ratio'
+    ykeys = ['val_acc', 'val_logloss']
+    sa.plot_results(path, xkey=xkey, ykey=ykeys)
+    sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
 
 
 def control_nonnegative():
