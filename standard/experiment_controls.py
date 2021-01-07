@@ -533,7 +533,7 @@ def control_vary_kc_analysis(path):
         sa.plot_weights(modeldir, sort_axis=1, average=False)
 
 
-def contro_vary_kc_relabel():
+def control_vary_kc_relabel():
     config = FullConfig()
     config.data_dir = './datasets/proto/relabel_500_100'
     config.max_epoch = 100
