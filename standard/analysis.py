@@ -56,33 +56,42 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     return rect, ax_args
 
 
+def _infer_plot_xy_axargs(X, Y):
+    ylim = np.max([np.percentile(y, 95) * 1.2 for y in Y])
+    return {'ylim': [0, ylim]}
+
+
 def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
             ax_args=None, log=None, figsize=None):
     def _plot_xy(xkey, ykey):
-        ax_args_ = {}
-        if ax_args is None:
-            if ykey == 'lin_hist_':
-                ax_args_ = {'ylim': [0, 500]}
-        else:
-            ax_args_ = ax_args
+        ys = log[ykey]
+        xs = log[xkey]
+
+        if xkey in ['lin_bins', 'log_bins']:
+            xs = [(x[1:] + x[:-1]) / 2 for x in xs]
+
+        if ykey == 'lin_hist':
+            new_ys = []
+            for x, y in zip(xs, ys):
+                # Plot density by dividing by binsize
+                bin_size = x[1] - x[0]  # must have equal bin size
+                y = y / bin_size
+                # Smoothing
+                y = savgol_filter(y, window_length=21, polyorder=0)
+                new_ys.append(y)
+            ys = new_ys
+
+        ax_args_ = _infer_plot_xy_axargs(xs, ys)
+        if ax_args is not None:
+            ax_args_.update(ax_args)
 
         _figsize = figsize or (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
         fig = plt.figure(figsize=_figsize)
         ax = fig.add_axes(rect, **ax_args_)
 
-        ys = log[ykey]
-        xs = log[xkey]
-
         colors = [seqcmap(x) for x in np.linspace(0, 1, len(xs))]
-
         for x, y, c in zip(xs, ys, colors):
-            if xkey in ['lin_bins', 'log_bins']:
-                x = (x[1:] + x[:-1])/2
-            if ykey == 'lin_hist':
-                # Smoothing
-                # pass
-                y = savgol_filter(y, window_length=21, polyorder=0)
             ax.plot(x, y, alpha=1, color=c, linewidth=1)
 
         if legend_key is not None:
@@ -99,6 +108,9 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
+
+        if ykey == 'lin_hist':
+            ax.set_yticks([])
 
         figname = xkey + '_' + ykey
         if legend_key:
