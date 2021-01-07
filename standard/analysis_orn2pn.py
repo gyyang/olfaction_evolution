@@ -103,43 +103,49 @@ def correlation_across_epochs(save_path, legend = None, arg = 'weight'):
                    ylim = [-0.2, 1], yticks = [0, 0.5, 1.0], ylabel= 'Correlation')
 
 
-def multiglo_gloscores(path, ix, cutoff, shuffle=False, vlim=[0, 5]):
+def multiglo_gloscores(modeldir, cutoff, shuffle=False, vlim=[0, 5]):
     def _helper_mat(w_plot, string):
-        rect = [0.15, 0.15, 0.65, 0.65]
-        rect_cb = [0.82, 0.15, 0.02, 0.65]
-        fig = plt.figure(figsize=(2.6, 2.6))
+        figsize = (1.7, 1.7)
+        rect = [0.15, 0.15, 0.6, 0.6]
+        rect_cb = [0.77, 0.15, 0.02, 0.6]
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_axes(rect)
-        cmap = tools.get_colormap()
+        # cmap = tools.get_colormap()
+        cmap = plt.get_cmap('RdBu_r')
+        positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
+        if positive_cmap:
+            cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
 
         ind_max = np.argmax(w_plot, axis=0)
         ind_sort = np.argsort(ind_max)
         w_plot = w_plot[:, ind_sort]
 
-        im = ax.imshow(w_plot, cmap=cmap, vmin=vlim[0], vmax=vlim[1], interpolation='none')
+        im = ax.imshow(w_plot.T, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
+                       interpolation='none')
 
         plt.axis('tight')
         for loc in ['bottom', 'top', 'left', 'right']:
             ax.spines[loc].set_visible(False)
         ax.tick_params('both', length=0)
-        ax.set_xticks([0, w_plot.shape[1]])
-        ax.set_yticks([0, w_plot.shape[0]])
-        ax.set_xlabel('To PN')
-        ax.set_ylabel('From ORN')
-        ax.set_title(string)
+        ax.set_yticks([0, w_plot.shape[1]])
+        ax.set_xticks([0, w_plot.shape[0]])
+        labelpad = -5
+        ax.set_ylabel('To PNs', labelpad=labelpad)
+        ax.set_xlabel('From ORNs', labelpad=labelpad)
+        # ax.set_title(string)
         ax = fig.add_axes(rect_cb)
         cb = plt.colorbar(im, cax=ax, ticks=[vlim[0], vlim[1]])
         cb.outline.set_linewidth(0.5)
-        cb.set_label('Weight', fontsize=7, labelpad=-10)
+        cb.set_label('Weight', fontsize=7, labelpad=-7)
         plt.tick_params(axis='both', which='major', labelsize=7)
         plt.axis('tight')
 
-        tools.save_fig(path, 'ix_' + str(ix) + '_cutoff_' + string)
+        tools.save_fig(tools.get_experiment_name(modeldir),
+                       tools.get_model_name(modeldir) + '_cutoff_' + string)
 
-    w_orns = tools.load_pickles(path, 'w_orn')
-    w_orn = w_orns[ix]
+    w_orn = tools.load_pickle(modeldir)['w_orn']
     w_orn = tools._reshape_worn(w_orn, unique_orn=50)
     w_orn = w_orn.mean(axis=0)
-    print(w_orn.shape)
 
     avg_gs, all_gs = tools.compute_glo_score(w_orn, unique_ors=50, mode='tile', w_or=None)
     all_gs = np.array(all_gs)
@@ -159,15 +165,15 @@ def multiglo_gloscores(path, ix, cutoff, shuffle=False, vlim=[0, 5]):
             all_gs.append(all_gs_)
         all_gs = np.concatenate(all_gs, axis=0)
 
-    arg = '_ix_' + str(ix) + '_hist_'
+    arg = tools.get_model_name(modeldir) + '_hist_'
     arg = arg + 'shuffled' if shuffle else arg
     fig = plt.figure(figsize=(2, 1.5))
-    ax = fig.add_axes([0.25, 0.25, 0.7, 0.6])
+    ax = fig.add_axes([0.25, 0.25, 0.65, 0.6])
     plt.hist(all_gs, bins=50, range=[0, 1], align='left')
     plt.plot([cutoff, cutoff], [0, ax.get_ylim()[1]], '--', color='gray')
-    ax.set_xlabel('Glo Score')
+    ax.set_xlabel('GloScore')
     ax.set_ylabel('Count')
-    ax.set_title('GloScore Distribution For all PNs')
+    ax.set_title('GloScore distribution for all PNs', fontsize=7)
 
     ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1])
     plt.xlim([-0.05, 1.05])
@@ -176,19 +182,18 @@ def multiglo_gloscores(path, ix, cutoff, shuffle=False, vlim=[0, 5]):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    tools.save_fig(path, arg)
+    tools.save_fig(tools.get_experiment_name(modeldir), arg)
     return ix_good, ix_bad
 
 
-def multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad):
+def multiglo_pn2kc_distribution(modeldir, ix_good, ix_bad):
     # weights
-    w_kcs = tools.load_pickles(path, 'w_glo')
-    w_kc = w_kcs[ix]
+    w_kc = tools.load_pickle(modeldir)['w_glo']
     sum_kc_weights = np.sum(w_kc, axis=1)
     weight_to_good = sum_kc_weights[ix_good]
     weight_to_bad = sum_kc_weights[ix_bad]
 
-    arg = '_ix_' + str(ix) + '_pn2kc_hist_'
+    arg = tools.get_model_name(modeldir) + '_pn2kc_hist_'
     plt.figure()
 
     fig = plt.figure(figsize=(2, 1.5))
@@ -207,7 +212,8 @@ def multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    tools.save_fig(path, arg)
+    tools.save_fig(tools.get_experiment_name(modeldir), arg)
+
 
 def _lesion_multiglomerular_pn(path, units):
     import tensorflow as tf
@@ -319,14 +325,3 @@ def correlation_matrix(path, ix, arg ='ortho', vlim=None):
 
     txt = '_' + title_txt + '_'
     tools.save_fig(path, txt + str(ix))
-
-if __name__ == '__main__':
-    path = '../files/control_vary_pn'
-    ix = 22
-
-    ix_good, ix_bad = multiglo_gloscores(path, ix, cutoff=.9, shuffle=False)
-    multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad)
-
-    print(np.sum(ix_good))
-    print(np.sum(ix_bad))
-    multiglo_lesion(path, ix, ix_good, ix_bad)

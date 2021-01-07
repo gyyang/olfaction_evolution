@@ -41,6 +41,7 @@ def control_relabel():
 
     config_ranges = OrderedDict()
     config_ranges['data_dir'] = data_dirs
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -507,6 +508,11 @@ def control_vary_kc_analysis(path):
     sa.plot_results(path, xkey='N_KC', ykey=ykeys, loop_key='kc_dropout_rate',
                     logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
 
+    for n_kc in [50, 10000]:
+        select_dict = {'N_KC': n_kc, 'kc_dropout_rate': 0.5}
+        modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+        sa.plot_weights(modeldir, sort_axis=1, average=False)
+
 
 def control_vary_pn():
     config = FullConfig()
@@ -522,26 +528,26 @@ def control_vary_pn():
 
 def control_vary_pn_analysis(path):
     # TODO: bring back the analysis
-    # sa.plot_weights(os.path.join(path, '000004'), sort_axis=1, average=False)
-    # sa.plot_weights(os.path.join(path, '000010'), sort_axis=1, average=False,
-    #                 vlim=[0, 5])
-    # sa.plot_weights(os.path.join(path, '000022'), sort_axis=1, average=False,
-    #                 vlim=[0, 5])
-    #
-    # ix = 22
-    # ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(path, ix, cutoff=.9,
-    #                                                      shuffle=False)
-    # analysis_orn2pn.multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad)
-    # analysis_orn2pn.multiglo_lesion(path, ix, ix_good, ix_bad)
+    for n_pn in [30, 200]:
+        select_dict = {'N_PN': n_pn, 'kc_dropout_rate': 0.5}
+        modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+        sa.plot_weights(modeldir, sort_axis=1, average=False, vlim=[0, 5])
 
-    default = {'kc_dropout_rate': 0.5, 'N_PN': 50}
-    ykeys = ['val_acc', 'glo_score']
-    xticks = [20, 50, 100, 200, 1000]
-    sa.plot_results(path, xkey='N_PN', ykey=ykeys, loop_key='kc_dropout_rate',
-                    logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
-    select_dict = {'kc_dropout_rate': 0.5}
-    sa.plot_progress(path, ykeys=ykeys, legend_key='N_PN',
-                     select_dict=select_dict)
+    select_dict = {'N_PN': 200, 'kc_dropout_rate': 0.5}
+    modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+    ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(
+        modeldir, cutoff=.9, shuffle=False)
+    analysis_orn2pn.multiglo_pn2kc_distribution(modeldir, ix_good, ix_bad)
+    # analysis_orn2pn.multiglo_lesion(modeldir, ix_good, ix_bad)
+
+    # default = {'kc_dropout_rate': 0.5, 'N_PN': 50}
+    # ykeys = ['val_acc', 'glo_score']
+    # xticks = [20, 50, 100, 200, 1000]
+    # sa.plot_results(path, xkey='N_PN', ykey=ykeys, loop_key='kc_dropout_rate',
+    #                 logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
+    # select_dict = {'kc_dropout_rate': 0.5}
+    # sa.plot_progress(path, ykeys=ykeys, legend_key='N_PN',
+    #                  select_dict=select_dict)
 
 
 def control_vary_pn_relabel():
