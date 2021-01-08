@@ -26,7 +26,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity', 'K_smart']:
         if n_pn == 50:
             ax_args['ylim'] = [0, 20]
-            ax_args['yticks'] = [0, 3, 7, 10, 15, 20]
+            ax_args['yticks'] = [1, 3, 7, 10, 15, 20]
         else:
             ax_args['ylim'] = [0, int(0.5*n_pn)]
     elif ykey in ['val_acc', 'glo_score', 'coding_level']:
@@ -150,6 +150,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
     if isinstance(ykeys, str):
         ykeys = [ykeys]
+    ny = len(ykeys)
 
     res = tools.load_all_results(save_path, argLast=False,
                                  select_dict=select_dict,
@@ -165,15 +166,25 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
     #     for k, v in res.items():
     #         res[k] = res[k][ixs]
 
-    def _plot_progress(xkey, ykey):
+    figsize = (2.0, 1.2 + 0.9 * (ny-1))
+
+    fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
+    xkey = 'epoch'
+    for i, ykey in enumerate(ykeys):
         rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'][0])
         if ax_args:
             ax_args_.update(ax_args)
 
-        figsize = (2.5, 2)
         rect = [0.3, 0.3, 0.65, 0.5]
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_axes(rect, **ax_args_)
+
+        # ax = fig.add_axes(rect, **ax_args_)
+        ax = axs[i]
+        ax.update(ax_args_)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
 
         ys = res[ykey]
         xs = res[xkey]
@@ -191,39 +202,38 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
                 x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
             ax.plot(x, y, alpha=alpha, color=c, linewidth=1)
 
-        if legend_key is not None:
+        if legend_key is not None and i == 0:
             legends = [nicename(l, mode=legend_key) for l in legends]
             ax.legend(legends, fontsize=7, frameon=False, ncol=2, loc='best')
-            plt.title(nicename(legend_key), fontsize=7)
+            ax.set_title(nicename(legend_key), fontsize=7)
 
-        ax.set_xlabel(nicename(xkey))
+        if i != ny - 1:
+            ax.tick_params(labelbottom=False)
+        else:
+            ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
         if ykey == 'val_acc' and res[ykey].shape[0] == 1:
             plt.title('Final accuracy {:0.3f}'.format(res[ykey][0,-1]))
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
 
         if epoch_range:
             ax.set_xlim([epoch_range[0], epoch_range[1]])
         else:
             ax.set_xlim([-1, res[xkey][0,-1]])
 
-        figname = '_' + ykey
-        if select_dict:
-            for k, v in select_dict.items():
-                figname += k + '_' + str(v) + '_'
+    plt.tight_layout()
 
-        if legend_key:
-            figname += '_' + legend_key
+    figname = '_' + '_'.join(ykeys)
+    if select_dict:
+        for k, v in select_dict.items():
+            figname += k + '_' + str(v) + '_'
 
-        if epoch_range:
-            figname += '_epoch_range_' + str(epoch_range[1])
-        tools.save_fig(save_path, figname)
+    if legend_key:
+        figname += '_' + legend_key
 
-    for plot_var in ykeys:
-        _plot_progress('epoch', plot_var)
+    if epoch_range:
+        figname += '_epoch_range_' + str(epoch_range[1])
+
+    tools.save_fig(save_path, figname)
 
 
 def plot_weights(modeldir, var_name=None, sort_axis='auto',
@@ -462,6 +472,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         ykeys = [ykey]
     else:
         ykeys = ykey
+    ny = len(ykeys)
 
     if res is None:
         res = tools.load_all_results(path, select_dict=select_dict)
@@ -482,11 +493,13 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
     if figsize is None:
         if xkey == 'lr':
-            figsize = (2.5, 1.2)
+            figsize = (2.5, 1.2 + 0.9 * (ny-1))
         else:
-            figsize = (1.5, 1.2)
+            figsize = (1.5, 1.2 + 0.9 * (ny-1))
+    # fig = plt.figure(figsize=figsize)
+    fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
 
-    def _plot_results(ykey):
+    for i, ykey in enumerate(ykeys):
         # Default ax_args and other values, based on x and y keys
         rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'][0])
         if ax_args:
@@ -499,8 +512,14 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             yval_tmp = res[ykey][res[xkey] == xval]
             yvals.append(np.mean(yval_tmp))
 
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_axes(rect, **ax_args_)
+        # ax = fig.add_axes(rect, **ax_args_)
+        ax = axs[i]
+        # ax.update(ax_args_)
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
         if loop_key:
             loop_vals = np.unique(res[loop_key])
             colors = [seqcmap(x) for x in np.linspace(0, 1, len(loop_vals))]
@@ -544,9 +563,13 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             xticks = x_plot
             xticklabels = [nicename(x, mode=xkey) for x in xvals]
         ax.set_xticks(xticks)
-        ax.set_xticklabels(xticklabels)
+        if i == ny - 1:
+            ax.set_xticklabels(xticklabels)
+            ax.set_xlabel(nicename(xkey))
+        else:
+            ax.tick_params(labelbottom=False)
 
-        # ax.set_xticks(xticks)
+            # ax.set_xticks(xticks)
         # if not xkey_is_string:
         #     x_span = xticks[-1] - xticks[0]
         #     ax.set_xlim([xticks[0]-x_span*0.05, xticks[-1]+x_span*0.05])
@@ -561,8 +584,6 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                 ax.set_yticks(yticks)
         else:
             plt.locator_params(axis='y', nbins=3)
-
-        ax.set_xlabel(nicename(xkey))
         ax.set_ylabel(nicename(ykey))
 
         if xkey == 'kc_inputs':
@@ -572,31 +593,26 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         elif xkey == 'N_KC':
             ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
-        if loop_key:
+        if loop_key and i == 0:
             l = ax.legend(loc='best', fontsize= 7, frameon=False, ncol=2)
             l.set_title(nicename(loop_key))
 
-        figname = '_' + ykey + '_vs_' + xkey
-        if loop_key:
-            figname += '_vary' + loop_key
-        if select_dict:
-            for k, v in select_dict.items():
-                if isinstance(v, list):
-                    v = [x.rsplit('/',1)[-1] for x in v]
-                    v = str('__'.join(v))
-                else:
-                    v = str(v)
-                figname += k + '_' + v + '__'
-        figname += string
+    figname = '_' + '_'.join(ykeys) + '_vs_' + xkey
+    if loop_key:
+        figname += '_vary' + loop_key
+    if select_dict:
+        for k, v in select_dict.items():
+            if isinstance(v, list):
+                v = [x.rsplit('/',1)[-1] for x in v]
+                v = str('__'.join(v))
+            else:
+                v = str(v)
+            figname += k + '_' + v + '__'
+    figname += string
 
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-        tools.save_fig(path, figname)
+    plt.tight_layout()
 
-    for ykey in ykeys:
-        _plot_results(ykey)
+    tools.save_fig(path, figname)
 
 
 if __name__ == '__main__':

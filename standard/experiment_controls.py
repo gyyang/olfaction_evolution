@@ -62,7 +62,7 @@ def control_relabel_prune():
 
 def _control_relabel_analysis(path, ax_args=None):
     xkey = 'n_trueclass_ratio'
-    ykeys = ['coding_level', 'glo_score', 'val_acc', 'K_smart']
+    ykeys = ['val_acc', 'glo_score', 'K_smart', 'coding_level']
     select_dict = {'kc_dropout_rate': 0.5}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
