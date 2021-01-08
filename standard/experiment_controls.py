@@ -63,6 +63,8 @@ def control_relabel_prune():
 def _control_relabel_analysis(path, ax_args=None):
     xkey = 'n_trueclass_ratio'
     ykeys = ['val_acc', 'glo_score', 'K_smart', 'coding_level']
+
+    # Plot network with dropout
     select_dict = {'kc_dropout_rate': 0.5}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
@@ -72,18 +74,17 @@ def _control_relabel_analysis(path, ax_args=None):
                ax_args=ax_args)
     analysis_activity.sparseness_activity(modeldirs, 'kc')
 
-    select_dict = None
-    ykeys = 'val_acc'
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey=xkey, ykey='val_acc',
                     loop_key='kc_dropout_rate')
 
+    # Plot network trained on relabel task
     select_dict = {'n_trueclass_ratio': 5}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_results(modeldirs, xkey='kc_dropout_rate', ykey=ykeys)
     sa.plot_xy(modeldirs,
                xkey='lin_bins', ykey='lin_hist', legend_key='kc_dropout_rate',
                ax_args=ax_args)
-    ykeys = ['coding_level', 'glo_score', 'val_acc', 'K_smart']
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='kc_dropout_rate')
 
 

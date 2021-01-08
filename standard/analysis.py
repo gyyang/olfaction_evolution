@@ -156,16 +156,6 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
                                  select_dict=select_dict,
                                  exclude_dict=exclude_dict)
 
-    # get rid of duplicates
-    # TODO: Don't remember why this is necessary, remove if not useful
-    # if legend_key:
-    #     values = res[legend_key]
-    #     if np.any(values == None):
-    #         values[values == None] = 'None'
-    #     _, ixs = np.unique(values, return_index=True)
-    #     for k, v in res.items():
-    #         res[k] = res[k][ixs]
-
     figsize = (2.0, 1.2 + 0.9 * (ny-1))
 
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
@@ -184,7 +174,6 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-
 
         ys = res[ykey]
         xs = res[xkey]
@@ -498,7 +487,6 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize = (1.5, 1.2 + 0.9 * (ny-1))
     # fig = plt.figure(figsize=figsize)
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
-
     for i, ykey in enumerate(ykeys):
         # Default ax_args and other values, based on x and y keys
         rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'][0])
@@ -513,7 +501,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             yvals.append(np.mean(yval_tmp))
 
         # ax = fig.add_axes(rect, **ax_args_)
-        ax = axs[i]
+        ax = axs[i] if ny > 1 else axs
         # ax.update(ax_args_)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
