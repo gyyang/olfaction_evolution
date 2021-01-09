@@ -165,7 +165,8 @@ if __name__ == '__main__':
 
     # path = './files/rnn'
     # path = './files/rnn_wdropout'
-    path = './files/rnn_relabel'
+    # path = './files/rnn_relabel'
+    path = './files/rnn_relabel_prune'
 
     from standard.analysis_activity import load_activity_torch
 
@@ -173,7 +174,8 @@ if __name__ == '__main__':
     # results = load_activity_torch(modeldir)
     # select_dict = {'rec_dropout_rate': 0.1, 'TIME_STEPS': 2}
     # select_dict = {'weight_dropout_rate': 0.0, 'TIME_STEPS': 2}
-    select_dict = {'diagonal': False, 'lr': 5e-4}
+    # select_dict = {'diagonal': False, 'lr': 5e-4}
+    select_dict = {'TIME_STEPS': 2, 'lr': 1e-3}
     dir_ix = 0
 # =============================================================================
 #     if dir_ix == 0:

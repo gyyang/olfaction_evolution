@@ -288,6 +288,12 @@ def rnn_relabel():
     return configs
 
 
+def rnn_relabel_analysis(path):
+    select_dict = {'diagonal': True}
+    sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
+    sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
+
+
 def rnn_relabel_prune():
     config = RNNConfig()
     config.data_dir = './datasets/proto/relabel_200_100'
@@ -310,8 +316,31 @@ def rnn_relabel_prune():
     return configs
 
 
-def rnn_relabel_analysis(path):
-    select_dict = {'diagonal': True}
+def rnn_relabel_prune2():
+    # TEMPORARY
+    config = RNNConfig()
+    config.data_dir = './datasets/proto/relabel_200_100'
+    config.max_epoch = 100
+    config.rec_dropout = False
+    config.rec_dropout_rate = 0.0
+    config.rec_norm_pre = None
+    config.diagonal = False
+    config.ORN_NOISE_STD = 0.0
+
+    config.prune_weak_weights = True
+    config.prune_threshold = 1. / 50.
+    config.initial_rec = 4. / 50.
+
+    config_ranges = OrderedDict()
+    config_ranges['TIME_STEPS'] = [2]
+    config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def rnn_relabel_prune_analysis(path):
+    select_dict = {'TIME_STEPS': 2}
     sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
     sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
 
