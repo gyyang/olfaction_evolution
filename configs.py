@@ -305,6 +305,9 @@ class RNNConfig(BaseConfig):
         # Weight dropout
         self.weight_dropout = False
         self.weight_dropout_rate = 0.
+        # Whether to prune weak KC weights
+        self.prune_weak_weights = False
+        self.prune_threshold = 0.
 
 
 

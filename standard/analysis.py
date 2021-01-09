@@ -151,13 +151,11 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
     if isinstance(ykeys, str):
         ykeys = [ykeys]
     ny = len(ykeys)
-
     res = tools.load_all_results(save_path, argLast=False,
                                  select_dict=select_dict,
                                  exclude_dict=exclude_dict)
 
     figsize = (2.0, 1.2 + 0.9 * (ny-1))
-
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     xkey = 'epoch'
     for i, ykey in enumerate(ykeys):
@@ -168,7 +166,10 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         rect = [0.3, 0.3, 0.65, 0.5]
 
         # ax = fig.add_axes(rect, **ax_args_)
-        ax = axs[i]
+        if ny == 1:
+            ax = axs
+        else:
+            ax = axs[i]
         ax.update(ax_args_)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)

@@ -512,6 +512,8 @@ class RNNModel(CustomModule):
             dropout_rate=config.rec_dropout_rate,
             weight_dropout=config.weight_dropout,
             weight_dropout_rate=config.weight_dropout_rate,
+            prune_weak_weights=config.prune_weak_weights,
+            prune_threshold=config.prune_threshold,
         )
         if config.diagonal:
             self.rnn.weight.data.fill_diagonal_(1.)  # set diagonal to 1
