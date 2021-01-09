@@ -261,6 +261,25 @@ def rnn_tf():
     return configs
 
 
+def rnn_relabel():
+    config = RNNConfig()
+    config.data_dir = './datasets/proto/relabel_200_100'
+    config.max_epoch = 100
+    config.rec_dropout = True
+    config.rec_dropout_rate = 0.0
+    config.rec_norm_pre = None
+    config.diagonal = True
+    config.ORN_NOISE_STD = 0.0
+
+    config_ranges = OrderedDict()
+    config_ranges['TIME_STEPS'] = [2]
+    config_ranges['diagonal'] = [True, False]
+    # config_ranges['rec_dropout_rate'] = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
 def rnn_analysis(path):
     # sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
     # analysis_rnn.analyze_t0(path, dir_ix=0)
