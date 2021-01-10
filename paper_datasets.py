@@ -43,7 +43,7 @@ def make_relabel_dataset(mode='small'):
     for i in true_classes:
         config.n_trueclass = i
         config.relabel = True
-        fn = str(config.n_trueclass) + '_' + str(config.N_CLASS)
+        fn = 'relabel_' + str(config.n_trueclass) + '_' + str(config.N_CLASS)
         task.save_proto(config, seed=seed, folder_name=fn)
         print('Done Relabel Dataset: ' + str(i))
 
@@ -122,8 +122,7 @@ def make_multihead_dataset():
 def make_vary_or_dataset():
     """Vary the number of olfactory receptors."""
     task_config = task.input_ProtoConfig()
-    for n_or in [25, 125, 175]:
-    # for n_or in [50, 75, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
+    for n_or in [25, 35, 50, 75, 100, 150, 200]:
         task_config.N_ORN = n_or
         task.save_proto(config=task_config, seed=0, folder_name='orn'+str(n_or))
 

@@ -4,7 +4,7 @@ import copy
 
 import numpy as np
 
-from configs import FullConfig
+from configs import FullConfig, SingleLayerConfig
 from tools import vary_config
 import tools
 
@@ -24,6 +24,104 @@ except ImportError as e:
     print(e)
 
 testing_epochs = 12
+
+
+def control_relabel():
+    """Standard training setting"""
+    config = FullConfig()
+    config.max_epoch = 100
+
+    relabel_class = 100
+    true_classes = [100, 200, 500, 1000]
+
+    data_dirs = []
+    for true_class in true_classes:
+        d = 'relabel_' + str(true_class) + '_' + str(relabel_class)
+        data_dirs.append('./datasets/proto/' + d)
+
+    config_ranges = OrderedDict()
+    config_ranges['data_dir'] = data_dirs
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_relabel_prune():
+    """Control for standard ORN-PN-KC all trainable model with pruning."""
+    new_configs = []
+    for config in control_relabel():
+        config.lr = 2e-4  # made smaller to improve separation
+        config.initial_pn2kc = 4./config.N_PN  # for clarity
+        config.kc_prune_weak_weights = True
+        config.kc_prune_threshold = 1./config.N_PN
+        new_configs.append(config)
+
+    return new_configs
+
+
+def _control_relabel_analysis(path, ax_args=None):
+    xkey = 'n_trueclass_ratio'
+    ykeys = ['val_acc', 'glo_score', 'K_smart', 'coding_level']
+
+    # Plot network with dropout
+    select_dict = {'kc_dropout_rate': 0.5}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+    sa.plot_xy(modeldirs,
+               xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+               ax_args=ax_args)
+    analysis_activity.sparseness_activity(modeldirs, 'kc')
+
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey=xkey, ykey='val_acc',
+                    loop_key='kc_dropout_rate')
+
+    # Plot network trained on relabel task
+    select_dict = {'n_trueclass_ratio': 5}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_results(modeldirs, xkey='kc_dropout_rate', ykey=ykeys)
+    sa.plot_xy(modeldirs,
+               xkey='lin_bins', ykey='lin_hist', legend_key='kc_dropout_rate',
+               ax_args=ax_args)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='kc_dropout_rate')
+
+
+def control_relabel_analysis(path):
+    _control_relabel_analysis(
+        path, ax_args={'ylim': [0, 200000], 'xlim': [0, 2.5]})
+
+
+def control_relabel_prune_analysis(path):
+    _control_relabel_analysis(
+        path, ax_args={'xlim': [0, 0.5]})
+
+
+def control_relabel_singlelayer():
+    config = SingleLayerConfig()
+    config.max_epoch = 100
+
+    relabel_class = 100
+    true_classes = [100, 200, 500, 1000]
+
+    data_dirs = []
+    for true_class in true_classes:
+        d = 'relabel_' + str(true_class) + '_' + str(relabel_class)
+        data_dirs.append('./datasets/proto/' + d)
+
+    config_ranges = OrderedDict()
+    config_ranges['data_dir'] = data_dirs
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_relabel_singlelayer_analysis(path):
+    xkey = 'n_trueclass_ratio'
+    ykeys = ['val_acc', 'val_logloss']
+    sa.plot_results(path, xkey=xkey, ykey=ykeys)
+    sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
 
 
 def control_nonnegative():
@@ -60,6 +158,7 @@ def control_standard():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
+    config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
@@ -77,22 +176,57 @@ def control_standard():
 
 
 def control_standard_analysis(path):
-    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 2e-3,
-               'train_kc_bias': True, 'initial_pn2kc': 0.2, 'ORN_NOISE_STD': 0,
+    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3,
+               'train_kc_bias': True, 'initial_pn2kc': 0.08,
+               'ORN_NOISE_STD': 0,
                'kc_norm_pre': None,
                }
     ykeys = ['glo_score', 'val_acc', 'K_smart']
+
     for xkey in default.keys():
         select_dict = copy.deepcopy(default)
         select_dict.pop(xkey)
-        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-        sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
-        sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+        modeldirs = tools.get_modeldirs(
+            path, select_dict=select_dict, acc_min=0.5)
+
+        _modeldirs = analysis_pn2kc_training.filter_modeldirs(
+            modeldirs, exclude_badkc=True, exclude_badpeak=True)
+        sa.plot_results(_modeldirs, xkey=xkey, ykey=ykeys)
+        sa.plot_progress(_modeldirs, ykeys=ykeys, legend_key=xkey)
+
+        _modeldirs = modeldirs
+        sa.plot_xy(_modeldirs,
+                   xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+                   ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
+
+
+def control_standard_prune():
+    """Control for standard ORN-PN-KC all trainable model with pruning."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/standard'
+    config.max_epoch = 100
+    config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1./config.N_PN
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    config_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
+    config_ranges['lr'] = [1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
+    config_ranges['kc_prune_threshold'] = np.array([0.5, 1., 2.])/config.N_PN
+    config_ranges['initial_pn2kc'] = np.array([2., 4., 8.])/config.N_PN
+
+    configs = vary_config(config, config_ranges, mode='control')
+    return configs
 
 
 def control_orn2pn():
     '''
     '''
+    # TODO: to be removed
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 100
@@ -217,6 +351,7 @@ def control_pn2kc():
     '''
     New setup Robert using for torch models
     '''
+    # TODO: To be removed
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
     config.max_epoch = 200
@@ -245,6 +380,7 @@ def control_pn2kc():
 
 
 def control_pn2kc_analysis(path):
+    # TODO: To be removed
     default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3}
     ykeys = ['val_acc', 'K_inferred']
 
@@ -279,29 +415,18 @@ def control_pn2kc_analysis(path):
 def control_pn2kc_inhibition():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 200
+    config.max_epoch = 30
 
-    config.N_ORN_DUPLICATION = 1
-    # config.direct_glo = True
-    config.skip_orn2pn = True
-    config.pn_norm_pre = 'batch_norm'
-
-    # New settings
-    config.batch_size = 8192  # Much bigger batch size
-    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
-    config.lr = 2e-3
-
-    # config.kc_prune_weak_weights = True
-    config.initial_pn2kc = 5./config.N_PN
-    config.kc_prune_threshold = 1./config.N_PN
-
+    config.initial_pn2kc = 4. / config.N_PN
+    # config.kc_prune_threshold = 1. / config.N_PN
     config.kc_recinh = True
+    config.kc_recinh_step = 10
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    config_ranges['kc_prune_weak_weights'] = [True, False]
+    # config_ranges['kc_prune_weak_weights'] = [True, False]
     config_ranges['kc_recinh_coeff'] = list(np.arange(0, 1.01, 0.2))
-    config_ranges['kc_recinh_step'] = list(range(1, 10, 2))
+    # config_ranges['kc_recinh_step'] = list(range(1, 10, 2))
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
@@ -312,45 +437,41 @@ def control_pn2kc_inhibition_analysis(path):
     # loop_key = 'kc_recinh_step'
     loop_key = None
     select_dict = {'kc_prune_weak_weights': False, 'kc_recinh_step': 9}
-    for yk in ykeys:
-        sa.plot_results(path, xkey=xkey, ykey=yk, loop_key=loop_key,
-                        select_dict=select_dict)
 
-        sa.plot_progress(path, ykeys=[yk], legend_key=xkey,
-                         select_dict=select_dict)
+    modeldirs = tools.get_modeldirs(
+        path, select_dict=select_dict, acc_min=0.5)
 
-    res = standard.analysis_pn2kc_peter.do_everything(path,
-                                                      filter_peaks=False,
-                                                      redo=True)
-    sa.plot_xy(path, xkey='lin_bins_', ykey='lin_hist_',
-               legend_key=xkey, log=res,
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key,
+                    figsize=(2.0, 1.2))
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+
+    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
                ax_args={'ylim': [0, 500]})
 
 
 def control_pn2kc_prune_boolean(n_pn=50):
-    """Standard training setting"""
+    """Control pruning."""
     config = FullConfig()
-    config.max_epoch = 200
+    config.max_epoch = 100
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
 
     config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0.
     config.skip_orn2pn = True
-    config.pn_norm_pre = 'batch_norm'
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1./n_pn
 
-    # New settings
-    config.batch_size = 8192  # Much bigger batch size
-    config.initial_pn2kc = 10. / config.N_PN
-    config.initializer_pn2kc = 'uniform'  # Prevent degeneration
     # Heuristics
-    if n_pn > 100:
-        config.lr = 1e-3
+    if n_pn > 50:
+        config.lr = 1e-4
     else:
-        config.lr = 2e-3
+        config.lr = 1e-3
+
+    # This is important for quantitative result
+    config.N_KC = min(40000, n_pn ** 2)
 
     config_ranges = OrderedDict()
     config_ranges['kc_prune_weak_weights'] = [False, True]
@@ -358,29 +479,62 @@ def control_pn2kc_prune_boolean(n_pn=50):
     return configs
 
 
-def control_pn2kc_prune_boolean_analysis(path, n_pns):
+def control_pn2kc_prune_boolean_analysis(path, n_pns=None):
     xkey = 'kc_prune_weak_weights'
-    ykeys = ['val_acc', 'K_inferred', 'K']
-    for n_pn in n_pns:
-        cur_path = path + '_' + str(n_pn)
-        for yk in ykeys:
-            sa.plot_progress(cur_path, ykeys=[yk], legend_key=xkey)
+    ykeys = ['val_acc', 'K_smart']
+    if n_pns is None:
+        n_pns = [50, 200]
 
-        res = standard.analysis_pn2kc_peter.do_everything(cur_path,
-                                                          filter_peaks=False,
-                                                          redo=True, range=1)
-        sa.plot_xy(cur_path, xkey='lin_bins_', ykey='lin_hist_',
-                   legend_key=xkey, log=res,
-                   ax_args={'ylim': [0, 500]})
+    for n_pn in n_pns:
+        cur_path = path + '_pn' + str(n_pn)
+        sa.plot_progress(cur_path, ykeys=ykeys, legend_key=xkey)
+        sa.plot_xy(cur_path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+                   ax_args={'ylim': [0, n_pn ** 2.4 / 50],
+                            'xlim': [0, 8 / n_pn**0.6]})
+
+
+def control_vary_kc_prune(n_pn=50):
+    """Vary KC with pruning, train only PN-KC."""
+    config = FullConfig()
+    config.max_epoch = 100
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn'+str(n_pn)
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1./n_pn
+
+    # Heuristics
+    if n_pn > 50:
+        config.lr = 1e-4
+    else:
+        config.lr = 1e-3
+
+    config_ranges = OrderedDict()
+    config_ranges['N_KC'] = [int(n**2) for n in np.linspace(50, n_pn, 5)]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_vary_kc_prune_analysis(path, n_pns=None):
+    ykeys = ['val_acc', 'K_smart']
+    n_pns = n_pns or [200]
+    for n_pn in n_pns:
+        cur_path = path + '_pn' + str(n_pn)
+        sa.plot_progress(cur_path, legend_key='N_KC', ykeys=ykeys)
+        sa.plot_results(cur_path, xkey='N_KC', ykey=ykeys,
+                        logx=True, figsize=(2.5, 1.5))
 
 
 def control_vary_kc():
+    """Vary KC without pruning, train all."""
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
-    config.sparse_pn2kc = False
-    config.train_pn2kc = True
+    config.max_epoch = 100
 
     config_ranges = OrderedDict()
     config_ranges['N_KC'] = [50, 100, 200, 400, 1000, 2500, 5000, 10000, 20000]
@@ -391,26 +545,44 @@ def control_vary_kc():
 
 
 def control_vary_kc_analysis(path):
-    sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
-    sa.plot_weights(os.path.join(path, '000021'), sort_axis=1, average=False)
-    # default = {'kc_dropout_rate': 0.5, 'N_KC':2500}
-    # ykeys = ['val_acc', 'glo_score']
-    # ylim, yticks = [0, 1.1], [0, .25, .5, .75, 1]
-    # xticks = [50, 200, 1000, 2500, 10000]
-    # for ykey in ykeys:
-    #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.3, 0.3, 0.65, 0.65),
-    #                     loop_key='kc_dropout_rate',
-    #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks': xticks}, plot_args={'alpha':0.7})
-    #     sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75), ax_box=(0.25, 0.25, 0.65, 0.65),
-    #                     loop_key='kc_dropout_rate', select_dict={'kc_dropout_rate':0.5},
-    #                     logx=True, ax_args={'ylim': ylim, 'yticks': yticks, 'xticks':xticks})
+    ykeys = ['val_acc', 'glo_score']
+    xticks = [50, 200, 1000, 2500, 10000]
+
+    sa.plot_results(path, xkey='N_KC', ykey=ykeys, loop_key='kc_dropout_rate',
+                    logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
+
+    for n_kc in [50, 10000]:
+        select_dict = {'N_KC': n_kc, 'kc_dropout_rate': 0.5}
+        modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+        sa.plot_weights(modeldir, sort_axis=1, average=False)
+
+
+def control_vary_kc_relabel():
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_500_100'
+    config.max_epoch = 100
+
+    config.lr = 2e-4  # made smaller to improve separation
+    config.initial_pn2kc = 4. / config.N_PN  # for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config_ranges = OrderedDict()
+    config_ranges['N_KC'] = [50, 100, 200, 400, 1000, 2500, 5000, 10000, 20000]
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_vary_kc_relabel_analysis(path):
+    control_vary_kc_analysis(path)
 
 
 def control_vary_pn():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
+    config.max_epoch = 100
 
     config_ranges = OrderedDict()
     config_ranges['N_PN'] = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
@@ -420,34 +592,48 @@ def control_vary_pn():
 
 
 def control_vary_pn_analysis(path):
-    sa.plot_weights(os.path.join(path, '000004'), sort_axis=1, average=False)
-    sa.plot_weights(os.path.join(path, '000010'), sort_axis=1, average=False,
-                    vlim=[0, 5])
-    sa.plot_weights(os.path.join(path, '000022'), sort_axis=1, average=False,
-                    vlim=[0, 5])
+    # TODO: bring back the analysis
+    for n_pn in [30, 200]:
+        select_dict = {'N_PN': n_pn, 'kc_dropout_rate': 0.5}
+        modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+        sa.plot_weights(modeldir, sort_axis=1, average=False, vlim=[0, 5])
 
-    ix = 22
-    ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(path, ix, cutoff=.9,
-                                                         shuffle=False)
-    analysis_orn2pn.multiglo_pn2kc_distribution(path, ix, ix_good, ix_bad)
-    analysis_orn2pn.multiglo_lesion(path, ix, ix_good, ix_bad)
+    select_dict = {'N_PN': 200, 'kc_dropout_rate': 0.5}
+    modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+    ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(
+        modeldir, cutoff=.9, shuffle=False)
+    analysis_orn2pn.multiglo_pn2kc_distribution(modeldir, ix_good, ix_bad)
+    # analysis_orn2pn.multiglo_lesion(modeldir, ix_good, ix_bad)
 
-    default = {'kc_dropout_rate': 0.5, 'N_PN': 50}
-    ykeys = ['val_acc', 'glo_score']
-    xticks = [20, 50, 100, 200, 1000]
-    for ykey in ykeys:
-        sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75),
-                        ax_box=(0.3, 0.3, 0.65, 0.65),
-                        loop_key='kc_dropout_rate',
-                        logx=True, ax_args={'xticks': xticks},
-                        plot_args={'alpha': 0.7})
-        sa.plot_results(path, xkey='N_PN', ykey=ykey, figsize=(1.75, 1.75),
-                        ax_box=(0.25, 0.25, 0.65, 0.65),
-                        loop_key='kc_dropout_rate',
-                        select_dict={'kc_dropout_rate': 0.5},
-                        logx=True, ax_args={'xticks': xticks})
-        sa.plot_progress(path, ykeys=[ykey], legend_key='N_PN',
-                         select_dict={'kc_dropout_rate': 0.5})
+    # default = {'kc_dropout_rate': 0.5, 'N_PN': 50}
+    # ykeys = ['val_acc', 'glo_score']
+    # xticks = [20, 50, 100, 200, 1000]
+    # sa.plot_results(path, xkey='N_PN', ykey=ykeys, loop_key='kc_dropout_rate',
+    #                 logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
+    # select_dict = {'kc_dropout_rate': 0.5}
+    # sa.plot_progress(path, ykeys=ykeys, legend_key='N_PN',
+    #                  select_dict=select_dict)
+
+
+def control_vary_pn_relabel():
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_500_100'
+    config.max_epoch = 100
+
+    config.lr = 2e-4  # made smaller to improve separation
+    config.initial_pn2kc = 4. / config.N_PN  # for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config_ranges = OrderedDict()
+    config_ranges['N_PN'] = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_vary_pn_relabel_analysis(path):
+    control_vary_pn_analysis(path)
 
 
 #TODO
@@ -698,15 +884,8 @@ def control_n_or_per_orn():
 def vary_orn_corr():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 200
-    config.pn_norm_pre = 'batch_norm'
-
-    config.batch_size = 8192
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.lr = 2 * 1e-3
-    config.initial_pn2kc = 10. / config.N_PN
-    config.initializer_pn2kc = 'uniform'
+    config.max_epoch = 100
+    config.lr = 1e-4
 
     orn_corrs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     datasets = ['./datasets/proto/orn_corr_{:0.2f}'.format(c) for c in orn_corrs]
@@ -747,6 +926,7 @@ def vary_orn_corr_analysis(path):
     ykeys = ['val_acc', 'K_inferred', 'glo_score']
     progress_keys = ['val_logloss', 'train_logloss', 'val_loss',
                      'train_loss', 'val_acc', 'glo_score', 'K_inferred']
-    for yk in ykeys:
-        sa.plot_results(path, xkey=xkey, ykey=yk, figsize=(3.0, 1.5))
-        sa.plot_progress(path, legend_key=xkey, ykeys=progress_keys)
+    sa.plot_results(path, xkey=xkey, ykey=ykeys, figsize=(3.0, 1.5))
+    sa.plot_progress(path, legend_key=xkey, ykeys=progress_keys)
+    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+               ax_args={'ylim': [0, 500]})

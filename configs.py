@@ -91,11 +91,12 @@ class SingleLayerConfig(BaseConfig):
     def __init__(self):
         super(SingleLayerConfig, self).__init__()
         self.dataset = 'proto'
+        self.data_dir = './datasets/proto/standard'
         self.model = 'singlelayer'
         self.lr = .001
         self.max_epoch = 100
         self.batch_size = 256
-        self.save_path = './files/peter_tmp'
+        self.save_path = './files/test'
 
 
 class FullConfig(BaseConfig):
@@ -250,6 +251,65 @@ class FullConfig(BaseConfig):
         # Only meaningful for multi_head configuration
         self.train_head1 = True
         self.train_head2 = True
+
+
+class RNNConfig(BaseConfig):
+    def __init__(self):
+        super().__init__()
+        self.dataset = 'proto'
+        self.data_dir = './datasets/proto/standard'
+
+        self.model = 'rnn'
+        self.save_path = './files/test'
+        self.save_every_epoch = False
+        self.save_log_only = False
+        self.save_epoch_interval = 1
+
+        self.lr = .001  # learning rate
+        self.decay_steps = 1e8  # learning rate decay steps
+        self.decay_rate = 1.  # learning rate decay rate, default to no decay
+        self.max_epoch = 30
+        self.batch_size = 256
+        self.target_acc = None  # target accuracy
+
+        # Overall architecture
+        # If False, ORNs are already replicated in the dataset
+        self.N_ORN_DUPLICATION = 10
+        self.N_PN = 50
+        self.NEURONS = 2500
+
+        #noise model
+        #model for noise: can be 'additive'. 'multiplicative', or None
+        self.NOISE_MODEL = 'additive'
+        self.ORN_NOISE_STD = 0.
+
+        # Recurrent steps
+        self.TIME_STEPS = 2
+        # Initialization method for pn2kc: can take values uniform, random, or normal
+        self.initializer_rec = 'uniform'
+        # Initial value of rec weights. if it is set to 0, network will
+        # initialize according to sparsity
+        self.initial_rec = 0
+        # If True, ORN --> PN connections are positive
+        self.sign_constraint_rec = True
+        # Normalization before non_linearity
+        self.rec_norm_pre = 'batch_norm'  # Default to BatchNorm
+        # Normalization after non_linearity
+        self.rec_norm_post = None
+        # dropout for pn
+        self.rec_dropout = True
+        # dropout rate for pns
+        self.rec_dropout_rate = .0
+        # Initialize rec weight as diagonal matrix
+        self.diagonal = False
+        # Weight dropout
+        self.weight_dropout = False
+        self.weight_dropout_rate = 0.
+        # Whether to prune weak KC weights
+        self.prune_weak_weights = False
+        self.prune_threshold = 0.
+
+
 
 class MetaConfig(FullConfig):
     def __init__(self):

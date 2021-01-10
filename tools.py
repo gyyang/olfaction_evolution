@@ -67,10 +67,21 @@ def load_config(save_path):
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
 
-    # config = configs.BaseConfig()
-    config = configs.FullConfig()
+    model_type = config_dict.get('model', None)
+    if model_type == 'full':
+        config = configs.FullConfig()
+    elif model_type == 'rnn':
+        config = configs.RNNConfig()
+    else:
+        config = configs.MetaConfig()
+
     for key, val in config_dict.items():
         setattr(config, key, val)
+
+    try:
+        config.n_trueclass_ratio = config.n_trueclass / config.N_CLASS
+    except AttributeError:
+        pass
 
     return config
 
@@ -327,6 +338,17 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
     return new_dirs
 
 
+def sort_modeldirs(modeldirs, key):
+    """Sort modeldirs by value of key."""
+    val = []
+    for d in modeldirs:
+        config = load_config(d)
+        val.append(getattr(config, key))
+    ind_sort = np.argsort(val)
+    modeldirs = [modeldirs[i] for i in ind_sort]
+    return modeldirs
+
+
 def get_modeldirs(path, select_dict=None, exclude_dict=None, acc_min=None):
     dirs = _get_alldirs(path, model=True, sort=True)
     dirs = select_modeldirs(dirs, select_dict=select_dict, acc_min=acc_min)
@@ -445,7 +467,7 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
     for i, d in enumerate(dirs):
         log = load_log(d)
         config = load_config(d)
-        
+
         n_actual_epoch = len(log['val_acc'])
         
         if exclude_early_models and n_actual_epoch < config.max_epoch:
@@ -464,7 +486,8 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
                 res[key].append(val)
 
         k_smart_key = 'K' if config.kc_prune_weak_weights else 'K_inferred'
-        res['K_smart'].append(res[k_smart_key][-1])
+        if k_smart_key in res.keys():
+            res['K_smart'].append(res[k_smart_key][-1])
 
         # Adding configuration values
         for k in dir(config):
@@ -516,9 +539,11 @@ nicename_dict = {
     'initial_pn2kc': 'Initial PN-KC Weights',
     'initializer_pn2kc': 'Initializer',
     'mean_claw': 'Average Number of KC Claws',
-    'zero_claw': 'Fraction of KC with No Input',
-    'kc_out_sparse_mean': 'Fraction of Active KCs',
-    'n_trueclass': 'Odor Prototypes Per Class',
+    'zero_claw': '% of KC with No Input',
+    'kc_out_sparse_mean': '% of Active KCs',
+    'coding_level': '% of Active KCs',
+    'n_trueclass': 'Number of Odor Prototypes',
+    'n_trueclass_ratio': 'Odor Prototypes Per Class',
     'weight_perturb': 'Weight Perturb.',
     'lr': 'Learning rate',
     'train_kc_bias': 'Training KC bias',
@@ -529,8 +554,10 @@ nicename_dict = {
     'pn_dropout_rate': 'PN dropout rate',
     'K_inferred': 'K',
     'K': 'fixed threshold K',
-    'lin_hist_': 'Number',
-    'lin_bins_': 'PN-KC Weight',
+    'lin_hist_': 'Distribution',
+    'lin_bins_': 'PN to KC Weight',
+    'lin_hist': 'Distribution',
+    'lin_bins': 'PN to KC Weight',
     'kc_prune_threshold': 'KC prune threshold',
     'n_or_per_orn': 'Number of ORs per ORN',
     'K_smart': 'K',
@@ -554,8 +581,17 @@ def nicename(name, mode='dict'):
     """Return nice name for publishing."""
     if mode == 'lr':
         return np.format_float_scientific(name, precision=0, exp_digits=1)
+    elif mode in ['N_KC', 'N_PN']:
+        if name >= 1000:
+            return '{:.1f}K'.format(name/1000)
+        else:
+            return name
     elif mode == 'kc_recinh_coeff':
         return '{:0.1f}'.format(name)
+    elif mode == 'coding_level':
+        return '{:0.2f}'.format(name)
+    elif mode == 'n_trueclass_ratio':
+        return '{:d}'.format(int(name))
     else:
         return nicename_dict.get(name, name)  # get(key, default value)
 
@@ -566,6 +602,7 @@ red = np.array([193,64,61])/255.
 gray = np.array([167, 156, 147])/255.
 darkblue = np.array([3, 53, 62])/255.
 green = np.array([65,89,57])/255.  # From # 24
+
 
 def _reshape_worn(w_orn, unique_orn, mode='tile'):
     """Reshape w_orn."""
@@ -582,6 +619,7 @@ def _reshape_worn(w_orn, unique_orn, mode='tile'):
     else:
         raise ValueError('Unknown mode' + str(mode))
     return w_orn_by_pn
+
 
 def _reshape_worn_by_wor(w_orn, w_or):
     ind_max = np.argmax(w_or, axis=0)

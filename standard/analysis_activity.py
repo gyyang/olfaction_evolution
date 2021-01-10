@@ -72,7 +72,7 @@ def load_activity_tf(save_path, lesion_kwargs=None):
 
 def load_activity_torch(save_path, lesion_kwargs=None):
     import torch
-    from torchmodel import FullModel
+    from torchmodel import get_model
     # Reload the network and analyze activity
     config = tools.load_config(save_path)
 
@@ -81,7 +81,7 @@ def load_activity_torch(save_path, lesion_kwargs=None):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     with torch.no_grad():
-        model = FullModel(config=config)
+        model = get_model(config)
         model.load()
         model.to(device)
         model.readout()
@@ -102,6 +102,7 @@ def load_activity_torch(save_path, lesion_kwargs=None):
             results[key] = val.numpy()
         except AttributeError:
             pass
+        results[key] = np.array(results[key])
 
     return results
 
@@ -185,9 +186,9 @@ def image_activity(save_path, arg, sort_columns = True, sort_rows = True):
 
 
 def _distribution(data, save_path, name, xlabel, ylabel, xrange=None,
-                  density=False):
+                  title=None, density=False):
     fig = plt.figure(figsize=(1.5, 1.5))
-    ax = fig.add_axes((0.27, 0.25, 0.65, 0.65))
+    ax = fig.add_axes((0.3, 0.25, 0.6, 0.6))
     plt.hist(data, bins=30, range=xrange, density=density, align='left')
     plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 2))
 
@@ -199,6 +200,8 @@ def _distribution(data, save_path, name, xlabel, ylabel, xrange=None,
     # ax.set_xticks(xticks)
     plt.locator_params(axis='x', nbins=3)
     plt.locator_params(axis='y', nbins=3)
+    if title is not None:
+        plt.title(title, fontsize=7)
 
     # ax.set_yticks(np.linspace(0, yrange, 3))
     # plt.ylim([0, yrange])
@@ -231,14 +234,18 @@ def distribution_activity(save_path, var_names=None):
 
 
 def sparseness_activity(save_path, var_names, activity_threshold=0.,
-                        lesion_kwargs=None, figname=None):
+                        lesion_kwargs=None, titlekey=None, figname=None):
     """Plot the sparseness of activity.
 
     Args:
         save_path: model path
         arg: str, the activity to plot
     """
-    dirs = tools.get_modeldirs(save_path)
+    if isinstance(save_path, str):
+        dirs = tools.get_modeldirs(save_path)
+    else:
+        dirs = save_path
+
     if figname is None:
         figname = ''
 
@@ -247,6 +254,7 @@ def sparseness_activity(save_path, var_names, activity_threshold=0.,
 
     for d in dirs:
         results = load_activity(d, lesion_kwargs)
+        config = tools.load_config(d)
         for var_name in var_names:
             data = results[var_name]
             xrange = [-0.05, 1.05]
@@ -260,15 +268,21 @@ def sparseness_activity(save_path, var_names, activity_threshold=0.,
             figpath = tools.get_experiment_name(d)
 
             data1 = np.mean(data > activity_threshold, axis=1)
+            if titlekey is None:
+                title = None
+            else:
+                title = tools.nicename(titlekey) + ' '
+                title = title + tools.nicename(getattr(config, titlekey),
+                                               mode=titlekey)
             fname = figname + 'spars_' + var_name + '_' + tools.get_model_name(d)
             _distribution(data1, figpath, name=fname, density=False,
-                          xlabel='Fraction of Active '+name+'s',
+                          xlabel='% of Active '+name+'s', title=title,
                           ylabel='Number of Odors', xrange=xrange)
 
             data2 = np.mean(data > activity_threshold, axis=0)
             fname = figname + 'spars_' + var_name + '2_' + tools.get_model_name(d)
             _distribution(data2, figpath, name=fname, density=False,
-                          xlabel='Fraction of Odors',
+                          xlabel='% of Odors', title=title,
                           ylabel='Number of '+name+'s', xrange=xrange)
 
 

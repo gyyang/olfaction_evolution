@@ -25,6 +25,7 @@ THRES = 0.1
 FIGSIZE = (1.6, 1.2)
 RECT = [0.3, 0.3, 0.65, 0.65]
 
+
 def _set_colormap(nbins):
     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
     cmap_name = 'my_list'
@@ -69,11 +70,14 @@ def filter_modeldirs_badkc(modeldirs, bad_kc_threshold=0.2):
     return [d for d in modeldirs if has_nobadkc(d, bad_kc_threshold)]
 
 
-def has_singlepeak(modeldir, peak_threshold=0.1):
+def has_singlepeak(modeldir, peak_threshold=None):
     """Check if model has a single peak."""
     # TODO: Use this method throughout to replace similar methods
     log = tools.load_log(modeldir)
     config = tools.load_config(modeldir)
+    if peak_threshold is None:
+        peak_threshold = 2./config.N_PN  # heuristic
+
     if config.kc_prune_weak_weights:
         thres = config.kc_prune_threshold
     else:
@@ -92,14 +96,15 @@ def has_singlepeak(modeldir, peak_threshold=0.1):
     # Value at threshold and at peak
     thres_value = hist_abovethres[0]
     peak_value = hist_abovethres[ind_peak]
-    if ind_peak * bin_size <= peak_threshold or peak_value < 1.3 * thres_value:
+    if (ind_peak + ind_grace) * bin_size <= peak_threshold or (
+            peak_value < 1.3 * thres_value):
         # peak should be at least 'peak_threshold' away from threshold
         return False
     else:
         return True
 
 
-def filter_modeldirs_badpeak(modeldirs, peak_threshold=0.1):
+def filter_modeldirs_badpeak(modeldirs, peak_threshold=None):
     """Filter model dirs without a strong second peak."""
     return [d for d in modeldirs if has_singlepeak(d, peak_threshold)]
 
@@ -628,6 +633,7 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
     ax.set_yticks(np.log(yticks))
     ax.set_yticklabels([str(t) for t in yticks])
     ax.set_xlim(np.log([20, 1700]))
+    ax.set_ylim(np.log([2, 300]))
     
     name = 'opt_k'
     if plot_scatter:
@@ -636,6 +642,8 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         name += '_box'
     if plot_data:
         name += '_data'
+    if plot_dim:
+        name += '_dim'
     if plot_fit:
         name += '_fit'
     if plot_angle:
