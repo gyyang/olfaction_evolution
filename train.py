@@ -243,7 +243,7 @@ def train(config, reload=False, save_everytrainloss=False):
                         log['combined_glo_score'].append(combined_glo_score)
 
                     else:
-                        if config.train_orn2pn and not config.direct_glo and not config.skip_orn2pn:
+                        if config.train_orn2pn and not config.skip_orn2pn:
                             w_orn = sess.run(model.w_orn)
                             glo_score, _ = tools.compute_glo_score(
                                 w_orn, config.N_ORN, glo_score_mode)
@@ -327,23 +327,14 @@ def train(config, reload=False, save_everytrainloss=False):
                             break
                 else:
                     for b in range(n_batch-1):
-                        # print('tmp', b)
-                        if config.separate_optimizer:
-                            _, _ = sess.run([model.train_op, model.train_op1])
-                        else:
-                            _ = sess.run(model.train_op)
+                        _ = sess.run(model.train_op)
 
                         # if b % 10 == 0:
                             # w_orn, w_glo = sess.run([model.w_orn, model.w_glo])
                             # weights_over_time.append((w_orn, w_glo))
 
                 # Compute training loss and accuracy using last batch
-                if config.separate_optimizer:
-                    # loss, acc, _, _, lr = sess.run([model.loss, model.acc, model.train_op, model.train_op1, model.lr])
-                    loss, acc, _, _ = sess.run([model.loss, model.acc, model.train_op, model.train_op1])
-                else:
-                    # loss, acc, _, lr = sess.run([model.loss, model.acc, model.train_op, model.lr])
-                    loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
+                loss, acc, _ = sess.run([model.loss, model.acc, model.train_op])
 
             except KeyboardInterrupt:
                 print('Training interrupted by users')
