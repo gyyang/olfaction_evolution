@@ -167,6 +167,7 @@ if __name__ == '__main__':
     # path = './files/rnn_wdropout'
     # path = './files/rnn_relabel'
     path = './files/rnn_relabel_prune'
+    # path = './files/rnn_relabel_prune2'
 
     from standard.analysis_activity import load_activity_torch
 

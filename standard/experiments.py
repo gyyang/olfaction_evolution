@@ -316,6 +316,14 @@ def rnn_relabel_prune():
     return configs
 
 
+def rnn_relabel_prune_analysis(path):
+    for t in [1, 2, 3]:
+        select_dict = {'TIME_STEPS': t}
+        sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
+        sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
+    sa.plot_results(path, xkey='lr', ykey='val_acc', loop_key='TIME_STEPS')
+
+
 def rnn_relabel_prune2():
     # TEMPORARY
     config = RNNConfig()
@@ -339,9 +347,10 @@ def rnn_relabel_prune2():
     return configs
 
 
-def rnn_relabel_prune_analysis(path):
+def rnn_relabel_prune2_analysis(path):
     select_dict = {'TIME_STEPS': 2}
-    sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
+    sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr',
+                     select_dict=select_dict)
     sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
 
 

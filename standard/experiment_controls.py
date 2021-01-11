@@ -496,7 +496,7 @@ def control_pn2kc_prune_boolean_analysis(path, n_pns=None):
 def control_vary_kc_prune(n_pn=50):
     """Vary KC with pruning, train only PN-KC."""
     config = FullConfig()
-    config.max_epoch = 100
+    config.max_epoch = 1000
 
     config.N_PN = n_pn
     config.data_dir = './datasets/proto/orn'+str(n_pn)
