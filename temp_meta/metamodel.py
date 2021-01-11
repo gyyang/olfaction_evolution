@@ -8,17 +8,21 @@ import torch.nn.functional as F
 from torch.nn import init
 import math
 import tools
+import configs
 
 class _linear_block(mmods.MetaLinear):
     def __init__(self,
                  in_features,
                  out_features,
                  sign_constraint,
+                 prune,
                  bias_init_value=0):
         super(_linear_block, self).__init__(in_features, out_features)
         self.sign_constraint = sign_constraint
         self.bias_initial_value = bias_init_value
+        self.prune = prune
         self.weight_init_range = 4. / in_features
+        self.prune_threshold = 0.001
         self.reset_params()
 
     def forward(self, input, params=None):
@@ -26,11 +30,15 @@ class _linear_block(mmods.MetaLinear):
             params = OrderedDict(self.named_parameters())
         bias = params.get('bias', None)
         weight = params.get('weight', None)
+        return F.linear(input, self.effective_weight(weight), bias)
+
+    def effective_weight(self, weight):
         if self.sign_constraint:
-            effective_weight = torch.abs(weight)
-        else:
-            effective_weight = weight
-        return F.linear(input, effective_weight, bias)
+            weight = torch.abs(weight)
+
+        if self.prune:
+            weight[weight < self.prune_threshold] = 0
+        return weight
 
     def reset_params(self):
         if self.sign_constraint:
@@ -45,7 +53,7 @@ class _linear_block(mmods.MetaLinear):
         init.uniform_(self.bias, -bound, bound)
 
     def _reset_sign_constraint_parameters(self):
-        init.uniform_(self.weight, 0, self.weight_init_range)
+        init.uniform_(self.weight, self.prune_threshold, self.weight_init_range)
         init.constant_(self.bias, self.bias_initial_value)
 
 
@@ -57,6 +65,7 @@ class Layer(mmods.MetaModule):
                  pre_norm: bool = False,
                  post_norm: bool = False,
                  sign_constraint: bool = False,
+                 prune: bool = False,
                  dropout: bool = False,
                  dropout_rate: float = 0,
                  ):
@@ -65,12 +74,13 @@ class Layer(mmods.MetaModule):
         modules = []
         lin_mod = _linear_block(in_features=in_features,
                                 out_features=out_features,
-                                sign_constraint=sign_constraint)
+                                sign_constraint=sign_constraint,
+                                prune=prune)
         modules += [(name + '_linear', lin_mod)]
 
         if pre_norm:
             bn_mod = mmods.MetaBatchNorm1d(num_features=out_features,
-                                           momentum=1,
+                                           momentum=0,
                                            track_running_stats=False)
             modules += [(name + '_bn_pre', bn_mod)]
 
@@ -78,7 +88,7 @@ class Layer(mmods.MetaModule):
 
         if post_norm:
             bn_mod = mmods.MetaBatchNorm1d(num_features=out_features,
-                                           momentum=1,
+                                           momentum=0,
                                            track_running_stats=False)
             modules += [(name + '_bn_post', bn_mod)]
 
@@ -93,7 +103,7 @@ class Layer(mmods.MetaModule):
 
 
 class model(mmods.MetaModule):
-    def __init__(self, config=None):
+    def __init__(self, config: configs.MetaConfig = None):
         super().__init__()
         self.config = config
         n_orn = config.N_ORN * config.N_ORN_DUPLICATION
@@ -104,6 +114,7 @@ class model(mmods.MetaModule):
                             sign_constraint=config.sign_constraint_orn2pn,
                             pre_norm=config.pn_norm_pre,
                             post_norm=config.pn_norm_post,
+                            prune=config.prune,
                             dropout=config.pn_dropout,
                             dropout_rate=config.pn_dropout_rate,
                             )
@@ -114,6 +125,7 @@ class model(mmods.MetaModule):
                             sign_constraint=config.sign_constraint_pn2kc,
                             pre_norm=config.kc_norm_pre,
                             post_norm=config.kc_norm_post,
+                            prune = config.prune,
                             dropout=config.kc_dropout,
                             dropout_rate=config.kc_dropout_rate,
                             )
@@ -139,19 +151,17 @@ class model(mmods.MetaModule):
         torch.save(self.state_dict(), fname)
 
     def save_pickle(self, epoch=None):
-        """Save model using pickle.
-
-        This is quite space-inefficient. But it's easier to read out.
-        """
         var_dict = dict()
         for name, param in self.named_parameters():
             var_dict[name] = param.data.cpu().numpy()
 
-        var_dict['w_orn'] = torch.abs(
-            self.layer1.block.orn_layer_linear.weight).detach().numpy()
-        var_dict['w_glo'] = torch.abs(
-            self.layer2.block.pn_layer_linear.weight).detach().numpy()
-        var_dict['w_out'] = self.layer3.weight.detach().numpy()
+        orn_weight = self.layer1.block.orn_layer_linear.effective_weight(
+            self.layer1.block.orn_layer_linear.weight)
+        pn_weight = self.layer2.block.pn_layer_linear.effective_weight(
+            self.layer2.block.pn_layer_linear.weight)
+        var_dict['w_orn'] = orn_weight.cpu().detach().numpy().T
+        var_dict['w_glo'] = pn_weight.cpu().detach().numpy().T
+        var_dict['w_out'] = self.layer3.weight.cpu().detach().numpy().T
 
         save_path = self.config.save_path
         tools.save_pickle(save_path, var_dict, epoch=epoch)
