@@ -522,12 +522,22 @@ def control_vary_kc_prune(n_pn=50):
 
 def control_vary_kc_prune_analysis(path, n_pns=None):
     ykeys = ['val_acc', 'K_smart']
-    n_pns = n_pns or [200]
+    n_pns = n_pns or [25]
     for n_pn in n_pns:
         cur_path = path + '_pn' + str(n_pn)
         sa.plot_progress(cur_path, legend_key='N_KC', ykeys=ykeys)
         sa.plot_results(cur_path, xkey='N_KC', ykey=ykeys,
                         logx=True, figsize=(2.5, 1.5))
+
+
+def control_vary_kc_prune_relabel(n_pn=50):
+    new_configs = []
+    for config in control_vary_kc_prune(n_pn=n_pn):
+        config.data_dir = './datasets/proto/relabel_200_100'
+        config.max_epoch = 300
+        new_configs.append(config)
+
+    return new_configs
 
 
 def control_vary_kc():
