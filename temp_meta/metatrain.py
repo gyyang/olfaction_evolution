@@ -1,5 +1,10 @@
 import os
+import sys
 import torch
+
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)
+
 import temp_meta.metamodel
 import configs
 import torch.nn as nn
