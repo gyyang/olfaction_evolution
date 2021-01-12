@@ -591,6 +591,14 @@ def vary_or_prune(n_pn=50):
     return configs
 
 
+def vary_or_prune_fixnkc(n_pn=50):
+    new_configs = []
+    for config in vary_or_prune(n_pn=n_pn):
+        config.N_KC = 2500
+        new_configs.append(config)
+    return new_configs
+
+
 def vary_or_prune_analysis(path, n_pn=None):
     def _vary_or_prune_analysis(path, n_pn):
         # Analyze individual network

@@ -540,6 +540,10 @@ def control_vary_kc_prune_relabel(n_pn=50):
     return new_configs
 
 
+def control_vary_kc_prune_relabel_analysis(path, n_pns=None):
+    control_vary_kc_prune_analysis(path, n_pns=n_pns)
+
+
 def control_vary_kc():
     """Vary KC without pruning, train all."""
     config = FullConfig()
