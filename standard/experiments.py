@@ -775,6 +775,8 @@ def test_metalearn():
     # config.data_dir = './datasets/proto/meta_dataset'
     config.data_dir = './datasets/proto/standard'
 
+    config.skip_orn2pn = True
+
     config_ranges = OrderedDict()
     config_ranges['dummy'] = [0]
 

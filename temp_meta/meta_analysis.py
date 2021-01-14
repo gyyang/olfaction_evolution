@@ -9,7 +9,7 @@ import standard.analysis as sa
 import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import tools
 
-path = Path('..') / 'files' / 'torch_metalearn'
+path = Path('..') / 'files' / 'test_metalearn'
 
 modeldir = tools.get_modeldirs(path)[0]
 

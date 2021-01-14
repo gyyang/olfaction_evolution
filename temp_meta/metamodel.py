@@ -120,6 +120,10 @@ class Model(mmods.MetaModule):
                             dropout_rate=config.pn_dropout_rate,
                             )
 
+        if config.skip_orn2pn:
+            init.eye_(self.layer1.block.orn_layer_linear.weight.data)
+            self.layer1.block.orn_layer_linear.weight.requires_grad=False
+
         self.layer2 = Layer('pn_layer',
                             config.N_PN,
                             config.N_KC,

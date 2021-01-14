@@ -317,7 +317,7 @@ class FullModel(CustomModule):
                             weight_norm=config.orn2pn_normalization,
                             )
 
-        if config.skip_orn2pn:  # make these two the same
+        if config.skip_orn2pn:
             init.eye_(self.layer1.weight.data)
             self.layer1.weight.requires_grad=False
 

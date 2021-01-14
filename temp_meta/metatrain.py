@@ -184,8 +184,8 @@ def train(config: configs.MetaConfig):
             print('Iteration ' + str(itr))
 
             if itr > 0:
+                print('SAVING')
                 if config.save_every_epoch:
-                    print('SAVING')
                     model.save_pickle(itr)
                 model.save_pickle()
                 model.save()
