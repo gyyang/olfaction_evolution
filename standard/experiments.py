@@ -749,3 +749,34 @@ def train_multihead_pruning():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def test_metalearn():
+    config = MetaConfig()
+    config.meta_lr = .001
+    config.N_CLASS = 5 #10
+    config.save_every_epoch = False
+    config.meta_batch_size = 32 #32
+    config.meta_num_samples_per_class = 16 #16
+    config.meta_print_interval = 100
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 10
+    config.output_max_lr = 2.0 #2.0
+    config.meta_update_lr = .2
+    config.prune = False
+
+    config.metatrain_iterations = 10000
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_norm_pre = 'batch_norm'
+
+    config.kc_dropout = False
+
+    # config.data_dir = './datasets/proto/meta_dataset'
+    config.data_dir = './datasets/proto/standard'
+
+    config_ranges = OrderedDict()
+    config_ranges['dummy'] = [0]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs

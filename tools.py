@@ -66,14 +66,16 @@ def load_config(save_path):
     import configs
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
-
     model_type = config_dict.get('model', None)
     if model_type == 'full':
-        config = configs.FullConfig()
+        if 'meta_lr' in config_dict:
+            config = configs.MetaConfig()
+        else:
+            config = configs.FullConfig()
     elif model_type == 'rnn':
         config = configs.RNNConfig()
     else:
-        config = configs.MetaConfig()
+        config = configs.BaseConfig()
 
     for key, val in config_dict.items():
         setattr(config, key, val)
@@ -443,7 +445,7 @@ def load_log(modeldir):
 
 
 def load_all_results(path, select_dict=None, exclude_dict=None,
-                     argLast=True, ix=None, exclude_early_models=True,
+                     argLast=True, ix=None, exclude_early_models=False,
                      none_to_string=True):
     """Load results from path.
 

@@ -310,7 +310,6 @@ class RNNConfig(BaseConfig):
         self.prune_threshold = 0.
 
 
-
 class MetaConfig(FullConfig):
     def __init__(self):
         super(MetaConfig, self).__init__()

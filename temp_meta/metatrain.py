@@ -32,9 +32,8 @@ def gradient_update_parameters(model,
     new_params = dict()
     for name, param in params.items():
         if 'layer3.weight' in name:
-            grads = torch.autograd.grad(loss,
-                                       param,
-                                       create_graph=not first_order)
+            grads = torch.autograd.grad(loss, param,
+                                        create_graph=not first_order)
             new_params[name] = param - update_lr * grads[0]
         else:
             new_params[name] = param
@@ -188,8 +187,8 @@ def train(config: configs.MetaConfig):
                 if config.save_every_epoch:
                     print('SAVING')
                     model.save_pickle(itr)
-                    model.save_pickle()
-                    model.save()
+                model.save_pickle()
+                model.save()
 
                 total_time = time.time() - start_time
                 print('Time taken {:0.1f}s'.format(total_time))
@@ -223,14 +222,20 @@ def train(config: configs.MetaConfig):
             print('val_post loss: {}, acc: {}'.format(
                 metaval_val_loss, metaval_val_acc))
 
-            log['metaval_train_pre_acc'].append(metaval_train_pre_acc)
-            log['metaval_train_pre_loss'].append(metaval_train_pre_loss)
-            log['metaval_train_post_acc'].append(metaval_train_post_acc)
-            log['metaval_train_post_loss'].append(metaval_train_post_loss)
-            log['metaval_val_acc'].append(metaval_val_acc)
-            log['metaval_val_loss'].append(metaval_val_loss)
+            log['train_pre_acc'].append(metaval_train_pre_acc.item())
+            log['train_pre_loss'].append(metaval_train_pre_loss.item())
+            log['train_post_acc'].append(metaval_train_post_acc.item())
+            log['train_post_loss'].append(metaval_train_post_loss.item())
+            log['val_acc'].append(metaval_val_acc.item())
+            log['val_loss'].append(metaval_val_loss.item())
             log['epoch'].append(itr)  # named epoch for consistency
             logging(log, model, config)
+
+
+def train_from_path(path):
+    """Train from a path with a config file in it."""
+    config = tools.load_config(path)
+    train(config)
 
 
 def main():
@@ -241,10 +246,10 @@ def main():
     config = configs.MetaConfig()
     config.meta_lr = .001
     config.N_CLASS = 5 #10
-    config.save_every_epoch = True
+    config.save_every_epoch = False
     config.meta_batch_size = 32 #32
     config.meta_num_samples_per_class = 16 #16
-    config.meta_print_interval = 500
+    config.meta_print_interval = 100
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
@@ -252,14 +257,15 @@ def main():
     config.meta_update_lr = .2
     config.prune = False
 
-    config.metatrain_iterations = 10000
+    config.metatrain_iterations = 300
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
 
     config.kc_dropout = False
 
     # config.data_dir = '../datasets/proto/meta_dataset'
-    config.data_dir = '../datasets/proto/relabel_200_100'
+    config.data_dir = '../datasets/proto/standard'
+    # config.data_dir = '../datasets/proto/relabel_200_100'
     config.save_path = '../files/torch_metalearn/000000'
 
     try:
@@ -267,6 +273,7 @@ def main():
     except FileNotFoundError:
         pass
     train(config)
+
 
 if __name__ == "__main__":
     main()
