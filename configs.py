@@ -316,6 +316,8 @@ class MetaConfig(FullConfig):
         super(MetaConfig, self).__init__()
         # data directory
         self.data_dir = './datasets/proto/standard'
+        # model type
+        self.model = 'full'
         # how many points for input generation
         self.meta_n_dataset = 1000 * 32
         # number of classes

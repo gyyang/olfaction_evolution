@@ -10,6 +10,7 @@ import math
 import tools
 import configs
 
+
 class _linear_block(mmods.MetaLinear):
     def __init__(self,
                  in_features,
@@ -102,7 +103,7 @@ class Layer(mmods.MetaModule):
         return self.block(x, params=self.get_subdict(params, 'block'))
 
 
-class model(mmods.MetaModule):
+class Model(mmods.MetaModule):
     def __init__(self, config: configs.MetaConfig = None):
         super().__init__()
         self.config = config
@@ -155,19 +156,27 @@ class model(mmods.MetaModule):
         for name, param in self.named_parameters():
             var_dict[name] = param.data.cpu().numpy()
 
-        orn_weight = self.layer1.block.orn_layer_linear.effective_weight(
-            self.layer1.block.orn_layer_linear.weight)
-        pn_weight = self.layer2.block.pn_layer_linear.effective_weight(
-            self.layer2.block.pn_layer_linear.weight)
-        var_dict['w_orn'] = orn_weight.cpu().detach().numpy().T
-        var_dict['w_glo'] = pn_weight.cpu().detach().numpy().T
-        var_dict['w_out'] = self.layer3.weight.cpu().detach().numpy().T
+        var_dict['w_orn'] = self.w_orn
+        var_dict['w_glo'] = self.w_glo
+        var_dict['w_out'] = self.w_out
 
         save_path = self.config.save_path
         tools.save_pickle(save_path, var_dict, epoch=epoch)
         print("Model weights saved in path: %s" % save_path)
 
+    @property
+    def w_orn(self):
+        orn_weight = self.layer1.block.orn_layer_linear.effective_weight(
+            self.layer1.block.orn_layer_linear.weight)
+        # Transpose to be consistent with tensorflow default
+        return orn_weight.cpu().detach().numpy().T
 
+    @property
+    def w_glo(self):
+        pn_weight = self.layer2.block.pn_layer_linear.effective_weight(
+            self.layer2.block.pn_layer_linear.weight)
+        return pn_weight.cpu().detach().numpy().T
 
-
-
+    @property
+    def w_out(self):
+        return self.layer3.weight.cpu().detach().numpy().T

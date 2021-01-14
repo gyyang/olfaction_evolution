@@ -1,22 +1,23 @@
 import os
 import sys
+import time
+from collections import defaultdict
+from collections import OrderedDict
+
 import torch
+import torch.nn as nn
+from torchmeta.modules import MetaModule
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 import temp_meta.metamodel
 import configs
-import torch.nn as nn
 import tools
 from mamldataset import DataGenerator
-import time
+from torchtrain import logging
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-import torch
-from collections import OrderedDict
-from torchmeta.modules import MetaModule
 
 
 def gradient_update_parameters(model,
@@ -126,7 +127,7 @@ def train(config: configs.MetaConfig):
     tools.save_config(config, save_path=config.save_path)
 
     # model
-    model = temp_meta.metamodel.model(config=config)
+    model = temp_meta.metamodel.Model(config=config)
     model.to(device=device)
     meta_optimizer = torch.optim.Adam(model.parameters(),
                                       lr=config.meta_lr)
@@ -135,8 +136,6 @@ def train(config: configs.MetaConfig):
     meta_update_lr.requires_grad = False
     update_optimizer = torch.optim.Adam([meta_update_lr],
                                         lr=config.meta_lr*10)
-
-
 
     print('MODEL VARIABLES')
     for k, v in model.named_parameters():
@@ -156,6 +155,9 @@ def train(config: configs.MetaConfig):
 
     PRINT_INTERVAL = config.meta_print_interval
     loss = nn.CrossEntropyLoss()
+
+    # Make logger
+    log = defaultdict(list)
     
     start_time = time.time()
     for itr in range(config.metatrain_iterations):
@@ -220,6 +222,15 @@ def train(config: configs.MetaConfig):
                 metaval_train_post_loss, metaval_train_post_acc))
             print('val_post loss: {}, acc: {}'.format(
                 metaval_val_loss, metaval_val_acc))
+
+            log['metaval_train_pre_acc'].append(metaval_train_pre_acc)
+            log['metaval_train_pre_loss'].append(metaval_train_pre_loss)
+            log['metaval_train_post_acc'].append(metaval_train_post_acc)
+            log['metaval_train_post_loss'].append(metaval_train_post_loss)
+            log['metaval_val_acc'].append(metaval_val_acc)
+            log['metaval_val_loss'].append(metaval_val_loss)
+            log['epoch'].append(itr)  # named epoch for consistency
+            logging(log, model, config)
 
 
 def main():
