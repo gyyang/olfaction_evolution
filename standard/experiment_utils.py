@@ -108,11 +108,9 @@ def cluster_train(config, path):
 
     if use_metatrain:
         if use_torch:
-            cmd = r'''python -c "import temp_meta.metatrain as metatrain; 
-            metatrain.train_from_path(''' + arg + ''')"'''
+            cmd = r'''python -c "import temp_meta.metatrain as metatrain;metatrain.train_from_path(''' + arg + ''')"'''
         else:
-            cmd = r'''python -c "import mamlmetatrain as metatrain; 
-            metatrain.train_from_path(''' + arg + ''')"'''
+            cmd = r'''python -c "import mamlmetatrain as metatrain;metatrain.train_from_path(''' + arg + ''')"'''
     else:
         if use_torch:
             cmd = r'''python -c "import torchtrain; torchtrain.train_from_path(''' + arg + ''')"'''
