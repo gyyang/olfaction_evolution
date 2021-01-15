@@ -196,8 +196,8 @@ def plot_sparsity(modeldir, epoch=None, dynamic_thres=True,
     if epoch is not None and epoch != -1:
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
-    w = tools.load_pickles(modeldir, 'w_glo')[0]
-    sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
+    log = tools.load_log(modeldir)
+    sparsity = log['sparsity_inferred'][-1]
 
     if plot:
         if epoch is not None:
