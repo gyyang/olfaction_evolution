@@ -501,6 +501,7 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
                     v = '_none'
                 res[k].append(v)
 
+    loss_keys = list()
     for key, val in res.items():
         try:
             res[key] = np.array(val)
@@ -508,12 +509,16 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
             print('Cannot turn ' + key +
                   ' into np array, probably non-homogeneous shape')
 
-    try:
-        res['val_logloss'] = np.log(res['val_loss'])
-        res['train_logloss'] = np.log(res['train_loss'])
-    except AttributeError:
-        print('''Could not compute log loss.
-              Most likely models have not finished training.''')
+        if 'loss' in key:
+            loss_keys.append(key)
+
+    for key in loss_keys:
+        new_key = key[:-4] + 'logloss'
+        try:
+            res[new_key] = np.log(res[key])
+        except AttributeError:
+            print('''Could not compute log loss.
+                  Most likely models have not finished training.''')
 
     return res
 
@@ -581,7 +586,7 @@ nicename_dict = {
 
 def nicename(name, mode='dict'):
     """Return nice name for publishing."""
-    if mode == 'lr':
+    if mode in ['lr', 'meta_lr']:
         return np.format_float_scientific(name, precision=0, exp_digits=1)
     elif mode in ['N_KC', 'N_PN']:
         if name >= 1000:

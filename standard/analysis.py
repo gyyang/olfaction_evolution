@@ -36,7 +36,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
         ax_args['ylim'] = [-2, 2]
         ax_args['yticks'] = [-2, -1, 0, 1, 2]
 
-    if xkey == 'lr':
+    if 'lr' in xkey:
         # rect = (0.3, 0.35, 0.5, 0.55)
         rect = (0.2, 0.35, 0.7, 0.55)
     else:
@@ -57,8 +57,17 @@ def _get_ax_args(xkey, ykey, n_pn=50):
 
 
 def _infer_plot_xy_axargs(X, Y):
-    ylim = np.max([np.percentile(y, 95) * 1.2 for y in Y])
-    return {'ylim': [0, ylim]}
+    xlims = list()
+    ylims = list()
+    for x, y in zip(X, Y):
+        ypeak = np.percentile(y, 95)
+        # first value from right higher than ypeak * 0.01
+        xlims.append(x[-np.where(np.array(y[::-1]) > ypeak*0.01)[0][0]])
+        ylims.append(ypeak*1.2)
+
+    xlim = np.max(xlims)
+    ylim = np.max(ylims)
+    return {'ylim': [0, ylim], 'xlim': [0, xlim]}
 
 
 def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
@@ -477,12 +486,13 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
     xvals = sorted(set(res[xkey]))
 
     if logx is None:
-        logx = xkey in ['lr', 'N_KC', 'initial_pn2kc', 'kc_prune_threshold',
+        logx = xkey in ['lr', 'meta_lr', 'N_KC', 'initial_pn2kc',
+                        'kc_prune_threshold',
                          'N_ORN_DUPLICATION', 'n_trueclass',
                         'n_trueclass_ratio']
 
     if figsize is None:
-        if xkey == 'lr':
+        if 'lr' in xkey:
             figsize = (2.5, 1.2 + 0.9 * (ny-1))
         else:
             figsize = (1.5, 1.2 + 0.9 * (ny-1))
