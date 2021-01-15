@@ -607,15 +607,14 @@ def vary_or_prune_analysis(path, n_pn=None):
         _modeldirs = modeldirs
         # _modeldirs = analysis_pn2kc_training.filter_modeldirs(
         #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
-        sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
-                         legend_key='lr')
+        if _modeldirs:
+            sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
+                             legend_key='lr')
 
         _modeldirs = modeldirs
-        sa.plot_xy(_modeldirs,
-                   xkey='lin_bins', ykey='lin_hist', legend_key='lr',
-                   ax_args={'ylim': [0, n_pn ** 2.4 / 50],
-                            'xlim': [0, 8 / n_pn**0.6]})
-        # x, y lim from heuristics, exponent should sum to 2-3
+        if _modeldirs:
+            sa.plot_xy(_modeldirs,
+                       xkey='lin_bins', ykey='lin_hist', legend_key='lr')
 
     if n_pn is not None:
         _vary_or_prune_analysis(path, n_pn)
@@ -644,7 +643,11 @@ def vary_or_prune_analysis(path, n_pn=None):
         for plot_dim in [False, True]:
             analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
                                                plot_dim=plot_dim,
-                                               path='vary_or_prune')
+                                               path=path)
+
+
+def vary_or_prune_fixnkc_analysis(path, n_pn=None):
+    vary_or_prune_analysis(path, n_pn)
 
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):
@@ -819,6 +822,14 @@ def meta_trainable_lr():
     return configs
 
 
+def meta_trainable_lr_analysis(path):
+    modeldirs = tools.get_modeldirs(path)
+    # accuracy
+    ykeys = ['val_acc', 'train_post_acc', 'glo_score', 'K_smart']
+    sa.plot_progress(modeldirs, ykeys=ykeys,
+                     legend_key='meta_trainable_lr')
+
+
 def meta_vary_or(n_pn=50):
     """Training networks with different number of PNs and vary hyperparams."""
     config = MetaConfig()
@@ -852,5 +863,97 @@ def meta_vary_or(n_pn=50):
 
     config_ranges = OrderedDict()
     config_ranges['meta_lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def meta_vary_or_prune(n_pn=50):
+    new_configs = []
+    for config in meta_vary_or(n_pn=n_pn):
+        config.N_CLASS = 2
+        config.kc_prune_weak_weights = True
+        new_configs.append(config)
+    return new_configs
+
+
+def meta_vary_or_analysis(path, n_pn=None):
+    def _meta_vary_or_analysis(path, n_pn):
+        # Analyze individual network
+        select_dict = {'N_PN': n_pn}
+        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+        _modeldirs = modeldirs
+        sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
+                         legend_key='meta_lr')
+
+        _modeldirs = modeldirs
+        sa.plot_xy(_modeldirs, xkey='lin_bins', ykey='lin_hist',
+                   legend_key='meta_lr')
+
+        sa.plot_results(_modeldirs, xkey='meta_lr', ykey=['val_acc', 'K_smart'])
+
+    if n_pn is not None:
+        _meta_vary_or_analysis(path, n_pn)
+
+    else:
+        import glob
+        path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
+        folders = glob.glob(path + '*')
+        n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
+        Ks = list()
+        for n_orn in n_orns:
+            _path = path + str(n_orn)
+            _meta_vary_or_analysis(_path, n_pn=n_orn)
+            modeldirs = tools.get_modeldirs(_path)
+            modeldirs = analysis_pn2kc_training.filter_modeldirs(
+                modeldirs, exclude_badkc=True, exclude_badpeak=True)
+
+            modeldirs = tools.sort_modeldirs(modeldirs, 'meta_lr')
+            # modeldirs = [modeldirs[-1]]  # Use model with highest LR
+            modeldirs = [modeldirs[0]]  # Use model with highest LR
+
+            res = tools.load_all_results(modeldirs)
+            Ks.append(res['K_smart'])
+
+        for plot_dim in [False, True]:
+            analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
+                                               plot_dim=plot_dim,
+                                               path=path)
+
+
+def meta_num_updates():
+    config = MetaConfig()
+    config.meta_lr = .001
+    # config.N_CLASS = 5 #10
+    config.N_CLASS = 2
+    config.save_every_epoch = False
+    config.meta_batch_size = 32 #32
+    config.meta_num_samples_per_class = 16 #16
+    config.meta_print_interval = 100
+
+    config.replicate_orn_with_tiling = True
+    config.N_ORN_DUPLICATION = 1
+    config.output_max_lr = 10. #2.0
+    config.meta_update_lr = .1
+    config.kc_prune_weak_weights = True
+
+    config.metatrain_iterations = 10000
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_norm_pre = 'batch_norm'
+
+    config.kc_dropout = False
+
+    # config.data_dir = './datasets/proto/meta_dataset'
+    config.data_dir = './datasets/proto/standard'
+
+    config.skip_orn2pn = True
+    config.meta_trainable_lr = True
+
+    n_pn = 50
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/orn' + str(n_pn)
+
+    config_ranges = OrderedDict()
+    config_ranges['meta_num_updates'] = [1]
+
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs

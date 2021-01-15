@@ -23,7 +23,8 @@ class _linear_block(mmods.MetaLinear):
         self.bias_initial_value = bias_init_value
         self.prune = prune
         self.weight_init_range = 4. / in_features
-        self.prune_threshold = 0.001
+        # self.prune_threshold = 0.001
+        self.prune_threshold = 1. / in_features
         self.reset_params()
 
     def forward(self, input, params=None):
@@ -115,7 +116,7 @@ class Model(mmods.MetaModule):
                             sign_constraint=config.sign_constraint_orn2pn,
                             pre_norm=config.pn_norm_pre,
                             post_norm=config.pn_norm_post,
-                            prune=config.prune,
+                            prune=config.pn_prune_weak_weights,
                             dropout=config.pn_dropout,
                             dropout_rate=config.pn_dropout_rate,
                             )
@@ -130,7 +131,7 @@ class Model(mmods.MetaModule):
                             sign_constraint=config.sign_constraint_pn2kc,
                             pre_norm=config.kc_norm_pre,
                             post_norm=config.kc_norm_post,
-                            prune = config.prune,
+                            prune=config.kc_prune_weak_weights,
                             dropout=config.kc_dropout,
                             dropout_rate=config.kc_dropout_rate,
                             )
