@@ -23,7 +23,8 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 def gradient_update_parameters(model,
                                loss,
                                update_lr,
-                               first_order=False):
+                               first_order=False,
+                               max_update_lr=1.0):
     if not isinstance(model, MetaModule):
         raise ValueError('The model must be an instance of `torchmeta.modules.'
                          'MetaModule`, got `{0}`'.format(type(model)))
@@ -34,7 +35,7 @@ def gradient_update_parameters(model,
         if 'layer3.weight' in name:
             grads = torch.autograd.grad(loss, param,
                                         create_graph=not first_order)
-            new_params[name] = param - update_lr * grads[0]
+            new_params[name] = param - torch.clamp_max(update_lr, max_update_lr) * grads[0]
         else:
             new_params[name] = param
     return new_params
@@ -63,7 +64,8 @@ def get_accuracy(logits, targets):
     return torch.mean(predictions.eq(targets).float())
 
 
-def run_per_batch(model, loss, split_size, data_x, data_t, update_lr):
+def run_per_batch(model, loss, split_size, data_x, data_t, update_lr,
+                  max_update_lr=1.0):
     pre_acc_av = torch.tensor(0., device=device)
     pre_loss_av = torch.tensor(0., device=device)
     post_acc_av = torch.tensor(0., device=device)
@@ -88,7 +90,9 @@ def run_per_batch(model, loss, split_size, data_x, data_t, update_lr):
             model,
             pre_loss,
             update_lr=update_lr,
-            first_order=False)
+            first_order=False,
+            max_update_lr=max_update_lr
+        )
 
         with torch.no_grad():
             post_y = model(train_x, params=params)
@@ -132,7 +136,7 @@ def train(config: configs.MetaConfig):
                                       lr=config.meta_lr)
 
     meta_update_lr = (torch.ones(1) * config.meta_update_lr).to(device)
-    meta_update_lr.requires_grad = False
+    meta_update_lr.requires_grad = config.meta_trainable_lr
     update_optimizer = torch.optim.Adam([meta_update_lr],
                                         lr=config.meta_lr*10)
 
@@ -174,7 +178,9 @@ def train(config: configs.MetaConfig):
                           num_class * num_samples_per_class, 
                           train_x_torch,
                           train_t_torch,
-                          update_lr=meta_update_lr)
+                          update_lr=meta_update_lr,
+                          max_update_lr=config.output_max_lr
+                          )
 
         metatrain_val_loss.backward()
         meta_optimizer.step()
@@ -212,7 +218,9 @@ def train(config: configs.MetaConfig):
                               num_class * num_samples_per_class,
                               test_x_torch,
                               test_t_torch,
-                              update_lr=meta_update_lr)
+                              update_lr=meta_update_lr,
+                              max_update_lr=config.output_max_lr
+                              )
 
             print('Meta-val')
             print('train_pre loss: {}, acc: {}'.format(

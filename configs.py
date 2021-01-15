@@ -345,3 +345,6 @@ class MetaConfig(FullConfig):
         self.meta_print_interval = 250
         # maximum learning rate for the KC-output layer
         self.output_max_lr = 0.2
+        # trainable lr?
+        self.meta_trainable_lr = False
+
