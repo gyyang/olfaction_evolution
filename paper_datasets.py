@@ -75,8 +75,6 @@ def make_relabel_corr_vary_or_dataset():
         print('Done Relabel Corr Vary OR Dataset: ' + str(n_or))
 
 
-make_relabel_corr_vary_or_dataset()
-
 def make_concentration_dataset():
     """Impose odor concentration invariance."""
     config = configs.input_ProtoConfig()
