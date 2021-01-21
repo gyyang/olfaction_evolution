@@ -48,6 +48,19 @@ def make_relabel_dataset(mode='small'):
         print('Done Relabel Dataset: ' + str(i))
 
 
+def make_relabel_vary_or_dataset():
+    """Vary the number of olfactory receptors for relabel dataset."""
+    task_config = task.input_ProtoConfig()
+    for n_or in [25, 35, 50, 75, 100, 150, 200]:
+        task_config.N_ORN = n_or
+        task_config.relabel = True
+        task_config.N_CLASS = 100
+        task_config.n_trueclass = 200
+        task.save_proto(config=task_config, seed=0,
+                        folder_name='relabel_orn'+str(n_or))
+        print('Done Relabel Vary OR Dataset: ' + str(n_or))
+
+
 def make_concentration_dataset():
     """Impose odor concentration invariance."""
     config = configs.input_ProtoConfig()

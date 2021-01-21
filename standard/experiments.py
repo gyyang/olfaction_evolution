@@ -599,6 +599,14 @@ def vary_or_prune_fixnkc(n_pn=50):
     return new_configs
 
 
+def vary_or_prune_relabel(n_pn=50):
+    new_configs = []
+    for config in vary_or_prune(n_pn=n_pn):
+        config.data_dir = './datasets/proto/relabel_orn' + str(n_pn)
+        new_configs.append(config)
+    return new_configs
+
+
 def vary_or_prune_analysis(path, n_pn=None):
     def _vary_or_prune_analysis(path, n_pn):
         # Analyze individual network
@@ -902,14 +910,19 @@ def meta_vary_or_analysis(path, n_pn=None):
         Ks = list()
         for n_orn in n_orns:
             _path = path + str(n_orn)
-            _meta_vary_or_analysis(_path, n_pn=n_orn)
-            modeldirs = tools.get_modeldirs(_path)
-            modeldirs = analysis_pn2kc_training.filter_modeldirs(
-                modeldirs, exclude_badkc=True, exclude_badpeak=True)
+            # _meta_vary_or_analysis(_path, n_pn=n_orn)
+
+            # NOTICE this is chosen after manual inspection
+            # TODO: Need an automated method
+            select_dict = {'meta_lr': 5e-4}
+            modeldirs = tools.get_modeldirs(_path, select_dict=select_dict)
+
+            # modeldirs = analysis_pn2kc_training.filter_modeldirs(
+            #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
             modeldirs = tools.sort_modeldirs(modeldirs, 'meta_lr')
-            # modeldirs = [modeldirs[-1]]  # Use model with highest LR
-            modeldirs = [modeldirs[0]]  # Use model with highest LR
+            modeldirs = [modeldirs[-1]]  # Use model with highest LR
+            # modeldirs = [modeldirs[0]]  # Use model with lowest LR
 
             res = tools.load_all_results(modeldirs)
             Ks.append(res['K_smart'])
@@ -918,6 +931,10 @@ def meta_vary_or_analysis(path, n_pn=None):
             analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
                                                plot_dim=plot_dim,
                                                path=path)
+
+
+def meta_vary_or_prune_analysis(path, n_pn=None):
+    meta_vary_or_analysis(path, n_pn=n_pn)
 
 
 def meta_num_updates():
