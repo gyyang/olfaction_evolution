@@ -607,7 +607,15 @@ def vary_or_prune_relabel(n_pn=50):
     return new_configs
 
 
-def vary_or_prune_analysis(path, n_pn=None):
+def vary_or_prune_relabel_corr(n_pn=50):
+    new_configs = []
+    for config in vary_or_prune(n_pn=n_pn):
+        config.data_dir = './datasets/proto/relabel_corr_orn' + str(n_pn)
+        new_configs.append(config)
+    return new_configs
+
+
+def vary_or_prune_analysis(path, n_pn=None, acc_min=0.75):
     def _vary_or_prune_analysis(path, n_pn):
         # Analyze individual network
         select_dict = {}
@@ -637,7 +645,7 @@ def vary_or_prune_analysis(path, n_pn=None):
         for n_orn in n_orns:
             _path = path + str(n_orn)
             _vary_or_prune_analysis(_path, n_pn=n_orn)
-            modeldirs = tools.get_modeldirs(_path, acc_min=0.75)
+            modeldirs = tools.get_modeldirs(_path, acc_min=acc_min)
             modeldirs = analysis_pn2kc_training.filter_modeldirs(
                 modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
@@ -656,6 +664,10 @@ def vary_or_prune_analysis(path, n_pn=None):
 
 def vary_or_prune_fixnkc_analysis(path, n_pn=None):
     vary_or_prune_analysis(path, n_pn)
+
+
+def vary_or_prune_relabel_analysis(path, n_pn=None):
+    vary_or_prune_analysis(path, n_pn, acc_min=0.5)
 
 
 def control_pn2kc_prune_hyper_analysis(path, n_pns):
