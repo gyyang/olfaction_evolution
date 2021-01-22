@@ -308,6 +308,8 @@ class RNNConfig(BaseConfig):
         # Whether to prune weak KC weights
         self.prune_weak_weights = False
         self.prune_threshold = 0.
+        # Whether to prevent neurons from being reactivated
+        self.allow_reactivation = True
 
 
 class MetaConfig(FullConfig):

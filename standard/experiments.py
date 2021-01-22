@@ -357,6 +357,28 @@ def rnn_relabel_prune2_analysis(path):
     sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
 
 
+def rnn_relabel_noreactivation():
+    config = RNNConfig()
+    config.data_dir = './datasets/proto/relabel_200_100'
+    config.max_epoch = 100
+    config.rec_dropout = True
+    config.rec_dropout_rate = 0.0
+    config.rec_norm_pre = None
+    config.diagonal = True
+    config.ORN_NOISE_STD = 0.0
+
+    config.allow_reactivation = False
+
+    config_ranges = OrderedDict()
+    config_ranges['TIME_STEPS'] = [1, 2, 3]
+    config_ranges['diagonal'] = [False]
+    config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
+    config_ranges['data_dir'] = ['./datasets/proto/relabel_200_100']
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
 def metalearn():
     config = MetaConfig()
     config.meta_lr = .001

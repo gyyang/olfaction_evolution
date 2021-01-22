@@ -521,12 +521,6 @@ class RNNModel(CustomModule):
         self.output = nn.Linear(hidden_units, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
 
-        # TODO: temp
-        # if config.rec_dropout:
-        #     self.dropout = nn.Dropout(p=config.rec_dropout_rate)
-        # else:
-        #     self.dropout = nn.Identity()
-
     @property
     def w_rnn(self):
         return self.rnn.effective_weight.data.cpu().numpy().T
@@ -552,8 +546,20 @@ class RNNModel(CustomModule):
         results = dict()
         if self._readout:
             results['rnn_outputs'] = [act1.cpu().numpy()]
+
+        act_sum = 0.
+
         for i in range(self.n_steps):
+            if not self.config.allow_reactivation:
+                # Keep track of cumulative activation
+                act_sum = act_sum + act1
+
             act1 = self.rnn(act1)
+
+            if not self.config.allow_reactivation:
+                # prevent neurons activated before from being re-activated
+                act1 = torch.nn.functional.relu(act1 - act_sum * 10.)
+
             if self._readout:
                 results['rnn_outputs'].append(act1.cpu().numpy())
 
