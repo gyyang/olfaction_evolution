@@ -166,7 +166,8 @@ if __name__ == '__main__':
 
     # path = './files/rnn'
     # path = './files/rnn_wdropout'
-    path = './files/rnn_relabel'
+    # path = './files/rnn_relabel'
+    path = './files/rnn_relabel_noreactivation'
     # path = './files/rnn_relabel_prune'
     # path = './files/rnn_relabel_prune2'
 
@@ -177,7 +178,7 @@ if __name__ == '__main__':
     # select_dict = {'rec_dropout_rate': 0.1, 'TIME_STEPS': 2}
     # select_dict = {'weight_dropout_rate': 0.0, 'TIME_STEPS': 2}
     # select_dict = {'diagonal': False, 'lr': 5e-4}
-    select_dict = {'TIME_STEPS': 3, 'lr': 5e-4, 'diagonal': False,
+    select_dict = {'TIME_STEPS': 2, 'lr': 5e-4, 'diagonal': False,
                    'data_dir': './datasets/proto/relabel_200_100'}
     dir_ix = 0
 # =============================================================================
