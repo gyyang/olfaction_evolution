@@ -557,8 +557,10 @@ class RNNModel(CustomModule):
             act1 = self.rnn(act1)
 
             if not self.config.allow_reactivation:
+                # TODO: doesn't work, remove soon
                 # prevent neurons activated before from being re-activated
-                act1 = act1 * (1 - torch.heaviside(act_sum, torch.tensor(0.)))
+                # act1 = act1 * (1 - torch.heaviside(act_sum, torch.tensor(0.)))
+                act1 = act1 * (act_sum < 0.001)
 
             if self._readout:
                 results['rnn_outputs'].append(act1.cpu().numpy())
