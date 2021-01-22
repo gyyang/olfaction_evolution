@@ -3,6 +3,7 @@
 import os
 import json
 import pickle
+from pathlib import Path
 from copy import deepcopy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -307,9 +308,15 @@ def select_modeldirs(modeldirs, select_dict=None, acc_min=None):
         if select_dict is not None:
             config = load_config(d)  # epoch modeldirs have no configs
             for key, val in select_dict.items():
-                if getattr(config, key) != val:
-                    selected = False
-                    break
+                if key == 'data_dir':
+                    # If data_dir, only compare last
+                    if Path(config.data_dir).name != Path(val).name:
+                        selected = False
+                        break
+                else:
+                    if getattr(config, key) != val:
+                        selected = False
+                        break
 
         if acc_min is not None:
             log = load_log(d)
@@ -330,9 +337,15 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
         if exclude_dict is not None:
             config = load_config(d)  # epoch modeldirs have no configs
             for key, val in exclude_dict.items():
-                if getattr(config, key) == val:
-                    excluded = True
-                    break
+                if key == 'data_dir':
+                    # If data_dir, only compare last
+                    if Path(config.data_dir).name == Path(val).name:
+                        excluded = True
+                        break
+                else:
+                    if getattr(config, key) == val:
+                        excluded = True
+                        break
 
         if not excluded:
             new_dirs.append(d)
