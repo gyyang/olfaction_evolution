@@ -666,14 +666,8 @@ def control_pn2kc_prune_hyper_analysis(path, n_pns):
 def multihead():
     """Multi-task classification."""
     config = FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
     config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-    config.pn_norm_pre = 'batch_norm'
-    config.initial_pn2kc = 0.1
-
-    config.save_every_epoch = False
-
     config.data_dir = './datasets/proto/multihead'
 
     config_ranges = OrderedDict()
@@ -683,6 +677,15 @@ def multihead():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def multihead_relabel():
+    """Multi-task with relabel datset."""
+    new_configs = list()
+    for cfg in multihead():
+        cfg.data_dir = './datasets/proto/multihead_relabel'
+        new_configs.append(cfg)
+    return new_configs
 
 
 def multihead_analysis(path):

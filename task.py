@@ -401,7 +401,7 @@ def _generate_proto_threshold(
         rng.shuffle(val_labels)
 
     if relabel:
-        print('relabeling' + str(n_proto) + 'classes into ' + str(n_class))
+        print('relabeling ' + str(n_proto) + ' classes into ' + str(n_class))
         train_labels, val_labels = _relabel(
             train_labels, val_labels, n_proto, n_class, rng)
 
