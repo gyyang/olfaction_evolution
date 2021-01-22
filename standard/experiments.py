@@ -370,9 +370,14 @@ def rnn_relabel_noreactivation():
     config.allow_reactivation = False
 
     config_ranges = OrderedDict()
-    config_ranges['TIME_STEPS'] = [1, 2, 3]
+    # config_ranges['TIME_STEPS'] = [1, 2, 3]
+    # config_ranges['diagonal'] = [False]
+    # config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
+    # config_ranges['data_dir'] = ['./datasets/proto/relabel_200_100']
+
+    config_ranges['TIME_STEPS'] = [2]
     config_ranges['diagonal'] = [False]
-    config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
+    config_ranges['lr'] = [5e-4]
     config_ranges['data_dir'] = ['./datasets/proto/relabel_200_100']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')

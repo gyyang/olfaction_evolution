@@ -166,8 +166,8 @@ if __name__ == '__main__':
 
     # path = './files/rnn'
     # path = './files/rnn_wdropout'
-    # path = './files/rnn_relabel'
-    path = './files/rnn_relabel_noreactivation'
+    path = './files/rnn_relabel'
+    # path = './files/rnn_relabel_noreactivation'
     # path = './files/rnn_relabel_prune'
     # path = './files/rnn_relabel_prune2'
 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     # select_dict = {'weight_dropout_rate': 0.0, 'TIME_STEPS': 2}
     # select_dict = {'diagonal': False, 'lr': 5e-4}
     select_dict = {'TIME_STEPS': 2, 'lr': 5e-4, 'diagonal': False,
-                   'data_dir': './datasets/proto/relabel_200_100'}
+                   'data_dir': './datasets/proto/relabel_500_100'}
     dir_ix = 0
 # =============================================================================
 #     if dir_ix == 0:
@@ -187,7 +187,7 @@ if __name__ == '__main__':
 #     else:
 #         analyze_t_greater(path, dir_ix)
 # =============================================================================
-    threshold = 0.05
+    threshold = 0.0
 
     save_path = tools.get_modeldirs(path, select_dict=select_dict)[0]
     config = tools.load_config(save_path)
@@ -203,9 +203,9 @@ if __name__ == '__main__':
     active_ixs = []
     assert rnn_outputs.shape[0] == config.TIME_STEPS + 1
     for i in range(config.TIME_STEPS+1):
-        pn = np.mean(rnn_outputs[i], axis=0)  # average across odors
-        ix = np.argsort(pn)[::-1]
-        pn_cutoff= np.argmax(pn[ix] < threshold)
+        mean_activity = np.mean(rnn_outputs[i], axis=0)  # average across odors
+        ix = np.argsort(mean_activity)[::-1]
+        pn_cutoff= np.argmax(mean_activity[ix] <= threshold)
         pn_ix = ix[:pn_cutoff]
         ixs.append(ix)
         active_ixs.append(pn_ix)
@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
         _easy_weights(rnn_outputs[t][:100, ind], dir_ix=dir_ix,
                       y_label='Odors', x_label='Neuron',
-                      xticks=xticks, title='T='+str(t),
+                      xticks=xticks, title='Step='+str(t),
                       save_path=path, c_label='Activity')
 
     ## plot weight
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     ind_max = np.argmax(w_orn, axis=1)
     ind_sort = np.argsort(ind_max)
     w_orn_reshaped = w_orn[ind_sort, :]
-    _easy_weights(w_orn_reshaped.T, x_label='T=0', y_label='T=1', extra_str='reshaped', vlim=.4,
+    _easy_weights(w_orn_reshaped.T, x_label='Step=0', y_label='Step=1', extra_str='reshaped', vlim=.4,
                   dir_ix=dir_ix, save_path=path)
 
     w_orn_mean = tools._reshape_worn(w_orn, N_OR, mode='tile')
@@ -234,11 +234,11 @@ if __name__ == '__main__':
     ind_max = np.argmax(w_orn_mean, axis=0)
     ind_sort = np.argsort(ind_max)
     w_orn_mean = w_orn_mean[:, ind_sort]
-    _easy_weights(w_orn_mean.T, x_label='T=0', y_label='T=1', extra_str='mean',
+    _easy_weights(w_orn_mean.T, x_label='Step=0', y_label='Step=1', extra_str='mean',
                   dir_ix=dir_ix, save_path=path)
 
     w_glo = w_rnn[active_ixs[1], :]
-    _easy_weights(w_glo.T, x_label='T=1', y_label='T=2',
+    _easy_weights(w_glo.T, x_label='Step=1', y_label='Step=2',
                   dir_ix=dir_ix, save_path=path)
     rnn_distribution(w_glo, dir_ix, path)
     rnn_sparsity(w_glo, dir_ix, path)
