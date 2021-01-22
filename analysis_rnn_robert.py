@@ -18,6 +18,7 @@ import task
 import tools
 import standard.analysis_pn2kc_training
 import settings
+import standard.analysis_activity as analysis_activity
 
 use_torch = settings.use_torch
 
@@ -165,8 +166,8 @@ if __name__ == '__main__':
 
     # path = './files/rnn'
     # path = './files/rnn_wdropout'
-    # path = './files/rnn_relabel'
-    path = './files/rnn_relabel_prune'
+    path = './files/rnn_relabel'
+    # path = './files/rnn_relabel_prune'
     # path = './files/rnn_relabel_prune2'
 
     from standard.analysis_activity import load_activity_torch
@@ -176,7 +177,7 @@ if __name__ == '__main__':
     # select_dict = {'rec_dropout_rate': 0.1, 'TIME_STEPS': 2}
     # select_dict = {'weight_dropout_rate': 0.0, 'TIME_STEPS': 2}
     # select_dict = {'diagonal': False, 'lr': 5e-4}
-    select_dict = {'TIME_STEPS': 2, 'lr': 1e-3}
+    select_dict = {'TIME_STEPS': 2, 'lr': 5e-4, 'diagonal': False}
     dir_ix = 0
 # =============================================================================
 #     if dir_ix == 0:
@@ -241,7 +242,24 @@ if __name__ == '__main__':
     rnn_sparsity(w_glo, dir_ix, path)
 
     w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
+    
+    # Plot distribution of activity
+    # Third time step activity for active neurons
+    figpath = tools.get_experiment_name(save_path)
+    activity_threshold = 0.
+    data = rnn_outputs[2][:, active_ixs[2]]
+    data1 = np.mean(data > activity_threshold, axis=1)
+    fname = 'spars_T3_' + tools.get_model_name(save_path)
+    analysis_activity._distribution(data1, figpath, name=fname, density=False,
+                  xlabel='% of Active T3 neurons',
+                  ylabel='Number of Odors')
 
+    data2 = np.mean(data > activity_threshold, axis=0)
+    fname = 'spars_T3_2_' + tools.get_model_name(save_path)
+    analysis_activity._distribution(data2, figpath, name=fname, density=False,
+                  xlabel='% of Odors',
+                  ylabel='Number of T3 neurons')
+    
 # =============================================================================
 #     if config.TIME_STEPS == 3:
 #         pn_to_pn1 = w_rnn[active_ixs[0][:,None], active_ixs[1]]

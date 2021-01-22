@@ -670,6 +670,10 @@ def vary_or_prune_relabel_analysis(path, n_pn=None):
     vary_or_prune_analysis(path, n_pn, acc_min=0.5)
 
 
+def vary_or_prune_relabel_corr_analysis(path, n_pn=None):
+    vary_or_prune_analysis(path, n_pn, acc_min=0.5)
+
+
 def control_pn2kc_prune_hyper_analysis(path, n_pns):
     import copy
     for n_pn in n_pns:

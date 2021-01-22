@@ -272,8 +272,10 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
     print('Plotting ' + var_name + ' from ' + modeldir)
 
     if average:
+        # Should only be used for w_orn
         w_orn_by_pn = tools._reshape_worn(w_plot, 50)
         w_plot = w_orn_by_pn.mean(axis=0)
+
     # Sort for visualization
     if multihead:
         import standard.analysis_multihead as analysis_multihead
