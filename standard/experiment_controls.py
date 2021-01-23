@@ -562,7 +562,7 @@ def control_vary_kc():
 
 def control_vary_kc_analysis(path):
     ykeys = ['val_acc', 'glo_score', 'K_smart']
-    xticks = [50, 200, 1000, 2500, 10000]
+    xticks = [50, 500, 2500, 10000]
 
     sa.plot_results(path, xkey='N_KC', ykey=ykeys, loop_key='kc_dropout_rate',
                     logx=True, ax_args={'xticks': xticks})

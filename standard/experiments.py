@@ -138,7 +138,7 @@ def receptor_analysis(path):
     sa.plot_weights(modeldir, zoomin=True)
 
     # pn-kc
-    analysis_pn2kc_training.plot_distribution(modeldir, xrange=1.0)
+    analysis_pn2kc_training.plot_distribution(modeldir, xrange=0.5)
     analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
     # analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
@@ -304,63 +304,6 @@ def metalearn_analysis(path):
     # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
     # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
     # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
-
-
-# def vary_pn():
-#     '''
-#     Vary number of PNs while fixing KCs to be 2500
-#     Results:
-#         GloScore should peak at PN=50, and then drop as PN > 50
-#         Accuracy should plateau at PN=50
-#         Results should be independent of noise
-#     '''
-#     config = FullConfig()
-#     config.data_dir = './datasets/proto/standard'
-#     config.max_epoch = 30
-#     config.pn_norm_pre = 'batch_norm'
-#
-#     config_ranges = OrderedDict()
-#     config_ranges['N_PN'] = [10, 20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
-#
-#     configs = vary_config(config, config_ranges, mode='combinatorial')
-#     return configs
-#
-#
-# def vary_pn_analysis(path):
-#     xticks = [20, 50, 100, 200, 1000]
-#     ykeys = ['val_acc', 'glo_score']
-#     sa.plot_results(path, xkey='N_PN', ykey=ykeys, figsize=(1.75, 1.75),
-#                     loop_key='kc_dropout_rate', logx=True,
-#                     ax_args={'xticks': xticks})
-#
-#
-# def vary_kc():
-#     '''
-#     Vary number of KCs while also training ORN2PN.
-#     '''
-#     config = FullConfig()
-#     config.data_dir = './datasets/proto/standard'
-#     config.max_epoch = 30
-#     config.pn_norm_pre = 'batch_norm'
-#
-#     # Ranges of hyperparameters to loop over
-#     config_ranges = OrderedDict()
-#     config_ranges['N_KC'] = [50, 100, 200, 300, 400, 500, 1000, 2500, 10000, 20000]
-#
-#     configs = vary_config(config, config_ranges, mode='combinatorial')
-#     return configs
-#
-#
-# def vary_kc_analysis(path):
-#     xticks = [50, 200, 1000, 2500, 10000]
-#     ylim, yticks = [0, 1.05], [0, .25, .5, .75, 1]
-#     ykeys = ['val_acc', 'glo_score']
-#     for ykey in ykeys:
-#         sa.plot_results(path, xkey='N_KC', ykey=ykey, figsize=(1.75, 1.75),
-#                         ax_box=(0.25, 0.25, 0.65, 0.65),
-#                         loop_key='kc_dropout_rate', logx=True,
-#                         ax_args={'ylim': ylim, 'yticks': yticks,
-#                                  'xticks': xticks})
 
 
 def vary_kc_activity_fixed():
@@ -585,39 +528,6 @@ def vary_or_prune_relabel_corr_analysis(path, n_pn=None):
     vary_or_prune_analysis(path, n_pn, acc_min=0.5)
 
 
-def control_pn2kc_prune_hyper_analysis(path, n_pns):
-    import copy
-    for n_pn in n_pns:
-        cur_path = path + '_' + str(n_pn)
-        default = {'N_KC': 2500, 'lr': 1e-3, 'initial_pn2kc': 4. / n_pn,
-                   'kc_prune_threshold': 1. / n_pn}
-        ykeys = ['val_acc', 'K']
-        for yk in ykeys:
-            exclude_dict = None
-            if yk in ['K_smart', 'sparsity_inferred', 'K', 'sparsity']:
-                # exclude_dict = {'lr': [3e-3, 1e-2, 3e-2]}
-                pass
-
-            for xk, v in default.items():
-                temp = copy.deepcopy(default)
-                temp.pop(xk)
-                logx = True
-                # sa.plot_results(cur_path, xkey=k, ykey=yk, figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                #                 select_dict=temp,
-                #                 logx=logx)
-                #
-                # sa.plot_progress(cur_path, select_dict=temp, ykeys=[yk], legend_key=k, exclude_dict=exclude_dict)
-        #
-        res = standard.analysis_pn2kc_peter.do_everything(cur_path,
-                                                          filter_peaks=True,
-                                                          redo=True, range=.75)
-        for xk, v in default.items():
-            temp = copy.deepcopy(default)
-            temp.pop(xk)
-            sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_',
-                       ykey='lin_hist_', legend_key=xk, log=res)
-
-
 def multihead():
     """Multi-task classification."""
     config = FullConfig()
@@ -717,33 +627,6 @@ def multihead_relabel_prune_analysis(path):
     analysis_activity.distribution_activity(dir, ['glo', 'kc'])
     analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
     analysis_multihead.analyze_example_network(dir)
-
-
-def train_multihead_pruning():
-    '''
-
-    '''
-
-    config = FullConfig()
-    config.max_epoch = 30
-    config.batch_size = 256
-    config.N_ORN_DUPLICATION = 1
-    config.ORN_NOISE_STD = 0
-
-    config.save_every_epoch = False
-    config.initial_pn2kc = 10./config.N_PN
-    config.kc_prune_threshold = 2./config.N_PN
-    config.kc_prune_weak_weights = True
-
-    config.data_dir = './datasets/proto/multi_head'
-
-    config_ranges = OrderedDict()
-    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
-    config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4, 2*1e-4, 1e-4]
-    config_ranges['dummy'] = [0, 1, 2]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
 
 
 def test_metalearn():
@@ -958,7 +841,3 @@ def meta_num_updates():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
-
-
-if __name__ == '__main__':
-    multihead_relabel_analysis('../files/multihead_relabel')

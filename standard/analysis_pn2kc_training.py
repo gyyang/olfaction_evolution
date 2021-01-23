@@ -151,14 +151,14 @@ def _plot_sparsity(data, savename, xrange=50, yrange=None):
         vmax = np.max(hist)
         if vmax > 0.5:
             yrange = 1
-        elif vmax > 0.2:
+        elif vmax > 0.25:
             yrange = 0.5
         else:
-            yrange = 0.2
+            yrange = 0.25
 
     xticks = [1, 5, 15, 25, 50]
     ax.set_xticks(xticks)
-    ax.set_yticks(np.linspace(0, yrange, 3))
+    ax.set_yticks([0, yrange])
     plt.ylim([0, yrange])
     plt.xlim([-1, xrange])
     # plt.title(data[data>0].mean())
