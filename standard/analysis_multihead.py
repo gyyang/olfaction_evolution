@@ -77,7 +77,8 @@ def _get_data(modeldir, use_log=True):
     return data, data_norm
 
 
-def _get_groups(data, data_norm, n_clusters=2, sortmode='head2'):
+def _get_groups(data, data_norm, n_clusters=2, sortmode='head2',
+                exclude_weak=False):
     """Get groups based on data_norm.
 
     Args:
@@ -107,14 +108,13 @@ def _get_groups(data, data_norm, n_clusters=2, sortmode='head2'):
     for group, group_size in zip(groups, group_sizes):
         assert len(group) == group_size
 
-    new_groups = list()
-    for group in groups:
-        norm = np.mean(data[group, :][:, [1, 2]])  # norm of two heads
-        print(group)
-        print(norm)
-        if norm > -2:  # this threshold is a bit arbitrary
-            new_groups.append(group)
-    groups = new_groups
+    if exclude_weak:
+        new_groups = list()
+        for group in groups:
+            norm = np.mean(data[group, :][:, [1, 2]])  # norm of two heads
+            if norm > -2:  # this threshold is a bit arbitrary
+                new_groups.append(group)
+        groups = new_groups
 
     return groups
 
@@ -132,7 +132,7 @@ def _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel, ylabel, figpath,
     save_fig(figpath, 'scatter_' + xlabel + '_' + ylabel)
 
 
-def _compute_silouette_score(data, figpath, plot=True):
+def _compute_silouette_score(data, figpath=None, plot=False):
     n_clusters = np.arange(2, 10)
     scores = list()
     for n in n_clusters:
@@ -452,18 +452,11 @@ def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
     if fix_cluster is not None:
         optim_n_clusters = fix_cluster
     else:
-        optim_n_clusters = _compute_silouette_score(data_norm, figpath)
+        optim_n_clusters = _compute_silouette_score(data_norm, figpath,
+                                                    plot=True)
 
     groups = _get_groups(data, data_norm, n_clusters=optim_n_clusters)
     
-# =============================================================================
-#     _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label,
-#                   ylabel=valence_label, figpath=figpath)
-#     _plot_scatter(v1, v3, xmin, xmax, ymin, ymax, xlabel=degree_label,
-#                   ylabel=class_label, figpath=figpath)
-#     _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label,
-#                   ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
-# =============================================================================
     if optim_n_clusters != len(groups):
         print('Updating optim n clusters to ', len(groups))
         optim_n_clusters = len(groups)  # update optim n clusters

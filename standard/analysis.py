@@ -280,11 +280,14 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
     if multihead:
         import standard.analysis_multihead as analysis_multihead
         data, data_norm = analysis_multihead._get_data(modeldir)
-        groups = analysis_multihead._get_groups(data, data_norm, n_clusters=2)
+        n_clusters = analysis_multihead._compute_silouette_score(data_norm)
+        groups = analysis_multihead._get_groups(data, data_norm,
+                                                n_clusters=n_clusters)
+        n_clusters = len(groups)
         n_eachcluster = 10
         # Sort KCs
-        w_plot = w_plot[:, np.concatenate((groups[0][:n_eachcluster],
-                                           groups[1][:n_eachcluster]))]
+        short_groups = [g[:n_eachcluster] for g in groups]
+        w_plot = w_plot[:, np.concatenate(short_groups)]
         w_orn = var_dict['w_orn']
         ind_sort = np.argmax(w_orn, axis=1)  # Sort PNs
         w_plot = w_plot[ind_sort, :]
@@ -441,9 +444,11 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         _plot_colorannot(rect_bottom, labels, colors, texts)
         # Note: Reverse y axis
         # Innate, flexible
-        colors = np.array([[245, 110, 128], [149, 0, 149]]) / 255
-        labels = np.array([1] * n_eachcluster + [0] * n_eachcluster)
-        texts = ['Cluster 1', 'Cluster 2']
+        colors = np.array([[245, 110, 128], [149, 0, 149], [0, 149, 149],
+                           [149, 149, 0]]) / 255
+        colors = colors[:n_clusters]
+        labels = np.repeat(np.arange(0, n_clusters)[::-1], n_eachcluster)
+        texts = ['Cluster {:d}'.format(i+1) for i in range(n_clusters)]
         _plot_colorannot(rect_left, labels, colors, texts, orient='vertical')
 
     var_name = var_name.replace('/','_')
