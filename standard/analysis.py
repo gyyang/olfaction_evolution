@@ -508,6 +508,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize[0] -= 0.3
         if xkey in ['lr', 'N_KC']:
             figsize[0] += 0.3
+        if xkey in ['orn_corr']:
+            figsize[0] += 1.0
     # fig = plt.figure(figsize=figsize)
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     for i, ykey in enumerate(ykeys):
