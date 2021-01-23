@@ -37,7 +37,7 @@ def _fix_config(config):
     return config
 
 
-def _get_data(modeldir):
+def _get_data(modeldir, use_log=True):
     """Load data.
     
     Returns:
@@ -64,14 +64,20 @@ def _get_data(modeldir):
     sparsity = np.count_nonzero(wglo > thres, axis=0)
     strength_wout1 = np.linalg.norm(wout1, axis=1)
     strength_wout2 = np.linalg.norm(wout2, axis=1)
+    # This ordering is important
     data = np.stack([sparsity, strength_wout2, strength_wout1]).T
+
+    if use_log:
+        # Use log data
+        data[data == 0.] = np.exp(-5) # Prevent zeros in data_plot
+        data = np.log(data)
     
     data_norm = (data - data.mean(axis=0)) / np.std(data, axis=0)
 
     return data, data_norm
 
 
-def _get_groups(data_norm, n_clusters=2, sortmode='head2'):
+def _get_groups(data, data_norm, n_clusters=2, sortmode='head2'):
     """Get groups based on data_norm.
 
     Args:
@@ -93,9 +99,23 @@ def _get_groups(data_norm, n_clusters=2, sortmode='head2'):
     else:
         raise ValueError('Unknown sort mode', sortmode)
 
+    group_sizes = group_sizes[ind_sort]
     label_inds = [label_inds[i] for i in ind_sort]
     groups = [np.arange(len(labels))[labels == l] for l in label_inds]
-    print('Group sizes', group_sizes[ind_sort])
+    print('Group sizes', group_sizes)
+
+    for group, group_size in zip(groups, group_sizes):
+        assert len(group) == group_size
+
+    new_groups = list()
+    for group in groups:
+        norm = np.mean(data[group, :][:, [1, 2]])  # norm of two heads
+        print(group)
+        print(norm)
+        if norm > -2:  # this threshold is a bit arbitrary
+            new_groups.append(group)
+    groups = new_groups
+
     return groups
 
 
@@ -196,11 +216,15 @@ def _plot_density(Z, xind, yind, savename=None, figpath=None, title=None, plot_l
 
 def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
                       name_pre=None, plot_log=True):
+    """Plot density.
+
+    Args:
+        data: np array (n_points, n_features)
+        groups: list of np arrays
+        plot_log: bool, if True, data is in log form
+    """
     data_plot = data[:, [xind, yind]]
     if plot_log:
-        # Prevent zeros in data_plot
-        data_plot[data_plot == 0.] = np.exp(-1)
-        data_plot = np.log(data_plot)
         xmin, xmax = np.log(LOGRANGES[xind])
         ymin, ymax = np.log(LOGRANGES[yind])
     else:
@@ -430,7 +454,7 @@ def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
     else:
         optim_n_clusters = _compute_silouette_score(data_norm, figpath)
 
-    groups = _get_groups(data_norm, n_clusters=optim_n_clusters)
+    groups = _get_groups(data, data_norm, n_clusters=optim_n_clusters)
     
 # =============================================================================
 #     _plot_scatter(v1, v2, xmin, xmax, ymin, ymax, xlabel=degree_label,
@@ -440,7 +464,9 @@ def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
 #     _plot_scatter(v3, v2, 0, 5, 0, 5, xlabel= class_label,
 #                   ylabel=valence_label, figpath=figpath, xticks=[0, 1, 2, 3, 4, 5])
 # =============================================================================
-    
+    if optim_n_clusters != len(groups):
+        print('Updating optim n clusters to ', len(groups))
+        optim_n_clusters = len(groups)  # update optim n clusters
     name_pre = 'cluster'+str(optim_n_clusters)
     _plot_all_density(data, groups, xind=0, yind=1, figpath=figpath, name_pre=name_pre)
     _plot_all_density(data, groups, xind=2, yind=1, figpath=figpath, name_pre=name_pre)
@@ -462,7 +488,7 @@ def analyze_many_networks_lesion(modeldirs, arg='multi_head'):
     val_accs, val_acc2s = list(), list()
     for modeldir in modeldirs:
         data, data_norm = _get_data(modeldir)
-        groups = _get_groups(data_norm, n_clusters=2)
+        groups = _get_groups(data, data_norm, n_clusters=2)
         val_accs_tmp, val_acc2s_tmp = _get_lesion_acc(modeldir, groups, arg=arg)
         val_accs.append(val_accs_tmp)
         val_acc2s.append(val_acc2s_tmp)

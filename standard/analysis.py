@@ -280,7 +280,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
     if multihead:
         import standard.analysis_multihead as analysis_multihead
         data, data_norm = analysis_multihead._get_data(modeldir)
-        groups = analysis_multihead._get_groups(data_norm, n_clusters=2)
+        groups = analysis_multihead._get_groups(data, data_norm, n_clusters=2)
         n_eachcluster = 10
         # Sort KCs
         w_plot = w_plot[:, np.concatenate((groups[0][:n_eachcluster],

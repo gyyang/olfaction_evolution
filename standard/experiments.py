@@ -688,43 +688,40 @@ def multihead_relabel():
     return new_configs
 
 
+def multihead_relabel_prune():
+    """Multi-task with relabel datset."""
+    new_configs = list()
+    for config in multihead():
+        config.data_dir = './datasets/proto/multihead_relabel'
+        n_pn = 50
+        config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+        config.kc_prune_weak_weights = True
+        config.kc_prune_threshold = 1. / n_pn
+
+        new_configs.append(config)
+    return new_configs
+
+
 def multihead_analysis(path, acc_min=0.85):
-    # this acc is average of two heads
-    modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
-        modeldirs, exclude_badkc=True)
-    analysis_multihead.analyze_many_networks_lesion(modeldirs)
 
-    select_dict = {}
-    select_dict['lr'] = 1e-3
-    select_dict['pn_norm_pre'] = 'batch_norm'
-    modeldirs = tools.get_modeldirs(path, acc_min=acc_min, select_dict=select_dict)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
-        modeldirs, exclude_badpeak=True)
-    dir = modeldirs[0]
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
-    sa.plot_weights(dir)
-    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
-    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
-    analysis_multihead.analyze_example_network(dir)
-
-
-def multihead_relabel_analysis(path):
-    acc_min = 0.
     select_dict = {'pn_norm_pre': 'batch_norm', 'initial_pn2kc': 0.1}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'],
                      legend_key='lr')
-
+    sa.plot_xy(modeldirs,
+               xkey='lin_bins', ykey='lin_hist', legend_key='lr')
+    # this acc is average of two heads
     # modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
     # modeldirs = analysis_pn2kc_training.filter_modeldirs(
     #     modeldirs, exclude_badkc=True)
+    #
+    # # TODO: This no longer works robustly, because there are more than 2
+    # #  clusters
     # analysis_multihead.analyze_many_networks_lesion(modeldirs)
     #
-    select_dict = {}
-    select_dict['lr'] = 5e-4
-    select_dict['pn_norm_pre'] = 'batch_norm'
-    modeldirs = tools.get_modeldirs(path, acc_min=acc_min, select_dict=select_dict)
+    select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
+    modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
+                                    select_dict=select_dict)
     modeldirs = analysis_pn2kc_training.filter_modeldirs(
         modeldirs, exclude_badpeak=True)
     dir = modeldirs[0]
@@ -732,7 +729,11 @@ def multihead_relabel_analysis(path):
     # sa.plot_weights(dir)
     # analysis_activity.distribution_activity(dir, ['glo', 'kc'])
     # analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
-    analysis_multihead.analyze_example_network(dir)
+    analysis_multihead.analyze_example_network(dir, fix_cluster=3)
+
+
+def multihead_relabel_analysis(path):
+    multihead_analysis(path, acc_min=0.65)
 
 
 def train_multihead_pruning():
