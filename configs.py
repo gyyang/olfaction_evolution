@@ -188,7 +188,7 @@ class FullConfig(BaseConfig):
         # Initialization method for pn2kc: can take values uniform, random, or normal
         self.initializer_pn2kc = 'uniform'
         # Initial value of pn2kc weights. if it is set to 0, network will initialize according to sparsity
-        self.initial_pn2kc = 0  # TODO: Need revisit, try use 0 for all
+        self.initial_pn2kc = 4. / self.N_PN
         # If True, ORN --> PN connections are positive
         self.sign_constraint_pn2kc = True
         # If True, PN --> KC connections are trainable

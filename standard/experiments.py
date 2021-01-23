@@ -35,6 +35,7 @@ def standard():
     """Standard training setting"""
     config = FullConfig()
     config.save_every_epoch = True
+    config.kc_dropout_rate = 0.
 
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
@@ -90,6 +91,7 @@ def receptor():
 
     config.receptor_layer = True
     config.ORN_NOISE_STD = 0.2
+    config.kc_dropout_rate = 0.
 
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
