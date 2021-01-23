@@ -156,7 +156,8 @@ def control_nonnegative_analysis(path):
 def control_standard():
     """Control for standard ORN-PN-KC all trainable model."""
     config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
+    # config.data_dir = './datasets/proto/standard'
+    config.data_dir = './datasets/proto/relabel_200_100'
     config.max_epoch = 100
     config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
 

@@ -103,7 +103,9 @@ class FullConfig(BaseConfig):
     def __init__(self):
         super(FullConfig, self).__init__()
         self.dataset = 'proto'
-        self.data_dir = './datasets/proto/standard'
+        # self.data_dir = './datasets/proto/standard'
+        # New standard dataset is relabel
+        self.data_dir = './datasets/proto/relabel_200_100'
         #model can be full, normmlp, or singlelayer
         self.model = 'full'
         self.save_path = './files/test'
@@ -114,7 +116,7 @@ class FullConfig(BaseConfig):
         self.lr = .001  # learning rate
         self.decay_steps = 1e8  # learning rate decay steps
         self.decay_rate = 1.  # learning rate decay rate, default to no decay
-        self.max_epoch = 30
+        self.max_epoch = 100
         self.batch_size = 256
         self.target_acc = None  # target accuracy
 
