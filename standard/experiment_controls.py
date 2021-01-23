@@ -185,25 +185,17 @@ def control_standard_analysis(path):
                'ORN_NOISE_STD': 0,
                'kc_norm_pre': None,
                }
-    ykeys = ['glo_score', 'val_acc', 'K_smart']
+    ykeys = ['val_acc', 'glo_score', 'K_smart']
 
-    # for xkey in default.keys():
-    for xkey in ['lr']:
+    for xkey in default.keys():
         select_dict = copy.deepcopy(default)
         select_dict.pop(xkey)
-        # acc_min = 0.5
-        acc_min = 0.
-        modeldirs = tools.get_modeldirs(
-            path, select_dict=select_dict, acc_min=acc_min)
-
-        _modeldirs = analysis_pn2kc_training.filter_modeldirs(
-            modeldirs, exclude_badkc=True, exclude_badpeak=True)
-        # sa.plot_results(_modeldirs, xkey=xkey, ykey=ykeys)
-        # sa.plot_progress(_modeldirs, ykeys=ykeys, legend_key=xkey)
-
-        # _modeldirs = modeldirs
-        sa.plot_xy(_modeldirs,
-                   xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
+        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+        sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                        show_ylabel=(xkey == 'lr'))
+        sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+        sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
+                   legend_key=xkey)
 
 
 def control_standard_prune():

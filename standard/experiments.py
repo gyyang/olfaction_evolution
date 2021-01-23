@@ -184,7 +184,7 @@ def receptor_multilr_analysis(path):
     # modeldir = modeldirs[0]
     select_dict = {}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+    modeldirs = tools.filter_modeldirs(
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
     for modeldir in modeldirs:
@@ -572,7 +572,7 @@ def vary_or_prune_analysis(path, n_pn=None, acc_min=0.75):
         select_dict = {}
         modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
         _modeldirs = modeldirs
-        # _modeldirs = analysis_pn2kc_training.filter_modeldirs(
+        # _modeldirs = tools.filter_modeldirs(
         #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
         if _modeldirs:
             sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
@@ -597,7 +597,7 @@ def vary_or_prune_analysis(path, n_pn=None, acc_min=0.75):
             _path = path + str(n_orn)
             _vary_or_prune_analysis(_path, n_pn=n_orn)
             modeldirs = tools.get_modeldirs(_path, acc_min=acc_min)
-            modeldirs = analysis_pn2kc_training.filter_modeldirs(
+            modeldirs = tools.filter_modeldirs(
                 modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
             # Use model with highest LR among good models
@@ -707,7 +707,7 @@ def multihead_analysis(path, acc_min=0.85):
                xkey='lin_bins', ykey='lin_hist', legend_key='lr')
     # this acc is average of two heads
     # modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
-    # modeldirs = analysis_pn2kc_training.filter_modeldirs(
+    # modeldirs = tools.filter_modeldirs(
     #     modeldirs, exclude_badkc=True)
     #
     # # TODO: This no longer works robustly, because there are more than 2
@@ -717,7 +717,7 @@ def multihead_analysis(path, acc_min=0.85):
     select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
                                     select_dict=select_dict)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+    modeldirs = tools.filter_modeldirs(
         modeldirs, exclude_badpeak=True)
     dir = modeldirs[0]
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
@@ -742,14 +742,14 @@ def multihead_relabel_prune_analysis(path):
 
     # this acc is average of two heads
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+    modeldirs = tools.filter_modeldirs(
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
     analysis_multihead.analyze_many_networks_lesion(modeldirs)
 
     select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
                                     select_dict=select_dict)
-    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+    modeldirs = tools.filter_modeldirs(
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
     dir = modeldirs[0]
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
@@ -941,7 +941,7 @@ def meta_vary_or_analysis(path, n_pn=None):
             select_dict = {'meta_lr': 5e-4}
             modeldirs = tools.get_modeldirs(_path, select_dict=select_dict)
 
-            # modeldirs = analysis_pn2kc_training.filter_modeldirs(
+            # modeldirs = tools.filter_modeldirs(
             #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
 
             modeldirs = tools.sort_modeldirs(modeldirs, 'meta_lr')
