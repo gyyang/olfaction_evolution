@@ -113,7 +113,7 @@ def receptor():
 def receptor_analysis(path):
     # This is the only combination of normalization that works, not sure why
     default = {'ORN_NOISE_STD': 0.1, 'kc_norm_pre': 'batch_norm',
-                   'pn_norm_pre': None, 'lr': 1e-4}
+               'pn_norm_pre': None, 'lr': 1e-4}
 
     # Analyze all
     ykeys = ['val_acc', 'glo_score', 'K_smart']
@@ -129,22 +129,22 @@ def receptor_analysis(path):
                    legend_key=xkey)
 
     # Analyze default network
-    dir = tools.get_modeldirs(path, select_dict=default)[0]
+    modeldir = tools.get_modeldirs(path, select_dict=default)[0]
     # accuracy
-    sa.plot_progress(dir, ykeys=['val_acc', 'K_smart'])
+    sa.plot_progress(modeldir, ykeys=['val_acc', 'K_smart'])
 
     # weight matrices
-    sa.plot_weights(dir)
-    sa.plot_weights(dir, zoomin=True)
+    sa.plot_weights(modeldir)
+    sa.plot_weights(modeldir, zoomin=True)
 
     # pn-kc
-    analysis_pn2kc_training.plot_distribution(dir, xrange=1.0)
-    analysis_pn2kc_training.plot_sparsity(dir, epoch=-1)
+    analysis_pn2kc_training.plot_distribution(modeldir, xrange=1.0)
+    analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
     # analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
     # Compute glo-score metric for OR-ORN connectivity
     print('ORN score for OR-ORN connectivity',
-          tools.compute_glo_score(tools.load_pickle(dir)['w_or'], 50)[0])
+          tools.compute_glo_score(tools.load_pickle(modeldir)['w_or'], 50)[0])
 
 
 def singlelayer():
@@ -157,66 +157,6 @@ def singlelayer():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
-
-
-def receptor_multilr():
-    """Standard training setting with full network including receptors."""
-    config = FullConfig()
-    config.max_epoch = 1000
-
-    config.receptor_layer = True
-    config.or2orn_normalization = True
-    config.orn2pn_normalization = True
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.ORN_NOISE_STD = 0.2
-
-    config.kc_norm_pre = 'batch_norm'
-    config.pn_norm_pre = None
-
-    # New settings
-    config.batch_size = 8192  # Much bigger batch size
-    config.initial_pn2kc = 10./config.N_PN
-    config.lr = 2e-3
-
-    config.data_dir = './datasets/proto/standard'
-    config_ranges = OrderedDict()
-    # config_ranges['ORN_NOISE_STD'] = [0.2]
-    # config_ranges['pn_norm_pre'] = [None, 'batch_norm']
-    # config_ranges['kc_norm_pre'] = [None, 'batch_norm']
-    config_ranges['lr'] = [2e-3, 2e-4]
-    config_ranges['pn2kc_lr'] = [2e-3, 2e-4]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def receptor_multilr_analysis(path):
-    select_dict = dict()
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict, acc_min=0.5)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
-
-    # select_dict = dict()
-    # select_dict['kc_norm_pre'] = 'batch_norm'
-    # select_dict['ORN_NOISE_STD'] = 0.2
-    # select_dict['pn_norm_pre'] = None
-    # modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    # modeldir = modeldirs[0]
-    select_dict = {}
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    modeldirs = tools.filter_modeldirs(
-        modeldirs, exclude_badkc=True, exclude_badpeak=True)
-
-    for modeldir in modeldirs:
-        # sa.plot_weights(modeldir)
-
-        analysis_pn2kc_training.plot_distribution(modeldir)
-        analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
-
-        # analysis_pn2kc_training.plot_log_distribution_movie(modeldir)
-
-        # analysis_activity.distribution_activity(modeldir, ['glo', 'kc'])
-        # analysis_activity.sparseness_activity(modeldir, ['glo', 'kc'])
 
 
 def rnn():

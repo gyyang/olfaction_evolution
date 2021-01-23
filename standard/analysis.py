@@ -506,7 +506,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         figsize = [1.5, 1.2 + 0.7 * (ny - 1)]
         if not show_ylabel:
             figsize[0] -= 0.3
-        if xkey == 'lr':
+        if xkey in ['lr', 'N_KC']:
             figsize[0] += 0.3
     # fig = plt.figure(figsize=figsize)
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
