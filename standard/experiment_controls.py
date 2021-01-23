@@ -127,9 +127,12 @@ def control_relabel_singlelayer_analysis(path):
 def control_nonnegative():
     """Standard training setting"""
     config = FullConfig()
-    config.max_epoch = 30
-    config.pn_norm_pre = 'batch_norm'
-    config.data_dir = './datasets/proto/standard'
+
+    config.kc_dropout_rate = 0.
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
 
     config_ranges = OrderedDict()
     config_ranges['sign_constraint_orn2pn'] = [True, False]
