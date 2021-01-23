@@ -559,9 +559,9 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
             if show_cleanpn2kc:
                 # Plot clean pn2kc networks differently
-                ax.plot(x_plot, y_plot, '-', **plot_args)
+                line, = ax.plot(x_plot, y_plot, '-', **plot_args)
                 ax.plot(x_plot[clean_pn2kc], y_plot[clean_pn2kc],
-                        'o', markersize=3, color='blue', **plot_args)
+                        'o', markersize=3, color=line.get_color(), **plot_args)
                 ax.plot(x_plot[~clean_pn2kc], y_plot[~clean_pn2kc],
                         'o', markersize=3, color='gray', **plot_args)
             else:
@@ -622,7 +622,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             ax.plot([np.log(2500), np.log(2500)], [ax.get_ylim()[0], ax.get_ylim()[-1]], '--', color='gray')
 
         if loop_key and i == 0:
-            l = ax.legend(loc='best', fontsize= 7, frameon=False, ncol=2)
+            ncol = 1 if len(loop_vals) < 4 else 1
+            l = ax.legend(loc='best', fontsize= 7, frameon=False, ncol=ncol)
             l.set_title(nicename(loop_key))
 
     figname = '_' + '_'.join(ykeys) + '_vs_' + xkey

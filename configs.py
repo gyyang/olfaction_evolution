@@ -207,7 +207,7 @@ class FullConfig(BaseConfig):
         self.kc_norm_post = None
         # If True, add dropout to KC layer
         self.kc_dropout = True
-        self.kc_dropout_rate = 0.5  # new default for relabel dataset
+        self.kc_dropout_rate = 0.5
         # If True, skip the PN --> KC connections
         self.skip_pn2kc = False
         # number of inputs onto KCs

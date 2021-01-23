@@ -298,8 +298,7 @@ def metalearn_analysis(path):
     sa.plot_weights(path, var_name='w_orn', sort_axis=1, average=False)
     sa.plot_weights(path, var_name='w_glo', sort_axis=-1)
     analysis_pn2kc_training.plot_distribution(path, xrange=1)
-    analysis_pn2kc_training.plot_sparsity(path, dynamic_thres=True,
-                                          thres=.05)
+    analysis_pn2kc_training.plot_sparsity(path)
     # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
     # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
     # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
