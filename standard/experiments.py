@@ -7,8 +7,8 @@ Analysis functions by convention are named
 def name_analysis()
 """
 
-from collections.__init__ import OrderedDict
-
+from collections import OrderedDict
+import copy
 import numpy as np
 
 from configs import FullConfig, MetaConfig, RNNConfig, SingleLayerConfig
@@ -92,7 +92,7 @@ def receptor():
     config.receptor_layer = True
     config.ORN_NOISE_STD = 0.1
     config.kc_dropout_rate = 0.
-    config.lr = 5e-4
+    config.lr = 1e-4  # For receptor, this is the default LR
     config.pn_norm_pre = None
     config.kc_norm_pre = 'batch_norm'
 
@@ -101,7 +101,7 @@ def receptor():
     config.kc_prune_threshold = 1. / config.N_PN
 
     config_ranges = OrderedDict()
-    config_ranges['lr'] = [2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
+    config_ranges['lr'] = [5e-4, 2e-4, 1e-4, 5e-5, 2e-5]
     config_ranges['ORN_NOISE_STD'] = [0, 0.1, 0.2]
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     config_ranges['kc_norm_pre'] = [None, 'batch_norm']
@@ -112,12 +112,26 @@ def receptor():
 
 def receptor_analysis(path):
     # This is the only combination of normalization that works, not sure why
-    select_dict = {'ORN_NOISE_STD': 0.1, 'kc_norm_pre': 'batch_norm',
-                   'pn_norm_pre': None, 'lr': 5e-4}
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    dir = modeldirs[0]
+    default = {'ORN_NOISE_STD': 0.1, 'kc_norm_pre': 'batch_norm',
+                   'pn_norm_pre': None, 'lr': 1e-4}
+
+    # Analyze all
+    ykeys = ['val_acc', 'glo_score', 'K_smart']
+
+    for xkey in default.keys():
+        select_dict = copy.deepcopy(default)
+        select_dict.pop(xkey)
+        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+        sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                        show_ylabel=(xkey == 'lr'))
+        sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+        sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
+                   legend_key=xkey)
+
+    # Analyze default network
+    dir = tools.get_modeldirs(path, select_dict=default)[0]
     # accuracy
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'])
+    sa.plot_progress(dir, ykeys=['val_acc', 'K_smart'])
 
     # weight matrices
     sa.plot_weights(dir)
