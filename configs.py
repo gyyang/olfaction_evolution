@@ -113,7 +113,8 @@ class FullConfig(BaseConfig):
         self.save_log_only = False
         self.save_epoch_interval = 1
 
-        self.lr = .001  # learning rate
+        # self.lr = .001  # learning rate
+        self.lr = 5e-4  # new default for relabel dataset
         self.decay_steps = 1e8  # learning rate decay steps
         self.decay_rate = 1.  # learning rate decay rate, default to no decay
         self.max_epoch = 100
@@ -205,8 +206,8 @@ class FullConfig(BaseConfig):
         # KC normalization after non_linearity
         self.kc_norm_post = None
         # If True, add dropout to KC layer
-        self.kc_dropout = True  # TODO: Check if necessary for K=7
-        self.kc_dropout_rate = 0.5
+        self.kc_dropout = True
+        self.kc_dropout_rate = 0.  # new default for relabel dataset
         # If True, skip the PN --> KC connections
         self.skip_pn2kc = False
         # number of inputs onto KCs

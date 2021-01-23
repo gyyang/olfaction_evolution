@@ -655,8 +655,7 @@ def control_pn2kc_prune_hyper_analysis(path, n_pns):
             temp = copy.deepcopy(default)
             temp.pop(xk)
             sa.plot_xy(cur_path, select_dict=temp, xkey='lin_bins_',
-                       ykey='lin_hist_', legend_key=xk, log=res,
-                       ax_args={'ylim': [0, 500]})
+                       ykey='lin_hist_', legend_key=xk, log=res)
 
 
 def multihead():

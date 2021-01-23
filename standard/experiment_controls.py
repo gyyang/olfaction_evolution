@@ -169,7 +169,7 @@ def control_standard():
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     config_ranges['kc_norm_pre'] = [None, 'batch_norm']
     config_ranges['kc_dropout_rate'] = [0, .25, .5, .75]
-    config_ranges['lr'] = [1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
+    config_ranges['lr'] = [2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
     config_ranges['train_kc_bias'] = [False, True]
     config_ranges['initial_pn2kc'] = np.array([2., 4., 8.])/config.N_PN
     config_ranges['ORN_NOISE_STD'] = [0, 0.1, 0.2]
@@ -180,28 +180,30 @@ def control_standard():
 
 
 def control_standard_analysis(path):
-    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0.5, 'lr': 1e-3,
+    default = {'pn_norm_pre': 'batch_norm', 'kc_dropout_rate': 0., 'lr': 5e-4,
                'train_kc_bias': True, 'initial_pn2kc': 0.08,
                'ORN_NOISE_STD': 0,
                'kc_norm_pre': None,
                }
     ykeys = ['glo_score', 'val_acc', 'K_smart']
 
-    for xkey in default.keys():
+    # for xkey in default.keys():
+    for xkey in ['lr']:
         select_dict = copy.deepcopy(default)
         select_dict.pop(xkey)
+        # acc_min = 0.5
+        acc_min = 0.
         modeldirs = tools.get_modeldirs(
-            path, select_dict=select_dict, acc_min=0.5)
+            path, select_dict=select_dict, acc_min=acc_min)
 
         _modeldirs = analysis_pn2kc_training.filter_modeldirs(
             modeldirs, exclude_badkc=True, exclude_badpeak=True)
-        sa.plot_results(_modeldirs, xkey=xkey, ykey=ykeys)
-        sa.plot_progress(_modeldirs, ykeys=ykeys, legend_key=xkey)
+        # sa.plot_results(_modeldirs, xkey=xkey, ykey=ykeys)
+        # sa.plot_progress(_modeldirs, ykeys=ykeys, legend_key=xkey)
 
-        _modeldirs = modeldirs
+        # _modeldirs = modeldirs
         sa.plot_xy(_modeldirs,
-                   xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
-                   ax_args={'ylim': [0, 200], 'xlim': [0, 2.5]})
+                   xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
 
 
 def control_standard_prune():
