@@ -159,7 +159,10 @@ def control_standard():
     # config.data_dir = './datasets/proto/standard'
     config.data_dir = './datasets/proto/relabel_200_100'
     config.max_epoch = 100
-    config.initial_pn2kc = 4./config.N_PN  # necessary for analysis
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()

@@ -52,10 +52,10 @@ def standard_analysis(path):
     dir = modeldirs[0]
 
     # accuracy
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
+    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
 
     # weight matrices
-    sa.plot_weights(dir)
+    # sa.plot_weights(dir)
 
     if not use_torch:
         # This currently doesn't work for pytorch
@@ -66,10 +66,11 @@ def standard_analysis(path):
             pass
 
     # pn-kc
-    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
-    analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
+    # analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
+    analysis_pn2kc_training.plot_sparsity(dir, epoch=-1)
 
-    analysis_pn2kc_training.plot_log_distribution_movie(dir)
+    # TODO: Broken now
+    # analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
     # pn-kc random
     # analysis_pn2kc_random.plot_cosine_similarity(
@@ -79,8 +80,8 @@ def standard_analysis(path):
     # analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
 
     # Activity
-    analysis_activity.distribution_activity(path, ['glo', 'kc'])
-    analysis_activity.sparseness_activity(path, ['glo', 'kc'])
+    # analysis_activity.distribution_activity(path, ['glo', 'kc'])
+    # analysis_activity.sparseness_activity(path, ['glo', 'kc'])
 
 
 def receptor():
@@ -104,12 +105,13 @@ def receptor():
 
 
 def receptor_analysis(path):
+    # This is the only combination of normalization that works, not sure why
     select_dict = {'ORN_NOISE_STD': 0.1, 'kc_norm_pre': 'batch_norm',
                    'pn_norm_pre': None}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     dir = modeldirs[0]
     # accuracy
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'])
 
     # weight matrices
     sa.plot_weights(dir)
@@ -118,7 +120,7 @@ def receptor_analysis(path):
     # pn-kc
     analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
-    analysis_pn2kc_training.plot_log_distribution_movie(dir)
+    # analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
     # Compute glo-score metric for OR-ORN connectivity
     print('ORN score for OR-ORN connectivity',

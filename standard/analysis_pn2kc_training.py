@@ -189,8 +189,7 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(modeldir, epoch=None, dynamic_thres=True,
-                  visualize=False, thres=THRES, xrange=50, plot=True):
+def plot_sparsity(modeldir, epoch=None, xrange=50, plot=True):
     model_name = tools.get_model_name(modeldir)
 
     if epoch is not None and epoch != -1:
@@ -230,7 +229,7 @@ def _plot_sparsity(data, savename, xrange=50, yrange=None):
         else:
             yrange = 0.2
 
-    xticks = [1, 7, 15, 25, 50]
+    xticks = [1, 5, 15, 25, 50]
     ax.set_xticks(xticks)
     ax.set_yticks(np.linspace(0, yrange, 3))
     plt.ylim([0, yrange])
@@ -297,7 +296,7 @@ def plot_sparsity_movie(modeldir):
 def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
     """Plot weight distribution from a single model path."""
     model_name = tools.get_model_name(modeldir)
-
+    config = tools.load_config(modeldir)
     if epoch is not None:
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
@@ -314,10 +313,12 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
         thres, res_fit = None, None
     else:
         thres, res_fit = infer_threshold(distribution)
+        if config.kc_prune_weak_weights:
+            thres = config.kc_prune_threshold
 
     save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
     save_name = os.path.join(save_path, '_' + model_name + '_')
-
+    print(thres)
     _plot_distribution(
         distribution, save_name + 'distribution' + string,
         thres=thres, xrange=xrange, **kwargs)
