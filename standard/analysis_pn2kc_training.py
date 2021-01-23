@@ -245,7 +245,6 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
 
     save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
     save_name = os.path.join(save_path, '_' + model_name + '_')
-    print(thres)
     _plot_distribution(
         distribution, save_name + 'distribution' + string,
         thres=thres, xrange=xrange, **kwargs)

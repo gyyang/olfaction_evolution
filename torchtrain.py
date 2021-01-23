@@ -81,7 +81,11 @@ def _log_full_model_train_pn2kc(log, model, config, res=None):
 
 def logging(log, model, config, res=None):
     if config.model == 'full':
-        w_orn = model.w_orn
+        if config.receptor_layer:
+            # Compute effective w_orn
+            w_orn = np.dot(model.w_or, model.w_orn)
+        else:
+            w_orn = model.w_orn
         glo_score, _ = tools.compute_glo_score(w_orn, config.N_ORN)
         log['glo_score'].append(glo_score)
         print('Glo score ' + str(glo_score))

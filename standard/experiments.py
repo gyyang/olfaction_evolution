@@ -53,10 +53,10 @@ def standard_analysis(path):
     dir = modeldirs[0]
 
     # accuracy
-    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
 
     # weight matrices
-    # sa.plot_weights(dir)
+    sa.plot_weights(dir)
 
     if not use_torch:
         # This currently doesn't work for pytorch
@@ -67,7 +67,7 @@ def standard_analysis(path):
             pass
 
     # pn-kc
-    # analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
     analysis_pn2kc_training.plot_sparsity(dir, epoch=-1)
 
     # TODO: Broken now
@@ -81,8 +81,8 @@ def standard_analysis(path):
     # analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
 
     # Activity
-    # analysis_activity.distribution_activity(path, ['glo', 'kc'])
-    # analysis_activity.sparseness_activity(path, ['glo', 'kc'])
+    analysis_activity.distribution_activity(path, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(path, ['glo', 'kc'])
 
 
 def receptor():
@@ -90,26 +90,30 @@ def receptor():
     config = FullConfig()
 
     config.receptor_layer = True
-    config.ORN_NOISE_STD = 0.2
+    config.ORN_NOISE_STD = 0.1
     config.kc_dropout_rate = 0.
+    config.lr = 5e-4
+    config.pn_norm_pre = None
+    config.kc_norm_pre = 'batch_norm'
 
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1. / config.N_PN
 
     config_ranges = OrderedDict()
+    config_ranges['lr'] = [2e-3, 1e-3, 5e-4, 2e-4, 1e-4]
     config_ranges['ORN_NOISE_STD'] = [0, 0.1, 0.2]
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     config_ranges['kc_norm_pre'] = [None, 'batch_norm']
 
-    configs = vary_config(config, config_ranges, mode='combinatorial')
+    configs = vary_config(config, config_ranges, mode='control')
     return configs
 
 
 def receptor_analysis(path):
     # This is the only combination of normalization that works, not sure why
     select_dict = {'ORN_NOISE_STD': 0.1, 'kc_norm_pre': 'batch_norm',
-                   'pn_norm_pre': None}
+                   'pn_norm_pre': None, 'lr': 5e-4}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     dir = modeldirs[0]
     # accuracy
@@ -120,8 +124,8 @@ def receptor_analysis(path):
     sa.plot_weights(dir, zoomin=True)
 
     # pn-kc
-    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
-    analysis_pn2kc_training.plot_sparsity(dir, dynamic_thres=True, epoch=-1)
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.0)
+    analysis_pn2kc_training.plot_sparsity(dir, epoch=-1)
     # analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
     # Compute glo-score metric for OR-ORN connectivity
