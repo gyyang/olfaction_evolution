@@ -528,9 +528,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             clean_pn2kc.append(all(clean_pn2kc_tmp))
         clean_pn2kc = np.array(clean_pn2kc)
 
-        # ax = fig.add_axes(rect, **ax_args_)
         ax = axs[i] if ny > 1 else axs
-        # ax.update(ax_args_)
+        ax.update(ax_args_)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position('bottom')
@@ -589,7 +588,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             xticklabels = [nicename(x, mode=xkey) for x in xvals]
         ax.set_xticks(xticks)
         if i == ny - 1:
-            ax.set_xticklabels(xticklabels, fontsize=6)
+            ax.set_xticklabels(xticklabels)
             ax.set_xlabel(nicename(xkey))
         else:
             ax.tick_params(labelbottom=False)

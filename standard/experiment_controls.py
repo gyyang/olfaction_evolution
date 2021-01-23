@@ -149,7 +149,6 @@ def control_nonnegative_analysis(path):
     #     standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='ortho')
     #     standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='corr')
 
-    # # #sign constraint
     ykeys = ['val_acc', 'glo_score', 'K_smart']
     sa.plot_progress(path, ykeys=ykeys, legend_key='sign_constraint_orn2pn')
     sa.plot_results(path, xkey='sign_constraint_orn2pn', ykey=ykeys)

@@ -673,6 +673,7 @@ nicename_dict = {
     'glo': 'PN Activity',
     'kc_in': 'KC Input',
     'kc': 'KC Activity',
+    'sign_constraint_orn2pn': 'Non-negative ORN-PN'
 }
 
 
