@@ -672,7 +672,7 @@ def multihead():
 
     config_ranges = OrderedDict()
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
-    config_ranges['lr'] = [5e-3, 2e-3, 1e-3, 5*1e-4]
+    config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
     config_ranges['initial_pn2kc'] = [0.05, 0.1]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
@@ -688,9 +688,9 @@ def multihead_relabel():
     return new_configs
 
 
-def multihead_analysis(path):
+def multihead_analysis(path, acc_min=0.85):
     # this acc is average of two heads
-    modeldirs = tools.get_modeldirs(path, acc_min=0.85)
+    modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
     modeldirs = analysis_pn2kc_training.filter_modeldirs(
         modeldirs, exclude_badkc=True)
     analysis_multihead.analyze_many_networks_lesion(modeldirs)
@@ -698,7 +698,7 @@ def multihead_analysis(path):
     select_dict = {}
     select_dict['lr'] = 1e-3
     select_dict['pn_norm_pre'] = 'batch_norm'
-    modeldirs = tools.get_modeldirs(path, acc_min=0.85, select_dict=select_dict)
+    modeldirs = tools.get_modeldirs(path, acc_min=acc_min, select_dict=select_dict)
     modeldirs = analysis_pn2kc_training.filter_modeldirs(
         modeldirs, exclude_badpeak=True)
     dir = modeldirs[0]
@@ -706,6 +706,32 @@ def multihead_analysis(path):
     sa.plot_weights(dir)
     analysis_activity.distribution_activity(dir, ['glo', 'kc'])
     analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+    analysis_multihead.analyze_example_network(dir)
+
+
+def multihead_relabel_analysis(path):
+    acc_min = 0.
+    select_dict = {'pn_norm_pre': 'batch_norm', 'initial_pn2kc': 0.1}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'],
+                     legend_key='lr')
+
+    # modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
+    # modeldirs = analysis_pn2kc_training.filter_modeldirs(
+    #     modeldirs, exclude_badkc=True)
+    # analysis_multihead.analyze_many_networks_lesion(modeldirs)
+    #
+    select_dict = {}
+    select_dict['lr'] = 5e-4
+    select_dict['pn_norm_pre'] = 'batch_norm'
+    modeldirs = tools.get_modeldirs(path, acc_min=acc_min, select_dict=select_dict)
+    modeldirs = analysis_pn2kc_training.filter_modeldirs(
+        modeldirs, exclude_badpeak=True)
+    dir = modeldirs[0]
+    # sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
+    # sa.plot_weights(dir)
+    # analysis_activity.distribution_activity(dir, ['glo', 'kc'])
+    # analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
     analysis_multihead.analyze_example_network(dir)
 
 
@@ -948,3 +974,7 @@ def meta_num_updates():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+if __name__ == '__main__':
+    multihead_relabel_analysis('../files/multihead_relabel')

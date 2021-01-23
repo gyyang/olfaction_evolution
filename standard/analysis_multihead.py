@@ -198,6 +198,8 @@ def _plot_all_density(data, groups, xind, yind, figpath, normalize=True,
                       name_pre=None, plot_log=True):
     data_plot = data[:, [xind, yind]]
     if plot_log:
+        # Prevent zeros in data_plot
+        data_plot[data_plot == 0.] = np.exp(-1)
         data_plot = np.log(data_plot)
         xmin, xmax = np.log(LOGRANGES[xind])
         ymin, ymax = np.log(LOGRANGES[yind])
