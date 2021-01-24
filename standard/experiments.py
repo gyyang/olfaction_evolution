@@ -337,8 +337,8 @@ def pn_normalization():
     config = FullConfig()
     config.max_epoch = 30
 
-    # config.skip_orn2pn = True
-    # config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.N_ORN_DUPLICATION = 1
 
     # config.train_pn2kc = False
 
