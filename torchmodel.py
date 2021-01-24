@@ -45,10 +45,48 @@ def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
     return mask.astype(np.float32)
 
 
+class OlsenNorm(nn.Module):
+    def __init__(self, num_features):
+        super().__init__()
+        self.exponent = 1
+        self.r_max = nn.Parameter(torch.Tensor(1, num_features))
+        self.rho = nn.Parameter(torch.Tensor(1, num_features))
+        self.m = nn.Parameter(torch.Tensor(1, num_features))
+
+        nn.init.constant_(self.r_max, num_features / 2.)
+        nn.init.constant_(self.rho, 1.)
+        nn.init.constant_(self.m, 0.01)  # should this scale with num_features?
+
+    def forward(self, input):
+        input_sum = torch.sum(input, dim=-1, keepdim=True) + 1e-6
+        input_exponentiated = input ** self.exponent
+        numerator = self.r_max * input_exponentiated
+        denominator = (input_exponentiated + self.rho +
+                       (self.m * input_sum) ** self.exponent)
+        return torch.div(numerator, denominator)
+
+
+class FixActivityNorm(nn.Module):
+    def __init__(self, num_features):
+        super().__init__()
+        self.rmax = num_features / 2.
+
+    def forward(self, input):
+        # input (batch_size, neurons)
+        input_sum = torch.sum(input, dim=-1, keepdim=True) + 1e-6
+        return self.rmax * torch.div(input, input_sum)
+
+
 def _get_normalization(norm_type, num_features=None):
     if norm_type is not None:
         if norm_type == 'batch_norm':
             return nn.BatchNorm1d(num_features)
+        elif norm_type == 'fixed_activity':
+            return FixActivityNorm(num_features)
+        elif norm_type == 'olsen':
+            return OlsenNorm(num_features)
+        else:
+            raise ValueError('Unknown norm type', norm_type)
     return lambda x: x
 
 
@@ -189,7 +227,7 @@ class Layer(nn.Module):
         if self.weight_dropout:
             weight = self.w_dropout(weight)
 
-        pre_act = F.linear(input, weight, self.bias)
+        pre_act = F.linear(input, weight, self.bias)  # (batch_size, neurons)
         pre_act_normalized = self.pre_norm(pre_act)
 
         output = self.activation(pre_act_normalized)
