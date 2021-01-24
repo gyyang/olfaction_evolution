@@ -377,6 +377,7 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
                plot_fit=True, plot_angle=False,
                plot_dim=False,
                path='default'):
+    """Plot the typical K-N plot."""
     from sklearn.linear_model import LinearRegression
 
     fig = plt.figure(figsize=(3.5, 2))
@@ -391,8 +392,7 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
         for n_orn, K, med_logK in zip(n_orns, Ks, med_logKs):
             ax.scatter(np.log([n_orn]*len(K)), np.log(K), alpha=0.01, s=3)
             ax.plot(np.log(n_orn), med_logK, '+', ms=15, color='black')
-            
-    
+
     def _pretty_box(x, positions, ax, color):
         flierprops = {'markersize': 3, 'markerfacecolor': color,
                       'markeredgecolor': 'none'}
