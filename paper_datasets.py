@@ -84,15 +84,6 @@ def make_concentration_dataset():
     print('Done Concentration Dataset')
 
 
-def make_tmp_dataset():
-    """Make dataset with already normalized odors."""
-    task_config = task.input_ProtoConfig()
-    # task_config.vary_concentration = True
-    task_config.N_CLASS = 1000
-    task.save_proto(config=task_config, seed=0, folder_name='tmp')
-    print('Done Normalized Dataset')
-
-
 def make_mask_row_dataset():
     """Impose sparsity on ORN activation."""
     config = configs.input_ProtoConfig()
@@ -103,14 +94,30 @@ def make_mask_row_dataset():
     print('Done Mask Dataset')
 
 
-def make_concentration_with_mask_row_dataset():
+def make_concentration_mask_row_dataset():
     """Impose sparsity on ORN activation and concentration invariance."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
     config.vary_concentration = True
-    for i in [0, .3, .6, .9]:
-        config.spread_orn_activity = (True, i)
-        fn = 'concentration_mask_row_' + str(i)
+    for spread in [0, .3, .6, .9]:
+        config.spread_orn_activity = (True, spread)
+        fn = 'concentration_mask_row_{:0.1f}'.format(spread)
+        task.save_proto(config, seed=seed, folder_name=fn)
+    print('Done Concentration_Mask Dataset')
+
+
+def make_concentration_relabel_mask_row_dataset():
+    """Impose sparsity on ORN activation and concentration invariance."""
+    config = configs.input_ProtoConfig()
+    # relabel
+    config.relabel = True
+    config.N_CLASS = 100
+    config.n_trueclass = 200
+
+    config.vary_concentration = True
+    for spread in [0, .3, .6, .9]:
+        config.spread_orn_activity = (True, spread)
+        fn = 'concentration_relabel_mask_row_{:0.1f}'.format(spread)
         task.save_proto(config, seed=seed, folder_name=fn)
     print('Done Concentration_Mask Dataset')
 
@@ -190,16 +197,6 @@ def make_multi_or_dataset():
         task_config.n_or_per_orn = n_or_per_orn
         fn = 'n_or_per_orn'+str(n_or_per_orn)
         task.save_proto(config=task_config, seed=0, folder_name=fn)
-
-
-def temp():
-    config = configs.input_ProtoConfig()
-    config.N_CLASS = 1000
-    # config.n_trueclass = 80
-    # config.relabel = True
-    # config.realistic_orn_mask = True
-    task.save_proto(config, seed=seed, folder_name='test')
-    print('Done test dataset')
 
 
 def make_dataset(dataset_name):

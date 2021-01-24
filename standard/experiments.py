@@ -335,19 +335,25 @@ def pn_normalization():
     Assesses the effect of PN normalization on glo score and performance
     '''
     config = FullConfig()
-    config.max_epoch = 15
+    config.max_epoch = 30
 
-    config.skip_orn2pn = True
-    config.N_ORN_DUPLICATION = 1
+    # config.skip_orn2pn = True
+    # config.N_ORN_DUPLICATION = 1
 
     # config.train_pn2kc = False
 
+    config.kc_dropout_rate = 0.
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    i = [0, .6]
+    i = [0, 0.3, 0.6]
     datasets = ['./datasets/proto/concentration_mask_row_' + str(s) for s in i]
-    config_ranges['data_dir'] = ['./datasets/proto/standard'] + ['./datasets/proto/concentration'] + datasets
-    config_ranges['pn_norm_pre'] = ['None','biology','fixed_activity']
+    config_ranges['data_dir'] = datasets
+    config_ranges['pn_norm_pre'] = ['None', 'olsen', 'fixed_activity']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs

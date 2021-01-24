@@ -23,6 +23,7 @@ def _get_labels(prototypes, odors, percent_generalization, weights=None):
         dist = weights * dist
     return np.argmin(dist, axis=0)
 
+
 def _spread_orn_activity(prototypes, spread = 0):
     '''
     :param prototypes:
@@ -43,7 +44,8 @@ def _spread_orn_activity(prototypes, spread = 0):
     out = prototypes * np.repeat(activity.reshape(-1,1), n_orn, axis=1)
     return out
 
-def _mask_orn_activation_row(prototypes, spread = None):
+
+def _mask_orn_activation_row(prototypes, spread=None):
     '''
     :param prototypes:
     :param spread: varies from [0, 1). 0 means no spread, 1 means maximum spread.
@@ -51,19 +53,23 @@ def _mask_orn_activation_row(prototypes, spread = None):
     '''
     assert spread >= 0 and spread < 1, 'spread is not within range of [0, 1)'
 
-    mask = np.zeros_like(prototypes, dtype=int)
-    n_samples = mask.shape[0]
-    n_orn = mask.shape[1]
+    n_samples, n_orn = prototypes.shape
     mask_degree = np.round(n_orn * (1 - spread) / 2).astype(int)
-    list_of_numbers = list(range(mask_degree)) + list(range(n_orn - mask_degree, n_orn))
+    # Small number of ORNs active
+    list_of_numbers = list(range(1, mask_degree))
+    # Large number of ORNs active
+    list_of_numbers = list_of_numbers + list(range(n_orn - mask_degree, n_orn))
     print(list_of_numbers)
 
+    # For each sample odor, how many ORNs will be active
     n_orn_active = np.random.choice(list_of_numbers, size=n_samples, replace=True)
+    mask = np.zeros_like(prototypes, dtype=int)
     for i in range(n_samples):
-        mask[i, :n_orn_active[i]] = 1
+        mask[i, :n_orn_active[i]] = 1  # set only this number of ORNs active
         np.random.shuffle(mask[i, :])
     out = np.multiply(prototypes, mask)
     return out
+
 
 def _mask_orn_activation_column(prototypes, probs):
     '''
