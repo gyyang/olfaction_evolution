@@ -315,8 +315,6 @@ def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=Tru
         yticklabels = ['0', '1K', '2K', '3K', '4K', '>100K']
         ax.set_yticks(yticks)
         ax.set_yticklabels(yticklabels)
-        plt.ylim([0, yrange])
-        plt.xlim([0, xrange])
 
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
@@ -352,6 +350,7 @@ def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=Tru
 
         ax.set_xlabel('PN to KC Weight')
         ax.set_ylabel('Number of Conn.')
+
         xticks = np.arange(0, xrange + 0.01, .5)
         ax.set_xticks(xticks)
         ax.set_xticklabels([str(x) for x in xticks])

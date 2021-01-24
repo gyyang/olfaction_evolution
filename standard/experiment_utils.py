@@ -4,6 +4,7 @@ from pathlib import Path
 
 import standard.experiments as experiments
 import standard.experiment_controls as experiment_controls
+import standard.experiment_metas as experiment_metas
 import tools
 import settings
 
@@ -142,7 +143,7 @@ def train_experiment(experiment, use_cluster=False, path=None,
             path = Path('./')
 
     print('Training {:s} experiment'.format(experiment))
-    experiment_files = [experiments, experiment_controls]
+    experiment_files = [experiments, experiment_controls, experiment_metas]
 
     experiment_found = False
     for experiment_file in experiment_files:
@@ -177,7 +178,7 @@ def train_experiment(experiment, use_cluster=False, path=None,
 def analyze_experiment(experiment, n_pn=None):
     path = './files/' + experiment
 
-    experiment_files = [experiments, experiment_controls]
+    experiment_files = [experiments, experiment_controls, experiment_metas]
 
     experiment_found = False
     for experiment_file in experiment_files:
