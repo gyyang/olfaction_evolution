@@ -123,8 +123,7 @@ def make_concentration_relabel_mask_row_dataset():
         fn = 'concentration_relabel_mask_row_{:0.1f}'.format(spread)
         task.save_proto(config, seed=seed, folder_name=fn)
     print('Done Concentration_Mask Dataset')
-make_concentration_mask_row_dataset()
-make_concentration_relabel_mask_row_dataset()
+
 
 def make_combinatorial_dataset():
     """Map an odor to a combinatorial code, instead of a single class."""

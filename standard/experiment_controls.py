@@ -10,7 +10,6 @@ import tools
 
 try:
     import standard.analysis as sa
-    import standard.analysis_pn2kc_peter
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
