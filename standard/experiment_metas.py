@@ -183,53 +183,24 @@ def meta_vary_or_prune(n_pn=50):
     return new_configs
 
 
-def meta_vary_or_analysis(path, n_pn=None):
-    def _meta_vary_or_analysis(path, n_pn):
-        # Analyze individual network
-        select_dict = {'N_PN': n_pn}
-        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-        _modeldirs = modeldirs
-        sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
-                         legend_key='meta_lr')
+def meta_vary_or_analysis(path):
+    def _vary_or_analysis(path, legend_key):
+        modeldirs = tools.get_modeldirs(path)
+        sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'],
+                         legend_key=legend_key)
+        sa.plot_results(modeldirs, xkey=legend_key,
+                        ykey=['val_acc', 'K_smart'])
+        sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
+                   legend_key=legend_key)
 
-        _modeldirs = modeldirs
-        sa.plot_xy(_modeldirs, xkey='lin_bins', ykey='lin_hist',
-                   legend_key='meta_lr')
+    import glob
+    _path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
+    folders = glob.glob(_path + '*')
+    n_orns = sorted([int(folder.split(_path)[-1]) for folder in folders])
+    for n_orn in n_orns:
+        _vary_or_analysis(_path + str(n_orn), legend_key='meta_lr')
 
-        sa.plot_results(_modeldirs, xkey='meta_lr', ykey=['val_acc', 'K_smart'])
-
-    if n_pn is not None:
-        _meta_vary_or_analysis(path, n_pn)
-
-    else:
-        import glob
-        path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
-        folders = glob.glob(path + '*')
-        n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
-        Ks = list()
-        for n_orn in n_orns:
-            _path = path + str(n_orn)
-            # _meta_vary_or_analysis(_path, n_pn=n_orn)
-
-            # NOTICE this is chosen after manual inspection
-            # TODO: Need an automated method
-            select_dict = {'meta_lr': 5e-4}
-            modeldirs = tools.get_modeldirs(_path, select_dict=select_dict)
-
-            # modeldirs = tools.filter_modeldirs(
-            #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
-
-            modeldirs = tools.sort_modeldirs(modeldirs, 'meta_lr')
-            modeldirs = [modeldirs[-1]]  # Use model with highest LR
-            # modeldirs = [modeldirs[0]]  # Use model with lowest LR
-
-            res = tools.load_all_results(modeldirs)
-            Ks.append(res['K_smart'])
-
-        for plot_dim in [False, True]:
-            analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
-                                               plot_dim=plot_dim,
-                                               path=path)
+    analysis_pn2kc_training.plot_all_K(path)
 
 
 def meta_vary_or_prune_analysis(path, n_pn=None):

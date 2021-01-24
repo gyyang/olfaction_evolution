@@ -2,6 +2,7 @@ import os
 import sys
 import pickle
 import glob
+from pathlib import Path
 from collections import defaultdict
 
 import numpy as np
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.animation as animation
 from scipy.signal import savgol_filter
+from sklearn.linear_model import LinearRegression
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
@@ -372,32 +374,93 @@ def plot_log_distribution_movie(modeldir):
     anim.save(figname + 'log_distribution_movie.mp4', writer=writer, dpi=600)
 
 
-def plot_all_K(n_orns, Ks, plot_scatter=False,
-               plot_box=False, plot_data=True,
-               plot_fit=True, plot_angle=False,
-               plot_dim=False,
-               path='default'):
-    """Plot the typical K-N plot."""
-    from sklearn.linear_model import LinearRegression
+def _get_K_vs_N(name_or_path):
+    """Get K vs N data for a name or path.
 
-    fig = plt.figure(figsize=(3.5, 2))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    
-    logKs = [np.log(K) for K in Ks]
-    med_logKs = np.array([np.median(np.log(K)) for K in Ks])
-    
-    if plot_scatter:
-        for n_orn, K, med_logK in zip(n_orns, Ks, med_logKs):
-            ax.scatter(np.log([n_orn]*len(K)), np.log(K), alpha=0.01, s=3)
-            ax.plot(np.log(n_orn), med_logK, '+', ms=15, color='black')
+    Returns:
+        n_orns: array like
+        Ks: array like
+    """
+    if name_or_path == 'dim':
+        # Get optimal K for high dimensionality as in Litwin-Kumar 17
+        from analytical.analyze_simulation_results import _load_result
+        n_orns, Ks = _load_result('all_value_withdim_m', v_name='dim')
+    elif name_or_path == 'angle':
+        # Optimal K for smallest angle change
+        fname = os.path.join(rootpath, 'files', 'analytical',
+                             'control_coding_level_summary')
+        summary = pickle.load(open(fname, "rb"))
+        # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
+        n_orns = summary['n_orns']
+        Ks = summary['opt_ks'].T
+    else:
+        # Should be a path
+        path = name_or_path
+
+        acc_min = 0.
+        path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
+        folders = glob.glob(path + '*')
+        n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
+        Ks = list()
+        new_n_orns = list()
+        for n_orn in n_orns:
+            _path = path + str(n_orn)
+            modeldirs = tools.get_modeldirs(_path, acc_min=acc_min)
+            modeldirs = tools.filter_modeldirs(
+                modeldirs, exclude_badkc=True, exclude_badpeak=True)
+            if len(modeldirs) == 0:
+                continue
+            # TODO: for meta need to be meta_lr
+            # TODO: Temporary disable sorting
+            # Use model with highest LR among good models
+            # modeldirs = tools.sort_modeldirs(modeldirs, 'lr')
+            # modeldirs = [modeldirs[-1]]
+
+            res = tools.load_all_results(modeldirs)
+            Ks.append(res['K_smart'])
+            new_n_orns.append(n_orn)
+        n_orns = np.array(new_n_orns)
+    return n_orns, Ks
+
+
+def _plot_K_vs_N(ax, name_or_path, results=None, plot_box=True, plot_fit=True):
+    """Plot one set of data."""
+    if name_or_path == 'data':
+        ax.plot(np.log(1000), np.log(100), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(120), '[2]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='bottom',
+                zorder=5)
+
+        ax.plot(np.log(1000), np.log(40), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(32), '[3]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='top',
+                zorder=5)
+        ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(53), np.log(6), '[1]', color=tools.darkblue,
+                horizontalalignment='left', verticalalignment='top', zorder=5)
+        return ax
+
+    # Get data
+    if results is None:
+        results = dict()
+    if name_or_path in results.keys():
+        n_orns, Ks = results[name_or_path]
+    else:
+        n_orns, Ks = _get_K_vs_N(name_or_path)
+
+    def _fit(x, y):
+        x_fit = np.linspace(min(np.log(20), x[0]), max(np.log(1200), x[-1]), 3)
+        # model = Ridge()
+        model = LinearRegression()
+        model.fit(x[:, np.newaxis], y)
+        y_fit = model.predict(x_fit[:, np.newaxis])
+        return x_fit, y_fit, model
 
     def _pretty_box(x, positions, ax, color):
         flierprops = {'markersize': 3, 'markerfacecolor': color,
                       'markeredgecolor': 'none'}
         boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
-        medianprops = {'color': color*0.5}
+        medianprops = {'color': color*0.3}  # make darker
         whiskerprops = {'color': color}
         ax.boxplot(x, positions=positions, widths=0.06,
                    patch_artist=True, medianprops=medianprops,
@@ -405,93 +468,79 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
                    whiskerprops=whiskerprops
                    )
 
-    def _fit(x, y):
-        x_fit = np.linspace(min(np.log(25), x[0]), max(np.log(1600), x[-1]), 3)
-        # model = Ridge()
-        model = LinearRegression()
-        model.fit(x[:, np.newaxis], y)
-        y_fit = model.predict(x_fit[:, np.newaxis])
-        return x_fit, y_fit, model
+    logKs = [np.log(K) for K in Ks]
+    med_logKs = np.array([np.median(np.log(K)) for K in Ks])
 
-    if plot_box:
-        _pretty_box(logKs, np.log(n_orns), ax, tools.blue)
-        
+    name_or_path = Path(name_or_path).name
+    if name_or_path == 'dim':
+        color = tools.gray
+    elif name_or_path == 'vary_or':
+        color = tools.blue
+    elif name_or_path == 'meta_vary_or':
+        color = tools.red
+    else:
+        color = tools.gray
+
+    if name_or_path == 'dim':
+        ax.scatter(np.log(n_orns), logKs, s=2., c=color)
+    else:
+        if plot_box:
+            _pretty_box(logKs, np.log(n_orns), ax, color)
+
     if plot_fit:
-        print(n_orns)
-        print(np.exp(med_logKs))
         x_fit, y_fit, model = _fit(np.log(n_orns), med_logKs)
-        label = r'Train $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+        label = tools.nicename(name_or_path, mode='scaling')
+        label = label + r' $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
                                np.exp(model.intercept_), model.coef_[0])
-        ax.plot(x_fit, y_fit, color=tools.blue, label=label)
-    
-    if plot_data:
-        ax.plot(np.log(1000), np.log(100), 'x', color=tools.darkblue, zorder=5)
-        ax.text(np.log(1000), np.log(120), '[2]', color=tools.darkblue,
-                horizontalalignment='center', verticalalignment='bottom', zorder=5)
-        
-        ax.plot(np.log(1000), np.log(40), 'x', color=tools.darkblue, zorder=5)
-        ax.text(np.log(1000), np.log(32), '[3]', color=tools.darkblue,
-                horizontalalignment='center', verticalalignment='top', zorder=5)
-        ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue, zorder=5)
-        ax.text(np.log(53), np.log(6), '[1]', color=tools.darkblue,
-                horizontalalignment='left', verticalalignment='top', zorder=5)
+        ax.plot(x_fit, y_fit, color=color, label=label)
+    return ax
 
-    if plot_dim:
-        from analytical.analyze_simulation_results import _load_result
-        x, y = _load_result('all_value_withdim_m', v_name='dim')
-        print(x, y)
-        x, y = np.log(x), np.log(y)
-        plt.scatter(x, y, c=tools.gray, s=5)
-        x_fit, y_fit, model = _fit(x, y)
-        label = r'Max Dimension $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
-                               np.exp(model.intercept_), model.coef_[0])
-        ax.plot(x_fit, y_fit, color=tools.gray, label=label)
-    
-    if plot_angle:
-        fname = os.path.join(rootpath, 'files', 'analytical',
-                                 'control_coding_level_summary')
-        summary = pickle.load(open(fname, "rb"))
-        # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
-        _pretty_box(list(np.log(summary['opt_ks'].T)),
-                    np.log(summary['n_orns']), ax, tools.red)
-        
-    if plot_angle and plot_fit:
-        # x, y = np.log(n_orns)[3:], med_logKs[3:]
-        x = np.log(summary['n_orns'])
-        y = np.median(np.log(summary['opt_ks']), axis=0)
-        x_fit, y_fit, model = _fit(x, y)
-        label = r'Robust weights $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
-                               np.exp(model.intercept_), model.coef_[0])
-        ax.plot(x_fit, y_fit, color=tools.red, label=label)
-        
-    ax.legend(bbox_to_anchor=(0., 1.05), loc=2, frameon=False)
-        
-    x = [ 50, 100, 150, 200, 300, 400]
-    y = [ 7.90428212, 10.8857362,  16.20759494,
-         20.70314843, 27.50305499, 32.03561644]
-    # ax.plot(np.log(x), np.log(y))
-    ax.set_xlabel('Number of ORs (N)')
-    ax.set_ylabel('Expansion Input Degree (K)')
-    xticks = np.array([25, 50, 100, 200, 400, 1000, 1600])
-    ax.set_xticks(np.log(xticks))
-    ax.set_xticklabels([str(t) for t in xticks])
-    yticks = np.array([3, 10, 30, 100])
-    ax.set_yticks(np.log(yticks))
-    ax.set_yticklabels([str(t) for t in yticks])
-    ax.set_xlim(np.log([20, 1700]))
-    ax.set_ylim(np.log([2, 300]))
-    
-    name = 'opt_k'
-    if plot_scatter:
-        name += '_scatter'
-    if plot_box:
-        name += '_box'
-    if plot_data:
-        name += '_data'
-    if plot_dim:
-        name += '_dim'
-    if plot_fit:
-        name += '_fit'
-    if plot_angle:
-        name += '_angle'
-    save_fig(path, name)
+
+def plot_all_K(name_or_paths, *args):
+    """Plot the typical K-N plot.
+
+    Args:
+       name_or_paths: a list of str
+    """
+    if isinstance(name_or_paths, str):
+        name_or_paths = [name_or_paths]
+
+    all_name_or_paths = name_or_paths[:]
+    for arg in args:
+        all_name_or_paths += arg
+    all_name_or_paths = set(all_name_or_paths)
+
+    # (n_orns, Ks)
+    results = {n: _get_K_vs_N(n) for n in all_name_or_paths}
+
+    def _plot_all_K(name_or_paths):
+        fig = plt.figure(figsize=(4, 2.5))
+        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+
+        for name_or_path in name_or_paths:
+            ax = _plot_K_vs_N(ax, name_or_path, results)
+
+        ax.legend(bbox_to_anchor=(0., 1.05), loc=2, frameon=False)
+
+        ax.set_xlabel('Number of ORs (N)')
+        ax.set_ylabel('Expansion Input Degree (K)')
+        xticks = np.array([25, 50, 100, 200, 500, 1000])
+        ax.set_xticks(np.log(xticks))
+        ax.set_xticklabels([str(t) for t in xticks])
+        yticks = np.array([3, 10, 30, 100])
+        ax.set_yticks(np.log(yticks))
+        ax.set_yticklabels([str(t) for t in yticks])
+        ax.set_xlim(np.log([15, 1700]))
+        ax.set_ylim(np.log([2, 300]))
+        ax.grid(True, alpha=0.5)
+
+        name = '.'.join([Path(n).name for n in name_or_paths])
+        # All save to the same directory
+        save_fig('scaling', name)
+
+    _plot_all_K(name_or_paths)
+    for arg in args:
+        _plot_all_K(arg)
+

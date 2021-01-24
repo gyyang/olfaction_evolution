@@ -70,6 +70,9 @@ def _infer_plot_xy_axargs(X, Y):
 
 def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
             ax_args=None, log=None, figsize=None):
+    if not save_path:
+        return
+
     def _plot_xy(xkey, ykey):
         ys = log[ykey]
         xs = log[xkey]
@@ -156,6 +159,9 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
     if ykeys is None:
         ykeys = ['val_logloss', 'train_logloss', 'val_loss',
                  'train_loss', 'val_acc', 'glo_score']
+
+    if not save_path:
+        return
 
     if isinstance(ykeys, str):
         ykeys = [ykeys]

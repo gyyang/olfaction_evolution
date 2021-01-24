@@ -159,6 +159,16 @@ def singlelayer():
     return configs
 
 
+def scaling_analysis(path):
+    del path
+    name_or_paths = ['./files/vary_or']
+    name_or_paths += ['./files/meta_vary_or']
+    analysis_pn2kc_training.plot_all_K(
+        ['./files/vary_or'],
+        name_or_paths + ['data'],
+        name_or_paths + ['dim', 'data'])
+
+
 def rnn():
     config = RNNConfig()
     config.max_epoch = 100
@@ -440,53 +450,24 @@ def vary_or_prune_relabel_corr(n_pn=50):
     return new_configs
 
 
-def vary_or_analysis(path, n_pn=None, acc_min=0.):
-    def _vary_or_analysis(path, n_pn):
-        # Analyze individual network
-        select_dict = {}
-        modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-        _modeldirs = modeldirs
-        # _modeldirs = tools.filter_modeldirs(
-        #     modeldirs, exclude_badkc=True, exclude_badpeak=True)
-        if _modeldirs:
-            sa.plot_progress(_modeldirs, ykeys=['val_acc', 'K_smart'],
-                             legend_key='lr')
+def vary_or_analysis(path, acc_min=0.):
+    def _vary_or_analysis(path, legend_key):
+        modeldirs = tools.get_modeldirs(path)
+        sa.plot_progress(modeldirs, ykeys=['val_acc', 'K_smart'],
+                         legend_key=legend_key)
+        sa.plot_results(modeldirs, xkey=legend_key,
+                        ykey=['val_acc', 'K_smart'])
+        sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
+                   legend_key=legend_key)
 
-        _modeldirs = modeldirs
-        if _modeldirs:
-            sa.plot_xy(_modeldirs,
-                       xkey='lin_bins', ykey='lin_hist', legend_key='lr')
+    import glob
+    _path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
+    folders = glob.glob(_path + '*')
+    n_orns = sorted([int(folder.split(_path)[-1]) for folder in folders])
+    for n_orn in n_orns:
+        _vary_or_analysis(_path + str(n_orn), legend_key='lr')
 
-    if n_pn is not None:
-        _vary_or_analysis(path, n_pn)
-
-    else:
-        import glob
-        path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
-        folders = glob.glob(path + '*')
-        n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
-        Ks = list()
-        new_n_orns = list()
-        for n_orn in n_orns:
-            _path = path + str(n_orn)
-            _vary_or_analysis(_path, n_pn=n_orn)
-            modeldirs = tools.get_modeldirs(_path, acc_min=acc_min)
-            modeldirs = tools.filter_modeldirs(
-                modeldirs, exclude_badkc=True, exclude_badpeak=True)
-            if len(modeldirs) == 0:
-                continue
-            # Use model with highest LR among good models
-            modeldirs = tools.sort_modeldirs(modeldirs, 'lr')
-            modeldirs = [modeldirs[-1]]
-
-            res = tools.load_all_results(modeldirs)
-            Ks.append(res['K_smart'])
-            new_n_orns.append(n_orn)
-        n_orns = np.array(new_n_orns)
-        for plot_dim in [False, True]:
-            analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
-                                               plot_dim=plot_dim,
-                                               path=path)
+    analysis_pn2kc_training.plot_all_K(path)
 
 
 def vary_or_prune_fixnkc_analysis(path, n_pn=None):

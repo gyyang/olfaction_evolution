@@ -714,6 +714,18 @@ def nicename(name, mode='dict'):
             return 'spread'
         else:
             return name
+    elif mode == 'scaling':
+        name = Path(name).name
+        if name == 'dim':
+            return 'Max dimension'
+        elif name == 'angle':
+            return 'Angle robustness'
+        elif name == 'vary_or':
+            return 'Train'
+        elif name == 'meta_vary_or':
+            return 'Meta learning'
+        else:
+            return name
     else:
         return nicename_dict.get(name, name)  # get(key, default value)
 
