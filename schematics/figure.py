@@ -52,6 +52,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
               np.array([255, 187, 0])/255.,  # red
               np.array([63, 104, 28])/255.,]  # green
 
+    # From colorbrewer qualitative map
     colors = np.array([[102,194,165],[252,141,98],[141,160,203],
                        [231,138,195],[166,216,84], [255, 217, 47]])/255.
 

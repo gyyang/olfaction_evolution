@@ -354,7 +354,8 @@ def pn_normalization():
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
     config_ranges['data_dir'] = datasets
-    config_ranges['pn_norm_pre'] = ['None', 'olsen', 'fixed_activity']
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
+                                    'fixed_activity']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -363,7 +364,7 @@ def pn_normalization():
 def pn_normalization_analysis(path):
     select_dict = {}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    sa.plot_results(modeldirs, xkey='data_dir', ykey='val_acc',
+    sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey='val_acc',
                     loop_key='pn_norm_pre')
 
     # import tools
