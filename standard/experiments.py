@@ -440,8 +440,8 @@ def vary_or_prune_relabel_corr(n_pn=50):
     return new_configs
 
 
-def vary_or_prune_analysis(path, n_pn=None, acc_min=0.75):
-    def _vary_or_prune_analysis(path, n_pn):
+def vary_or_analysis(path, n_pn=None, acc_min=0.):
+    def _vary_or_analysis(path, n_pn):
         # Analyze individual network
         select_dict = {}
         modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
@@ -458,7 +458,7 @@ def vary_or_prune_analysis(path, n_pn=None, acc_min=0.75):
                        xkey='lin_bins', ykey='lin_hist', legend_key='lr')
 
     if n_pn is not None:
-        _vary_or_prune_analysis(path, n_pn)
+        _vary_or_analysis(path, n_pn)
 
     else:
         import glob
@@ -466,21 +466,23 @@ def vary_or_prune_analysis(path, n_pn=None, acc_min=0.75):
         folders = glob.glob(path + '*')
         n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
         Ks = list()
-        # n_orns = [25, 75, 100, 150, 200]
+        new_n_orns = list()
         for n_orn in n_orns:
             _path = path + str(n_orn)
-            _vary_or_prune_analysis(_path, n_pn=n_orn)
+            _vary_or_analysis(_path, n_pn=n_orn)
             modeldirs = tools.get_modeldirs(_path, acc_min=acc_min)
             modeldirs = tools.filter_modeldirs(
                 modeldirs, exclude_badkc=True, exclude_badpeak=True)
-
+            if len(modeldirs) == 0:
+                continue
             # Use model with highest LR among good models
             modeldirs = tools.sort_modeldirs(modeldirs, 'lr')
             modeldirs = [modeldirs[-1]]
 
             res = tools.load_all_results(modeldirs)
             Ks.append(res['K_smart'])
-
+            new_n_orns.append(n_orn)
+        n_orns = np.array(new_n_orns)
         for plot_dim in [False, True]:
             analysis_pn2kc_training.plot_all_K(n_orns, Ks, plot_box=True,
                                                plot_dim=plot_dim,
@@ -488,15 +490,15 @@ def vary_or_prune_analysis(path, n_pn=None, acc_min=0.75):
 
 
 def vary_or_prune_fixnkc_analysis(path, n_pn=None):
-    vary_or_prune_analysis(path, n_pn)
+    vary_or_analysis(path, n_pn)
 
 
 def vary_or_prune_relabel_analysis(path, n_pn=None):
-    vary_or_prune_analysis(path, n_pn, acc_min=0.5)
+    vary_or_analysis(path, n_pn, acc_min=0.5)
 
 
 def vary_or_prune_relabel_corr_analysis(path, n_pn=None):
-    vary_or_prune_analysis(path, n_pn, acc_min=0.5)
+    vary_or_analysis(path, n_pn, acc_min=0.5)
 
 
 def multihead():

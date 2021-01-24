@@ -25,11 +25,8 @@ def get_figname(save_path, figname=''):
     if isinstance(save_path, str):
         save_name = os.path.split(save_path)[-1]
     else:
-        # save_path is a list of model paths
-        print(save_path[0])
         # ugly hack to get experiment name
         save_name = os.path.split(os.path.split(save_path[0])[-2])[-1]
-        print(save_name)
 
     path = os.path.join(FIGPATH, save_name)
     os.makedirs(path, exist_ok=True)
@@ -309,8 +306,6 @@ def select_modeldirs(modeldirs, select_dict=None, acc_min=None):
             config = load_config(d)  # epoch modeldirs have no configs
             for key, val in select_dict.items():
                 if key == 'data_dir':
-                    print(config.data_dir)
-                    print(val)
                     # If data_dir, only compare last
                     if Path(config.data_dir).name != Path(val).name:
                         selected = False
@@ -564,6 +559,8 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
 
         # Add logger values
         for key, val in log.items():
+            if key == 'meta_update_lr':  # special handling
+                key = 'meta_update_lr_trained'
             if len(val) == n_actual_epoch:
                 if argLast:
                     res[key].append(val[-1])  # store last value in log
@@ -582,6 +579,8 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
         for k in dir(config):
             if k == 'coding_level':  # name conflict with log entry
                 res['coding_level_set'].append(config.coding_level)
+            elif k == 'data_dir':
+                res['data_dir'].append(Path(config.data_dir).name)
             elif k[0] != '_':
                 v = getattr(config, k)
                 if v is None and none_to_string:
@@ -643,6 +642,7 @@ nicename_dict = {
     'zero_claw': '% of KC with No Input',
     'kc_out_sparse_mean': '% of Active KCs',
     'coding_level': '% of Active KCs',
+    'N_CLASS': 'Number of Classes',
     'n_trueclass': 'Number of Odor Prototypes',
     'n_trueclass_ratio': 'Odor Prototypes Per Class',
     'weight_perturb': 'Weight Perturb.',
@@ -675,7 +675,12 @@ nicename_dict = {
     'glo': 'PN Activity',
     'kc_in': 'KC Input',
     'kc': 'KC Activity',
-    'sign_constraint_orn2pn': 'Non-negative ORN-PN'
+    'sign_constraint_orn2pn': 'Non-negative ORN-PN',
+    'meta_lr': 'Meta learning rate',
+    'meta_num_samples_per_class': '# Samples/Class',
+    'meta_update_lr': 'Initial inner learning rate',
+    'skip_orn2pn': 'Skip ORN-PN',
+    'data_dir': 'Dataset',
 }
 
 
@@ -708,7 +713,7 @@ def nicename(name, mode='dict'):
         elif name == 'data_dir':
             return 'spread'
         else:
-            return '??'
+            return name
     else:
         return nicename_dict.get(name, name)  # get(key, default value)
 

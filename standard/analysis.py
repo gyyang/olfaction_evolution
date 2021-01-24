@@ -138,7 +138,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
         if np.any(values == None):
             values[values == None] = 'None'
         _, ixs = np.unique(values, return_index=True)
-        for k, v in log.items():
+        for k in [legend_key, xkey, ykey]:
             log[k] = log[k][ixs]
     _plot_xy(xkey, ykey)
 
@@ -502,7 +502,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
     xvals = sorted(set(res[xkey]))
 
     if logx is None:
-        logx = xkey in ['lr', 'meta_lr', 'N_KC', 'N_PN', 'initial_pn2kc',
+        logx = xkey in ['lr', 'meta_lr', 'meta_update_lr',
+                        'N_KC', 'N_PN', 'initial_pn2kc',
                         'kc_prune_threshold',
                          'N_ORN_DUPLICATION', 'n_trueclass',
                         'n_trueclass_ratio']
