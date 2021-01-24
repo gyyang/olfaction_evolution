@@ -522,6 +522,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize[0] += 0.3
         if xkey in ['orn_corr']:
             figsize[0] += 1.0
+        if xkey == 'spread_orn_activity':
+            figsize[0] += 1.0
     # fig = plt.figure(figsize=figsize)
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     for i, ykey in enumerate(ykeys):
@@ -635,7 +637,12 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
         if loop_key and i == 0:
             ncol = 1 if len(loop_vals) < 4 else 1
-            l = ax.legend(loc='best', fontsize= 7, frameon=False, ncol=ncol)
+
+            if xkey == 'spread_orn_activity':
+                l = ax.legend(loc='upper left', fontsize=7, frameon=False,
+                              ncol=1, bbox_to_anchor=(1., 1.))
+            else:
+                l = ax.legend(loc='best', fontsize=7, frameon=False, ncol=ncol)
             l.set_title(nicename(loop_key))
 
     figname = '_' + '_'.join(ykeys) + '_vs_' + xkey

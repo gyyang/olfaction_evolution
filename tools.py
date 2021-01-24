@@ -681,6 +681,9 @@ nicename_dict = {
     'meta_update_lr': 'Initial inner learning rate',
     'skip_orn2pn': 'Skip ORN-PN',
     'data_dir': 'Dataset',
+    'olsen': 'Olsen & Wilson',
+    'fixed_activity': 'Fixed activity',
+    'spread_orn_activity': 'ORN activity spread',
 }
 
 

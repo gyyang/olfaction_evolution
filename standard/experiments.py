@@ -330,17 +330,15 @@ def vary_kc_activity_trainable():
     return configs
 
 
-def pn_normalization():
+def pn_norm():
     '''
     Assesses the effect of PN normalization on glo score and performance
     '''
     config = FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 100
 
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
-
-    # config.train_pn2kc = False
 
     config.kc_dropout_rate = 0.
 
@@ -350,7 +348,7 @@ def pn_normalization():
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    spreads = [0, 0.3, 0.6]
+    spreads = [0, 0.3, 0.6, 0.9]
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
     config_ranges['data_dir'] = datasets
@@ -361,11 +359,26 @@ def pn_normalization():
     return configs
 
 
-def pn_normalization_analysis(path):
+def pn_norm_relabel():
+    configs = pn_norm()
+    new_configs = list()
+    for c in configs:
+        c.data_dir = c.data_dir.replace('_mask_row', '_relabel_mask_row')
+        new_configs.append(c)
+    return new_configs
+
+
+def pn_norm_analysis(path):
     select_dict = {}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey='val_acc',
+    ykeys = ['val_acc', 'K_smart']
+    sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre')
+    select_dict = {'spread_orn_activity': 0.6}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
+    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
+               legend_key='pn_norm_pre')
 
     # import tools
     # rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
