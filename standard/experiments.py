@@ -350,8 +350,9 @@ def pn_normalization():
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    i = [0, 0.3, 0.6]
-    datasets = ['./datasets/proto/concentration_mask_row_' + str(s) for s in i]
+    spreads = [0, 0.3, 0.6]
+    dataset_base = './datasets/proto/concentration_mask_row'
+    datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
     config_ranges['data_dir'] = datasets
     config_ranges['pn_norm_pre'] = ['None', 'olsen', 'fixed_activity']
 

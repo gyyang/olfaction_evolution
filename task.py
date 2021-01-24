@@ -202,6 +202,7 @@ def _generate_proto_threshold(
         shuffle_label,
         relabel,
         n_trueclass,
+        is_spread_orn_activity,
         spread_orn_activity,
         mask_orn_activation_row,
         mask_orn_activation_column,
@@ -342,9 +343,9 @@ def _generate_proto_threshold(
         train_odors = _mask_orn_activation_column(train_odors, probs)
         val_odors = _mask_orn_activation_column(val_odors, probs)
 
-    if spread_orn_activity[0]:
+    if is_spread_orn_activity:
         print('mean')
-        spread = spread_orn_activity[1]
+        spread = spread_orn_activity
         prototypes = _spread_orn_activity(prototypes, spread)
         train_odors = _spread_orn_activity(train_odors, spread)
         val_odors = _spread_orn_activity(val_odors, spread)
@@ -505,9 +506,10 @@ def save_proto(config=None, seed=0, folder_name=None):
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
         n_trueclass=config.n_trueclass,
-        spread_orn_activity= config.spread_orn_activity,
-        mask_orn_activation_row= config.mask_orn_activation_row,
-        mask_orn_activation_column= config.mask_orn_activation_column,
+        is_spread_orn_activity=config.is_spread_orn_activity,
+        spread_orn_activity=config.spread_orn_activity,
+        mask_orn_activation_row=config.mask_orn_activation_row,
+        mask_orn_activation_column=config.mask_orn_activation_column,
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,

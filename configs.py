@@ -66,7 +66,8 @@ class input_ProtoConfig(BaseConfig):
 
         # If tuple[0] = True, total orn activity becomes more spread out as defined by a distribution
         # tuple[1] = Spread, varies from (0, 1]. Defines the bimodality of the prob dist.
-        self.spread_orn_activity = (False, .5)
+        self.is_spread_orn_activity = False
+        self.spread_orn_activity = 0.
 
         # Whether to have correlation between ORNs
         self.orn_corr = None

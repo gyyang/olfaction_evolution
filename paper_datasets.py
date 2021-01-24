@@ -99,8 +99,9 @@ def make_concentration_mask_row_dataset():
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
     config.vary_concentration = True
+    config.is_spread_orn_activity = True
     for spread in [0, .3, .6, .9]:
-        config.spread_orn_activity = (True, spread)
+        config.spread_orn_activity = spread
         fn = 'concentration_mask_row_{:0.1f}'.format(spread)
         task.save_proto(config, seed=seed, folder_name=fn)
     print('Done Concentration_Mask Dataset')
@@ -115,12 +116,15 @@ def make_concentration_relabel_mask_row_dataset():
     config.n_trueclass = 200
 
     config.vary_concentration = True
+    config.is_spread_orn_activity = True
+
     for spread in [0, .3, .6, .9]:
-        config.spread_orn_activity = (True, spread)
+        config.spread_orn_activity = spread
         fn = 'concentration_relabel_mask_row_{:0.1f}'.format(spread)
         task.save_proto(config, seed=seed, folder_name=fn)
     print('Done Concentration_Mask Dataset')
-
+make_concentration_mask_row_dataset()
+make_concentration_relabel_mask_row_dataset()
 
 def make_combinatorial_dataset():
     """Map an odor to a combinatorial code, instead of a single class."""
