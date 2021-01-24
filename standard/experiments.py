@@ -628,31 +628,28 @@ def multihead_relabel_prune_analysis(path):
     analysis_multihead.analyze_example_network(dir)
 
 
-def test_metalearn():
+def meta_standard():
     config = MetaConfig()
-    config.meta_lr = .001
-    config.N_CLASS = 5 #10
-    config.save_every_epoch = False
-    config.meta_batch_size = 32 #32
-    config.meta_num_samples_per_class = 16 #16
-    config.meta_print_interval = 100
+    # config.data_dir = './datasets/proto/relabel_200_100'
+    config.data_dir = './datasets/proto/standard'
+    config.kc_dropout = False
+    config.kc_dropout_rate = 0.
+    config.kc_prune_weak_weights = True
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 1
-    config.output_max_lr = 2.0 #2.0
-    config.meta_update_lr = .2
-    config.prune = False
-
-    config.metatrain_iterations = 10000
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
-
-    config.kc_dropout = False
-
-    # config.data_dir = './datasets/proto/meta_dataset'
-    config.data_dir = './datasets/proto/standard'
-
     config.skip_orn2pn = True
+
+    config.meta_lr = 5e-4
+    config.N_CLASS = 2
+    config.meta_batch_size = 32
+    config.meta_num_samples_per_class = 16
+    config.meta_print_interval = 100
+    config.output_max_lr = 2.0
+    config.meta_update_lr = .2
+    config.metatrain_iterations = 10000
     config.meta_trainable_lr = True
 
     config_ranges = OrderedDict()

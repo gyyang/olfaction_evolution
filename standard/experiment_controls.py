@@ -444,7 +444,7 @@ def control_vary_kc():
 
 def control_vary_kc_analysis(path):
     ykeys = ['val_acc', 'glo_score', 'K_smart']
-    xticks = [50, 500, 2500, 10000]
+    xticks = [50, 500, 2500, 20000]
 
     # All networks
     modeldirs = tools.get_modeldirs(path)
@@ -453,7 +453,7 @@ def control_vary_kc_analysis(path):
 
     select_dict = {'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    sa.plot_results(modeldirs, xkey='N_KC', ykey=ykeys,
+    sa.plot_results(modeldirs, xkey='N_KC', ykey=ykeys, show_ylabel=False,
                     ax_args={'xticks': xticks}, plot_actual_value=False)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='N_KC')
 
@@ -475,35 +475,41 @@ def control_vary_pn():
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1. / config.N_PN
 
+    n_pns = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
     config_ranges = OrderedDict()
-    config_ranges['N_PN'] = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
-    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
-    configs = vary_config(config, config_ranges, mode='combinatorial')
+    config_ranges['N_PN'] = n_pns
+    config_ranges['initial_pn2kc'] = [4. / n for n in n_pns]
+    config_ranges['kc_prune_threshold'] = [1. / n for n in n_pns]
+    configs = vary_config(config, config_ranges, mode='sequential')
     return configs
 
 
 def control_vary_pn_analysis(path):
-    # TODO: bring back the analysis
-    for n_pn in [30, 200]:
-        select_dict = {'N_PN': n_pn, 'kc_dropout_rate': 0.5}
-        modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
-        sa.plot_weights(modeldir, sort_axis=1, average=False, vlim=[0, 5])
+    ykeys = ['val_acc', 'glo_score', 'K_smart']
+    xticks = [20, 50, 200, 1000]
 
-    select_dict = {'N_PN': 200, 'kc_dropout_rate': 0.5}
+    # All networks
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey='N_PN', ykey=ykeys,
+                    loop_key='kc_dropout_rate', ax_args={'xticks': xticks})
+
+    select_dict = {'kc_dropout_rate': 0.}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_results(modeldirs, xkey='N_PN', ykey=ykeys, show_ylabel=False,
+                    ax_args={'xticks': xticks}, plot_actual_value=False)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='N_PN')
+
+    for n_pn in [30, 50, 200]:
+        select_dict = {'N_PN': n_pn, 'kc_dropout_rate': 0.}
+        modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+        sa.plot_weights(modeldir)
+
+    select_dict = {'N_PN': 200, 'kc_dropout_rate': 0.}
     modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
     ix_good, ix_bad = analysis_orn2pn.multiglo_gloscores(
         modeldir, cutoff=.9, shuffle=False)
     analysis_orn2pn.multiglo_pn2kc_distribution(modeldir, ix_good, ix_bad)
     # analysis_orn2pn.multiglo_lesion(modeldir, ix_good, ix_bad)
-
-    # default = {'kc_dropout_rate': 0.5, 'N_PN': 50}
-    # ykeys = ['val_acc', 'glo_score']
-    # xticks = [20, 50, 100, 200, 1000]
-    # sa.plot_results(path, xkey='N_PN', ykey=ykeys, loop_key='kc_dropout_rate',
-    #                 logx=True, ax_args={'xticks': xticks}, figsize=(2.5, 1.5))
-    # select_dict = {'kc_dropout_rate': 0.5}
-    # sa.plot_progress(path, ykeys=ykeys, legend_key='N_PN',
-    #                  select_dict=select_dict)
 
 
 def control_vary_pn_relabel():

@@ -19,6 +19,11 @@ figpath = os.path.join(rootpath, 'figures')
 
 
 def _get_ax_args(xkey, ykey, n_pn=50):
+    unique_n_pns = np.unique(n_pn)
+    if len(unique_n_pns) == 1:
+        n_pn = unique_n_pns[0]
+    else:
+        n_pn = 50
     ax_args = {}
     if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity', 'K_smart']:
         if n_pn == 50:
@@ -163,7 +168,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     xkey = 'epoch'
     for i, ykey in enumerate(ykeys):
-        rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'][0])
+        rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'])
         if ax_args:
             ax_args_.update(ax_args)
 
@@ -497,7 +502,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
     xvals = sorted(set(res[xkey]))
 
     if logx is None:
-        logx = xkey in ['lr', 'meta_lr', 'N_KC', 'initial_pn2kc',
+        logx = xkey in ['lr', 'meta_lr', 'N_KC', 'N_PN', 'initial_pn2kc',
                         'kc_prune_threshold',
                          'N_ORN_DUPLICATION', 'n_trueclass',
                         'n_trueclass_ratio']
@@ -506,7 +511,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         figsize = [1.5, 1.2 + 0.7 * (ny - 1)]
         if not show_ylabel:
             figsize[0] -= 0.3
-        if xkey in ['lr', 'N_KC']:
+        if xkey in ['lr', 'N_KC', 'N_PN']:
             figsize[0] += 0.3
         if xkey in ['orn_corr']:
             figsize[0] += 1.0
@@ -514,12 +519,11 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     for i, ykey in enumerate(ykeys):
         # Default ax_args and other values, based on x and y keys
-        rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'][0])
+        rect, ax_args_ = _get_ax_args(xkey, ykey, n_pn=res['N_PN'])
         if ax_args:
             ax_args_.update(ax_args)
         if ax_box is not None:
             rect = ax_box
-
         yvals = list()
         clean_pn2kc = list()
         for xval in xvals:

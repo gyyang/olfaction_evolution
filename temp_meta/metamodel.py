@@ -23,7 +23,6 @@ class _linear_block(mmods.MetaLinear):
         self.bias_initial_value = bias_init_value
         self.prune = prune
         self.weight_init_range = 4. / in_features
-        # self.prune_threshold = 0.001
         self.prune_threshold = 1. / in_features
         self.reset_params()
 

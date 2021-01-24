@@ -317,7 +317,7 @@ class RNNConfig(BaseConfig):
 
 class MetaConfig(FullConfig):
     def __init__(self):
-        super(MetaConfig, self).__init__()
+        super().__init__()
         # data directory
         self.data_dir = './datasets/proto/standard'
         # model type

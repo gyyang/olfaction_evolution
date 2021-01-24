@@ -67,8 +67,8 @@ def get_accuracy(logits, targets):
     return torch.mean(predictions.eq(targets).float())
 
 
-def run_per_batch_old(model, loss, split_size, data_x, data_t, update_lr,
-                  num_inner_updates=1, max_update_lr=1.0):
+def run_per_batch(model, loss, split_size, data_x, data_t, update_lr,
+                  max_update_lr=1.0):
     pre_acc_av = torch.tensor(0., device=device)
     pre_loss_av = torch.tensor(0., device=device)
     post_acc_av = torch.tensor(0., device=device)
@@ -83,22 +83,20 @@ def run_per_batch_old(model, loss, split_size, data_x, data_t, update_lr,
 
         params = None
         # Train
-        for i_inner_update in range(num_inner_updates):
-            pre_y = model(train_x, params=params)
-            pre_loss = loss(pre_y, torch.max(train_t, dim=-1)[1])
-    
-            with torch.no_grad():
-                pre_acc = get_accuracy(pre_y, train_t)
+        pre_y = model(train_x, params=params)
+        pre_loss = loss(pre_y, torch.max(train_t, dim=-1)[1])
 
-            model.zero_grad()  # TODO: Fix this
-            params = gradient_update_parameters(
-                model,
-                pre_loss,
-                update_lr=update_lr,
-                first_order=False,
-                # first_order=True,
-                max_update_lr=max_update_lr
-            )
+        with torch.no_grad():
+            pre_acc = get_accuracy(pre_y, train_t)
+
+        model.zero_grad()
+        params = gradient_update_parameters(
+            model,
+            pre_loss,
+            update_lr=update_lr,
+            first_order=False,
+            max_update_lr=max_update_lr
+        )
 
         with torch.no_grad():
             post_y = model(train_x, params=params)
@@ -124,8 +122,9 @@ def run_per_batch_old(model, loss, split_size, data_x, data_t, update_lr,
         val_acc_av.div_(l), val_loss_av.div_(l)
 
 
-def run_per_batch(model, loss, split_size, data_x, data_t, update_lr,
+def run_per_batch_tmp(model, loss, split_size, data_x, data_t, update_lr,
                       num_inner_updates=1, max_update_lr=1.0):
+    """Tmp testing multi update."""
     pre_acc_av = torch.tensor(0., device=device)
     pre_loss_av = torch.tensor(0., device=device)
     post_acc_av = torch.tensor(0., device=device)
@@ -257,7 +256,6 @@ def train(config: configs.MetaConfig):
                           num_class * num_samples_per_class, 
                           train_x_torch,
                           train_t_torch,
-                          num_inner_updates=config.meta_num_updates,
                           update_lr=meta_update_lr,
                           max_update_lr=config.output_max_lr
                           )
@@ -299,7 +297,6 @@ def train(config: configs.MetaConfig):
                               num_class * num_samples_per_class,
                               test_x_torch,
                               test_t_torch,
-                              num_inner_updates=config.meta_num_updates,
                               update_lr=meta_update_lr,
                               max_update_lr=config.output_max_lr
                               )
