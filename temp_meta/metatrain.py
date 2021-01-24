@@ -4,6 +4,9 @@ import time
 from collections import defaultdict
 from collections import OrderedDict
 
+# for some reason this line is necessary on cluster even if numpy is not used
+import numpy as np
+
 import torch
 import torch.nn as nn
 from torchmeta.modules import MetaModule

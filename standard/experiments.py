@@ -328,10 +328,9 @@ def pn_normalization():
     config.max_epoch = 15
 
     config.skip_orn2pn = True
-    config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
 
-    config.train_pn2kc = False
+    # config.train_pn2kc = False
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
