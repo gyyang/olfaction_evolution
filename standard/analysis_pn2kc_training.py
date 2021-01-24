@@ -32,61 +32,6 @@ def _set_colormap(nbins):
     return cm
 
 
-def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=None):
-    def _get_K_obsolete(res):
-        # GRY: Not sure what this function is doing
-        n_model, n_epoch = res['sparsity'].shape[:2]
-        Ks = np.zeros((n_model, n_epoch))
-        bad_KC = np.zeros((n_model, n_epoch))
-        for i in range(n_model):
-            if res['kc_prune_weak_weights'][i]:
-                Ks[i] = res['K'][i]
-            else:
-                Ks[i] = res['K_inferred'][i]
-
-                # sparsity = res['sparsity'][i, j]
-                # Ks[i, j] = sparsity[sparsity>0].mean()
-                # bad_KC[i,j] = np.sum(sparsity==0)/sparsity.size
-        res['K_inferred'] = Ks
-        res['bad_KC'] = bad_KC
-
-    d = os.path.join(path)
-    files = glob.glob(d)
-    res = defaultdict(list)
-    for f in files:
-        temp = tools.load_all_results(f, argLast=False, select_dict=select_dict)
-        dict_methods.chain_defaultdicts(res, temp)
-
-    if redo:
-        wglos = tools.load_pickles(path, 'w_glo')
-        for i, wglo in enumerate(wglos):
-            w = wglo.flatten()
-            hist, bins = np.histogram(w, bins=1000, range=[0, range])
-            res['lin_bins'][i] = bins
-            res['lin_hist'][i][-1,:] = hist #hack
-        # _get_K(res)
-
-    badkc_ind = res['bad_KC'][:, -1] < 0.2
-    acc_ind = res['train_acc'][:, -1] > 0.5
-    if filter_peaks:
-        peak_ind = check_single_peak(res['lin_bins'],
-                                     res['lin_hist'][:, -1, :],  # last epoch
-                                     res['kc_prune_threshold'])
-    else:
-        peak_ind = np.ones_like(acc_ind)
-    ind = badkc_ind * acc_ind * peak_ind
-    for k, v in res.items():
-        res[k] = v[ind]
-
-    for k in res['lin_bins']:
-        res['lin_bins_'].append(k[:-1])
-    for k in res['lin_hist']:
-        res['lin_hist_'].append(savgol_filter(k[-1], window_length=21, polyorder=0))
-    for k, v in res.items():
-        res[k] = np.array(res[k])
-    return res
-
-
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
                      thres=THRES):
     print('compute sparsity needs to be replaced')
