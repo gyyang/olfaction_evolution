@@ -344,26 +344,11 @@ def pn_normalization():
 
 
 def pn_normalization_analysis(path):
-    sa.plot_results(path, xkey='data_dir', ykey='val_acc',
-                    loop_key='pn_norm_pre',
-                    select_dict={
-                        'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
-                        'data_dir': ['./datasets/proto/standard',
-                                     './datasets/proto/concentration_mask_row_0.6'
-                                     ]},
-                    figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                    sort=False)
+    select_dict = {}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_results(modeldirs, xkey='data_dir', ykey='val_acc',
+                    loop_key='pn_norm_pre')
 
-    sa.plot_results(path, xkey='data_dir', ykey='val_acc',
-                    loop_key='pn_norm_pre',
-                    select_dict={
-                        'pn_norm_pre': ['None', 'fixed_activity', 'biology'],
-                        'data_dir': ['./datasets/proto/concentration',
-                                     './datasets/proto/concentration_mask_row_0',
-                                     './datasets/proto/concentration_mask_row_0.6',
-                                     ]},
-                    figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
-                    sort=False)
     # import tools
     # rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
     # rho = tools.load_pickles(path, 'model/layer1/rho:0')
@@ -377,6 +362,34 @@ def pn_normalization_analysis(path):
     # analysis_activity.distribution_activity(path, 'glo')
     # analysis_activity.distribution_activity(path, 'kc')
     # analysis_activity.sparseness_activity(path, 'kc')
+
+
+def vary_or(n_pn=50):
+    """Training networks with different number of PNs and vary hyperparams.
+
+    Latest default.
+    """
+    config = FullConfig()
+    config.max_epoch = 100
+    config.save_log_only = True
+
+    config.N_PN = n_pn
+    config.data_dir = './datasets/proto/relabel_orn' + str(n_pn)
+    config.kc_dropout_rate = 0.
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True  # Skip ORN-to-PN
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / n_pn
+
+    config.N_KC = min(40000, n_pn**2)
+
+    config_ranges = OrderedDict()
+    config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
 
 
 def vary_or_prune(n_pn=50):

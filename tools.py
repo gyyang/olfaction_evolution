@@ -309,6 +309,8 @@ def select_modeldirs(modeldirs, select_dict=None, acc_min=None):
             config = load_config(d)  # epoch modeldirs have no configs
             for key, val in select_dict.items():
                 if key == 'data_dir':
+                    print(config.data_dir)
+                    print(val)
                     # If data_dir, only compare last
                     if Path(config.data_dir).name != Path(val).name:
                         selected = False
@@ -692,6 +694,21 @@ def nicename(name, mode='dict'):
         return '{:0.2f}'.format(name)
     elif mode == 'n_trueclass_ratio':
         return '{:d}'.format(int(name))
+    elif mode == 'data_dir':
+        # Right now this is only used for pn_normalization experiment
+        if Path(name).name == Path(
+            './datasets/proto/concentration').name:
+            return 'low'
+        elif Path(name).name == Path(
+            './datasets/proto/concentration_mask_row_0').name:
+            return 'medium'
+        elif Path(name).name == Path(
+            './datasets/proto/concentration_mask_row_0.6').name:
+            return 'high'
+        elif name == 'data_dir':
+            return 'spread'
+        else:
+            return '??'
     else:
         return nicename_dict.get(name, name)  # get(key, default value)
 
