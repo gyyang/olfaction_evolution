@@ -327,7 +327,7 @@ def pn_normalization():
     config = FullConfig()
     config.max_epoch = 15
 
-    config.direct_glo = True
+    config.skip_orn2pn = True
     config.replicate_orn_with_tiling = False
     config.N_ORN_DUPLICATION = 1
 

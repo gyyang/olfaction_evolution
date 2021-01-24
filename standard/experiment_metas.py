@@ -78,10 +78,10 @@ def meta_standard():
     config.kc_prune_weak_weights = True
 
     config.replicate_orn_with_tiling = True
-    # config.N_ORN_DUPLICATION = 1
+    config.N_ORN_DUPLICATION = 1
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
-    # config.skip_orn2pn = True
+    config.skip_orn2pn = True
 
     config.meta_lr = 5e-4
     config.N_CLASS = 2
@@ -111,6 +111,45 @@ def meta_standard_analysis(path):
 
     # analysis_activity.distribution_activity(path, ['glo', 'kc'])
     # analysis_activity.sparseness_activity(path, ['glo', 'kc'])
+
+
+def meta_control_standard():
+    config = MetaConfig()
+    # config.data_dir = './datasets/proto/relabel_200_100'
+    config.data_dir = './datasets/proto/standard'
+    config.kc_dropout_rate = 0.
+    config.kc_prune_weak_weights = True
+
+    config.N_ORN_DUPLICATION = 1
+    config.pn_norm_pre = 'batch_norm'
+    config.kc_norm_pre = 'batch_norm'
+    config.skip_orn2pn = True
+
+    config.meta_lr = 5e-4
+    config.N_CLASS = 2
+    config.meta_batch_size = 32
+    config.meta_num_samples_per_class = 16
+    config.meta_print_interval = 100
+    config.output_max_lr = 2.0
+    config.meta_update_lr = .2
+    config.metatrain_iterations = 10000
+    config.meta_trainable_lr = True
+
+    config_ranges = OrderedDict()
+    config_ranges['meta_lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
+    config_ranges['N_CLASS'] = [2, 3, 4]
+    config_ranges['meta_update_lr'] = [.1, .2, .5, 1.0]
+    config_ranges['meta_num_samples_per_class'] = [4, 8, 16, 32]
+    config_ranges['kc_dropout_rate'] = [0., 0.25, 0.5, 0.75]
+    config_ranges['kc_prune_weak_weights'] = [True, False]
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    config_ranges['kc_norm_pre'] = [None, 'batch_norm']
+    config_ranges['skip_orn2pn'] = [True, False]
+    config_ranges['data_dir'] = ['./datasets/proto/standard',
+                                 './datasets/proto/relabel_200_100']
+
+    configs = vary_config(config, config_ranges, mode='control')
+    return configs
 
 
 def meta_trainable_lr():
