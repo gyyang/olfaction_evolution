@@ -351,6 +351,7 @@ def pn_norm():
     spreads = [0, 0.3, 0.6, 0.9]
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
+    config_ranges['kc_prune_weak_weights'] = [True, False]
     config_ranges['data_dir'] = datasets
     config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
                                     'fixed_activity']
