@@ -610,15 +610,4 @@ def load_data(data_dir):
 
 
 if __name__ == '__main__':
-    # save_proto()
-    # save_proto_all()
-    # proto_path = os.path.join(PROTO_PATH, '_threshold_onehot')
-    # train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
-    # _make_hallem_dataset()
-    # _generate_from_hallem()
-    # save_proto()
-
-    import configs
-    config = configs.input_ProtoConfig()
-    config.N_CLASS = 20
-    save_proto(config, folder_name='standard_20')
+    pass
