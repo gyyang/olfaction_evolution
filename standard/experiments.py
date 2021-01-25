@@ -353,8 +353,9 @@ def pn_norm():
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
     config_ranges['kc_prune_weak_weights'] = [True, False]
     config_ranges['data_dir'] = datasets
-    config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
-                                    'fixed_activity']
+    # config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
+    #                                 'fixed_activity']
+    config_ranges['pn_norm_pre'] = ['olsen', 'fixed_activity']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
