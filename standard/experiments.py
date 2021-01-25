@@ -376,7 +376,7 @@ def pn_norm_analysis(path):
     ykeys = ['val_acc', 'K_smart']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre')
-    select_dict = {'spread_orn_activity': 0.9, 'kc_prune_weak_weights': False}
+    select_dict = {'spread_orn_activity': 0.6, 'kc_prune_weak_weights': False}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
     sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',

@@ -62,9 +62,6 @@ class OlsenNorm(nn.Module):
                             self.num_features * 2.)
         rho = torch.clamp(self.rho, 0.01, 1.)
         m = torch.clamp(self.m, 0.05, 5)
-        # r_max = 25
-        # rho = 0.1
-        # m = 0.5
 
         input_sum = torch.sum(input, dim=-1, keepdim=True) + 1e-6
         input_exponentiated = input ** self.exponent
