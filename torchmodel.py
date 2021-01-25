@@ -52,17 +52,22 @@ class OlsenNorm(nn.Module):
         self.r_max = nn.Parameter(torch.Tensor(1, num_features))
         self.rho = nn.Parameter(torch.Tensor(1, num_features))
         self.m = nn.Parameter(torch.Tensor(1, num_features))
-
+        self.num_features = num_features
         nn.init.constant_(self.r_max, num_features / 2.)
-        nn.init.constant_(self.rho, 1.)
-        nn.init.constant_(self.m, 0.01)  # should this scale with num_features?
+        nn.init.constant_(self.rho, 0.1)
+        nn.init.constant_(self.m, 0.5)  # should this scale with num_features?
 
     def forward(self, input):
+        r_max = torch.clamp(self.r_max, self.num_features / 10.,
+                            self.num_features * 2.)
+        rho = torch.clamp(self.rho, 0.01, 1.)
+        m = torch.clamp(self.m, 0.05, 5)
+
         input_sum = torch.sum(input, dim=-1, keepdim=True) + 1e-6
         input_exponentiated = input ** self.exponent
-        numerator = self.r_max * input_exponentiated
-        denominator = (input_exponentiated + self.rho +
-                       (self.m * input_sum) ** self.exponent)
+        numerator = r_max * input_exponentiated
+        denominator = (input_exponentiated + rho +
+                       (m * input_sum) ** self.exponent)
         return torch.div(numerator, denominator)
 
 

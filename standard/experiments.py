@@ -370,16 +370,16 @@ def pn_norm_relabel():
 
 
 def pn_norm_analysis(path):
-    select_dict = {}
+    select_dict = {'kc_prune_weak_weights': False}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     ykeys = ['val_acc', 'K_smart']
-    # sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
-    #                 loop_key='pn_norm_pre')
-    select_dict = {'spread_orn_activity': 0.}
+    sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
+                    loop_key='pn_norm_pre')
+    select_dict = {'spread_orn_activity': 0.9, 'kc_prune_weak_weights': False}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
-    # sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
-    #            legend_key='pn_norm_pre')
+    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
+               legend_key='pn_norm_pre')
 
     # import tools
     # rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
