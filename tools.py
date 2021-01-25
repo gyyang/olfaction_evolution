@@ -588,11 +588,8 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
                 res[k].append(v)
 
         # Add pn2kc peak information
-        _singlepeak = has_singlepeak(d)
-        _nobadkc = has_nobadkc(d)
-        res['has_singlepeak'].append(_singlepeak)
-        res['no_badkc'].append(_nobadkc)
-        res['clean_pn2kc'].append(_singlepeak and _nobadkc)
+        clean_pn2kc = has_nobadkc(d) and has_singlepeak(d)
+        res['clean_pn2kc'].append(clean_pn2kc)
 
     loss_keys = list()
     for key, val in res.items():
