@@ -423,7 +423,7 @@ class FullModel(CustomModule):
                 layer2_w = get_sparse_mask(config.N_PN, config.N_KC,
                                            config.kc_inputs)
                 self.layer2.weight = nn.Parameter(torch.from_numpy(
-                    layer2_w).float())
+                    layer2_w.T).float())
 
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
