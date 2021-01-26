@@ -18,6 +18,7 @@ import task
 import tools
 import standard.analysis_pn2kc_training
 import settings
+import standard.analysis_activity as analysis_activity
 
 use_torch = settings.use_torch
 
@@ -117,7 +118,8 @@ def plot_activity(rnn_outputs, dir_ix, threshold, path):
     mean_activities = [np.mean(x, axis=0) for x in rnn_outputs]
     neurons_active = [np.sum(x > threshold) for x in mean_activities]
     log_neurons_active = np.log(neurons_active)
-    xticks = [50, 500, 3000]
+    n_neuron = rnn_outputs.shape[-1]
+    xticks = [50, 500, n_neuron]
 
 
     fig = plt.figure(figsize=(1.5, 1.2 ))
@@ -133,6 +135,7 @@ def plot_activity(rnn_outputs, dir_ix, threshold, path):
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
+    ax.grid(axis='y')
 
     fig_name = '__' + str(dir_ix) + '_activity'
     tools.save_fig(path, fig_name, pdf=True)
@@ -165,8 +168,10 @@ if __name__ == '__main__':
 
     # path = './files/rnn'
     # path = './files/rnn_wdropout'
-    # path = './files/rnn_relabel'
-    path = './files/rnn_relabel_prune'
+    path = './files/rnn_relabel'
+    # path = './files/rnn_relabel_noreactivation'
+    # path = './files/rnn_relabel_prune'
+    # path = './files/rnn_relabel_prune'
 
     from standard.analysis_activity import load_activity_torch
 
@@ -175,7 +180,8 @@ if __name__ == '__main__':
     # select_dict = {'rec_dropout_rate': 0.1, 'TIME_STEPS': 2}
     # select_dict = {'weight_dropout_rate': 0.0, 'TIME_STEPS': 2}
     # select_dict = {'diagonal': False, 'lr': 5e-4}
-    select_dict = {'TIME_STEPS': 2, 'lr': 1e-3}
+    select_dict = {'TIME_STEPS': 2, 'lr': 1e-3, 'diagonal': False,
+                   'data_dir': './datasets/proto/relabel_200_100'}
     dir_ix = 0
 # =============================================================================
 #     if dir_ix == 0:
@@ -183,12 +189,15 @@ if __name__ == '__main__':
 #     else:
 #         analyze_t_greater(path, dir_ix)
 # =============================================================================
-    threshold = 0.05
+    threshold = 0.15  # TODO: might need to smarter, more robust method
 
     save_path = tools.get_modeldirs(path, select_dict=select_dict)[0]
     config = tools.load_config(save_path)
     w_rnn = tools.load_pickle(save_path)['w_rnn']  # (from, to)
     rnn_outputs = _load_activity(save_path)  # (time step, odor, neuron)
+
+    log = tools.load_log(save_path)
+    print('Val acc', str(log['val_acc'][-1]))
 
     plot_activity(rnn_outputs, dir_ix=dir_ix, path=path, threshold=threshold)
 
@@ -199,12 +208,13 @@ if __name__ == '__main__':
     active_ixs = []
     assert rnn_outputs.shape[0] == config.TIME_STEPS + 1
     for i in range(config.TIME_STEPS+1):
-        pn = np.mean(rnn_outputs[i], axis=0)  # average across odors
-        ix = np.argsort(pn)[::-1]
-        pn_cutoff= np.argmax(pn[ix] < threshold)
-        pn_ix = ix[:pn_cutoff]
+        mean_activity = np.mean(rnn_outputs[i], axis=0)  # average across odors
+        ix = np.argsort(mean_activity)[::-1]
+        # TODO: this code not robust. Fix!
+        sorted_activity = mean_activity[ix]
+        active_ix = ix[sorted_activity > threshold]
         ixs.append(ix)
-        active_ixs.append(pn_ix)
+        active_ixs.append(active_ix)
 
     ## plot activity
     # ORN activation
@@ -214,7 +224,7 @@ if __name__ == '__main__':
 
         _easy_weights(rnn_outputs[t][:100, ind], dir_ix=dir_ix,
                       y_label='Odors', x_label='Neuron',
-                      xticks=xticks, title='T='+str(t),
+                      xticks=xticks, title='Step='+str(t),
                       save_path=path, c_label='Activity')
 
     ## plot weight
@@ -222,7 +232,7 @@ if __name__ == '__main__':
     ind_max = np.argmax(w_orn, axis=1)
     ind_sort = np.argsort(ind_max)
     w_orn_reshaped = w_orn[ind_sort, :]
-    _easy_weights(w_orn_reshaped.T, x_label='T=0', y_label='T=1', extra_str='reshaped', vlim=.4,
+    _easy_weights(w_orn_reshaped.T, x_label='Step=0', y_label='Step=1', extra_str='reshaped', vlim=.4,
                   dir_ix=dir_ix, save_path=path)
 
     w_orn_mean = tools._reshape_worn(w_orn, N_OR, mode='tile')
@@ -230,17 +240,36 @@ if __name__ == '__main__':
     ind_max = np.argmax(w_orn_mean, axis=0)
     ind_sort = np.argsort(ind_max)
     w_orn_mean = w_orn_mean[:, ind_sort]
-    _easy_weights(w_orn_mean.T, x_label='T=0', y_label='T=1', extra_str='mean',
+    _easy_weights(w_orn_mean.T, x_label='Step=0', y_label='Step=1', extra_str='mean',
                   dir_ix=dir_ix, save_path=path)
 
     w_glo = w_rnn[active_ixs[1], :]
-    _easy_weights(w_glo.T, x_label='T=1', y_label='T=2',
+    _easy_weights(w_glo.T, x_label='Step=1', y_label='Step=2',
                   dir_ix=dir_ix, save_path=path)
     rnn_distribution(w_glo, dir_ix, path)
     rnn_sparsity(w_glo, dir_ix, path)
 
     w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
+    
+    # Plot distribution of activity
+    # Third time step activity for active neurons
+    figpath = tools.get_experiment_name(save_path)
+    activity_threshold = threshold
+    data = rnn_outputs[2][:, active_ixs[2]]
+    data1 = np.mean(data > activity_threshold, axis=1)
+    fname = 'spars_T3_' + tools.get_model_name(save_path)
+    analysis_activity._distribution(data1, figpath, name=fname, density=False,
+                  xlabel='% of Active T3 neurons', xrange=(0,1),
+                  ylabel='Number of Odors',
+                  title='Mean {:0.2f}'.format(data1.mean()))
 
+    data2 = np.mean(data > activity_threshold, axis=0)
+    fname = 'spars_T3_2_' + tools.get_model_name(save_path)
+    analysis_activity._distribution(data2, figpath, name=fname, density=False,
+                  xlabel='% of Odors', xrange=(0,1),
+                  ylabel='Number of T3 neurons',
+                  title='Mean {:0.2f}'.format(data2.mean()))
+    
 # =============================================================================
 #     if config.TIME_STEPS == 3:
 #         pn_to_pn1 = w_rnn[active_ixs[0][:,None], active_ixs[1]]

@@ -53,7 +53,6 @@ class DataGenerator(object):
             self.metatrain_classes = unique_y[:int(0.5 * len(unique_y))]
             self.metaval_classes = unique_y[int(0.5 * len(unique_y)):]
 
-
         if np.mod(num_class, dim_output) != 0:
             raise ValueError('Now only supporting num_class multiples of dim_output')
 

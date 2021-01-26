@@ -4,6 +4,7 @@ from pathlib import Path
 
 import standard.experiments as experiments
 import standard.experiment_controls as experiment_controls
+import standard.experiment_metas as experiment_metas
 import tools
 import settings
 
@@ -11,13 +12,14 @@ import settings
 use_torch = settings.use_torch
 
 
-def local_train(config, path=None, train_arg=None, **kwargs):
+def local_train(config, path=None, **kwargs):
     """Train all models locally."""
     if use_torch:
         import torchtrain as train
+        import temp_meta.metatrain as metatrain
     else:
         import train
-        import mamlmetatrain
+        import mamlmetatrain as metatrain
 
     if path is None:
         path = './'
@@ -26,12 +28,12 @@ def local_train(config, path=None, train_arg=None, **kwargs):
     model_name = config.model_name
     config.save_path = os.path.join(path, 'files', experiment_name, model_name)
 
-    if train_arg is None:
+    use_metatrain = 'meta_lr' in dir(config)
+
+    if not use_metatrain:
         train.train(config, **kwargs)
-    elif train_arg == 'metatrain':
-        mamlmetatrain.train(config)
     else:
-        raise ValueError('training function is not recognized by keyword {}'.format(train_arg))
+        metatrain.train(config)
 
 
 def write_jobfile(cmd, jobname, sbatchpath='./sbatch/',
@@ -87,7 +89,7 @@ def write_jobfile(cmd, jobname, sbatchpath='./sbatch/',
     return jobfile
 
 
-def cluster_train(config, path, train_arg=None):
+def cluster_train(config, path):
     """Train all models locally."""
     experiment_name = config.experiment_name
     model_name = config.model_name
@@ -103,8 +105,13 @@ def cluster_train(config, path, train_arg=None):
 
     arg = '\'' + config.save_path + '\''
 
-    if train_arg == 'metatrain':
-        cmd = r'''python -c "import mamlmetatrain; mamlmetatrain.train_from_path(''' + arg + ''')"'''
+    use_metatrain = 'meta_lr' in dir(config)
+
+    if use_metatrain:
+        if use_torch:
+            cmd = r'''python -c "import temp_meta.metatrain as metatrain;metatrain.train_from_path(''' + arg + ''')"'''
+        else:
+            cmd = r'''python -c "import mamlmetatrain as metatrain;metatrain.train_from_path(''' + arg + ''')"'''
     else:
         if use_torch:
             cmd = r'''python -c "import torchtrain; torchtrain.train_from_path(''' + arg + ''')"'''
@@ -116,7 +123,7 @@ def cluster_train(config, path, train_arg=None):
     subprocess.call(['sbatch', jobfile])
 
 
-def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
+def train_experiment(experiment, use_cluster=False, path=None,
                      testing=False, n_pn=None, **kwargs):
     """Train model across platforms given experiment name.
 
@@ -136,7 +143,7 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
             path = Path('./')
 
     print('Training {:s} experiment'.format(experiment))
-    experiment_files = [experiments, experiment_controls]
+    experiment_files = [experiments, experiment_controls, experiment_metas]
 
     experiment_found = False
     for experiment_file in experiment_files:
@@ -163,15 +170,15 @@ def train_experiment(experiment, use_cluster=False, path=None, train_arg=None,
             config.max_epoch = 2
 
         if use_cluster:
-            cluster_train(config, path=path, train_arg=train_arg)
+            cluster_train(config, path=path)
         else:
-            local_train(config, path=path, train_arg=train_arg, **kwargs)
+            local_train(config, path=path, **kwargs)
 
 
 def analyze_experiment(experiment, n_pn=None):
     path = './files/' + experiment
 
-    experiment_files = [experiments, experiment_controls]
+    experiment_files = [experiments, experiment_controls, experiment_metas]
 
     experiment_found = False
     for experiment_file in experiment_files:

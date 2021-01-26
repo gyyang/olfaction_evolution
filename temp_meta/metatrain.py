@@ -1,35 +1,47 @@
 import os
+import sys
+import time
+from collections import defaultdict
+from collections import OrderedDict
+
+# for some reason this line is necessary on cluster even if numpy is not used
+import numpy as np
+
 import torch
+import torch.nn as nn
+from torchmeta.modules import MetaModule
+
+rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(rootpath)
+
 import temp_meta.metamodel
 import configs
-import torch.nn as nn
 import tools
 from mamldataset import DataGenerator
-import time
+from torchtrain import logging
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-import torch
-from collections import OrderedDict
-from torchmeta.modules import MetaModule
 
 
 def gradient_update_parameters(model,
                                loss,
                                update_lr,
-                               first_order=False):
+                               params=None,
+                               first_order=False,
+                               max_update_lr=1.0):
     if not isinstance(model, MetaModule):
         raise ValueError('The model must be an instance of `torchmeta.modules.'
                          'MetaModule`, got `{0}`'.format(type(model)))
 
-    params = OrderedDict(model.meta_named_parameters())
-    new_params = dict()
+    if params is None:
+        params = OrderedDict(model.meta_named_parameters())
+
+    new_params = OrderedDict()
     for name, param in params.items():
         if 'layer3.weight' in name:
-            grads = torch.autograd.grad(loss,
-                                       param,
-                                       create_graph=not first_order)
-            new_params[name] = param - update_lr * grads[0]
+            grads = torch.autograd.grad(loss, param,
+                                        create_graph=not first_order)
+            new_params[name] = param - torch.clamp_max(update_lr, max_update_lr) * grads[0]
         else:
             new_params[name] = param
     return new_params
@@ -58,7 +70,8 @@ def get_accuracy(logits, targets):
     return torch.mean(predictions.eq(targets).float())
 
 
-def run_per_batch(model, loss, split_size, data_x, data_t, update_lr):
+def run_per_batch(model, loss, split_size, data_x, data_t, update_lr,
+                  max_update_lr=1.0):
     pre_acc_av = torch.tensor(0., device=device)
     pre_loss_av = torch.tensor(0., device=device)
     post_acc_av = torch.tensor(0., device=device)
@@ -70,20 +83,23 @@ def run_per_batch(model, loss, split_size, data_x, data_t, update_lr):
             enumerate(zip(data_x, data_t)):
         train_x, val_x = torch.split(x, split_size, dim=0)
         train_t, val_t = torch.split(t, split_size, dim=0)
-        
+
+        params = None
         # Train
-        pre_y = model(train_x)
+        pre_y = model(train_x, params=params)
         pre_loss = loss(pre_y, torch.max(train_t, dim=-1)[1])
-    
+
         with torch.no_grad():
             pre_acc = get_accuracy(pre_y, train_t)
-    
+
         model.zero_grad()
         params = gradient_update_parameters(
             model,
             pre_loss,
             update_lr=update_lr,
-            first_order=False)
+            first_order=False,
+            max_update_lr=max_update_lr
+        )
 
         with torch.no_grad():
             post_y = model(train_x, params=params)
@@ -109,6 +125,80 @@ def run_per_batch(model, loss, split_size, data_x, data_t, update_lr):
         val_acc_av.div_(l), val_loss_av.div_(l)
 
 
+def run_per_batch_tmp(model, loss, split_size, data_x, data_t, update_lr,
+                      num_inner_updates=1, max_update_lr=1.0):
+    """Tmp testing multi update."""
+    pre_acc_av = torch.tensor(0., device=device)
+    pre_loss_av = torch.tensor(0., device=device)
+    post_acc_av = torch.tensor(0., device=device)
+    post_loss_av = torch.tensor(0., device=device)
+    val_acc_av = torch.tensor(0., device=device)
+    val_loss_av = torch.tensor(0., device=device)
+    l = data_x.shape[0]
+    # For each learning episode
+    for task_ix, (x, t) in \
+            enumerate(zip(data_x, data_t)):
+        train_x, val_x = torch.split(x, split_size, dim=0)
+        train_t, val_t = torch.split(t, split_size, dim=0)
+
+        params = OrderedDict(model.meta_named_parameters())
+        # Train
+        act0 = train_x
+        if model.config.N_ORN_DUPLICATION > 1:
+            act0 = act0.repeat(1, model.config.N_ORN_DUPLICATION)
+
+        act1 = model.layer1(act0, params=model.get_subdict(params, 'layer1'))
+        act2 = model.layer2(act1, params=model.get_subdict(params, 'layer2'))
+
+        # meta_update_keys = [k for k in params.keys() if 'layer3.weight' in k]
+        meta_update_keys = [k for k in params.keys() if 'layer3' in k]
+
+        # first_order = False if num_inner_updates < 2 else True
+        first_order = False
+
+        for i_inner_update in range(num_inner_updates):
+            pre_y = model.layer3(act2, params=model.get_subdict(params,'layer3'))
+            pre_loss = loss(pre_y, torch.max(train_t, dim=-1)[1])
+
+            with torch.no_grad():
+                pre_acc = get_accuracy(pre_y, train_t)
+
+            if i_inner_update == 0:
+                pre_acc_av += pre_acc
+                pre_loss_av += pre_loss
+
+            model.zero_grad()
+
+            clamped_lr = torch.clamp_max(update_lr, max_update_lr)
+            grads = torch.autograd.grad(pre_loss, [params[k] for k in meta_update_keys],
+                                        create_graph=not first_order)
+            for i_key, key in enumerate(meta_update_keys):
+                params[key] = params[key] - clamped_lr * grads[i_key]
+
+        with torch.no_grad():
+            post_y = model(train_x, params=params)
+            post_loss = loss(post_y, torch.max(train_t, dim=-1)[1])
+            post_acc = get_accuracy(post_y, train_t)
+
+        # Test
+        val_y = model(val_x, params=params)
+        val_loss = loss(val_y, torch.max(val_t, dim=-1)[1])
+
+        with torch.no_grad():
+            val_acc = get_accuracy(val_y, val_t)
+
+        # pre_acc_av += pre_acc
+        # pre_loss_av += pre_loss
+        post_acc_av += post_acc
+        post_loss_av += post_loss
+        val_acc_av += val_acc
+        val_loss_av += val_loss
+
+    return pre_acc_av.div_(l), pre_loss_av.div_(l), \
+           post_acc_av.div_(l), post_loss_av.div_(l), \
+           val_acc_av.div_(l), val_loss_av.div_(l)
+
+
 def train(config: configs.MetaConfig):
     dataset_config = tools.load_config(config.data_dir)
     dataset_config.update(config)
@@ -121,17 +211,15 @@ def train(config: configs.MetaConfig):
     tools.save_config(config, save_path=config.save_path)
 
     # model
-    model = temp_meta.metamodel.model(config=config)
+    model = temp_meta.metamodel.Model(config=config)
     model.to(device=device)
     meta_optimizer = torch.optim.Adam(model.parameters(),
                                       lr=config.meta_lr)
 
     meta_update_lr = (torch.ones(1) * config.meta_update_lr).to(device)
-    meta_update_lr.requires_grad = False
+    meta_update_lr.requires_grad = config.meta_trainable_lr
     update_optimizer = torch.optim.Adam([meta_update_lr],
                                         lr=config.meta_lr*10)
-
-
 
     print('MODEL VARIABLES')
     for k, v in model.named_parameters():
@@ -151,6 +239,9 @@ def train(config: configs.MetaConfig):
 
     PRINT_INTERVAL = config.meta_print_interval
     loss = nn.CrossEntropyLoss()
+
+    # Make logger
+    log = defaultdict(list)
     
     start_time = time.time()
     for itr in range(config.metatrain_iterations):
@@ -168,7 +259,9 @@ def train(config: configs.MetaConfig):
                           num_class * num_samples_per_class, 
                           train_x_torch,
                           train_t_torch,
-                          update_lr=meta_update_lr)
+                          update_lr=meta_update_lr,
+                          max_update_lr=config.output_max_lr
+                          )
 
         metatrain_val_loss.backward()
         meta_optimizer.step()
@@ -178,14 +271,15 @@ def train(config: configs.MetaConfig):
             print('Iteration ' + str(itr))
 
             if itr > 0:
+                print('SAVING')
                 if config.save_every_epoch:
-                    print('SAVING')
                     model.save_pickle(itr)
-                    model.save_pickle()
-                    model.save()
+                model.save_pickle()
+                model.save()
 
                 total_time = time.time() - start_time
                 print('Time taken {:0.1f}s'.format(total_time))
+                print('Iterations/second {:0.2f}'.format(int(itr/total_time)))
                 print('Meta-train')
                 print('train_pre loss: {}, acc: {}'.format(
                     metatrain_train_pre_loss, metatrain_train_pre_acc))
@@ -206,7 +300,9 @@ def train(config: configs.MetaConfig):
                               num_class * num_samples_per_class,
                               test_x_torch,
                               test_t_torch,
-                              update_lr=meta_update_lr)
+                              update_lr=meta_update_lr,
+                              max_update_lr=config.output_max_lr
+                              )
 
             print('Meta-val')
             print('train_pre loss: {}, acc: {}'.format(
@@ -215,6 +311,22 @@ def train(config: configs.MetaConfig):
                 metaval_train_post_loss, metaval_train_post_acc))
             print('val_post loss: {}, acc: {}'.format(
                 metaval_val_loss, metaval_val_acc))
+
+            log['train_pre_acc'].append(metaval_train_pre_acc.item())
+            log['train_pre_loss'].append(metaval_train_pre_loss.item())
+            log['train_post_acc'].append(metaval_train_post_acc.item())
+            log['train_post_loss'].append(metaval_train_post_loss.item())
+            log['val_acc'].append(metaval_val_acc.item())
+            log['val_loss'].append(metaval_val_loss.item())
+            log['meta_update_lr'].append(meta_update_lr.item())
+            log['epoch'].append(itr)  # named epoch for consistency
+            logging(log, model, config)
+
+
+def train_from_path(path):
+    """Train from a path with a config file in it."""
+    config = tools.load_config(path)
+    train(config)
 
 
 def main():
@@ -225,10 +337,10 @@ def main():
     config = configs.MetaConfig()
     config.meta_lr = .001
     config.N_CLASS = 5 #10
-    config.save_every_epoch = True
+    config.save_every_epoch = False
     config.meta_batch_size = 32 #32
     config.meta_num_samples_per_class = 16 #16
-    config.meta_print_interval = 500
+    config.meta_print_interval = 100
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
@@ -236,14 +348,15 @@ def main():
     config.meta_update_lr = .2
     config.prune = False
 
-    config.metatrain_iterations = 10000
+    config.metatrain_iterations = 300
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
 
     config.kc_dropout = False
 
     # config.data_dir = '../datasets/proto/meta_dataset'
-    config.data_dir = '../datasets/proto/relabel_200_100'
+    config.data_dir = '../datasets/proto/standard'
+    # config.data_dir = '../datasets/proto/relabel_200_100'
     config.save_path = '../files/torch_metalearn/000000'
 
     try:
@@ -251,6 +364,7 @@ def main():
     except FileNotFoundError:
         pass
     train(config)
+
 
 if __name__ == "__main__":
     main()

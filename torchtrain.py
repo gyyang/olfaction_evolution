@@ -18,19 +18,22 @@ from standard.analysis_pn2kc_training import _compute_sparsity
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def _log_full_model_train_pn2kc(log, model, res, config):
+def _log_full_model_train_pn2kc(log, model, config, res=None):
     w_glo = model.w_glo
     w_glo[w_glo < 1e-9] = 1e-9  # finite range for log
-    kcs = res['kc'].cpu().numpy()  # (n_odor, n_neuron)
+    if res is not None:
+        kcs = res['kc'].cpu().numpy()  # (n_odor, n_neuron)
 
-    coding_level = (kcs > 0).mean()
-    coding_level_per_kc = kcs.mean(axis=0)
-    coding_level_per_odor = kcs.mean(axis=1)
-    log['coding_level'].append(coding_level)
-    hist, _ = np.histogram(coding_level_per_kc, bins=log['activity_bins'])
-    log['coding_level_per_kc'].append(hist)
-    hist, _ = np.histogram(coding_level_per_odor, bins=log['activity_bins'])
-    log['coding_level_per_odor'].append(hist)
+        coding_level = (kcs > 0).mean()
+        coding_level_per_kc = kcs.mean(axis=0)
+        coding_level_per_odor = kcs.mean(axis=1)
+        log['coding_level'].append(coding_level)
+        hist, _ = np.histogram(coding_level_per_kc, bins=log['activity_bins'])
+        log['coding_level_per_kc'].append(hist)
+        hist, _ = np.histogram(coding_level_per_odor, bins=log['activity_bins'])
+        log['coding_level_per_odor'].append(hist)
+
+        print('KC coding level={}'.format(np.round(coding_level, 2)))
 
     # Store distribution of flattened weigths
     log_hist, _ = np.histogram(np.log(w_glo.flatten()),
@@ -70,16 +73,19 @@ def _log_full_model_train_pn2kc(log, model, res, config):
     log['K'].append(K)
     log['bad_KC'].append(bad_KC)
 
-    print('KC coding level={}'.format(np.round(coding_level, 2)))
     print('Bad KCs (fixed, inferred) ={}, {}'.format(bad_KC,
                                                      bad_KC_inferred))
     print('K (fixed, inferred) ={}, {}'.format(K, K_inferred))
     return log
 
 
-def logging(log, model, res, config):
+def logging(log, model, config, res=None):
     if config.model == 'full':
-        w_orn = model.w_orn
+        if config.receptor_layer:
+            # Compute effective w_orn
+            w_orn = np.dot(model.w_or, model.w_orn)
+        else:
+            w_orn = model.w_orn
         glo_score, _ = tools.compute_glo_score(w_orn, config.N_ORN)
         log['glo_score'].append(glo_score)
         print('Glo score ' + str(glo_score))
@@ -89,7 +95,7 @@ def logging(log, model, res, config):
         print('Sim score ' + str(sim_score))
 
         if config.train_pn2kc:
-            log = _log_full_model_train_pn2kc(log, model, res, config)
+            log = _log_full_model_train_pn2kc(log, model, config, res)
 
     tools.save_log(config.save_path, log)
     return log
@@ -175,7 +181,7 @@ def train(config, reload=False, save_everytrainloss=False):
         log['train_acc'].append(res['acc'])
         log['val_acc'].append(res_val['acc'])
 
-        log = logging(log, model, res_val, config)
+        log = logging(log, model, config, res_val)
 
         if ep > 0:
             time_spent = time.time() - start_time

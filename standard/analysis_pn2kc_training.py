@@ -2,6 +2,7 @@ import os
 import sys
 import pickle
 import glob
+from pathlib import Path
 from collections import defaultdict
 
 import numpy as np
@@ -9,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.animation as animation
 from scipy.signal import savgol_filter
-from scipy.signal import find_peaks
+from sklearn.linear_model import LinearRegression
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
@@ -31,158 +32,6 @@ def _set_colormap(nbins):
     cmap_name = 'my_list'
     cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=nbins)
     return cm
-
-
-def check_single_peak_obsolete(bins, hist, threshold):
-    """Check if an array of histogram has double peaks.
-
-    Args:
-        bins: (n_networks, n_histogram_points)
-        hist: (n_networks, n_histogram_points)
-        threshold: (n_networks)
-
-    Returns:
-        peak_ind: bool array (n_networks), True if single peak
-    """
-    # TODO: This has a problem if lin_bins doesn't cover the second peak
-    peak_ind = np.zeros_like(threshold).astype(np.bool)
-    for i, thres in enumerate(threshold):
-        # find location of threshold
-        ind_thres = np.where(bins[i, :-1] > thres)[0][0]
-        # with=10, heuristics
-        hist_ = hist[i][ind_thres:]
-        peaks, properties = find_peaks(hist_, width=20)
-        # check if there's an additional peak undetected
-        peak_loc = np.argmax(hist_)
-        peak_ind[i] = len(peaks) == 1 and abs(peaks[0] - peak_loc) < 5
-    return peak_ind
-
-
-def has_nobadkc(modeldir, bad_kc_threshold=0.2):
-    """Check if model has too many bad KCs."""
-    log = tools.load_log(modeldir)
-    # After training, bad KC proportion should lower 'bad_kc_threshold'
-    return log['bad_KC'][-1] < bad_kc_threshold
-
-
-def filter_modeldirs_badkc(modeldirs, bad_kc_threshold=0.2):
-    """Filter model dirs with too many bad KCs."""
-    return [d for d in modeldirs if has_nobadkc(d, bad_kc_threshold)]
-
-
-def has_singlepeak(modeldir, peak_threshold=None):
-    """Check if model has a single peak."""
-    # TODO: Use this method throughout to replace similar methods
-    log = tools.load_log(modeldir)
-    config = tools.load_config(modeldir)
-    if peak_threshold is None:
-        peak_threshold = 2./config.N_PN  # heuristic
-
-    if config.kc_prune_weak_weights:
-        thres = config.kc_prune_threshold
-    else:
-        thres = log['thres_inferred'][-1]  # last epoch
-    if len(log['lin_bins'].shape) == 1:
-        bins = log['lin_bins'][:-1]
-    else:
-        bins = log['lin_bins'][-1, :-1]
-    bin_size = bins[1] - bins[0]
-    hist = log['lin_hist'][-1]  # last epoch
-    # log['lin_bins'] shape (nbin+1), log['lin_hist'] shape (n_epoch, nbin)
-    ind_thres = np.argsort(np.abs(bins - thres))[0]
-    ind_grace = int(0.01 / bin_size)  # grace distance to start find peak
-    hist_abovethres = hist[ind_thres + ind_grace:]
-    ind_peak = np.argmax(hist_abovethres)
-    # Value at threshold and at peak
-    thres_value = hist_abovethres[0]
-    peak_value = hist_abovethres[ind_peak]
-    if (ind_peak + ind_grace) * bin_size <= peak_threshold or (
-            peak_value < 1.3 * thres_value):
-        # peak should be at least 'peak_threshold' away from threshold
-        return False
-    else:
-        return True
-
-
-def filter_modeldirs_badpeak(modeldirs, peak_threshold=None):
-    """Filter model dirs without a strong second peak."""
-    return [d for d in modeldirs if has_singlepeak(d, peak_threshold)]
-
-
-def filter_modeldirs(modeldirs, exclude_badkc=False, exclude_badpeak=False):
-    """Select model directories.
-
-    Args:
-        modeldirs: list of model directories
-        exclude_badkc: bool, if True, exclude models with too many bad KCs
-        exclude_badpeak: bool, if True, exclude models with bad peaks
-
-    Return:
-        modeldirs: list of filtered model directories
-    """
-    print('Analyzing {} model directories'.format(len(modeldirs)))
-    if exclude_badkc:
-        modeldirs = filter_modeldirs_badkc(modeldirs)
-        print('{} remain after filtering bad kcs'.format(len(modeldirs)))
-    if exclude_badpeak:
-        modeldirs = filter_modeldirs_badpeak(modeldirs)
-        print('{} remain after filtering bad peaks'.format(len(modeldirs)))
-    return modeldirs
-
-
-def do_everything(path, filter_peaks=False, redo=False, range=2, select_dict=None):
-    def _get_K_obsolete(res):
-        # GRY: Not sure what this function is doing
-        n_model, n_epoch = res['sparsity'].shape[:2]
-        Ks = np.zeros((n_model, n_epoch))
-        bad_KC = np.zeros((n_model, n_epoch))
-        for i in range(n_model):
-            if res['kc_prune_weak_weights'][i]:
-                Ks[i] = res['K'][i]
-            else:
-                Ks[i] = res['K_inferred'][i]
-
-                # sparsity = res['sparsity'][i, j]
-                # Ks[i, j] = sparsity[sparsity>0].mean()
-                # bad_KC[i,j] = np.sum(sparsity==0)/sparsity.size
-        res['K_inferred'] = Ks
-        res['bad_KC'] = bad_KC
-
-    d = os.path.join(path)
-    files = glob.glob(d)
-    res = defaultdict(list)
-    for f in files:
-        temp = tools.load_all_results(f, argLast=False, select_dict=select_dict)
-        dict_methods.chain_defaultdicts(res, temp)
-
-    if redo:
-        wglos = tools.load_pickles(path, 'w_glo')
-        for i, wglo in enumerate(wglos):
-            w = wglo.flatten()
-            hist, bins = np.histogram(w, bins=1000, range=[0, range])
-            res['lin_bins'][i] = bins
-            res['lin_hist'][i][-1,:] = hist #hack
-        # _get_K(res)
-
-    badkc_ind = res['bad_KC'][:, -1] < 0.2
-    acc_ind = res['train_acc'][:, -1] > 0.5
-    if filter_peaks:
-        peak_ind = check_single_peak(res['lin_bins'],
-                                     res['lin_hist'][:, -1, :],  # last epoch
-                                     res['kc_prune_threshold'])
-    else:
-        peak_ind = np.ones_like(acc_ind)
-    ind = badkc_ind * acc_ind * peak_ind
-    for k, v in res.items():
-        res[k] = v[ind]
-
-    for k in res['lin_bins']:
-        res['lin_bins_'].append(k[:-1])
-    for k in res['lin_hist']:
-        res['lin_hist_'].append(savgol_filter(k[-1], window_length=21, polyorder=0))
-    for k, v in res.items():
-        res[k] = np.array(res[k])
-    return res
 
 
 def compute_sparsity(d, epoch, dynamic_thres=False, visualize=False,
@@ -214,15 +63,14 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
     return sparsity, thres
 
 
-def plot_sparsity(modeldir, epoch=None, dynamic_thres=True,
-                  visualize=False, thres=THRES, xrange=50, plot=True):
+def plot_sparsity(modeldir, epoch=None, xrange=50, plot=True):
     model_name = tools.get_model_name(modeldir)
 
     if epoch is not None and epoch != -1:
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
-    w = tools.load_pickles(modeldir, 'w_glo')[0]
-    sparsity, thres = _compute_sparsity(w, dynamic_thres, visualize, thres)
+    log = tools.load_log(modeldir)
+    sparsity = log['sparsity_inferred'][-1]
 
     if plot:
         if epoch is not None:
@@ -250,14 +98,14 @@ def _plot_sparsity(data, savename, xrange=50, yrange=None):
         vmax = np.max(hist)
         if vmax > 0.5:
             yrange = 1
-        elif vmax > 0.2:
+        elif vmax > 0.25:
             yrange = 0.5
         else:
-            yrange = 0.2
+            yrange = 0.25
 
-    xticks = [1, 7, 15, 25, 50]
+    xticks = [1, 5, 15, 25, 50]
     ax.set_xticks(xticks)
-    ax.set_yticks(np.linspace(0, yrange, 3))
+    ax.set_yticks([0, yrange])
     plt.ylim([0, yrange])
     plt.xlim([-1, xrange])
     # plt.title(data[data>0].mean())
@@ -322,7 +170,7 @@ def plot_sparsity_movie(modeldir):
 def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
     """Plot weight distribution from a single model path."""
     model_name = tools.get_model_name(modeldir)
-
+    config = tools.load_config(modeldir)
     if epoch is not None:
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
@@ -339,10 +187,11 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
         thres, res_fit = None, None
     else:
         thres, res_fit = infer_threshold(distribution)
+        if config.kc_prune_weak_weights:
+            thres = config.kc_prune_threshold
 
     save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
     save_name = os.path.join(save_path, '_' + model_name + '_')
-
     _plot_distribution(
         distribution, save_name + 'distribution' + string,
         thres=thres, xrange=xrange, **kwargs)
@@ -413,8 +262,6 @@ def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=Tru
         yticklabels = ['0', '1K', '2K', '3K', '4K', '>100K']
         ax.set_yticks(yticks)
         ax.set_yticklabels(yticklabels)
-        plt.ylim([0, yrange])
-        plt.xlim([0, xrange])
 
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
@@ -450,6 +297,7 @@ def _plot_distribution(data, savename, xrange=None, yrange=None, broken_axis=Tru
 
         ax.set_xlabel('PN to KC Weight')
         ax.set_ylabel('Number of Conn.')
+
         xticks = np.arange(0, xrange + 0.01, .5)
         ax.set_xticks(xticks)
         ax.set_xticklabels([str(x) for x in xticks])
@@ -526,32 +374,93 @@ def plot_log_distribution_movie(modeldir):
     anim.save(figname + 'log_distribution_movie.mp4', writer=writer, dpi=600)
 
 
-def plot_all_K(n_orns, Ks, plot_scatter=False,
-               plot_box=False, plot_data=True,
-               plot_fit=True, plot_angle=False,
-               plot_dim=False,
-               path='default'):
-    from sklearn.linear_model import LinearRegression
+def _get_K_vs_N(name_or_path):
+    """Get K vs N data for a name or path.
 
-    fig = plt.figure(figsize=(3.5, 2))
-    ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
-    ax.spines["right"].set_visible(False)
-    ax.spines["top"].set_visible(False)
-    
-    logKs = [np.log(K) for K in Ks]
-    med_logKs = np.array([np.median(np.log(K)) for K in Ks])
-    
-    if plot_scatter:
-        for n_orn, K, med_logK in zip(n_orns, Ks, med_logKs):
-            ax.scatter(np.log([n_orn]*len(K)), np.log(K), alpha=0.01, s=3)
-            ax.plot(np.log(n_orn), med_logK, '+', ms=15, color='black')
-            
-    
+    Returns:
+        n_orns: array like
+        Ks: array like
+    """
+    if name_or_path == 'dim':
+        # Get optimal K for high dimensionality as in Litwin-Kumar 17
+        from analytical.analyze_simulation_results import _load_result
+        n_orns, Ks = _load_result('all_value_withdim_m', v_name='dim')
+    elif name_or_path == 'angle':
+        # Optimal K for smallest angle change
+        fname = os.path.join(rootpath, 'files', 'analytical',
+                             'control_coding_level_summary')
+        summary = pickle.load(open(fname, "rb"))
+        # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
+        n_orns = summary['n_orns']
+        Ks = summary['opt_ks'].T
+    else:
+        # Should be a path
+        path = name_or_path
+
+        acc_min = 0.
+        path = path + '_pn'  # folders named XX_pn50, XX_pn100, ..
+        folders = glob.glob(path + '*')
+        n_orns = sorted([int(folder.split(path)[-1]) for folder in folders])
+        Ks = list()
+        new_n_orns = list()
+        for n_orn in n_orns:
+            _path = path + str(n_orn)
+            modeldirs = tools.get_modeldirs(_path, acc_min=acc_min)
+            modeldirs = tools.filter_modeldirs(
+                modeldirs, exclude_badkc=True, exclude_badpeak=True)
+            if len(modeldirs) == 0:
+                continue
+            # TODO: for meta need to be meta_lr
+            # TODO: Temporary disable sorting
+            # Use model with highest LR among good models
+            # modeldirs = tools.sort_modeldirs(modeldirs, 'lr')
+            # modeldirs = [modeldirs[-1]]
+
+            res = tools.load_all_results(modeldirs)
+            Ks.append(res['K_smart'])
+            new_n_orns.append(n_orn)
+        n_orns = np.array(new_n_orns)
+    return n_orns, Ks
+
+
+def _plot_K_vs_N(ax, name_or_path, results=None, plot_box=True, plot_fit=True):
+    """Plot one set of data."""
+    if name_or_path == 'data':
+        ax.plot(np.log(1000), np.log(100), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(120), '[2]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='bottom',
+                zorder=5)
+
+        ax.plot(np.log(1000), np.log(40), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(1000), np.log(32), '[3]', color=tools.darkblue,
+                horizontalalignment='center', verticalalignment='top',
+                zorder=5)
+        ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue, zorder=5)
+        ax.text(np.log(53), np.log(6), '[1]', color=tools.darkblue,
+                horizontalalignment='left', verticalalignment='top', zorder=5)
+        return ax
+
+    # Get data
+    if results is None:
+        results = dict()
+    if name_or_path in results.keys():
+        n_orns, Ks = results[name_or_path]
+    else:
+        n_orns, Ks = _get_K_vs_N(name_or_path)
+
+    def _fit(x, y):
+        x_fit = np.linspace(min(np.log(20), x[0]), max(np.log(1200), x[-1]), 3)
+        # model = Ridge()
+        model = LinearRegression()
+        model.fit(x[:, np.newaxis], y)
+        y_fit = model.predict(x_fit[:, np.newaxis])
+        return x_fit, y_fit, model
+
     def _pretty_box(x, positions, ax, color):
         flierprops = {'markersize': 3, 'markerfacecolor': color,
                       'markeredgecolor': 'none'}
         boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
-        medianprops = {'color': color*0.5}
+        medianprops = {'color': color*0.3}  # make darker
         whiskerprops = {'color': color}
         ax.boxplot(x, positions=positions, widths=0.06,
                    patch_artist=True, medianprops=medianprops,
@@ -559,93 +468,79 @@ def plot_all_K(n_orns, Ks, plot_scatter=False,
                    whiskerprops=whiskerprops
                    )
 
-    def _fit(x, y):
-        x_fit = np.linspace(min(np.log(25), x[0]), max(np.log(1600), x[-1]), 3)
-        # model = Ridge()
-        model = LinearRegression()
-        model.fit(x[:, np.newaxis], y)
-        y_fit = model.predict(x_fit[:, np.newaxis])
-        return x_fit, y_fit, model
+    logKs = [np.log(K) for K in Ks]
+    med_logKs = np.array([np.median(np.log(K)) for K in Ks])
 
-    if plot_box:
-        _pretty_box(logKs, np.log(n_orns), ax, tools.blue)
-        
+    name_or_path = Path(name_or_path).name
+    if name_or_path == 'dim':
+        color = tools.gray
+    elif name_or_path == 'vary_or':
+        color = tools.blue
+    elif name_or_path == 'meta_vary_or':
+        color = tools.red
+    else:
+        color = tools.gray
+
+    if name_or_path == 'dim':
+        ax.scatter(np.log(n_orns), logKs, s=2., c=color)
+    else:
+        if plot_box:
+            _pretty_box(logKs, np.log(n_orns), ax, color)
+
     if plot_fit:
-        print(n_orns)
-        print(np.exp(med_logKs))
         x_fit, y_fit, model = _fit(np.log(n_orns), med_logKs)
-        label = r'Train $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
+        label = tools.nicename(name_or_path, mode='scaling')
+        label = label + r' $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
                                np.exp(model.intercept_), model.coef_[0])
-        ax.plot(x_fit, y_fit, color=tools.blue, label=label)
-    
-    if plot_data:
-        ax.plot(np.log(1000), np.log(100), 'x', color=tools.darkblue, zorder=5)
-        ax.text(np.log(1000), np.log(120), '[2]', color=tools.darkblue,
-                horizontalalignment='center', verticalalignment='bottom', zorder=5)
-        
-        ax.plot(np.log(1000), np.log(40), 'x', color=tools.darkblue, zorder=5)
-        ax.text(np.log(1000), np.log(32), '[3]', color=tools.darkblue,
-                horizontalalignment='center', verticalalignment='top', zorder=5)
-        ax.plot(np.log(50), np.log(7), 'x', color=tools.darkblue, zorder=5)
-        ax.text(np.log(53), np.log(6), '[1]', color=tools.darkblue,
-                horizontalalignment='left', verticalalignment='top', zorder=5)
+        ax.plot(x_fit, y_fit, color=color, label=label)
+    return ax
 
-    if plot_dim:
-        from analytical.analyze_simulation_results import _load_result
-        x, y = _load_result('all_value_withdim_m', v_name='dim')
-        print(x, y)
-        x, y = np.log(x), np.log(y)
-        plt.scatter(x, y, c=tools.gray, s=5)
-        x_fit, y_fit, model = _fit(x, y)
-        label = r'Max Dimension $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
-                               np.exp(model.intercept_), model.coef_[0])
-        ax.plot(x_fit, y_fit, color=tools.gray, label=label)
-    
-    if plot_angle:
-        fname = os.path.join(rootpath, 'files', 'analytical',
-                                 'control_coding_level_summary')
-        summary = pickle.load(open(fname, "rb"))
-        # summary: 'opt_ks', 'coding_levels', 'conf_ints', 'n_orns'
-        _pretty_box(list(np.log(summary['opt_ks'].T)),
-                    np.log(summary['n_orns']), ax, tools.red)
-        
-    if plot_angle and plot_fit:
-        # x, y = np.log(n_orns)[3:], med_logKs[3:]
-        x = np.log(summary['n_orns'])
-        y = np.median(np.log(summary['opt_ks']), axis=0)
-        x_fit, y_fit, model = _fit(x, y)
-        label = r'Robust weights $K ={:0.2f} \ N^{{{:0.2f}}}$'.format(
-                               np.exp(model.intercept_), model.coef_[0])
-        ax.plot(x_fit, y_fit, color=tools.red, label=label)
-        
-    ax.legend(bbox_to_anchor=(0., 1.05), loc=2, frameon=False)
-        
-    x = [ 50, 100, 150, 200, 300, 400]
-    y = [ 7.90428212, 10.8857362,  16.20759494,
-         20.70314843, 27.50305499, 32.03561644]
-    # ax.plot(np.log(x), np.log(y))
-    ax.set_xlabel('Number of ORs (N)')
-    ax.set_ylabel('Expansion Input Degree (K)')
-    xticks = np.array([25, 50, 100, 200, 400, 1000, 1600])
-    ax.set_xticks(np.log(xticks))
-    ax.set_xticklabels([str(t) for t in xticks])
-    yticks = np.array([3, 10, 30, 100])
-    ax.set_yticks(np.log(yticks))
-    ax.set_yticklabels([str(t) for t in yticks])
-    ax.set_xlim(np.log([20, 1700]))
-    ax.set_ylim(np.log([2, 300]))
-    
-    name = 'opt_k'
-    if plot_scatter:
-        name += '_scatter'
-    if plot_box:
-        name += '_box'
-    if plot_data:
-        name += '_data'
-    if plot_dim:
-        name += '_dim'
-    if plot_fit:
-        name += '_fit'
-    if plot_angle:
-        name += '_angle'
-    save_fig(path, name)
+
+def plot_all_K(name_or_paths, *args):
+    """Plot the typical K-N plot.
+
+    Args:
+       name_or_paths: a list of str
+    """
+    if isinstance(name_or_paths, str):
+        name_or_paths = [name_or_paths]
+
+    all_name_or_paths = name_or_paths[:]
+    for arg in args:
+        all_name_or_paths += arg
+    all_name_or_paths = set(all_name_or_paths)
+
+    # (n_orns, Ks)
+    results = {n: _get_K_vs_N(n) for n in all_name_or_paths}
+
+    def _plot_all_K(name_or_paths):
+        fig = plt.figure(figsize=(4, 2.5))
+        ax = fig.add_axes([0.2, 0.2, 0.7, 0.7])
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+
+        for name_or_path in name_or_paths:
+            ax = _plot_K_vs_N(ax, name_or_path, results)
+
+        ax.legend(bbox_to_anchor=(0., 1.05), loc=2, frameon=False)
+
+        ax.set_xlabel('Number of ORs (N)')
+        ax.set_ylabel('Expansion Input Degree (K)')
+        xticks = np.array([25, 50, 100, 200, 500, 1000])
+        ax.set_xticks(np.log(xticks))
+        ax.set_xticklabels([str(t) for t in xticks])
+        yticks = np.array([3, 10, 30, 100])
+        ax.set_yticks(np.log(yticks))
+        ax.set_yticklabels([str(t) for t in yticks])
+        ax.set_xlim(np.log([15, 1700]))
+        ax.set_ylim(np.log([2, 300]))
+        ax.grid(True, alpha=0.5)
+
+        name = '.'.join([Path(n).name for n in name_or_paths])
+        # All save to the same directory
+        save_fig('scaling', name)
+
+    _plot_all_K(name_or_paths)
+    for arg in args:
+        _plot_all_K(arg)
+

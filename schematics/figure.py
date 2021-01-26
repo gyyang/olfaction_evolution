@@ -52,7 +52,9 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
               np.array([255, 187, 0])/255.,  # red
               np.array([63, 104, 28])/255.,]  # green
 
-    colors = np.array([[102,194,165],[252,141,98],[141,160,203],[231,138,195],[166,216,84]])/255.
+    # From colorbrewer qualitative map
+    colors = np.array([[102,194,165],[252,141,98],[141,160,203],
+                       [231,138,195],[166,216,84], [255, 217, 47]])/255.
 
     size = 80
     figsize = (1.8, 1.8)
@@ -86,11 +88,15 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     elif 'innate' in mode:
         innate_point = np.array([8, 0])
         innate_point2 = np.array([0, 8])
-        proto_points = np.array([[2, 4], [4, 3], [3, 1], innate_point, innate_point2])
-        texts = ['Class ' + i for i in ['A','B','C', 'D', 'E']]
+        proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], 
+                                 [4, 1], [4, 3], innate_point, innate_point2])
+        ind = [0, 1, 2, 3, 2, 1, 4, 5]
+        labels = ['A','B','C','D', 'E', 'F']
+        colors = [colors[i] for i in ind]
+        texts = ['Class ' + labels[i] for i in ind]
         lim = 10
         if mode == 'innate2':
-            colors = ([np.array([178]*3)/255.] * 3 + 
+            colors = ([np.array([178]*3)/255.] * 6 + 
             [np.array([228, 26, 28])/255.] + [np.array([55,126,184])/255.])
     elif mode == 'correlate':
         orn_corr = 0.8
@@ -153,10 +159,13 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
 
     for i, (txt,p) in enumerate(zip(texts, proto_points)):
         if mode == 'innate':
-            if i < 4:
-                ax.annotate(txt, (p[0]-.3, p[1]+.35))
-            else:
-                ax.annotate(txt, (p[0]+0.3, p[1]+0.3))
+            pass
+# =============================================================================
+#             if i < 4:
+#                 ax.annotate(txt, (p[0]-.3, p[1]-.35))
+#             else:
+#                 ax.annotate(txt, (p[0]+0.3, p[1]+0.3))
+# =============================================================================
         elif mode == 'innate2':
             pass
         elif mode in ['metalearn', 'correlate']:
@@ -192,7 +201,7 @@ if __name__ == '__main__':
     pass
     # plot_task('standard', include_prototypes=True)
     # plot_task('innate', include_prototypes=True)
-    # plot_task('innate2', include_prototypes=True)
+    plot_task('innate2', include_prototypes=True)
     # plot_task('concentration', include_prototypes=True, include_data=True)
     # plot_task('relabel', include_prototypes=True)
     # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]

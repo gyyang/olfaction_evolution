@@ -45,10 +45,52 @@ def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
     return mask.astype(np.float32)
 
 
+class OlsenNorm(nn.Module):
+    def __init__(self, num_features):
+        super().__init__()
+        self.exponent = 1
+        self.r_max = nn.Parameter(torch.Tensor(1, num_features))
+        self.rho = nn.Parameter(torch.Tensor(1, num_features))
+        self.m = nn.Parameter(torch.Tensor(1, num_features))
+        self.num_features = num_features
+        nn.init.constant_(self.r_max, 25.)
+        nn.init.constant_(self.rho, 1.0)
+        nn.init.constant_(self.m, 0.5)
+
+    def forward(self, input):
+        r_max = torch.clamp(self.r_max, 1., 50.)
+        rho = torch.clamp(self.rho, 0.3, 3.)
+        m = torch.clamp(self.m, 0.1, 2.)
+
+        input_mean = torch.mean(input, dim=-1, keepdim=True) + 1e-6
+        input_exponentiated = input ** self.exponent
+        numerator = r_max * input_exponentiated
+        denominator = (input_exponentiated + rho +
+                       (m * input_mean) ** self.exponent)
+        return torch.div(numerator, denominator)
+
+
+class FixActivityNorm(nn.Module):
+    def __init__(self, num_features):
+        super().__init__()
+        self.rmax = num_features / 2.
+
+    def forward(self, input):
+        # input (batch_size, neurons)
+        input_sum = torch.sum(input, dim=-1, keepdim=True) + 1e-6
+        return self.rmax * torch.div(input, input_sum)
+
+
 def _get_normalization(norm_type, num_features=None):
     if norm_type is not None:
         if norm_type == 'batch_norm':
             return nn.BatchNorm1d(num_features)
+        elif norm_type == 'fixed_activity':
+            return FixActivityNorm(num_features)
+        elif norm_type == 'olsen':
+            return OlsenNorm(num_features)
+        else:
+            raise ValueError('Unknown norm type', norm_type)
     return lambda x: x
 
 
@@ -189,7 +231,7 @@ class Layer(nn.Module):
         if self.weight_dropout:
             weight = self.w_dropout(weight)
 
-        pre_act = F.linear(input, weight, self.bias)
+        pre_act = F.linear(input, weight, self.bias)  # (batch_size, neurons)
         pre_act_normalized = self.pre_norm(pre_act)
 
         output = self.activation(pre_act_normalized)
@@ -317,7 +359,7 @@ class FullModel(CustomModule):
                             weight_norm=config.orn2pn_normalization,
                             )
 
-        if config.skip_orn2pn:  # make these two the same
+        if config.skip_orn2pn:
             init.eye_(self.layer1.weight.data)
             self.layer1.weight.requires_grad=False
 
@@ -341,6 +383,13 @@ class FullModel(CustomModule):
 
         if not config.train_kc_bias:
             self.layer2.bias.requires_grad = False
+
+        if not config.train_pn2kc:
+            layer2_w = get_sparse_mask(config.N_PN, config.N_KC,
+                                       config.kc_inputs)
+            with torch.no_grad():
+                self.layer2.weight = nn.Parameter(torch.from_numpy(
+                    layer2_w.T).float())
 
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
@@ -521,12 +570,6 @@ class RNNModel(CustomModule):
         self.output = nn.Linear(hidden_units, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
 
-        # TODO: temp
-        # if config.rec_dropout:
-        #     self.dropout = nn.Dropout(p=config.rec_dropout_rate)
-        # else:
-        #     self.dropout = nn.Identity()
-
     @property
     def w_rnn(self):
         return self.rnn.effective_weight.data.cpu().numpy().T
@@ -552,8 +595,22 @@ class RNNModel(CustomModule):
         results = dict()
         if self._readout:
             results['rnn_outputs'] = [act1.cpu().numpy()]
+
+        act_sum = 0.
+
         for i in range(self.n_steps):
+            if not self.config.allow_reactivation:
+                # Keep track of cumulative activation
+                act_sum = act_sum + act1
+
             act1 = self.rnn(act1)
+
+            if not self.config.allow_reactivation:
+                # TODO: doesn't work, remove soon
+                # prevent neurons activated before from being re-activated
+                # act1 = act1 * (1 - torch.heaviside(act_sum, torch.tensor(0.)))
+                act1 = act1 * (act_sum < 0.001)
+
             if self._readout:
                 results['rnn_outputs'].append(act1.cpu().numpy())
 

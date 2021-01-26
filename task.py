@@ -23,6 +23,7 @@ def _get_labels(prototypes, odors, percent_generalization, weights=None):
         dist = weights * dist
     return np.argmin(dist, axis=0)
 
+
 def _spread_orn_activity(prototypes, spread = 0):
     '''
     :param prototypes:
@@ -43,7 +44,8 @@ def _spread_orn_activity(prototypes, spread = 0):
     out = prototypes * np.repeat(activity.reshape(-1,1), n_orn, axis=1)
     return out
 
-def _mask_orn_activation_row(prototypes, spread = None):
+
+def _mask_orn_activation_row(prototypes, spread=None):
     '''
     :param prototypes:
     :param spread: varies from [0, 1). 0 means no spread, 1 means maximum spread.
@@ -51,19 +53,23 @@ def _mask_orn_activation_row(prototypes, spread = None):
     '''
     assert spread >= 0 and spread < 1, 'spread is not within range of [0, 1)'
 
-    mask = np.zeros_like(prototypes, dtype=int)
-    n_samples = mask.shape[0]
-    n_orn = mask.shape[1]
+    n_samples, n_orn = prototypes.shape
     mask_degree = np.round(n_orn * (1 - spread) / 2).astype(int)
-    list_of_numbers = list(range(mask_degree)) + list(range(n_orn - mask_degree, n_orn))
+    # Small number of ORNs active
+    list_of_numbers = list(range(1, mask_degree))
+    # Large number of ORNs active
+    list_of_numbers = list_of_numbers + list(range(n_orn - mask_degree, n_orn))
     print(list_of_numbers)
 
+    # For each sample odor, how many ORNs will be active
     n_orn_active = np.random.choice(list_of_numbers, size=n_samples, replace=True)
+    mask = np.zeros_like(prototypes, dtype=int)
     for i in range(n_samples):
-        mask[i, :n_orn_active[i]] = 1
+        mask[i, :n_orn_active[i]] = 1  # set only this number of ORNs active
         np.random.shuffle(mask[i, :])
     out = np.multiply(prototypes, mask)
     return out
+
 
 def _mask_orn_activation_column(prototypes, probs):
     '''
@@ -196,6 +202,7 @@ def _generate_proto_threshold(
         shuffle_label,
         relabel,
         n_trueclass,
+        is_spread_orn_activity,
         spread_orn_activity,
         mask_orn_activation_row,
         mask_orn_activation_column,
@@ -336,9 +343,9 @@ def _generate_proto_threshold(
         train_odors = _mask_orn_activation_column(train_odors, probs)
         val_odors = _mask_orn_activation_column(val_odors, probs)
 
-    if spread_orn_activity[0]:
+    if is_spread_orn_activity:
         print('mean')
-        spread = spread_orn_activity[1]
+        spread = spread_orn_activity
         prototypes = _spread_orn_activity(prototypes, spread)
         train_odors = _spread_orn_activity(train_odors, spread)
         val_odors = _spread_orn_activity(val_odors, spread)
@@ -401,7 +408,7 @@ def _generate_proto_threshold(
         rng.shuffle(val_labels)
 
     if relabel:
-        print('relabeling' + str(n_proto) + 'classes into ' + str(n_class))
+        print('relabeling ' + str(n_proto) + ' classes into ' + str(n_class))
         train_labels, val_labels = _relabel(
             train_labels, val_labels, n_proto, n_class, rng)
 
@@ -499,9 +506,10 @@ def save_proto(config=None, seed=0, folder_name=None):
         shuffle_label=config.shuffle_label,
         relabel=config.relabel,
         n_trueclass=config.n_trueclass,
-        spread_orn_activity= config.spread_orn_activity,
-        mask_orn_activation_row= config.mask_orn_activation_row,
-        mask_orn_activation_column= config.mask_orn_activation_column,
+        is_spread_orn_activity=config.is_spread_orn_activity,
+        spread_orn_activity=config.spread_orn_activity,
+        mask_orn_activation_row=config.mask_orn_activation_row,
+        mask_orn_activation_column=config.mask_orn_activation_column,
         n_combinatorial_classes=config.n_combinatorial_classes,
         combinatorial_density=config.combinatorial_density,
         n_class_valence=config.n_class_valence,
@@ -602,15 +610,4 @@ def load_data(data_dir):
 
 
 if __name__ == '__main__':
-    # save_proto()
-    # save_proto_all()
-    # proto_path = os.path.join(PROTO_PATH, '_threshold_onehot')
-    # train_odors, train_labels, val_odors, val_labels = load_proto(proto_path)
-    # _make_hallem_dataset()
-    # _generate_from_hallem()
-    # save_proto()
-
-    import configs
-    config = configs.input_ProtoConfig()
-    config.N_CLASS = 20
-    save_proto(config, folder_name='standard_20')
+    pass

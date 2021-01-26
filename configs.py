@@ -66,7 +66,8 @@ class input_ProtoConfig(BaseConfig):
 
         # If tuple[0] = True, total orn activity becomes more spread out as defined by a distribution
         # tuple[1] = Spread, varies from (0, 1]. Defines the bimodality of the prob dist.
-        self.spread_orn_activity = (False, .5)
+        self.is_spread_orn_activity = False
+        self.spread_orn_activity = 0.
 
         # Whether to have correlation between ORNs
         self.orn_corr = None
@@ -103,7 +104,9 @@ class FullConfig(BaseConfig):
     def __init__(self):
         super(FullConfig, self).__init__()
         self.dataset = 'proto'
-        self.data_dir = './datasets/proto/standard'
+        # self.data_dir = './datasets/proto/standard'
+        # New standard dataset is relabel
+        self.data_dir = './datasets/proto/relabel_200_100'
         #model can be full, normmlp, or singlelayer
         self.model = 'full'
         self.save_path = './files/test'
@@ -111,10 +114,11 @@ class FullConfig(BaseConfig):
         self.save_log_only = False
         self.save_epoch_interval = 1
 
-        self.lr = .001  # learning rate
+        # self.lr = .001  # learning rate
+        self.lr = 5e-4  # new default for relabel dataset
         self.decay_steps = 1e8  # learning rate decay steps
         self.decay_rate = 1.  # learning rate decay rate, default to no decay
-        self.max_epoch = 30
+        self.max_epoch = 100
         self.batch_size = 256
         self.target_acc = None  # target accuracy
 
@@ -185,7 +189,7 @@ class FullConfig(BaseConfig):
         # Initialization method for pn2kc: can take values uniform, random, or normal
         self.initializer_pn2kc = 'uniform'
         # Initial value of pn2kc weights. if it is set to 0, network will initialize according to sparsity
-        self.initial_pn2kc = 0  # TODO: Need revisit, try use 0 for all
+        self.initial_pn2kc = 4. / self.N_PN
         # If True, ORN --> PN connections are positive
         self.sign_constraint_pn2kc = True
         # If True, PN --> KC connections are trainable
@@ -203,7 +207,7 @@ class FullConfig(BaseConfig):
         # KC normalization after non_linearity
         self.kc_norm_post = None
         # If True, add dropout to KC layer
-        self.kc_dropout = True  # TODO: Check if necessary for K=7
+        self.kc_dropout = True
         self.kc_dropout_rate = 0.5
         # If True, skip the PN --> KC connections
         self.skip_pn2kc = False
@@ -308,14 +312,17 @@ class RNNConfig(BaseConfig):
         # Whether to prune weak KC weights
         self.prune_weak_weights = False
         self.prune_threshold = 0.
-
+        # Whether to prevent neurons from being reactivated
+        self.allow_reactivation = True
 
 
 class MetaConfig(FullConfig):
     def __init__(self):
-        super(MetaConfig, self).__init__()
+        super().__init__()
         # data directory
         self.data_dir = './datasets/proto/standard'
+        # model type
+        self.model = 'full'
         # how many points for input generation
         self.meta_n_dataset = 1000 * 32
         # number of classes
@@ -344,3 +351,6 @@ class MetaConfig(FullConfig):
         self.meta_print_interval = 250
         # maximum learning rate for the KC-output layer
         self.output_max_lr = 0.2
+        # trainable lr?
+        self.meta_trainable_lr = False
+

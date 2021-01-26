@@ -3,6 +3,7 @@
 import os
 import json
 import pickle
+from pathlib import Path
 from copy import deepcopy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,11 +25,8 @@ def get_figname(save_path, figname=''):
     if isinstance(save_path, str):
         save_name = os.path.split(save_path)[-1]
     else:
-        # save_path is a list of model paths
-        print(save_path[0])
         # ugly hack to get experiment name
         save_name = os.path.split(os.path.split(save_path[0])[-2])[-1]
-        print(save_name)
 
     path = os.path.join(FIGPATH, save_name)
     os.makedirs(path, exist_ok=True)
@@ -66,14 +64,16 @@ def load_config(save_path):
     import configs
     with open(os.path.join(save_path, 'config.json'), 'r') as f:
         config_dict = json.load(f)
-
     model_type = config_dict.get('model', None)
     if model_type == 'full':
-        config = configs.FullConfig()
+        if 'meta_lr' in config_dict:
+            config = configs.MetaConfig()
+        else:
+            config = configs.FullConfig()
     elif model_type == 'rnn':
         config = configs.RNNConfig()
     else:
-        config = configs.MetaConfig()
+        config = configs.BaseConfig()
 
     for key, val in config_dict.items():
         setattr(config, key, val)
@@ -305,9 +305,15 @@ def select_modeldirs(modeldirs, select_dict=None, acc_min=None):
         if select_dict is not None:
             config = load_config(d)  # epoch modeldirs have no configs
             for key, val in select_dict.items():
-                if getattr(config, key) != val:
-                    selected = False
-                    break
+                if key == 'data_dir':
+                    # If data_dir, only compare last
+                    if Path(config.data_dir).name != Path(val).name:
+                        selected = False
+                        break
+                else:
+                    if getattr(config, key) != val:
+                        selected = False
+                        break
 
         if acc_min is not None:
             log = load_log(d)
@@ -328,9 +334,15 @@ def exclude_modeldirs(modeldirs, exclude_dict=None):
         if exclude_dict is not None:
             config = load_config(d)  # epoch modeldirs have no configs
             for key, val in exclude_dict.items():
-                if getattr(config, key) == val:
-                    excluded = True
-                    break
+                if key == 'data_dir':
+                    # If data_dir, only compare last
+                    if Path(config.data_dir).name == Path(val).name:
+                        excluded = True
+                        break
+                else:
+                    if getattr(config, key) == val:
+                        excluded = True
+                        break
 
         if not excluded:
             new_dirs.append(d)
@@ -442,8 +454,84 @@ def load_log(modeldir):
     return log
 
 
+def has_nobadkc(modeldir, bad_kc_threshold=0.2):
+    """Check if model has too many bad KCs."""
+    log = load_log(modeldir)
+    if 'bad_KC' not in log:
+        return True
+    # After training, bad KC proportion should lower 'bad_kc_threshold'
+    return log['bad_KC'][-1] < bad_kc_threshold
+
+
+def filter_modeldirs_badkc(modeldirs, bad_kc_threshold=0.2):
+    """Filter model dirs with too many bad KCs."""
+    return [d for d in modeldirs if has_nobadkc(d, bad_kc_threshold)]
+
+
+def has_singlepeak(modeldir, peak_threshold=None):
+    """Check if model has a single peak."""
+    # TODO: Use this method throughout to replace similar methods
+    log = load_log(modeldir)
+    if ('lin_bins' not in log) or ('lin_hist' not in log):
+        return True
+    config = load_config(modeldir)
+    if peak_threshold is None:
+        peak_threshold = 2./config.N_PN  # heuristic
+
+    if config.kc_prune_weak_weights:
+        thres = config.kc_prune_threshold
+    else:
+        thres = log['thres_inferred'][-1]  # last epoch
+    if len(log['lin_bins'].shape) == 1:
+        bins = log['lin_bins'][:-1]
+    else:
+        bins = log['lin_bins'][-1, :-1]
+    bin_size = bins[1] - bins[0]
+    hist = log['lin_hist'][-1]  # last epoch
+    # log['lin_bins'] shape (nbin+1), log['lin_hist'] shape (n_epoch, nbin)
+    ind_thres = np.argsort(np.abs(bins - thres))[0]
+    ind_grace = int(0.01 / bin_size)  # grace distance to start find peak
+    hist_abovethres = hist[ind_thres + ind_grace:]
+    ind_peak = np.argmax(hist_abovethres)
+    # Value at threshold and at peak
+    thres_value = hist_abovethres[0]
+    peak_value = hist_abovethres[ind_peak]
+    if (ind_peak + ind_grace) * bin_size <= peak_threshold or (
+            peak_value < 1.3 * thres_value):
+        # peak should be at least 'peak_threshold' away from threshold
+        return False
+    else:
+        return True
+
+
+def filter_modeldirs_badpeak(modeldirs, peak_threshold=None):
+    """Filter model dirs without a strong second peak."""
+    return [d for d in modeldirs if has_singlepeak(d, peak_threshold)]
+
+
+def filter_modeldirs(modeldirs, exclude_badkc=False, exclude_badpeak=False):
+    """Select model directories.
+
+    Args:
+        modeldirs: list of model directories
+        exclude_badkc: bool, if True, exclude models with too many bad KCs
+        exclude_badpeak: bool, if True, exclude models with bad peaks
+
+    Return:
+        modeldirs: list of filtered model directories
+    """
+    print('Analyzing {} model directories'.format(len(modeldirs)))
+    if exclude_badkc:
+        modeldirs = filter_modeldirs_badkc(modeldirs)
+        print('{} remain after filtering bad kcs'.format(len(modeldirs)))
+    if exclude_badpeak:
+        modeldirs = filter_modeldirs_badpeak(modeldirs)
+        print('{} remain after filtering bad peaks'.format(len(modeldirs)))
+    return modeldirs
+
+
 def load_all_results(path, select_dict=None, exclude_dict=None,
-                     argLast=True, ix=None, exclude_early_models=True,
+                     argLast=True, ix=None, exclude_early_models=False,
                      none_to_string=True):
     """Load results from path.
 
@@ -475,6 +563,8 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
 
         # Add logger values
         for key, val in log.items():
+            if key == 'meta_update_lr':  # special handling
+                key = 'meta_update_lr_trained'
             if len(val) == n_actual_epoch:
                 if argLast:
                     res[key].append(val[-1])  # store last value in log
@@ -493,12 +583,19 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
         for k in dir(config):
             if k == 'coding_level':  # name conflict with log entry
                 res['coding_level_set'].append(config.coding_level)
+            elif k == 'data_dir':
+                res['data_dir'].append(Path(config.data_dir).name)
             elif k[0] != '_':
                 v = getattr(config, k)
                 if v is None and none_to_string:
                     v = '_none'
                 res[k].append(v)
 
+        # Add pn2kc peak information
+        clean_pn2kc = has_nobadkc(d) and has_singlepeak(d)
+        res['clean_pn2kc'].append(clean_pn2kc)
+
+    loss_keys = list()
     for key, val in res.items():
         try:
             res[key] = np.array(val)
@@ -506,12 +603,16 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
             print('Cannot turn ' + key +
                   ' into np array, probably non-homogeneous shape')
 
-    try:
-        res['val_logloss'] = np.log(res['val_loss'])
-        res['train_logloss'] = np.log(res['train_loss'])
-    except AttributeError:
-        print('''Could not compute log loss.
-              Most likely models have not finished training.''')
+        if 'loss' in key:
+            loss_keys.append(key)
+
+    for key in loss_keys:
+        new_key = key[:-4] + 'logloss'
+        try:
+            res[new_key] = np.log(res[key])
+        except AttributeError:
+            print('''Could not compute log loss.
+                  Most likely models have not finished training.''')
 
     return res
 
@@ -542,6 +643,7 @@ nicename_dict = {
     'zero_claw': '% of KC with No Input',
     'kc_out_sparse_mean': '% of Active KCs',
     'coding_level': '% of Active KCs',
+    'N_CLASS': 'Number of Classes',
     'n_trueclass': 'Number of Odor Prototypes',
     'n_trueclass_ratio': 'Odor Prototypes Per Class',
     'weight_perturb': 'Weight Perturb.',
@@ -574,12 +676,21 @@ nicename_dict = {
     'glo': 'PN Activity',
     'kc_in': 'KC Input',
     'kc': 'KC Activity',
+    'sign_constraint_orn2pn': 'Non-negative ORN-PN',
+    'meta_lr': 'Meta learning rate',
+    'meta_num_samples_per_class': '# Samples/Class',
+    'meta_update_lr': 'Initial inner learning rate',
+    'skip_orn2pn': 'Skip ORN-PN',
+    'data_dir': 'Dataset',
+    'olsen': 'Olsen & Wilson',
+    'fixed_activity': 'Fixed activity',
+    'spread_orn_activity': 'ORN activity spread',
 }
 
 
 def nicename(name, mode='dict'):
     """Return nice name for publishing."""
-    if mode == 'lr':
+    if mode in ['lr', 'meta_lr']:
         return np.format_float_scientific(name, precision=0, exp_digits=1)
     elif mode in ['N_KC', 'N_PN']:
         if name >= 1000:
@@ -592,6 +703,33 @@ def nicename(name, mode='dict'):
         return '{:0.2f}'.format(name)
     elif mode == 'n_trueclass_ratio':
         return '{:d}'.format(int(name))
+    elif mode == 'data_dir':
+        # Right now this is only used for pn_normalization experiment
+        if Path(name).name == Path(
+            './datasets/proto/concentration').name:
+            return 'low'
+        elif Path(name).name == Path(
+            './datasets/proto/concentration_mask_row_0').name:
+            return 'medium'
+        elif Path(name).name == Path(
+            './datasets/proto/concentration_mask_row_0.6').name:
+            return 'high'
+        elif name == 'data_dir':
+            return 'spread'
+        else:
+            return name
+    elif mode == 'scaling':
+        name = Path(name).name
+        if name == 'dim':
+            return 'Max dimension'
+        elif name == 'angle':
+            return 'Angle robustness'
+        elif name == 'vary_or':
+            return 'Train'
+        elif name == 'meta_vary_or':
+            return 'Meta learning'
+        else:
+            return name
     else:
         return nicename_dict.get(name, name)  # get(key, default value)
 

@@ -10,6 +10,7 @@ import math
 import tools
 import configs
 
+
 class _linear_block(mmods.MetaLinear):
     def __init__(self,
                  in_features,
@@ -22,7 +23,7 @@ class _linear_block(mmods.MetaLinear):
         self.bias_initial_value = bias_init_value
         self.prune = prune
         self.weight_init_range = 4. / in_features
-        self.prune_threshold = 0.001
+        self.prune_threshold = 1. / in_features
         self.reset_params()
 
     def forward(self, input, params=None):
@@ -102,7 +103,7 @@ class Layer(mmods.MetaModule):
         return self.block(x, params=self.get_subdict(params, 'block'))
 
 
-class model(mmods.MetaModule):
+class Model(mmods.MetaModule):
     def __init__(self, config: configs.MetaConfig = None):
         super().__init__()
         self.config = config
@@ -114,10 +115,14 @@ class model(mmods.MetaModule):
                             sign_constraint=config.sign_constraint_orn2pn,
                             pre_norm=config.pn_norm_pre,
                             post_norm=config.pn_norm_post,
-                            prune=config.prune,
+                            prune=config.pn_prune_weak_weights,
                             dropout=config.pn_dropout,
                             dropout_rate=config.pn_dropout_rate,
                             )
+
+        if config.skip_orn2pn:
+            init.eye_(self.layer1.block.orn_layer_linear.weight.data)
+            self.layer1.block.orn_layer_linear.weight.requires_grad=False
 
         self.layer2 = Layer('pn_layer',
                             config.N_PN,
@@ -125,7 +130,7 @@ class model(mmods.MetaModule):
                             sign_constraint=config.sign_constraint_pn2kc,
                             pre_norm=config.kc_norm_pre,
                             post_norm=config.kc_norm_post,
-                            prune = config.prune,
+                            prune=config.kc_prune_weak_weights,
                             dropout=config.kc_dropout,
                             dropout_rate=config.kc_dropout_rate,
                             )
@@ -155,19 +160,27 @@ class model(mmods.MetaModule):
         for name, param in self.named_parameters():
             var_dict[name] = param.data.cpu().numpy()
 
-        orn_weight = self.layer1.block.orn_layer_linear.effective_weight(
-            self.layer1.block.orn_layer_linear.weight)
-        pn_weight = self.layer2.block.pn_layer_linear.effective_weight(
-            self.layer2.block.pn_layer_linear.weight)
-        var_dict['w_orn'] = orn_weight.cpu().detach().numpy().T
-        var_dict['w_glo'] = pn_weight.cpu().detach().numpy().T
-        var_dict['w_out'] = self.layer3.weight.cpu().detach().numpy().T
+        var_dict['w_orn'] = self.w_orn
+        var_dict['w_glo'] = self.w_glo
+        var_dict['w_out'] = self.w_out
 
         save_path = self.config.save_path
         tools.save_pickle(save_path, var_dict, epoch=epoch)
         print("Model weights saved in path: %s" % save_path)
 
+    @property
+    def w_orn(self):
+        orn_weight = self.layer1.block.orn_layer_linear.effective_weight(
+            self.layer1.block.orn_layer_linear.weight)
+        # Transpose to be consistent with tensorflow default
+        return orn_weight.cpu().detach().numpy().T
 
+    @property
+    def w_glo(self):
+        pn_weight = self.layer2.block.pn_layer_linear.effective_weight(
+            self.layer2.block.pn_layer_linear.weight)
+        return pn_weight.cpu().detach().numpy().T
 
-
-
+    @property
+    def w_out(self):
+        return self.layer3.weight.cpu().detach().numpy().T
