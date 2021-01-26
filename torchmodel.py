@@ -419,9 +419,9 @@ class FullModel(CustomModule):
             self.layer2.bias.requires_grad = False
 
         if not config.train_pn2kc:
+            layer2_w = get_sparse_mask(config.N_PN, config.N_KC,
+                                       config.kc_inputs)
             with torch.no_grad():
-                layer2_w = get_sparse_mask(config.N_PN, config.N_KC,
-                                           config.kc_inputs)
                 self.layer2.weight = nn.Parameter(torch.from_numpy(
                     layer2_w.T).float())
 

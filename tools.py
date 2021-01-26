@@ -457,6 +457,8 @@ def load_log(modeldir):
 def has_nobadkc(modeldir, bad_kc_threshold=0.2):
     """Check if model has too many bad KCs."""
     log = load_log(modeldir)
+    if 'bad_KC' not in log:
+        return True
     # After training, bad KC proportion should lower 'bad_kc_threshold'
     return log['bad_KC'][-1] < bad_kc_threshold
 
@@ -470,6 +472,8 @@ def has_singlepeak(modeldir, peak_threshold=None):
     """Check if model has a single peak."""
     # TODO: Use this method throughout to replace similar methods
     log = load_log(modeldir)
+    if ('lin_bins' not in log) or ('lin_hist' not in log):
+        return True
     config = load_config(modeldir)
     if peak_threshold is None:
         peak_threshold = 2./config.N_PN  # heuristic

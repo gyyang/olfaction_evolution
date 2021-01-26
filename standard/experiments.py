@@ -335,7 +335,8 @@ def pn_norm():
     Assesses the effect of PN normalization on glo score and performance
     '''
     config = FullConfig()
-    config.max_epoch = 10
+    config.max_epoch = 15
+    config.lr = 1e-4
 
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
@@ -375,14 +376,15 @@ def pn_norm_relabel():
 def pn_norm_analysis(path):
     select_dict = {'kc_prune_weak_weights': False}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    ykeys = ['val_acc', 'K_smart']
+    # ykeys = ['val_acc', 'K_smart']
+    ykeys = ['val_acc']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre')
     select_dict = {'spread_orn_activity': 0.6, 'kc_prune_weak_weights': False}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
-    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
-               legend_key='pn_norm_pre')
+    # sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
+    #            legend_key='pn_norm_pre')
 
     # import tools
     # rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
