@@ -340,6 +340,8 @@ def pn_norm():
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
 
+    config.train_pn2kc = False
+
     config.kc_dropout_rate = 0.5
 
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity

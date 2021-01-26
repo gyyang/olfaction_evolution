@@ -75,12 +75,12 @@ class OlsenNorm(nn.Module):
     def __init__(self, num_features):
         super().__init__()
         self.exponent = 1
-        # self.r_max = nn.Parameter(torch.Tensor(1, num_features))
-        # self.rho = nn.Parameter(torch.Tensor(1, num_features))
-        # self.m = nn.Parameter(torch.Tensor(1, num_features))
-        self.r_max = nn.Parameter(torch.Tensor(1))
-        self.rho = nn.Parameter(torch.Tensor(1))
-        self.m = nn.Parameter(torch.Tensor(1))
+        self.r_max = nn.Parameter(torch.Tensor(1, num_features))
+        self.rho = nn.Parameter(torch.Tensor(1, num_features))
+        self.m = nn.Parameter(torch.Tensor(1, num_features))
+        # self.r_max = nn.Parameter(torch.Tensor(1))
+        # self.rho = nn.Parameter(torch.Tensor(1))
+        # self.m = nn.Parameter(torch.Tensor(1))
         self.num_features = num_features
         nn.init.constant_(self.r_max, 25.)
         nn.init.constant_(self.rho, 1.0)
@@ -417,6 +417,13 @@ class FullModel(CustomModule):
 
         if not config.train_kc_bias:
             self.layer2.bias.requires_grad = False
+
+        if not config.train_pn2kc:
+            with torch.no_grad():
+                layer2_w = get_sparse_mask(config.N_PN, config.N_KC,
+                                           config.kc_inputs)
+                self.layer2.weight = nn.Parameter(torch.from_numpy(
+                    layer2_w).float())
 
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
