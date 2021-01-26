@@ -45,7 +45,7 @@ def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
     return mask.astype(np.float32)
 
 
-class OlsenNorm(nn.Module):
+class OlsenNormOld(nn.Module):
     def __init__(self, num_features):
         super().__init__()
         self.exponent = 1
@@ -68,6 +68,37 @@ class OlsenNorm(nn.Module):
         numerator = r_max * input_exponentiated
         denominator = (input_exponentiated + rho +
                        (m * input_sum) ** self.exponent)
+        return torch.div(numerator, denominator)
+
+
+class OlsenNorm(nn.Module):
+    def __init__(self, num_features):
+        super().__init__()
+        self.exponent = 1
+        # self.r_max = nn.Parameter(torch.Tensor(1, num_features))
+        # self.rho = nn.Parameter(torch.Tensor(1, num_features))
+        # self.m = nn.Parameter(torch.Tensor(1, num_features))
+        # self.num_features = num_features
+        # nn.init.constant_(self.r_max, num_features / 2.)
+        # nn.init.constant_(self.rho, 0.1)
+        # nn.init.constant_(self.m, 0.5)  # should this scale with num_features?
+
+    def forward(self, input):
+        # r_max = torch.clamp(self.r_max, self.num_features / 10.,
+        #                     self.num_features * 2.)
+        # rho = torch.clamp(self.rho, 0.01, 1.)
+        # m = torch.clamp(self.m, 0.05, 5)
+
+        # Obtained myself
+        r_max = 3
+        m = 1
+        rho = 1
+
+        input_mean = torch.mean(input, dim=-1, keepdim=True) + 1e-6
+        input_exponentiated = input ** self.exponent
+        numerator = r_max * input_exponentiated
+        denominator = (input_exponentiated + rho +
+                       (m * input_mean) ** self.exponent)
         return torch.div(numerator, denominator)
 
 
