@@ -335,7 +335,7 @@ def pn_norm():
     Assesses the effect of PN normalization on glo score and performance
     '''
     config = FullConfig()
-    config.max_epoch = 30
+    config.max_epoch = 5
 
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
@@ -371,7 +371,7 @@ def pn_norm_relabel():
 
 
 def pn_norm_analysis(path):
-    select_dict = {'kc_prune_weak_weights': False}
+    select_dict = {'kc_prune_weak_weights': True}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     ykeys = ['val_acc', 'K_smart']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
