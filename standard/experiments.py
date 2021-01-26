@@ -335,7 +335,7 @@ def pn_norm():
     Assesses the effect of PN normalization on glo score and performance
     '''
     config = FullConfig()
-    config.max_epoch = 5
+    config.max_epoch = 10
 
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
@@ -343,7 +343,7 @@ def pn_norm():
     config.kc_dropout_rate = 0.
 
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
-    config.kc_prune_weak_weights = True
+    config.kc_prune_weak_weights = False
     config.kc_prune_threshold = 1. / config.N_PN
 
     # Ranges of hyperparameters to loop over
@@ -351,11 +351,11 @@ def pn_norm():
     spreads = [0, 0.3, 0.6, 0.9]
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
-    config_ranges['kc_prune_weak_weights'] = [True, False]
+    # config_ranges['kc_prune_weak_weights'] = [True, False]
     config_ranges['data_dir'] = datasets
     # config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
     #                                 'fixed_activity']
-    config_ranges['pn_norm_pre'] = ['olsen', 'fixed_activity']
+    config_ranges['pn_norm_pre'] = [None, 'olsen', 'fixed_activity']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -371,7 +371,7 @@ def pn_norm_relabel():
 
 
 def pn_norm_analysis(path):
-    select_dict = {'kc_prune_weak_weights': True}
+    select_dict = {'kc_prune_weak_weights': False}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     ykeys = ['val_acc', 'K_smart']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
