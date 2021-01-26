@@ -336,7 +336,7 @@ def pn_norm():
     '''
     config = FullConfig()
     config.max_epoch = 15
-    config.lr = 1e-4
+    config.lr = 1e-3
 
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
