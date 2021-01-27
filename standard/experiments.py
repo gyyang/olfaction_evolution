@@ -335,8 +335,8 @@ def pn_norm():
     Assesses the effect of PN normalization on glo score and performance
     '''
     config = FullConfig()
-    config.max_epoch = 15
-    config.lr = 1e-3
+    config.max_epoch = 30
+    config.lr = 5e-4
 
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
@@ -354,7 +354,8 @@ def pn_norm():
     spreads = [0, 0.3, 0.6, 0.9]
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
-    # config_ranges['kc_prune_weak_weights'] = [True, False]
+    config_ranges['kc_prune_weak_weights'] = [True, False]
+    config_ranges['kc_dropout_rate'] = [0., 0.5]
     config_ranges['data_dir'] = datasets
     # config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
     #                                 'fixed_activity']
