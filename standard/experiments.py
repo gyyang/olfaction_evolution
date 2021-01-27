@@ -342,7 +342,6 @@ def pn_norm():
     config.N_ORN_DUPLICATION = 1
 
     config.train_pn2kc = True
-    config.train_pn2kc = True
 
     config.kc_dropout_rate = 0.5
 
