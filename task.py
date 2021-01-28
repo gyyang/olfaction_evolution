@@ -31,17 +31,14 @@ def _spread_orn_activity(prototypes, spread = 0):
     :return:
     '''
     assert spread >= 0 and spread < 1, 'spread is not within range of [0, 1)'
-    mask_degree = (1 - spread) / 2
-    n_samples = prototypes.shape[0]
-    n_orn = prototypes.shape[1]
-    low, high = mask_degree, 1 - mask_degree
-    print(low, high)
+    if spread == 0:
+        return prototypes
 
-    low_samples = np.random.uniform(0, low, n_samples)
-    high_samples = np.random.uniform(high, 1, n_samples)
-    samples = np.concatenate((low_samples, high_samples))
-    activity = np.random.choice(samples, size=n_samples, replace=False)
-    out = prototypes * np.repeat(activity.reshape(-1,1), n_orn, axis=1)
+    spread_low = 1 - spread
+    spread_high = 1 + spread
+    n_samples = prototypes.shape[0]
+    scale_factors = np.random.uniform(spread_low, spread_high, n_samples)
+    out = prototypes * scale_factors.reshape(-1, 1)
     return out
 
 

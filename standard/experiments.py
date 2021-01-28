@@ -352,14 +352,15 @@ def pn_norm():
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    spreads = [0, 0.3, 0.6, 0.9]
+    spreads = [0, 0.33, 0.66, 0.99]
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
     # config_ranges['kc_prune_weak_weights'] = [True, False]
     config_ranges['data_dir'] = datasets
-    # config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
-    #                                 'fixed_activity']
-    config_ranges['pn_norm_pre'] = [None, 'olsen', 'fixed_activity']
+    config_ranges['pn_norm_pre'] = [None,
+                                    'batch_norm',
+                                    'olsen',
+                                    'fixed_activity']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -377,8 +378,8 @@ def pn_norm_relabel():
 def pn_norm_analysis(path):
     select_dict = {'kc_prune_weak_weights': False}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    # ykeys = ['val_acc', 'K_smart']
-    ykeys = ['val_acc']
+    ykeys = ['val_acc', 'K_smart']
+    # ykeys = ['val_acc']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre')
     select_dict = {'spread_orn_activity': 0.6, 'kc_prune_weak_weights': False}
