@@ -796,6 +796,26 @@ def vary_orn_corr():
     return configs
 
 
+def vary_orn_corr_relabel():
+    config = FullConfig()
+
+    config.kc_dropout_rate = 0.
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    orn_corrs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    datasets = ['./datasets/proto/orn_corr_relabel_{:0.2f}'.format(c) for c in
+                orn_corrs]
+
+    config_ranges = OrderedDict()
+    config_ranges['orn_corr'] = orn_corrs
+    config_ranges['data_dir'] = datasets
+    configs = vary_config(config, config_ranges, mode='sequential')
+    return configs
+
+
 def vary_orn_corr_nosign():
     config = FullConfig()
     config.data_dir = './datasets/proto/standard'

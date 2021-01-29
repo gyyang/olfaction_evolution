@@ -192,6 +192,19 @@ def make_orncorr_dataset():
         print('Done orn_corr training dataset: ', orn_corr)
 
 
+def make_orncorr_relabel_dataset():
+    """Vary the correlation of olfactory receptor neuron activity."""
+    task_config = task.input_ProtoConfig()
+    for orn_corr in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        task_config.orn_corr = orn_corr
+        task_config.relabel = True
+        task_config.N_CLASS = 100
+        task_config.n_trueclass = 200
+        fn = 'orn_corr_relabel_{:0.2f}'.format(orn_corr)
+        task.save_proto(config=task_config, seed=0, folder_name=fn)
+        print('Done orn_corr_relabel training dataset: ', orn_corr)
+
+
 def make_multi_or_dataset():
     """Vary the number of receptors expressed in each receptor neuron."""
     task_config = task.input_ProtoConfig()
