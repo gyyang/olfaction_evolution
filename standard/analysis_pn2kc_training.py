@@ -456,18 +456,6 @@ def _plot_K_vs_N(ax, name_or_path, results=None, plot_box=True, plot_fit=True):
         y_fit = model.predict(x_fit[:, np.newaxis])
         return x_fit, y_fit, model
 
-    def _pretty_box(x, positions, ax, color):
-        flierprops = {'markersize': 3, 'markerfacecolor': color,
-                      'markeredgecolor': 'none'}
-        boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
-        medianprops = {'color': color*0.3}  # make darker
-        whiskerprops = {'color': color}
-        ax.boxplot(x, positions=positions, widths=0.06,
-                   patch_artist=True, medianprops=medianprops,
-                   flierprops=flierprops, boxprops=boxprops, showcaps=False,
-                   whiskerprops=whiskerprops
-                   )
-
     logKs = [np.log(K) for K in Ks]
     med_logKs = np.array([np.median(np.log(K)) for K in Ks])
 
@@ -485,7 +473,7 @@ def _plot_K_vs_N(ax, name_or_path, results=None, plot_box=True, plot_fit=True):
         ax.scatter(np.log(n_orns), logKs, s=2., c=color)
     else:
         if plot_box:
-            _pretty_box(logKs, np.log(n_orns), ax, color)
+            tools.pretty_box(logKs, np.log(n_orns), ax, color)
 
     if plot_fit:
         x_fit, y_fit, model = _fit(np.log(n_orns), med_logKs)

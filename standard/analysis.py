@@ -504,8 +504,13 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
     if plot_args is None:
         plot_args = {}
 
+    # X-axis should be shared for all curves in this plot, precomputed
     # Unique sorted xkey values
     xvals = sorted(set(res[xkey]))
+    if xkey_is_string:
+        x_plot = np.arange(len(xvals))
+    else:
+        x_plot = np.log(np.array(xvals)) if logx else np.array(xvals)
 
     if logx is None:
         logx = xkey in ['lr', 'meta_lr', 'meta_update_lr',
@@ -524,6 +529,63 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize[0] += 1.0
         if xkey == 'spread_orn_activity':
             figsize[0] += 1.0
+
+    def _plot(_ykey, ind=None, label=None, color=None,
+              plot_actual_value=False):
+        """
+
+        Args:
+             _ykey: str, y key for line
+             ind: optinonal bool array of entries to select
+        """
+        yvals = list()
+        yval_alls = list()
+        clean_pn2kc = list()
+        for xval in xvals:
+            _ind = res[xkey] == xval
+            if ind is not None:
+                _ind = _ind * ind
+            yval_tmp = res[_ykey][_ind]
+            yvals.append(np.median(yval_tmp))
+            yval_alls.append(yval_tmp)
+
+            clean_pn2kc_tmp = res['clean_pn2kc'][_ind]
+            clean_pn2kc.append(all(clean_pn2kc_tmp))
+        yvals = np.array(yvals)
+        clean_pn2kc = np.array(clean_pn2kc)
+
+        y_plot = np.log(yvals) if logy else yvals
+
+        if show_cleanpn2kc:
+            # Plot clean pn2kc networks differently
+            line, = ax.plot(x_plot, y_plot, '-', color=color, **plot_args)
+            ax.plot(x_plot[clean_pn2kc], y_plot[clean_pn2kc],
+                    'o', markersize=3, color=line.get_color(),
+                    label=label, **plot_args)
+            ax.plot(x_plot[~clean_pn2kc], y_plot[~clean_pn2kc],
+                    'o', markersize=3, color='gray', **plot_args)
+        else:
+            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label,
+                    color=color, **plot_args)
+            # tools.pretty_box(yval_alls, x_plot, ax, color=color)
+            # TODO: TEMPORARY
+            # ax.plot(
+            #     x_plot+np.random.randn(*np.array(x_plot).shape)*0.03,
+            #     yval_alls+np.random.randn(*np.array(yval_alls).shape)*0.0,
+            #     'o', markersize=3, color=color)
+
+        if plot_actual_value:
+            for x, y in zip(x_plot, y_plot):
+                if y > ax.get_ylim()[-1]:
+                    continue
+                if _ykey in ['val_acc', 'glo_score', 'coding_level']:
+                    ytext = '{:0.2f}'.format(y)
+                else:
+                    ytext = '{:0.1f}'.format(y)
+                ax.text(x, y, ytext, fontsize=6,
+                        horizontalalignment='center',
+                        verticalalignment='bottom')
+
     # fig = plt.figure(figsize=figsize)
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     for i, ykey in enumerate(ykeys):
@@ -533,16 +595,6 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             ax_args_.update(ax_args)
         if ax_box is not None:
             rect = ax_box
-        yvals = list()
-        clean_pn2kc = list()
-        for xval in xvals:
-            yval_tmp = res[ykey][res[xkey] == xval]
-            yvals.append(np.mean(yval_tmp))
-
-            clean_pn2kc_tmp = res['clean_pn2kc'][res[xkey] == xval]
-            clean_pn2kc.append(all(clean_pn2kc_tmp))
-        clean_pn2kc = np.array(clean_pn2kc)
-
         ax = axs[i] if ny > 1 else axs
         ax.update(ax_args_)
         ax.spines["right"].set_visible(False)
@@ -555,43 +607,10 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             colors = [seqcmap(x) for x in np.linspace(0, 1, len(loop_vals))]
             for loop_val, color in zip(loop_vals, colors):
                 ind = res[loop_key] == loop_val
-                x_plot = res[xkey][ind]
-                y_plot = res[ykey][ind]
-                if logx:
-                    x_plot = np.log(x_plot)
-                if logy:
-                    y_plot = np.log(y_plot)
-                # x_plot = [str(x).rsplit('/', 1)[-1] for x in x_plot]
-                ax.plot(x_plot, y_plot, 'o-', markersize=3, color=color,
-                        label=nicename(loop_val, mode=loop_key), **plot_args)
+                _plot(ykey, ind=ind, label=nicename(loop_val, mode=loop_key),
+                      color=color)
         else:
-            if xkey_is_string:
-                x_plot = np.arange(len(xvals))
-            else:
-                x_plot = np.log(np.array(xvals)) if logx else np.array(xvals)
-            y_plot = np.log(yvals) if logy else np.array(yvals)
-
-            if show_cleanpn2kc:
-                # Plot clean pn2kc networks differently
-                line, = ax.plot(x_plot, y_plot, '-', **plot_args)
-                ax.plot(x_plot[clean_pn2kc], y_plot[clean_pn2kc],
-                        'o', markersize=3, color=line.get_color(), **plot_args)
-                ax.plot(x_plot[~clean_pn2kc], y_plot[~clean_pn2kc],
-                        'o', markersize=3, color='gray', **plot_args)
-            else:
-                ax.plot(x_plot, y_plot, 'o-', markersize=3, **plot_args)
-
-            if plot_actual_value:
-                for x, y in zip(x_plot, y_plot):
-                    if y > ax.get_ylim()[-1]:
-                        continue
-                    if ykey in ['val_acc', 'glo_score', 'coding_level']:
-                        ytext = '{:0.2f}'.format(y)
-                    else:
-                        ytext = '{:0.1f}'.format(y)
-                    ax.text(x, y, ytext, fontsize=6,
-                            horizontalalignment='center',
-                            verticalalignment='bottom')
+            _plot(ykey, plot_actual_value=plot_actual_value)
 
         if 'xticks' in ax_args_.keys():
             xticks = ax_args_['xticks']
@@ -644,6 +663,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             else:
                 l = ax.legend(loc='best', fontsize=7, frameon=False, ncol=ncol)
             l.set_title(nicename(loop_key))
+    plt.tight_layout()
 
     figname = '_' + '_'.join(ykeys) + '_vs_' + xkey
     if loop_key:
@@ -657,9 +677,6 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                 v = str(v)
             figname += k + '_' + v + '__'
     figname += string
-
-    plt.tight_layout()
-
     tools.save_fig(path, figname)
 
 

@@ -894,3 +894,17 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
                                             b=maxval),
         cmap(np.linspace(minval, maxval, n)))
     return new_cmap
+
+
+def pretty_box(x, positions, ax, color, **kwargs):
+    color = np.array(color)
+    flierprops = {'markersize': 3, 'markerfacecolor': color,
+                  'markeredgecolor': 'none'}
+    boxprops = {'facecolor': color, 'linewidth': 1, 'color': color}
+    medianprops = {'color': color*0.3}  # make darker
+    whiskerprops = {'color': color}
+    ax.boxplot(x, positions=positions, widths=0.06,
+               patch_artist=True, medianprops=medianprops,
+               flierprops=flierprops, boxprops=boxprops, showcaps=False,
+               whiskerprops=whiskerprops, **kwargs
+               )

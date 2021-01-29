@@ -26,7 +26,7 @@ def _get_labels(prototypes, odors, percent_generalization, weights=None):
 
 def _spread_orn_activity(prototypes, spread = 0):
     '''
-    :param prototypes:
+    :param prototypes: (n_samples, n_neurons)
     :param spread: varies from [0, 1). 0 means no spread, 1 means maximum spread.
     :return:
     '''
