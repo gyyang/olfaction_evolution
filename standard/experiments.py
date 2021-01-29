@@ -344,7 +344,6 @@ def pn_norm():
     config.train_pn2kc = True
 
     config.kc_dropout_rate = 0.
-
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1. / config.N_PN
@@ -357,9 +356,10 @@ def pn_norm():
     # config_ranges['kc_prune_weak_weights'] = [True, False]
     # config_ranges['kc_dropout_rate'] = [0., 0.5]
     config_ranges['data_dir'] = datasets
-    # config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen',
-    #                                 'fixed_activity']
-    config_ranges['pn_norm_pre'] = [None, 'olsen', 'fixed_activity']
+    config_ranges['pn_norm_pre'] = [None,
+                                    'batch_norm',
+                                    'olsen',
+                                    'fixed_activity']
     config_ranges['seed'] = [0, 1, 2, 3, 4]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
