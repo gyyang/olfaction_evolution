@@ -366,9 +366,7 @@ def pn_norm_relabel():
     new_configs = list()
     for c in configs:
         c.data_dir = c.data_dir.replace('_spread', '_relabel_spread')
-        c.skip_orn2pn = False
-        if c.seed == 0:
-            new_configs.append(c)
+        new_configs.append(c)
     return new_configs
 
 
@@ -377,7 +375,9 @@ def pn_norm_relabel_trainorn():
     new_configs = list()
     for c in configs:
         c.data_dir = c.data_dir.replace('_spread', '_relabel_spread')
-        new_configs.append(c)
+        c.skip_orn2pn = False
+        if c.seed == 0:
+            new_configs.append(c)
     return new_configs
 
 
