@@ -523,7 +523,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         figsize = [1.5, 1.2 + 0.7 * (ny - 1)]
         if not show_ylabel:
             figsize[0] -= 0.3
-        if xkey in ['lr', 'N_KC', 'N_PN']:
+        if xkey in ['lr', 'N_KC', 'N_PN', 'spread_orn_activity']:
             figsize[0] += 0.3
         if xkey in ['orn_corr']:
             figsize[0] += 1.0

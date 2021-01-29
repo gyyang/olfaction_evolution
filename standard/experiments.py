@@ -381,11 +381,11 @@ def pn_norm_relabel_trainorn():
     return new_configs
 
 
-def pn_norm_analysis(path):
+def pn_norm_analysis(path, ykeys=None):
     select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    ykeys = ['val_acc', 'K_smart']
-    # ykeys = ['val_acc']
+    if ykeys is None:
+        ykeys = ['val_acc', 'K_smart']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre', show_cleanpn2kc=False)
     select_dict.update({'spread_orn_activity': 0.3})
@@ -411,6 +411,10 @@ def pn_norm_analysis(path):
 
 def pn_norm_relabel_analysis(path):
     pn_norm_analysis(path)
+
+
+def pn_norm_relabel_trainorn_analysis(path):
+    pn_norm_analysis(path, ykeys = ['val_acc', 'glo_score', 'K_smart'])
 
 
 def vary_or(n_pn=50):
