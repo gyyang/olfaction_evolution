@@ -94,7 +94,7 @@ def make_mask_row_dataset():
     print('Done Mask Dataset')
 
 
-def make_concentration_mask_row_dataset():
+def make_concentration_spread_dataset():
     """Impose sparsity on ORN activation and concentration invariance."""
     config = configs.input_ProtoConfig()
     config.N_CLASS = 100
@@ -102,12 +102,12 @@ def make_concentration_mask_row_dataset():
     config.is_spread_orn_activity = True
     for spread in [0, .3, .6, .9]:
         config.spread_orn_activity = spread
-        fn = 'concentration_mask_row_{:0.1f}'.format(spread)
+        fn = 'concentration_spread_{:0.2f}'.format(spread)
         task.save_proto(config, seed=seed, folder_name=fn)
-    print('Done Concentration_Mask Dataset')
+    print('Done Concentration_Spread Dataset')
 
 
-def make_concentration_relabel_mask_row_dataset():
+def make_concentration_relabel_spread_dataset():
     """Impose sparsity on ORN activation and concentration invariance."""
     config = configs.input_ProtoConfig()
     # relabel
@@ -120,9 +120,9 @@ def make_concentration_relabel_mask_row_dataset():
 
     for spread in [0, .3, .6, .9]:
         config.spread_orn_activity = spread
-        fn = 'concentration_relabel_mask_row_{:0.1f}'.format(spread)
+        fn = 'concentration_relabel_spread_{:0.2f}'.format(spread)
         task.save_proto(config, seed=seed, folder_name=fn)
-    print('Done Concentration_Mask Dataset')
+    print('Done Concentration_Spread Dataset')
 
 
 def make_combinatorial_dataset():

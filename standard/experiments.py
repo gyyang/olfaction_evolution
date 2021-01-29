@@ -341,8 +341,6 @@ def pn_norm():
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
 
-    config.train_pn2kc = True
-
     config.kc_dropout_rate = 0.
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
@@ -351,16 +349,12 @@ def pn_norm():
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
     spreads = [0, 0.3, 0.6, 0.9]
-    dataset_base = './datasets/proto/concentration_mask_row'
-    datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
-    # config_ranges['kc_prune_weak_weights'] = [True, False]
-    # config_ranges['kc_dropout_rate'] = [0., 0.5]
+    dataset_base = './datasets/proto/concentration_spread'
+    datasets = [dataset_base + '_{:0.2f}'.format(s) for s in spreads]
     config_ranges['data_dir'] = datasets
-    config_ranges['pn_norm_pre'] = [None,
-                                    'batch_norm',
-                                    'olsen',
-                                    'fixed_activity']
-    config_ranges['seed'] = [0, 1, 2, 3, 4]
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'fixed_activity',
+                                    'olsen']
+    # config_ranges['seed'] = [0, 1, 2, 3, 4]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -370,7 +364,7 @@ def pn_norm_relabel():
     configs = pn_norm()
     new_configs = list()
     for c in configs:
-        c.data_dir = c.data_dir.replace('_mask_row', '_relabel_mask_row')
+        c.data_dir = c.data_dir.replace('_spread', '_relabel_spread')
         new_configs.append(c)
     return new_configs
 
