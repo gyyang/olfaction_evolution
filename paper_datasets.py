@@ -100,8 +100,7 @@ def make_concentration_mask_row_dataset():
     config.N_CLASS = 100
     config.vary_concentration = True
     config.is_spread_orn_activity = True
-    # for spread in [0, .3, .6, .9]:
-    for spread in [0.33, 0.66, .99]:
+    for spread in [0, .3, .6, .9]:
         config.spread_orn_activity = spread
         fn = 'concentration_mask_row_{:0.1f}'.format(spread)
         task.save_proto(config, seed=seed, folder_name=fn)
@@ -206,6 +205,3 @@ def make_multi_or_dataset():
 def make_dataset(dataset_name):
     func_name = 'make_' + dataset_name + '_dataset'
     globals()[func_name]()  # call function by the name func_name
-
-
-make_concentration_mask_row_dataset()

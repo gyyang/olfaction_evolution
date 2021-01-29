@@ -37,7 +37,8 @@ def _spread_orn_activity(prototypes, spread = 0):
     spread_low = 1 - spread
     spread_high = 1 + spread
     n_samples = prototypes.shape[0]
-    scale_factors = np.random.uniform(spread_low, spread_high, n_samples)
+    scale_factors = np.random.beta(1-spread, 1-spread, n_samples)
+    scale_factors = spread_low + scale_factors * (spread_high - spread_low)
     out = prototypes * scale_factors.reshape(-1, 1)
     return out
 

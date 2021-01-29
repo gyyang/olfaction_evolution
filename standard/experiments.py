@@ -344,15 +344,13 @@ def pn_norm():
     config.train_pn2kc = True
     config.train_pn2kc = True
 
-    config.kc_dropout_rate = 0.5
-
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = False
     config.kc_prune_threshold = 1. / config.N_PN
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    spreads = [0, 0.33, 0.66, 0.99]
+    spreads = [0, 0.3, 0.6, 0.9]
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
     # config_ranges['kc_prune_weak_weights'] = [True, False]
