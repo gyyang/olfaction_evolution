@@ -85,6 +85,8 @@ def _get_normalization(norm_type, num_features=None):
     if norm_type is not None:
         if norm_type == 'batch_norm':
             return nn.BatchNorm1d(num_features)
+        elif norm_type == 'layer_norm':
+            return nn.LayerNorm(num_features)
         elif norm_type == 'fixed_activity':
             return FixActivityNorm(num_features)
         elif norm_type == 'olsen':

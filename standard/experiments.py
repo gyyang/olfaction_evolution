@@ -352,9 +352,10 @@ def pn_norm():
     dataset_base = './datasets/proto/concentration_spread'
     datasets = [dataset_base + '_{:0.2f}'.format(s) for s in spreads]
     config_ranges['data_dir'] = datasets
-    config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'fixed_activity',
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm',
+                                    'layer_norm', 'fixed_activity',
                                     'olsen']
-    # config_ranges['seed'] = [0, 1, 2, 3, 4]
+    config_ranges['seed'] = [0, 1, 2]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -376,7 +377,7 @@ def pn_norm_analysis(path):
     # ykeys = ['val_acc']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre', show_cleanpn2kc=False)
-    select_dict.update({'spread_orn_activity': 0.6})
+    select_dict.update({'spread_orn_activity': 0.3})
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
     sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
