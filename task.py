@@ -24,7 +24,7 @@ def _get_labels(prototypes, odors, percent_generalization, weights=None):
     return np.argmin(dist, axis=0)
 
 
-def _spread_orn_activity(prototypes, spread = 0):
+def _spread_orn_activity(prototypes, spread=0, rng=None):
     '''
     :param prototypes: (n_samples, n_neurons)
     :param spread: varies from [0, 1). 0 means no spread, 1 means maximum spread.
@@ -34,23 +34,27 @@ def _spread_orn_activity(prototypes, spread = 0):
     if spread == 0:
         return prototypes
 
+    if rng is None:
+        rng = np.random.RandomState()
+
     spread_low = 1 - spread
     spread_high = 1 + spread
     n_samples = prototypes.shape[0]
-    scale_factors = np.random.beta(1-spread, 1-spread, n_samples)
+    scale_factors = rng.beta(1-spread, 1-spread, n_samples)
     scale_factors = spread_low + scale_factors * (spread_high - spread_low)
     out = prototypes * scale_factors.reshape(-1, 1)
     return out
 
 
-def _mask_orn_activation_row(prototypes, spread=None):
+def _mask_orn_activation_row(prototypes, spread=None, rng=None):
     '''
     :param prototypes:
     :param spread: varies from [0, 1). 0 means no spread, 1 means maximum spread.
     :return:
     '''
     assert spread >= 0 and spread < 1, 'spread is not within range of [0, 1)'
-
+    if rng is None:
+        rng = np.random.RandomState()
     n_samples, n_orn = prototypes.shape
     mask_degree = np.round(n_orn * (1 - spread) / 2).astype(int)
     # Small number of ORNs active
@@ -60,26 +64,28 @@ def _mask_orn_activation_row(prototypes, spread=None):
     print(list_of_numbers)
 
     # For each sample odor, how many ORNs will be active
-    n_orn_active = np.random.choice(list_of_numbers, size=n_samples, replace=True)
+    n_orn_active = rng.choice(list_of_numbers, size=n_samples, replace=True)
     mask = np.zeros_like(prototypes, dtype=int)
     for i in range(n_samples):
         mask[i, :n_orn_active[i]] = 1  # set only this number of ORNs active
-        np.random.shuffle(mask[i, :])
+        rng.shuffle(mask[i, :])
     out = np.multiply(prototypes, mask)
     return out
 
 
-def _mask_orn_activation_column(prototypes, probs):
+def _mask_orn_activation_column(prototypes, probs, rng=None):
     '''
     :param prototypes:
     :param spread:  varies from [0, 1). 0 means no spread, 1 means maximum spread.
     :return:
     '''
+    if rng is None:
+        rng = np.random.RandomState()
     n_samples = prototypes.shape[0]
     n_orn = prototypes.shape[1]
     mask = np.zeros_like(prototypes)
     for i in range(n_orn):
-        mask[:,i] = np.random.uniform(0, 1, n_samples) < probs[i]
+        mask[:,i] = rng.uniform(0, 1, n_samples) < probs[i]
     out = np.multiply(prototypes, mask)
     return out
 
@@ -332,21 +338,21 @@ def _generate_proto_threshold(
         assert spread >= 0 and spread < 1, 'spread is not between the values of [0,1)'
         mask_degree = (1 - spread) / 2
         low, high = mask_degree, 1 - mask_degree
-        low_samples = np.random.uniform(0, low, n_orn)
-        high_samples = np.random.uniform(high, 1, n_orn)
+        low_samples = rng.uniform(0, low, n_orn)
+        high_samples = rng.uniform(high, 1, n_orn)
         samples = np.concatenate((low_samples, high_samples))
-        probs = np.random.choice(samples, size=n_orn, replace=False)
+        probs = rng.choice(samples, size=n_orn, replace=False)
 
-        prototypes = _mask_orn_activation_column(prototypes, probs)
-        train_odors = _mask_orn_activation_column(train_odors, probs)
-        val_odors = _mask_orn_activation_column(val_odors, probs)
+        prototypes = _mask_orn_activation_column(prototypes, probs, rng=rng)
+        train_odors = _mask_orn_activation_column(train_odors, probs, rng=rng)
+        val_odors = _mask_orn_activation_column(val_odors, probs, rng=rng)
 
     if is_spread_orn_activity:
         print('mean')
         spread = spread_orn_activity
-        prototypes = _spread_orn_activity(prototypes, spread)
-        train_odors = _spread_orn_activity(train_odors, spread)
-        val_odors = _spread_orn_activity(val_odors, spread)
+        prototypes = _spread_orn_activity(prototypes, spread, rng=rng)
+        train_odors = _spread_orn_activity(train_odors, spread, rng=rng)
+        val_odors = _spread_orn_activity(val_odors, spread, rng=rng)
 
     train_odors = train_odors.astype(np.float32)
     val_odors = val_odors.astype(np.float32)
@@ -465,7 +471,7 @@ def _generate_proto_threshold(
             mask = np.zeros((n_orn, n_orn))
             mask[:n_or_per_orn] = 1./n_or_per_orn
             for i in range(n_orn):
-                np.random.shuffle(mask[:, i])  # shuffling in-place
+                rng.shuffle(mask[:, i])  # shuffling in-place
         else:
             from scipy.linalg import circulant
             tmp = np.zeros(n_orn)
