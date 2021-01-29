@@ -652,6 +652,8 @@ nicename_dict = {
     'pn_norm_pre': 'PN normalization',
     'kc_norm_pre': 'KC normalization',
     'batch_norm': 'Batch Norm',
+    'layer_norm': 'Layer Norm',
+    'olsen': 'Divisive Norm',
     'kc_dropout_rate': 'KC dropout rate',
     'pn_dropout_rate': 'PN dropout rate',
     'K_inferred': 'K',
@@ -682,7 +684,6 @@ nicename_dict = {
     'meta_update_lr': 'Initial inner learning rate',
     'skip_orn2pn': 'Skip ORN-PN',
     'data_dir': 'Dataset',
-    'olsen': 'Olsen & Wilson',
     'fixed_activity': 'Fixed activity',
     'spread_orn_activity': 'ORN activity spread',
 }
