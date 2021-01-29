@@ -335,17 +335,17 @@ def pn_norm():
     Assesses the effect of PN normalization on glo score and performance
     '''
     config = FullConfig()
-    config.max_epoch = 15
-    config.lr = 1e-3
+    config.max_epoch = 100
+    config.lr = 5e-4
 
     config.skip_orn2pn = True
     config.N_ORN_DUPLICATION = 1
 
     config.train_pn2kc = True
-    config.train_pn2kc = True
 
+    config.kc_dropout_rate = 0.
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
-    config.kc_prune_weak_weights = False
+    config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1. / config.N_PN
 
     # Ranges of hyperparameters to loop over
@@ -354,11 +354,13 @@ def pn_norm():
     dataset_base = './datasets/proto/concentration_mask_row'
     datasets = [dataset_base + '_{:0.1f}'.format(s) for s in spreads]
     # config_ranges['kc_prune_weak_weights'] = [True, False]
+    # config_ranges['kc_dropout_rate'] = [0., 0.5]
     config_ranges['data_dir'] = datasets
     config_ranges['pn_norm_pre'] = [None,
                                     'batch_norm',
                                     'olsen',
                                     'fixed_activity']
+    config_ranges['seed'] = [0, 1, 2, 3, 4]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -374,17 +376,17 @@ def pn_norm_relabel():
 
 
 def pn_norm_analysis(path):
-    select_dict = {'kc_prune_weak_weights': False}
+    select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     ykeys = ['val_acc', 'K_smart']
     # ykeys = ['val_acc']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre')
-    select_dict = {'spread_orn_activity': 0.6, 'kc_prune_weak_weights': False}
+    select_dict.update({'spread_orn_activity': 0.6})
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
-    # sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
-    #            legend_key='pn_norm_pre')
+    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
+               legend_key='pn_norm_pre')
 
     # import tools
     # rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
