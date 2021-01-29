@@ -205,5 +205,3 @@ def make_multi_or_dataset():
 def make_dataset(dataset_name):
     func_name = 'make_' + dataset_name + '_dataset'
     globals()[func_name]()  # call function by the name func_name
-
-
