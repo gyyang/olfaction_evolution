@@ -543,7 +543,7 @@ def plot_acrossmodels(path, model_var='kc_inputs', dataset='val', file=None, epo
             except IndexError:
                 res_plot = [res_dict[model][i] for model in models]
             res_plot = np.array(res_plot)
-            if ylabel == 'val_logloss':
+            if ylabel == 'log_val_loss':
                 res_plot = np.log(res_plot)  # TODO: this log?
             if i == 0:
                 diff_dict[ylabel] = res_plot

@@ -575,6 +575,9 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
             else:
                 res[key].append(val)
 
+            if 'loss' in key:
+                res['log_' + key].append(np.log(val))
+
         k_smart_key = 'K' if config.kc_prune_weak_weights else 'K_inferred'
         if k_smart_key in res.keys():
             res['K_smart'].append(res[k_smart_key][-1])
@@ -595,24 +598,12 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
         clean_pn2kc = has_nobadkc(d) and has_singlepeak(d)
         res['clean_pn2kc'].append(clean_pn2kc)
 
-    loss_keys = list()
     for key, val in res.items():
         try:
             res[key] = np.array(val)
         except ValueError:
             print('Cannot turn ' + key +
                   ' into np array, probably non-homogeneous shape')
-
-        if 'loss' in key:
-            loss_keys.append(key)
-
-    for key in loss_keys:
-        new_key = key[:-4] + 'logloss'
-        try:
-            res[new_key] = np.log(res[key])
-        except AttributeError:
-            print('''Could not compute log loss.
-                  Most likely models have not finished training.''')
 
     return res
 
@@ -629,10 +620,10 @@ nicename_dict = {
     'combined_glo_score': 'OR to PN GloScore',
     'train_acc': 'Training Accuracy',
     'train_loss': 'Training Loss',
-    'train_logloss': 'Log Training Loss',
+    'log_train_loss': 'Log Training Loss',
     'val_acc': 'Accuracy',
     'val_loss': 'Loss',
-    'val_logloss': 'Log Loss',
+    'log_val_loss': 'Log Loss',
     'epoch': 'Epoch',
     'kc_dropout': 'KC Dropout Rate',
     'kc_loss_alpha': r'$\alpha$',

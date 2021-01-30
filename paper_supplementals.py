@@ -287,7 +287,7 @@ if 'control_pn2kc_prune_hyper' in experiments:
 #         t = [1, 2, 9, 19, 29, 39, 49, 59, 69]
 #         for i in t:
 #             res = tools.load_all_results(path, argLast=False, ix=i)
-#             sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss',
+#             sa.plot_results(path, xkey='kc_inputs', ykey='log_val_loss',
 #                             select_dict={'ORN_NOISE_STD':0}, res=res, string = str(i), figsize=(2, 2))
 #
 #         sa.plot_progress(path, select_dict = {'kc_inputs':[7,15,30], 'ORN_NOISE_STD':0}, legends=['7', '15', '30'])
@@ -302,10 +302,10 @@ if 'control_pn2kc_prune_hyper' in experiments:
 #         #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),)
 #         sa.plot_results(path, xkey='kc_inputs', ykey='val_acc', select_dict={'ORN_NOISE_STD':0},
 #                         figsize=(2, 2))
-#         # sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss', loop_key='ORN_NOISE_STD',
+#         # sa.plot_results(path, xkey='kc_inputs', ykey='log_val_loss', loop_key='ORN_NOISE_STD',
 #         #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
 #         #                 ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
-#         sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss', select_dict={'ORN_NOISE_STD': 0},
+#         sa.plot_results(path, xkey='kc_inputs', ykey='log_val_loss', select_dict={'ORN_NOISE_STD': 0},
 #                         figsize=(2, 2),
 #                         ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
 
@@ -345,7 +345,7 @@ if 'vary_kc_activity_trainable' in experiments:
 #     if ANALYZE:
 #         xkey = 'orn_corr'
 #         ykeys = ['val_acc', 'K_inferred', 'glo_score']
-#         progress_keys = ['val_logloss', 'train_logloss', 'val_loss',
+#         progress_keys = ['log_val_loss', 'log_train_loss', 'val_loss',
 #                          'train_loss', 'val_acc', 'glo_score', 'K_inferred']
 #         for yk in ykeys:
 #             sa.plot_results(path, xkey=xkey, ykey=yk, figsize=(3.0, 1.5))

@@ -53,12 +53,13 @@ class OlsenNorm(nn.Module):
         self.rho = nn.Parameter(torch.Tensor(1, num_features))
         self.m = nn.Parameter(torch.Tensor(1, num_features))
         self.num_features = num_features
-        nn.init.constant_(self.r_max, 25.)
+        nn.init.constant_(self.r_max, num_features / 2.)
         nn.init.constant_(self.rho, 0)
         nn.init.constant_(self.m, 0.99)
 
     def forward(self, input):
-        r_max = torch.clamp(self.r_max, 5., 50.)
+        r_max = torch.clamp(self.r_max, self.num_features / 10.,
+                            self.num_features)
         rho = torch.clamp(self.rho, 0., 3.)
         m = torch.clamp(self.m, 0.05, 2.)
 

@@ -387,7 +387,7 @@ def pn_norm_analysis(path, ykeys=None):
     if ykeys is None:
         ykeys = ['val_acc', 'K_smart']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
-                    loop_key='pn_norm_pre', show_cleanpn2kc=False)
+                    loop_key='pn_norm_pre')
     select_dict.update({'spread_orn_activity': 0.3})
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')

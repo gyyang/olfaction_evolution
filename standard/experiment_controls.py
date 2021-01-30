@@ -353,18 +353,11 @@ def control_pn2kc_prune_boolean():
     return configs
 
 
-def control_pn2kc_prune_boolean_analysis(path, n_pns=None):
+def control_pn2kc_prune_boolean_analysis(path):
     xkey = 'kc_prune_weak_weights'
     ykeys = ['val_acc', 'K_smart']
-    if n_pns is None:
-        n_pns = [50, 200]
-
-    for n_pn in n_pns:
-        cur_path = path + '_pn' + str(n_pn)
-        sa.plot_progress(cur_path, ykeys=ykeys, legend_key=xkey)
-        sa.plot_xy(cur_path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
-                   ax_args={'ylim': [0, n_pn ** 2.4 / 50],
-                            'xlim': [0, 8 / n_pn**0.6]})
+    sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
+    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
 
 
 def control_vary_kc_prune(n_pn=50):
@@ -724,7 +717,7 @@ def vary_kc_claws_analysis(path):
     t = [1, 2, 9, 19, 29, 39, 49, 59, 69]
     for i in t:
         res = tools.load_all_results(path, argLast=False, ix=i)
-        sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss',
+        sa.plot_results(path, xkey='kc_inputs', ykey='log_val_loss',
                         select_dict={'ORN_NOISE_STD': 0}, res=res,
                         string=str(i), figsize=(2, 2))
 
@@ -743,10 +736,10 @@ def vary_kc_claws_analysis(path):
     sa.plot_results(path, xkey='kc_inputs', ykey='val_acc',
                     select_dict={'ORN_NOISE_STD': 0},
                     figsize=(2, 2))
-    # sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss', loop_key='ORN_NOISE_STD',
+    # sa.plot_results(path, xkey='kc_inputs', ykey='log_val_loss', loop_key='ORN_NOISE_STD',
     #                 figsize=(1.5, 1.5), ax_box=(0.27, 0.25, 0.65, 0.65),
     #                 ax_args={'ylim':[-1, 2], 'yticks':[-1,0,1,2]})
-    sa.plot_results(path, xkey='kc_inputs', ykey='val_logloss',
+    sa.plot_results(path, xkey='kc_inputs', ykey='log_val_loss',
                     select_dict={'ORN_NOISE_STD': 0},
                     figsize=(2, 2),
                     ax_args={'ylim': [-1, 2], 'yticks': [-1, 0, 1, 2]})
@@ -854,7 +847,7 @@ def kc_norm():
     '''
     config = FullConfig()
     config.data_dir = './datasets/proto/relabel_200_100'
-    config.max_epoch = 100
+    config.max_epoch = 15
     config.lr = 5e-4
     config.kc_dropout_rate = 0.
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
@@ -863,8 +856,19 @@ def kc_norm():
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    config_ranges['kc_norm_pre'] = [None, 'batch_norm', 'mean_center',
-                                    'layer_norm', 'fixed_activity',
-                                    'olsen']
+    config_ranges['kc_norm_post'] = [None, 'batch_norm', 'mean_center',
+                                     'layer_norm', 'fixed_activity',
+                                     'olsen']
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def kc_norm_analysis(path):
+    select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.,
+                   'kc_norm_pre': 'fixed_activity'}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    ykeys = ['val_acc', 'glo_score', 'K_smart']
+    xkey = 'kc_norm_pre'
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)

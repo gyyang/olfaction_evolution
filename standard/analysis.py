@@ -34,7 +34,7 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     elif ykey in ['val_acc', 'glo_score', 'coding_level']:
         ax_args['ylim'] = [0, 1.05]
         ax_args['yticks'] = [0, .5, 1]
-    elif ykey == 'train_logloss':
+    elif ykey == 'log_train_loss':
         ax_args['ylim'] = [-2, 2]
         ax_args['yticks'] = [-2, -1, 0, 1, 2]
 
@@ -157,7 +157,7 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
 
     """
     if ykeys is None:
-        ykeys = ['val_logloss', 'train_logloss', 'val_loss',
+        ykeys = ['log_val_loss', 'log_train_loss', 'val_loss',
                  'train_loss', 'val_acc', 'glo_score']
 
     if not save_path:
@@ -529,6 +529,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize[0] += 1.0
         if xkey == 'spread_orn_activity':
             figsize[0] += 1.0
+        if xkey == 'kc_norm_pre':
+            figsize[0] += 2.0
 
     def _plot(_ykey, ind=None, label=None, color=None,
               plot_actual_value=False):
