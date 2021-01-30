@@ -529,7 +529,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize[0] += 1.0
         if xkey == 'spread_orn_activity':
             figsize[0] += 1.0
-        if xkey == 'kc_norm_pre':
+        if xkey in ['kc_norm_pre', 'kc_norm_post']:
             figsize[0] += 2.0
 
     def _plot(_ykey, ind=None, label=None, color=None,

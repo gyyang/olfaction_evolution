@@ -847,7 +847,7 @@ def kc_norm():
     '''
     config = FullConfig()
     config.data_dir = './datasets/proto/relabel_200_100'
-    config.max_epoch = 15
+    config.max_epoch = 100
     config.lr = 5e-4
     config.kc_dropout_rate = 0.
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
@@ -856,19 +856,22 @@ def kc_norm():
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    config_ranges['kc_norm_post'] = [None, 'batch_norm', 'mean_center',
-                                     'layer_norm', 'fixed_activity',
-                                     'olsen']
-    configs = vary_config(config, config_ranges, mode='combinatorial')
+    config_ranges['kc_norm'] = [None, 'batch_norm', 'mean_center',
+                                      'layer_norm', 'fixed_activity',
+                                      'olsen']
+    config_ranges['kc_norm_pre'] = [None, 'batch_norm', 'mean_center',
+                                    'layer_norm', None, None]
+    config_ranges['kc_norm_post'] = [None, None, None, None,
+                                     'fixed_activity', 'olsen']
+    configs = vary_config(config, config_ranges, mode='sequential')
     return configs
 
 
 def kc_norm_analysis(path):
-    select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.,
-                   'kc_norm_pre': 'fixed_activity'}
+    select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     ykeys = ['val_acc', 'glo_score', 'K_smart']
-    xkey = 'kc_norm_pre'
+    xkey = 'kc_norm_post'
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
     sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
