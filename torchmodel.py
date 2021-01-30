@@ -81,12 +81,23 @@ class FixActivityNorm(nn.Module):
         return self.rmax * torch.div(input, input_sum)
 
 
+class MeanCenterNorm(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, input):
+        # input (batch_size, neurons)
+        return input - torch.mean(input, dim=-1, keepdim=True)
+
+
 def _get_normalization(norm_type, num_features=None):
     if norm_type is not None:
         if norm_type == 'batch_norm':
             return nn.BatchNorm1d(num_features)
         elif norm_type == 'layer_norm':
             return nn.LayerNorm(num_features)
+        elif norm_type == 'mean_center':
+            return MeanCenterNorm()
         elif norm_type == 'fixed_activity':
             return FixActivityNorm(num_features)
         elif norm_type == 'olsen':

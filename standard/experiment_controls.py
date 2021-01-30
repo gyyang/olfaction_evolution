@@ -74,6 +74,10 @@ def _control_relabel_analysis(path, ax_args=None):
     sa.plot_xy(modeldirs,
                xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
                ax_args=ax_args)
+    sa.plot_results(modeldirs, xkey=xkey, ykey='val_acc')
+
+    select_dict = {'kc_dropout_rate': 0.5}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     analysis_activity.sparseness_activity(modeldirs, 'kc')
 
     modeldirs = tools.get_modeldirs(path)
@@ -121,7 +125,7 @@ def control_relabel_singlelayer():
 
 def control_relabel_singlelayer_analysis(path):
     xkey = 'n_trueclass_ratio'
-    ykeys = ['val_acc', 'val_logloss']
+    ykeys = 'val_acc'
     sa.plot_results(path, xkey=xkey, ykey=ykeys)
     sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
 
@@ -842,3 +846,25 @@ def vary_orn_corr_analysis(path):
 
 def vary_orn_corr_relabel_analysis(path):
     vary_orn_corr_analysis(path)
+
+
+def kc_norm():
+    '''
+    Assesses the effect of KC normalization on glo score and performance
+    '''
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_200_100'
+    config.max_epoch = 100
+    config.lr = 5e-4
+    config.kc_dropout_rate = 0.
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    config_ranges['kc_norm_pre'] = [None, 'batch_norm', 'mean_center',
+                                    'layer_norm', 'fixed_activity',
+                                    'olsen']
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
