@@ -841,7 +841,7 @@ def vary_orn_corr_relabel_analysis(path):
     vary_orn_corr_analysis(path)
 
 
-def kc_norm():
+def _kc_norm():
     '''
     Assesses the effect of KC normalization on glo score and performance
     '''
@@ -854,24 +854,35 @@ def kc_norm():
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1. / config.N_PN
 
+    config.kc_norm_pre = None
+    config.kc_norm_post = None
+
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
     config_ranges['kc_norm'] = [None, 'batch_norm', 'mean_center',
-                                      'layer_norm', 'fixed_activity',
-                                      'olsen']
-    config_ranges['kc_norm_pre'] = [None, 'batch_norm', 'mean_center',
-                                    'layer_norm', None, None]
-    config_ranges['kc_norm_post'] = [None, None, None, None,
-                                     'fixed_activity', 'olsen']
-    configs = vary_config(config, config_ranges, mode='sequential')
+                                'layer_norm', 'fixed_activity', 'olsen']
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def kc_norm():
+    new_configs = list()
+    for c in _kc_norm():
+        if c.kc_norm in ['batch_norm', 'layer_norm', 'mean_center']:
+            c.kc_norm_pre = c.kc_norm
+        if c.kc_norm in ['fixed_activity', 'olsen']:
+            c.kc_norm_post = c.kc_norm
+        new_configs.append(c)
+
+    return new_configs
 
 
 def kc_norm_analysis(path):
     select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     ykeys = ['val_acc', 'glo_score', 'K_smart']
-    xkey = 'kc_norm_post'
+    xkey = 'kc_norm'
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
     sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)

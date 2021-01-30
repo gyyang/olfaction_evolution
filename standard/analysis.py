@@ -27,8 +27,12 @@ def _get_ax_args(xkey, ykey, n_pn=50):
     ax_args = {}
     if ykey in ['K_inferred', 'sparsity_inferred', 'K', 'sparsity', 'K_smart']:
         if n_pn == 50:
-            ax_args['ylim'] = [0, 20]
-            ax_args['yticks'] = [1, 5, 10, 15, 20]
+            if xkey in ['kc_norm']:
+                ax_args['ylim'] = [0, 30]
+                ax_args['yticks'] = [1, 10, 20, 30]
+            else:
+                ax_args['ylim'] = [0, 20]
+                ax_args['yticks'] = [1, 5, 10, 15, 20]
         else:
             ax_args['ylim'] = [0, int(0.5*n_pn)]
     elif ykey in ['val_acc', 'glo_score', 'coding_level']:
@@ -529,7 +533,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize[0] += 1.0
         if xkey == 'spread_orn_activity':
             figsize[0] += 1.0
-        if xkey in ['kc_norm_pre', 'kc_norm_post']:
+        if xkey in ['kc_norm_pre', 'kc_norm_post', 'kc_norm']:
             figsize[0] += 2.0
 
     def _plot(_ykey, ind=None, label=None, color=None,
@@ -624,7 +628,10 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             xticklabels = [nicename(x, mode=xkey) for x in xvals]
         ax.set_xticks(xticks)
         if i == ny - 1:
-            ax.set_xticklabels(xticklabels)
+            if xkey in ['kc_norm_pre', 'kc_norm_post', 'kc_norm']:
+                ax.set_xticklabels(xticklabels, rotation=15, ha="right")
+            else:
+                ax.set_xticklabels(xticklabels)
             ax.set_xlabel(nicename(xkey))
         else:
             ax.tick_params(labelbottom=False)
