@@ -29,6 +29,7 @@ def control_relabel():
     """Standard training setting"""
     config = FullConfig()
     config.max_epoch = 100
+    config.kc_dropout_rate = 0.
 
     relabel_class = 100
     true_classes = [100, 200, 500, 1000]
@@ -64,9 +65,11 @@ def _control_relabel_analysis(path, ax_args=None):
     ykeys = ['val_acc', 'glo_score', 'K_smart', 'coding_level']
 
     # Plot network with dropout
-    select_dict = {'kc_dropout_rate': 0.5}
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                    loop_key='kc_dropout_rate')
+    select_dict = {'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
     sa.plot_xy(modeldirs,
                xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
@@ -78,7 +81,7 @@ def _control_relabel_analysis(path, ax_args=None):
                     loop_key='kc_dropout_rate')
 
     # Plot network trained on relabel task
-    select_dict = {'n_trueclass_ratio': 5}
+    select_dict = {'n_trueclass_ratio': 2}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_results(modeldirs, xkey='kc_dropout_rate', ykey=ykeys)
     sa.plot_xy(modeldirs,
@@ -846,3 +849,7 @@ def vary_orn_corr_analysis(path):
     sa.plot_results(path, xkey=xkey, ykey=ykeys)
     sa.plot_progress(path, legend_key=xkey, ykeys=ykeys)
     sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
+
+
+def vary_orn_corr_relabel_analysis(path):
+    vary_orn_corr_analysis(path)

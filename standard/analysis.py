@@ -505,6 +505,12 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         plot_args = {}
 
     # X-axis should be shared for all curves in this plot, precomputed
+    if logx is None:
+        logx = xkey in ['lr', 'meta_lr', 'meta_update_lr',
+                        'N_KC', 'N_PN', 'initial_pn2kc',
+                        'kc_prune_threshold', 'N_ORN_DUPLICATION',
+                        'n_trueclass', 'n_trueclass_ratio']
+
     # Unique sorted xkey values
     xvals = sorted(set(res[xkey]))
     if xkey_is_string:
@@ -512,18 +518,12 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
     else:
         x_plot = np.log(np.array(xvals)) if logx else np.array(xvals)
 
-    if logx is None:
-        logx = xkey in ['lr', 'meta_lr', 'meta_update_lr',
-                        'N_KC', 'N_PN', 'initial_pn2kc',
-                        'kc_prune_threshold',
-                         'N_ORN_DUPLICATION', 'n_trueclass',
-                        'n_trueclass_ratio']
-
     if figsize is None:
         figsize = [1.5, 1.2 + 0.7 * (ny - 1)]
         if not show_ylabel:
             figsize[0] -= 0.3
-        if xkey in ['lr', 'N_KC', 'N_PN', 'spread_orn_activity']:
+        if xkey in ['lr', 'N_KC', 'N_PN', 'spread_orn_activity',
+                    'n_trueclass_ratio']:
             figsize[0] += 0.3
         if xkey in ['orn_corr']:
             figsize[0] += 1.0
@@ -558,10 +558,10 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
         if show_cleanpn2kc:
             # Plot clean pn2kc networks differently
-            line, = ax.plot(x_plot, y_plot, '-', color=color, **plot_args)
+            line, = ax.plot(x_plot, y_plot, '-', color=color,
+                            label=label, **plot_args)
             ax.plot(x_plot[clean_pn2kc], y_plot[clean_pn2kc],
-                    'o', markersize=3, color=line.get_color(),
-                    label=label, **plot_args)
+                    'o', markersize=3, color=line.get_color(), **plot_args)
             ax.plot(x_plot[~clean_pn2kc], y_plot[~clean_pn2kc],
                     'o', markersize=3, color='gray', **plot_args)
         else:
