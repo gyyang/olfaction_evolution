@@ -177,6 +177,7 @@ def control_standard():
     config_ranges['train_kc_bias'] = [False, True]
     config_ranges['initial_pn2kc'] = np.array([2., 4., 8.])/config.N_PN
     config_ranges['ORN_NOISE_STD'] = [0, 0.1, 0.2]
+    config_ranges['kc_prune_weak_weights'] = [False, True]
     # config_ranges['apl'] = [False, True]
 
     configs = vary_config(config, config_ranges, mode='control')
@@ -330,29 +331,17 @@ def control_pn2kc_inhibition_analysis(path):
                ax_args={'ylim': [0, 500]})
 
 
-def control_pn2kc_prune_boolean(n_pn=50):
+def control_pn2kc_prune_boolean():
     """Control pruning."""
     config = FullConfig()
     config.max_epoch = 100
-
-    config.N_PN = n_pn
-    config.data_dir = './datasets/proto/orn'+str(n_pn)
-
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
+    config.data_dir = './datasets/proto/relabel_200_100'
+    config.lr = 5e-4
+    config.kc_dropout_rate = 0.
 
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
-    config.kc_prune_threshold = 1./n_pn
-
-    # Heuristics
-    if n_pn > 50:
-        config.lr = 1e-4
-    else:
-        config.lr = 1e-3
-
-    # This is important for quantitative result
-    config.N_KC = min(40000, n_pn ** 2)
+    config.kc_prune_threshold = 1. / config.N_PN
 
     config_ranges = OrderedDict()
     config_ranges['kc_prune_weak_weights'] = [False, True]
