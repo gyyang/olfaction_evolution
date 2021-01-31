@@ -61,7 +61,9 @@ def _get_ax_args(xkey, ykey, n_pn=50):
 def _infer_plot_xy_axargs(X, Y):
     xlims = list()
     ylims = list()
-    for x, y in zip(X, Y):
+    for i in range(len(X)):
+        x = X[i]
+        y = Y[i]
         ypeak = np.percentile(y, 95)
         # first value from right higher than ypeak * 0.01
         xlims.append(x[-np.where(np.array(y[::-1]) > ypeak*0.01)[0][0]])
@@ -73,25 +75,31 @@ def _infer_plot_xy_axargs(X, Y):
 
 
 def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
-            ax_args=None, log=None, figsize=None):
+            ax_args=None, res=None, figsize=None):
     if not save_path:
         return
 
     def _plot_xy(xkey, ykey):
-        ys = log[ykey]
-        xs = log[xkey]
+        ys = res[ykey]
+        xs = res[xkey]
 
         if xkey in ['lin_bins', 'log_bins']:
             xs = [(x[1:] + x[:-1]) / 2 for x in xs]
 
         if ykey == 'lin_hist':
             new_ys = []
-            for x, y in zip(xs, ys):
+            for i in range(len(xs)):
+                x = xs[i]
+                y = ys[i]
                 # Plot density by dividing by binsize
                 bin_size = x[1] - x[0]  # must have equal bin size
                 y = y / bin_size
+                if res['kc_prune_weak_weights'][i]:
+                    y[0] = 0  # Ignore the pruned ones
                 # Smoothing
-                y = savgol_filter(y, window_length=21, polyorder=0)
+                window_lenth = int(0.02 / bin_size / 2) * 2 + 1
+                y = savgol_filter(
+                    y, window_length=window_lenth, polyorder=0)
                 new_ys.append(y)
             ys = new_ys
 
@@ -109,7 +117,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
             ax.plot(x, y, alpha=1, color=c, linewidth=1)
 
         if legend_key is not None:
-            legends = log[legend_key]
+            legends = res[legend_key]
             legends = [nicename(l, mode=legend_key) for l in legends]
             ncol = 1 if len(legends) < 4 else 2
             ax.legend(legends, fontsize=6, frameon=False, ncol=ncol,
@@ -134,19 +142,19 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
                 figname += k + '_' + str(v) + '_'
         tools.save_fig(save_path, figname)
 
-    if log is None:
-        log = tools.load_all_results(save_path, argLast=True)
+    if res is None:
+        res = tools.load_all_results(save_path, argLast=True)
     if select_dict is not None:
-        log = dict_methods.filter(log, select_dict)
+        res = dict_methods.filter(res, select_dict)
 
     if legend_key:
         # get rid of duplicates
-        values = log[legend_key]
+        values = res[legend_key]
         if np.any(values == None):
             values[values == None] = 'None'
         _, ixs = np.unique(values, return_index=True)
         for k in [legend_key, xkey, ykey]:
-            log[k] = log[k][ixs]
+            res[k] = res[k][ixs]
     _plot_xy(xkey, ykey)
 
 

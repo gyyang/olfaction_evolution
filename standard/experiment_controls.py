@@ -879,10 +879,15 @@ def kc_norm():
 
 
 def kc_norm_analysis(path):
-    select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
+    select_dict = {'kc_prune_weak_weights': True}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     ykeys = ['val_acc', 'glo_score', 'K_smart']
     xkey = 'kc_norm'
-    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                    loop_key='kc_dropout_rate')
+
+    select_dict.update({'kc_dropout_rate': 0.5})
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
-    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
+    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
+               ax_args={'xlim': [0, 1], 'ylim': [0, 200000]})
