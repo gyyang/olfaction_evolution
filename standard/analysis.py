@@ -160,7 +160,7 @@ def plot_xy(save_path, xkey, ykey, select_dict=None, legend_key=None,
 
 def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
                   legend_key=None, epoch_range=None, ykeys=None,
-                  ax_args=None, show_cleanpn2kc=True
+                  ax_args=None, show_cleanpn2kc=True, show_ylabel=True,
                   ):
     """Plot progress through training.
 
@@ -182,7 +182,9 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
                                  select_dict=select_dict,
                                  exclude_dict=exclude_dict)
 
-    figsize = (2.0, 1.2 + 0.7 * (ny-1))
+    figsize = [2.0, 1.2 + 0.7 * (ny-1)]
+    if not show_ylabel:
+        figsize[0] = figsize[0] - 0.3
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     xkey = 'epoch'
     for i, ykey in enumerate(ykeys):
@@ -238,7 +240,11 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
             ax.tick_params(labelbottom=False)
         else:
             ax.set_xlabel(nicename(xkey))
-        ax.set_ylabel(nicename(ykey))
+
+        if show_ylabel:
+            ax.set_ylabel(nicename(ykey))
+        else:
+            ax.set_yticklabels([])
 
         if epoch_range:
             ax.set_xlim([epoch_range[0], epoch_range[1]])
@@ -521,7 +527,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         logx = xkey in ['lr', 'meta_lr', 'meta_update_lr',
                         'N_KC', 'N_PN', 'initial_pn2kc',
                         'kc_prune_threshold', 'N_ORN_DUPLICATION',
-                        'n_trueclass', 'n_trueclass_ratio']
+                        'n_trueclass', 'n_trueclass_ratio',
+                        'meta_num_samples_per_class']
 
     # Unique sorted xkey values
     xvals = sorted(set(res[xkey]))
@@ -541,8 +548,6 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             figsize[0] += 1.0
         if xkey == 'spread_orn_activity':
             figsize[0] += 1.0
-        if xkey in ['kc_norm_pre', 'kc_norm_post', 'kc_norm']:
-            figsize[0] += 2.0
 
     def _plot(_ykey, ind=None, label=None, color=None,
               plot_actual_value=False):
@@ -600,7 +605,6 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
                         horizontalalignment='center',
                         verticalalignment='bottom')
 
-    # fig = plt.figure(figsize=figsize)
     fig, axs = plt.subplots(ny, 1, figsize=figsize, sharex='all')
     for i, ykey in enumerate(ykeys):
         # Default ax_args and other values, based on x and y keys

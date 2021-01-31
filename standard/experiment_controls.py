@@ -884,7 +884,8 @@ def kc_norm_analysis(path):
     ykeys = ['val_acc', 'glo_score', 'K_smart']
     xkey = 'kc_norm'
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
-                    loop_key='kc_dropout_rate')
+                    loop_key='kc_dropout_rate',
+                    figsize=[2.5, 1.2 + 0.7 * (3 - 1)])
 
     select_dict.update({'kc_dropout_rate': 0.5})
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)

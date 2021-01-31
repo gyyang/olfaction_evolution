@@ -152,9 +152,12 @@ def meta_control_standard_analysis(path):
     for xkey in default.keys():
         select_dict = copy.deepcopy(default)
         select_dict.pop(xkey)
+        show_ylabel = xkey == 'meta_lr'
         modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-        sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys)
-        sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
+        sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                        show_ylabel=show_ylabel)
+        sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey,
+                         show_ylabel=show_ylabel)
         sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
                    legend_key=xkey)
 
