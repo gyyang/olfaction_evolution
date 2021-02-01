@@ -18,6 +18,17 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
+def _spread_orn_activity(prototypes, spread=0.):
+    assert spread >= 0 and spread < 1, 'spread is not within range of [0, 1)'
+    if spread == 0:
+        return prototypes
+    spread_low = 1 - spread
+    spread_high = 1 + spread
+    n_samples = prototypes.shape[0]
+    scale_factors = np.random.choice([spread_low, spread_high, spread_high],
+                                     size=n_samples)
+    return prototypes * scale_factors.reshape(-1, 1)
+
 def get_labels(prototypes, odors):
     dist = euclidean_distances(prototypes, odors)
     label = np.argmin(dist, axis=0)
@@ -38,7 +49,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         mode: str, standard, innate, innate2, concentration, metalearn, relabel
     
     """
-    np.random.seed(1)
+    np.random.seed(2)
     colors = ['c','y','m','g']
     
 # =============================================================================
@@ -64,9 +75,12 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         texts = ['Class ' + i for i in ['A','B','C','D']]
         lim = 5
     elif mode == 'concentration':
-        proto_points_ = np.array([[1, 4], [4, 3], [3, .5], [2.5, 2.5]])
+        proto_points_ = np.array([[1, 4], [5, 3], [3, 3], [3, .5], [1.5, 2.5]])
         proto_points = _normalize(proto_points_)
-        texts = ['Class ' + i for i in ['A','B','C','D']]
+        ind = [0, 0, 2, 1, 1]
+        labels = ['A', 'B', 'C']
+        colors = [colors[i] for i in ind]
+        texts = ['Class ' + labels[i] for i in ind]
         lim = 5
     elif mode == 'relabel':
         proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], [4, 1], [4, 3]])
@@ -99,7 +113,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
             colors = ([np.array([178]*3)/255.] * 6 + 
             [np.array([228, 26, 28])/255.] + [np.array([55,126,184])/255.])
     elif mode == 'correlate':
-        orn_corr = 0.8
+        orn_corr = 0.6
         rng = np.random.RandomState(seed=1)
         proto_points = _sample_input(3, 2, rng=rng, corr=orn_corr) * 5
         texts = ['Class ' + i for i in ['A','B','C','D']]
@@ -114,6 +128,14 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         rand_points = np.concatenate((rand_points, rand_innate_points, rand_innate_points2), axis=0)
     elif mode == 'correlate':
         rand_points = _sample_input(size, 2, rng=rng, corr=orn_corr) * 5
+    elif mode == 'concentration':
+        spread = 0.8
+        if spread == 0:
+            nlim = lim
+        else:
+            nlim = lim/2
+        rand_points = np.random.uniform(low=0, high=nlim, size=[size, 2])
+        rand_points = _spread_orn_activity(rand_points, spread=spread)
     else:
         rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
     if mode == 'concentration':
@@ -145,7 +167,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
                         line_width=1)
 
     if mode == 'concentration':
-        proto_points = proto_points_
+        proto_points *= lim
         
     
 
@@ -188,6 +210,10 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         plt.title('Correlation {:0.1f}'.format(orn_corr), fontsize=7)
     if mode == 'metalearn':
         name_str = '_' + str(meta_ix)
+    if mode == 'concentration':
+        name_str = '_spread {:0.1f}'.format(spread)
+        plt.title(name_str[1:].capitalize(), fontsize=7)
+
     else:
         name_str = ''
 
@@ -198,11 +224,10 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     
 
 if __name__ == '__main__':
-    pass
     # plot_task('standard', include_prototypes=True)
     # plot_task('innate', include_prototypes=True)
-    plot_task('innate2', include_prototypes=True)
-    # plot_task('concentration', include_prototypes=True, include_data=True)
+    # plot_task('innate2', include_prototypes=True)
+    plot_task('concentration', include_prototypes=True, include_data=True)
     # plot_task('relabel', include_prototypes=True)
     # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
     # plot_task('correlate', include_prototypes=True)
