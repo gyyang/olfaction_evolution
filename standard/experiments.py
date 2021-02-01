@@ -558,8 +558,8 @@ def multihead_relabel():
     return new_configs
 
 
-def multihead_relabel_prune():
-    """Multi-task with relabel datset. Latest standard."""
+def multihead_standard():
+    """Multi-task with relabel datset and pruning. Latest standard."""
     new_configs = list()
     for config in multihead():
         config.data_dir = './datasets/proto/multihead_relabel'
@@ -606,7 +606,7 @@ def multihead_relabel_analysis(path):
     multihead_analysis(path, acc_min=0.65)
 
 
-def multihead_relabel_prune_analysis(path):
+def multihead_standard_analysis(path):
     acc_min = 0.65
     select_dict = {}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
