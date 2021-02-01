@@ -21,10 +21,9 @@ try:
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
-    # import standard.analysis_rnn as analysis_rnn
+    import standard.analysis_rnn as analysis_rnn
     import standard.analysis_activity as analysis_activity
     import standard.analysis_multihead as analysis_multihead
-    import analysis_rnn_robert as analysis_rnn
 except ImportError as e:
     print(e)
 

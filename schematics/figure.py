@@ -42,7 +42,7 @@ def _normalize(x):
 
 
 def plot_task(mode='standard', include_prototypes=False, include_data = True, 
-              prototype_marker = '^', meta_ix = 0):
+              prototype_marker = '^', meta_ix=0, spread=0):
     """Plot task schematic.
     
     Args:
@@ -129,7 +129,6 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     elif mode == 'correlate':
         rand_points = _sample_input(size, 2, rng=rng, corr=orn_corr) * 5
     elif mode == 'concentration':
-        spread = 0.8
         if spread == 0:
             nlim = lim
         else:
@@ -168,8 +167,6 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
 
     if mode == 'concentration':
         proto_points *= lim
-        
-    
 
     if include_prototypes:
         for c,p in zip(colors, proto_points):
@@ -180,7 +177,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
             ax.scatter(p[0], p[1], color=c, s=2)
 
     for i, (txt,p) in enumerate(zip(texts, proto_points)):
-        if mode == 'innate':
+        if mode in ['innate', 'concentration']:
             pass
 # =============================================================================
 #             if i < 4:
@@ -227,7 +224,8 @@ if __name__ == '__main__':
     # plot_task('standard', include_prototypes=True)
     # plot_task('innate', include_prototypes=True)
     # plot_task('innate2', include_prototypes=True)
-    plot_task('concentration', include_prototypes=True, include_data=True)
+    plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
+    plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
     # plot_task('relabel', include_prototypes=True)
     # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
     # plot_task('correlate', include_prototypes=True)
