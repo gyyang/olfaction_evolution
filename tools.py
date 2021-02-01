@@ -578,7 +578,11 @@ def load_all_results(path, select_dict=None, exclude_dict=None,
             if 'loss' in key:
                 res['log_' + key].append(np.log(val))
 
-        k_smart_key = 'K' if config.kc_prune_weak_weights else 'K_inferred'
+        if 'kc_prune_weak_weights' in dir(config) and \
+                config.kc_prune_weak_weights:
+            k_smart_key = 'K'
+        else:
+            k_smart_key = 'K_inferred'
         if k_smart_key in res.keys():
             res['K_smart'].append(res[k_smart_key][-1])
 
@@ -736,7 +740,7 @@ darkblue = np.array([3, 53, 62])/255.
 green = np.array([65,89,57])/255.  # From # 24
 
 
-def _reshape_worn(w_orn, unique_orn, mode='tile'):
+def reshape_worn(w_orn, unique_orn, mode='tile'):
     """Reshape w_orn."""
     n_orn, n_pn = w_orn.shape
     w_orn_by_pn = abs(w_orn)
@@ -753,7 +757,7 @@ def _reshape_worn(w_orn, unique_orn, mode='tile'):
     return w_orn_by_pn
 
 
-def _reshape_worn_by_wor(w_orn, w_or):
+def reshape_worn_by_wor(w_orn, w_or):
     ind_max = np.argmax(w_or, axis=0)
     w_orn = w_orn[ind_max,:]
     return w_orn, ind_max
@@ -788,10 +792,10 @@ def compute_glo_score(w_orn, unique_ors, mode='tile', w_or = None):
     """
     n_orn, n_pn = w_orn.shape
     if mode == 'tile' or mode == 'repeat':
-        w_orn_by_pn = _reshape_worn(w_orn, unique_ors, mode)
+        w_orn_by_pn = reshape_worn(w_orn, unique_ors, mode)
         w_orn_by_pn = w_orn_by_pn.mean(axis=0)
     elif mode == 'matrix':
-        _, ind_max = _reshape_worn_by_wor(w_orn, w_or)
+        _, ind_max = reshape_worn_by_wor(w_orn, w_or)
         w_orn_by_pn = np.zeros((unique_ors, unique_ors))
         for i in range(unique_ors):
             out = np.mean(w_orn[ind_max == i, :], axis=0)
@@ -842,7 +846,7 @@ def compute_sim_score(w_orn, unique_orn, mode='tile'):
     """
     from sklearn.metrics.pairwise import cosine_similarity
     n_orn, n_pn = w_orn.shape
-    w_orn_by_pn = _reshape_worn(w_orn, unique_orn, mode)
+    w_orn_by_pn = reshape_worn(w_orn, unique_orn, mode)
     n_duplicate_orn = n_orn // unique_orn
     if n_duplicate_orn == 1:
         return 0, [0]*unique_orn

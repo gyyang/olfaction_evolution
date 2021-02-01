@@ -271,7 +271,7 @@ def plot_weights(modeldir, var_name=None, sort_axis='auto',
                  average=False, vlim=None, zoomin=False, **kwargs):
     """Plot weights of a model."""
     if var_name is None:
-        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo']
+        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo', 'w_copy']
     elif isinstance(var_name, str):
         var_name = [var_name]
 
@@ -289,7 +289,7 @@ def plot_weights(modeldir, var_name=None, sort_axis='auto',
 
 def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
                   vlim=None, binarized=False, title_keys=None, zoomin=False,
-                  multihead=False):
+                  multihead=False, ax_args=None):
     """Plot weights."""
     # Load network at the end of training
     var_dict = tools.load_pickle(modeldir)
@@ -305,7 +305,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
 
     if average:
         # Should only be used for w_orn
-        w_orn_by_pn = tools._reshape_worn(w_plot, 50)
+        w_orn_by_pn = tools.reshape_worn(w_plot, 50)
         w_plot = w_orn_by_pn.mean(axis=0)
 
     # Sort for visualization
@@ -407,8 +407,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         elif var_name == 'w_combined':
             y_label, x_label = 'To PNs', 'From ORs'
         else:
-            raise ValueError(
-                'unknown variable name for weight matrix: {}'.format(var_name))
+            y_label, x_label = '', ''
         ax.set_ylabel(y_label, labelpad=labelpad)
         ax.set_xlabel(x_label, labelpad=labelpad)
         title = tools.nicename(var_name)
@@ -422,7 +421,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
                     title_key) + ':' + tools.nicename(v, 'lr')
         if multihead:
             title = 'PN-Third layer connectivity'
-        plt.title(title, fontsize=7)
+        ax.set_title(title, fontsize=7)
 
         if multihead:
             ax.set_xticks([])
@@ -433,6 +432,9 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
             ax.set_yticks([0, w_plot.shape[1] - 1, w_plot.shape[1]])
             ax.set_yticklabels(['1', str(w_plot.shape[1]), ''])
         ax.tick_params('both', length=0)
+
+        if ax_args is not None:
+            ax.update(ax_args)
 
         ax = fig.add_axes(rect_cb)
         cb = plt.colorbar(im, cax=ax, ticks=vlim)

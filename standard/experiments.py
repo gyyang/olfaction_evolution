@@ -21,9 +21,10 @@ try:
     import standard.analysis_pn2kc_training as analysis_pn2kc_training
     import standard.analysis_pn2kc_random as analysis_pn2kc_random
     import standard.analysis_orn2pn as analysis_orn2pn
-    import standard.analysis_rnn as analysis_rnn
+    # import standard.analysis_rnn as analysis_rnn
     import standard.analysis_activity as analysis_activity
     import standard.analysis_multihead as analysis_multihead
+    import analysis_rnn_robert as analysis_rnn
 except ImportError as e:
     print(e)
 
@@ -240,9 +241,17 @@ def rnn_relabel():
 
 
 def rnn_relabel_analysis(path):
-    select_dict = {'diagonal': True}
+    select_dict = {'diagonal': True, 'TIME_STEPS': 2}
     sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
     sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
+
+    # Specific analysis
+    for step in [2, 3]:
+        select_dict = {'TIME_STEPS': step, 'lr': 2e-4, 'diagonal': False,
+                       'data_dir': './datasets/proto/relabel_200_100'}
+        modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
+        analysis_rnn.analyze_rnn_activity(modeldir)
+        analysis_rnn.analyze_rnn_weights(modeldir)
 
 
 def rnn_relabel_prune():

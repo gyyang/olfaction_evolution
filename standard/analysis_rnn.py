@@ -202,7 +202,7 @@ def analyze_t_greater(path, dir_ix, threshold = 0.05):
     _easy_weights(w_orn_reshaped, y_label='T=0', x_label='T=1', extra_str= 'reshaped', vlim=.4,
                   dir_ix= dir_ix, save_path = path)
 
-    w_orn_mean = tools._reshape_worn(w_orn, N_OR, mode='tile')
+    w_orn_mean = tools.reshape_worn(w_orn, N_OR, mode='tile')
     w_orn_mean = w_orn_mean.mean(axis=0)
     ind_max = np.argmax(w_orn_mean, axis=0)
     ind_sort = np.argsort(ind_max)
@@ -249,7 +249,7 @@ def analyze_t_greater(path, dir_ix, threshold = 0.05):
                       x_label='Sorted to Each, Layer' + '_' + str(i + 1), save_path=path)
 
     w_orn = w_rnn[:N_ORN, pn_ixs[0]]
-    w_orn_reshaped = tools._reshape_worn(w_orn, N_OR, mode='tile')
+    w_orn_reshaped = tools.reshape_worn(w_orn, N_OR, mode='tile')
     w_orn_reshaped = w_orn_reshaped.mean(axis=0)
     ind_max = np.argmax(w_orn_reshaped, axis=0)
     ind_sort = np.argsort(ind_max)

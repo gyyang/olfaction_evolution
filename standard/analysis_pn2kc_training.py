@@ -70,7 +70,18 @@ def plot_sparsity(modeldir, epoch=None, xrange=50, plot=True):
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
     log = tools.load_log(modeldir)
-    sparsity = log['sparsity_inferred'][-1]
+    if 'sparsity_inferred' not in log:
+        config = tools.load_config(modeldir)
+        w_glo = tools.load_pickle(modeldir)['w_glo']
+        if 'kc_prune_weak_weights' in dir(config) \
+                and config.kc_prune_weak_weights:
+            sparsity, thres_inferred = _compute_sparsity(
+                w_glo, dynamic_thres=False, thres=config.kc_prune_threshold)
+        else:
+            sparsity, thres_inferred = _compute_sparsity(
+                w_glo, dynamic_thres=True)
+    else:
+        sparsity = log['sparsity_inferred'][-1]
 
     if plot:
         if epoch is not None:
@@ -187,7 +198,8 @@ def plot_distribution(modeldir, epoch=None, xrange=1.0, **kwargs):
         thres, res_fit = None, None
     else:
         thres, res_fit = infer_threshold(distribution)
-        if config.kc_prune_weak_weights:
+        if 'kc_prune_weak_weights' in dir(config) \
+                and config.kc_prune_weak_weights:
             thres = config.kc_prune_threshold
 
     save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))

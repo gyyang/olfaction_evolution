@@ -144,7 +144,7 @@ def multiglo_gloscores(modeldir, cutoff, shuffle=False, vlim=[0, 5]):
                        tools.get_model_name(modeldir) + '_cutoff_' + string)
 
     w_orn = tools.load_pickle(modeldir)['w_orn']
-    w_orn = tools._reshape_worn(w_orn, unique_orn=50)
+    w_orn = tools.reshape_worn(w_orn, unique_orn=50)
     w_orn = w_orn.mean(axis=0)
 
     avg_gs, all_gs = tools.compute_glo_score(w_orn, unique_ors=50, mode='tile', w_or=None)

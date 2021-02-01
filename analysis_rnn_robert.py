@@ -16,21 +16,22 @@ sys.path.append(rootpath)
 
 import task
 import tools
-import standard.analysis_pn2kc_training
+import standard.analysis as sa
+import standard.analysis_pn2kc_training as analysis_pn2kc_training
 import settings
 import standard.analysis_activity as analysis_activity
 
 use_torch = settings.use_torch
 
 
-def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path,
+def _easy_weights(w_plot, modeldir, x_label=None, y_label=None,
                   xticks=None, extra_str='', vlim=None, title=None,
                   c_label='Weight'):
-    rect = [0.2, 0.15, 0.6, 0.6]
-    rect_cb = [0.82, 0.15, 0.02, 0.6]
-    fig = plt.figure(figsize=(2.6, 2.6))
+    rect = [0.15, 0.15, 0.6, 0.6]
+    rect_cb = [0.77, 0.15, 0.02, 0.6]
+    fig = plt.figure(figsize=(1.7, 1.7))
     ax = fig.add_axes(rect)
-    if vlim == None:
+    if vlim is None:
         vlim = np.round(np.max(abs(w_plot)), decimals=1)
 
     cmap = plt.get_cmap('RdBu_r')
@@ -62,7 +63,9 @@ def _easy_weights(w_plot, x_label, y_label, dir_ix, save_path,
     cb.set_label(c_label, fontsize=7, labelpad=-10)
     plt.tick_params(axis='both', which='major', labelsize=7)
     plt.axis('tight')
-    tools.save_fig(save_path, '__' + str(dir_ix) + '_' + y_label + '_' + x_label + '_' + extra_str, dpi=400)
+    tools.save_fig(tools.get_experiment_name(modeldir),
+                   '_' + tools.get_model_name(modeldir) +
+                   '_' + y_label + '_' + x_label + '_' + extra_str, dpi=400)
 
 
 def _load_activity_tf(save_path):
@@ -100,36 +103,46 @@ def _load_activity(save_path):
         return _load_activity_tf(save_path)
 
 
-
-def rnn_distribution(w_glo, dir_ix, path):
-    n = os.path.join(path, '__' + str(dir_ix) + '_distribution')
-    standard.analysis_pn2kc_training._plot_distribution(w_glo.flatten(), savename= n, xrange=1.0, yrange=5000)
-
-
-def rnn_sparsity(w_glo, dir_ix, path):
-    thres, _ = standard.analysis_pn2kc_training.infer_threshold(w_glo, visualize=False)
-    claw_count = np.count_nonzero(w_glo>thres,axis=0)
-    n = os.path.join(path, '__' + str(dir_ix) + '_sparsity')
-    standard.analysis_pn2kc_training._plot_sparsity(claw_count, savename= n, yrange = 0.5)
+def rnn_distribution(w_glo, modeldir):
+    """Plot distribution of effective PN-KC weights."""
+    savename = os.path.join(
+        tools.get_experiment_name(modeldir),
+        '_' + tools.get_model_name(modeldir) + '_distribution')
+    standard.analysis_pn2kc_training._plot_distribution(
+        w_glo.flatten(), savename=savename, xrange=1.0, yrange=5000)
+    standard.analysis_pn2kc_training._plot_log_distribution(
+        w_glo.flatten(), savename=savename, res_fit=True)
 
 
-def plot_activity(rnn_outputs, dir_ix, threshold, path):
-    ## plot summary
-    mean_activities = [np.mean(x, axis=0) for x in rnn_outputs]
-    neurons_active = [np.sum(x > threshold) for x in mean_activities]
+def rnn_sparsity(w_glo, modeldir):
+    """Plot sparsity of effective PN-KC connections."""
+    thres, _ = standard.analysis_pn2kc_training.infer_threshold(
+        w_glo, visualize=False)
+    claw_count = np.count_nonzero(w_glo > thres, axis=0)
+    n = os.path.join(tools.get_experiment_name(modeldir),
+                     '_' + tools.get_model_name(modeldir) + '_sparsity')
+    standard.analysis_pn2kc_training._plot_sparsity(
+        claw_count, savename=n, yrange=0.5)
+
+
+def plot_num_active_neurons(active_ixs, modeldir):
+    """Plot activity of RNN.
+    
+    Args:
+        active_ixs: list of arrays
+    """
+    neurons_active = [len(ind) for ind in active_ixs]
     log_neurons_active = np.log(neurons_active)
-    n_neuron = rnn_outputs.shape[-1]
-    xticks = [50, 500, n_neuron]
+    xticks = [50, 500, 2500]
 
-
-    fig = plt.figure(figsize=(1.5, 1.2 ))
-    ax = fig.add_axes([0.35, 0.3, .15 * len(rnn_outputs), 0.6])
+    fig = plt.figure(figsize=(1.5, 1.2))
+    ax = fig.add_axes([0.35, 0.3, .5, 0.6])
     ax.plot(log_neurons_active, 'o-', markersize=3)
-    ax.set_xlabel('Time')
+    ax.set_xlabel('Steps')
     ax.set_ylabel('Active Neurons')
     ax.set_yticks(np.log(xticks))
     ax.set_yticklabels([str(x) for x in xticks])
-    ax.set_xticks(np.arange(len(rnn_outputs)))
+    ax.set_xticks(np.arange(len(neurons_active)))
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -137,8 +150,96 @@ def plot_activity(rnn_outputs, dir_ix, threshold, path):
     ax.yaxis.set_ticks_position('left')
     ax.grid(axis='y')
 
-    fig_name = '__' + str(dir_ix) + '_activity'
-    tools.save_fig(path, fig_name, pdf=True)
+    fig_name = 'num_neurons_by_step_' + tools.get_model_name(modeldir)
+    tools.save_fig(tools.get_experiment_name(modeldir), fig_name, pdf=True)
+
+
+def _plot_all_activity(rnn_activity, modeldir):
+    """Plot activity for all odors and time steps.
+
+    Args:
+        rnn_activity: (Step, Batch, Neuron)
+    """
+    for step in range(rnn_activity.shape[0]):
+        mean_activity = np.mean(rnn_activity[step], axis=0)  # (Neuron)
+        ind_sort = np.argsort(mean_activity)[::-1]
+        _easy_weights(rnn_activity[step, :100][:, ind_sort],
+                      modeldir=modeldir, y_label='Odors', x_label='Neuron',
+                      title='Step='+str(step), c_label='Activity')
+
+
+def analyze_rnn_activity(modeldir, threshold=0.15, plot=True):
+    """Analyze activity of RNN.
+
+    Returns:
+        rnn_activity: (Step, Batch, Neuron)
+        active_ixs: list of arrays
+    """
+    # Find indices of neurons activated at each time point
+    config = tools.load_config(modeldir)
+
+    rnn_activity = _load_activity(modeldir)  # (Step, Batch, Neuron)
+    assert rnn_activity.shape[0] == config.TIME_STEPS + 1
+
+    # Compute the number of active neurons at each step
+    mean_activity = np.mean(rnn_activity, axis=1)  # (Step, Neuron)
+
+    ixs = []
+    active_ixs = []
+    for ma in mean_activity:
+        ind_sort = np.argsort(ma)[::-1]
+        ixs.append(ind_sort)
+        # Threshold may not be robust
+        active_ixs.append(np.where(ma > threshold)[0])
+
+    # Store weights based on active indices
+    res = tools.load_pickle(modeldir)  # (from, to)
+    res.allow_pickle = True
+    res = dict(res)
+    w_rnn = res['w_rnn']
+    N_ORN = config.N_PN * config.N_ORN_DUPLICATION
+    w_orn = w_rnn[:N_ORN, active_ixs[1]]
+    new_res = {'w_orn': w_orn, 'active_ixs': active_ixs}
+    if config.TIME_STEPS >= 2:
+        w_glo = w_rnn[active_ixs[-2], :][:, active_ixs[-1]]
+        new_res['w_glo'] = w_glo
+    if config.TIME_STEPS >= 3:
+        w_copy = w_rnn[active_ixs[1], :][:, active_ixs[2]]
+        new_res['w_copy'] = w_copy
+
+    res.update(new_res)
+    tools.save_pickle(modeldir, res)
+
+    if plot:
+        # Plotting results
+        _plot_all_activity(rnn_activity, modeldir)
+        plot_num_active_neurons(active_ixs, modeldir)
+
+    return rnn_activity, active_ixs
+
+
+def analyze_rnn_weights(modeldir):
+    config = tools.load_config(modeldir)
+    sa.plot_weights(modeldir, 'w_orn',
+                    ax_args={'xlabel': 'From Step 1', 
+                             'ylabel': 'To Step 2',
+                             'title': 'Step 1-2 connectivity'})
+
+    # Only plotted if exists
+    sa.plot_weights(modeldir, 'w_copy',
+                    ax_args={'xlabel': 'From Step 2', 
+                             'ylabel': 'To Step 3',
+                             'title': 'Step 2-3 connectivity'})
+
+    n_step = config.TIME_STEPS
+    sa.plot_weights(
+        modeldir, 'w_glo',
+        ax_args={'xlabel': 'From Step ' + str(n_step), 
+                 'ylabel': 'To Step ' + str(n_step + 1),
+                 'title': 'Step {:d}-{:d} connectivity'.format(n_step,
+                                                               n_step+1)})
+    analysis_pn2kc_training.plot_distribution(modeldir)
+    analysis_pn2kc_training.plot_sparsity(modeldir)
 
 
 def analyze_t0(path, dir_ix):
@@ -161,7 +262,6 @@ def analyze_t0(path, dir_ix):
                   x_label='Sorted, Layer_1', save_path=path)
 
 
-# def analyze_t_greater(path, dir_ix, threshold = 0.05):
 
 if __name__ == '__main__':
 
@@ -173,156 +273,10 @@ if __name__ == '__main__':
     # path = './files/rnn_relabel_prune'
     # path = './files/rnn_relabel_prune'
 
-    from standard.analysis_activity import load_activity_torch
-
-    # modeldir = tools.get_modeldirs(path)[0]
-    # results = load_activity_torch(modeldir)
-    # select_dict = {'rec_dropout_rate': 0.1, 'TIME_STEPS': 2}
-    # select_dict = {'weight_dropout_rate': 0.0, 'TIME_STEPS': 2}
-    # select_dict = {'diagonal': False, 'lr': 5e-4}
-    select_dict = {'TIME_STEPS': 2, 'lr': 1e-3, 'diagonal': False,
+    select_dict = {'TIME_STEPS': 3, 'lr': 2e-4, 'diagonal': False,
                    'data_dir': './datasets/proto/relabel_200_100'}
-    dir_ix = 0
-# =============================================================================
-#     if dir_ix == 0:
-#         analyze_t0(path, dir_ix)
-#     else:
-#         analyze_t_greater(path, dir_ix)
-# =============================================================================
-    threshold = 0.15  # TODO: might need to smarter, more robust method
 
-    save_path = tools.get_modeldirs(path, select_dict=select_dict)[0]
-    config = tools.load_config(save_path)
-    w_rnn = tools.load_pickle(save_path)['w_rnn']  # (from, to)
-    rnn_outputs = _load_activity(save_path)  # (time step, odor, neuron)
+    modeldir = tools.get_modeldirs(path, select_dict=select_dict)[0]
 
-    log = tools.load_log(save_path)
-    print('Val acc', str(log['val_acc'][-1]))
-
-    plot_activity(rnn_outputs, dir_ix=dir_ix, path=path, threshold=threshold)
-
-    # Find indices of neurons activated at each time point
-    N_OR = config.N_ORN
-    N_ORN = config.N_ORN * config.N_ORN_DUPLICATION
-    ixs = []
-    active_ixs = []
-    assert rnn_outputs.shape[0] == config.TIME_STEPS + 1
-    for i in range(config.TIME_STEPS+1):
-        mean_activity = np.mean(rnn_outputs[i], axis=0)  # average across odors
-        ix = np.argsort(mean_activity)[::-1]
-        # TODO: this code not robust. Fix!
-        sorted_activity = mean_activity[ix]
-        active_ix = ix[sorted_activity > threshold]
-        ixs.append(ix)
-        active_ixs.append(active_ix)
-
-    ## plot activity
-    # ORN activation
-    for t in range(rnn_outputs.shape[0]):
-        ind = ixs[t]
-        xticks = []
-
-        _easy_weights(rnn_outputs[t][:100, ind], dir_ix=dir_ix,
-                      y_label='Odors', x_label='Neuron',
-                      xticks=xticks, title='Step='+str(t),
-                      save_path=path, c_label='Activity')
-
-    ## plot weight
-    w_orn = w_rnn[:N_ORN, active_ixs[1]]
-    ind_max = np.argmax(w_orn, axis=1)
-    ind_sort = np.argsort(ind_max)
-    w_orn_reshaped = w_orn[ind_sort, :]
-    _easy_weights(w_orn_reshaped.T, x_label='Step=0', y_label='Step=1', extra_str='reshaped', vlim=.4,
-                  dir_ix=dir_ix, save_path=path)
-
-    w_orn_mean = tools._reshape_worn(w_orn, N_OR, mode='tile')
-    w_orn_mean = w_orn_mean.mean(axis=0)
-    ind_max = np.argmax(w_orn_mean, axis=0)
-    ind_sort = np.argsort(ind_max)
-    w_orn_mean = w_orn_mean[:, ind_sort]
-    _easy_weights(w_orn_mean.T, x_label='Step=0', y_label='Step=1', extra_str='mean',
-                  dir_ix=dir_ix, save_path=path)
-
-    w_glo = w_rnn[active_ixs[1], :]
-    _easy_weights(w_glo.T, x_label='Step=1', y_label='Step=2',
-                  dir_ix=dir_ix, save_path=path)
-    rnn_distribution(w_glo, dir_ix, path)
-    rnn_sparsity(w_glo, dir_ix, path)
-
-    w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
-    
-    # Plot distribution of activity
-    # Third time step activity for active neurons
-    figpath = tools.get_experiment_name(save_path)
-    activity_threshold = threshold
-    data = rnn_outputs[2][:, active_ixs[2]]
-    data1 = np.mean(data > activity_threshold, axis=1)
-    fname = 'spars_T3_' + tools.get_model_name(save_path)
-    analysis_activity._distribution(data1, figpath, name=fname, density=False,
-                  xlabel='% of Active T3 neurons', xrange=(0,1),
-                  ylabel='Number of Odors',
-                  title='Mean {:0.2f}'.format(data1.mean()))
-
-    data2 = np.mean(data > activity_threshold, axis=0)
-    fname = 'spars_T3_2_' + tools.get_model_name(save_path)
-    analysis_activity._distribution(data2, figpath, name=fname, density=False,
-                  xlabel='% of Odors', xrange=(0,1),
-                  ylabel='Number of T3 neurons',
-                  title='Mean {:0.2f}'.format(data2.mean()))
-    
-# =============================================================================
-#     if config.TIME_STEPS == 3:
-#         pn_to_pn1 = w_rnn[active_ixs[0][:,None], active_ixs[1]]
-#         ind_max = np.argmax(pn_to_pn1, axis=1)
-#         ind_sort = np.argsort(ind_max)
-#         pn_to_pn1_reshaped = pn_to_pn1[ind_sort,:]
-#         _easy_weights(pn_to_pn1_reshaped, dir_ix= dir_ix, y_label='T=1', x_label='T=2', extra_str='sorted',
-#                       save_path=path)
-# 
-#         _easy_weights(w_glo_sorted, y_label='T=2', x_label='T=3', extra_str='sorted',
-#                       dir_ix= dir_ix, save_path = path)
-# 
-#         w_glo_subsample = w_glo[:, 1000:1020]
-#         _easy_weights(w_glo_subsample, y_label='T=2', x_label='T=3', dir_ix=dir_ix, save_path = path)
-#     else:
-#         _easy_weights(w_glo_sorted, y_label='T=1', x_label='T=2', extra_str='sorted',
-#                       dir_ix=dir_ix, save_path=path)
-# 
-#         w_glo_subsample = w_glo[:, 1000:1020]
-#         _easy_weights(w_glo_subsample, y_label='T=1', x_label='T=2', dir_ix=dir_ix, save_path=path)
-# 
-#     #EXTRAS
-#     # sorted to first layer
-#     for i in range(config.TIME_STEPS):
-#         _easy_weights(rnn_outputs[i][:, ixs[0]], dir_ix=dir_ix, y_label='odors',
-#                       x_label='Sorted to Layer 1, Layer' + '_' + str(i), save_path=path)
-# 
-#     # sorted to each
-#     _easy_weights(rnn_outputs[0], dir_ix=dir_ix, y_label='odors', x_label='Sorted to Each, Layer_0', save_path=path)
-#     for i, ix in enumerate(ixs):
-#         _easy_weights(rnn_outputs[i + 1][:, ix], dir_ix=dir_ix, y_label='odors',
-#                       x_label='Sorted to Each, Layer' + '_' + str(i + 1), save_path=path)
-# 
-#     w_orn = w_rnn[:N_ORN, active_ixs[0]]
-#     w_orn_reshaped = tools._reshape_worn(w_orn, N_OR, mode='tile')
-#     w_orn_reshaped = w_orn_reshaped.mean(axis=0)
-#     ind_max = np.argmax(w_orn_reshaped, axis=0)
-#     ind_sort = np.argsort(ind_max)
-#     w_orn_reshaped = w_orn_reshaped[:, ind_sort]
-#     #
-#     w_glo = w_rnn[active_ixs[-1], :]
-#     w_glo_sorted = np.sort(w_glo, axis=0)[::-1, :]
-# 
-#     if len(active_ixs) == 2:
-#         pn_to_pn1 = w_rnn[active_ixs[1][:, None], active_ixs[0]]
-#         ind_max = np.argmax(pn_to_pn1, axis=1)
-#         ind_sort = np.argsort(ind_max)
-#         pn_to_pn1_reshaped = pn_to_pn1[ind_sort, :]
-#         _easy_weights(pn_to_pn1_reshaped, dir_ix=dir_ix, y_label='Layer_1', x_label='Layer_2', save_path=path)
-# =============================================================================
-    #
-    # _easy_weights(w_rnn, y_label='Input', x_label='Output', dir_ix=dir_ix, save_path=path)
-    # _easy_weights(w_rnn[:50, ixs[0]], y_label='ORN', x_label='All', dir_ix=dir_ix, save_path=path)
-    # _easy_weights(w_orn, y_label='ORN', x_label='PN', dir_ix=dir_ix, save_path=path)
-    # _easy_weights(w_glo, y_label='PN', x_label='KC', dir_ix=dir_ix, save_path=path)
-    # _easy_weights(w_glo_sorted, y_label='PN', x_label='KC_sorted', dir_ix=dir_ix, save_path=path)
+    analyze_rnn_activity(modeldir)
+    analyze_rnn_weights(modeldir)
