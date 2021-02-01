@@ -543,7 +543,7 @@ def multihead():
     config_ranges = OrderedDict()
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
     config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
-    config_ranges['initial_pn2kc'] = [0.05, 0.1]
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -621,6 +621,7 @@ def multihead_relabel_prune_analysis(path):
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
     analysis_multihead.analyze_many_networks_lesion(modeldirs)
 
+    # Plot example network
     select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
                                     select_dict=select_dict)
