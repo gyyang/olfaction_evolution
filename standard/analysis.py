@@ -2,6 +2,7 @@
 
 import sys
 import os
+import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -267,37 +268,65 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
     tools.save_fig(save_path, figname)
 
 
-def plot_weights(modeldir, var_name=None, sort_axis='auto',
-                 average=False, vlim=None, zoomin=False, **kwargs):
+def plot_weights(modeldir, var_name=None, average=False, vlim=None,
+                 zoomin=False, **kwargs):
     """Plot weights of a model."""
     if var_name is None:
         var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo', 'w_copy']
     elif isinstance(var_name, str):
         var_name = [var_name]
-
-    config = tools.load_config(modeldir)
     for v in var_name:
-        multihead = 'multihead' in config.data_dir and v == 'w_glo'
-        if sort_axis == 'auto':
-            _sort_axis = 0 if v == 'w_or' else 1
+        _plot_weights(modeldir, v, average=average, vlim=vlim,
+                      zoomin=zoomin, **kwargs)
+
+
+def _load_sorted_pickle(modeldir):
+    """Sort neurons in weight matrices of var_dict."""
+    var_dict = tools.load_pickle(modeldir)
+    # Each weight matrix in this is (Input neuron, Output neuron)
+    config = tools.load_config(modeldir)
+    new_var_dict = dict()
+    if 'w_or' in var_dict.keys():
+        # First sort ORNs
+        w = var_dict['w_or']  # OR-ORN weight
+        ind_sort_orn = np.argsort(np.argmax(w, axis=0))
+        new_var_dict['w_or'] = w[:, ind_sort_orn]
+        new_var_dict['w_orn'] = var_dict['w_orn'][ind_sort_orn, :]
+    else:
+        w = var_dict['w_orn']  # ORN-PN weight
+        if config.N_ORN_DUPLICATION > 1:
+            n_orn = config.N_PN * config.N_ORN_DUPLICATION
+            assert w.shape[0] == n_orn
+            # Reorder ORNs so the neurons of same type are adjacent
+
+            ind_sort_orn = np.concatenate(
+                [range(i, n_orn, config.N_PN) for i in range(config.N_PN)])
+            new_var_dict['w_orn'] = w[ind_sort_orn, :]
         else:
-            _sort_axis = sort_axis
+            new_var_dict['w_orn'] = w
 
-        _plot_weights(modeldir, v, _sort_axis, average=average, vlim=vlim,
-                      zoomin=zoomin, multihead=multihead, **kwargs)
+    # Next sort PNs
+    w = new_var_dict['w_orn']  # ORN-PN weight
+    ind_sort_pn = np.argsort(np.argmax(w, axis=0))
+    new_var_dict['w_orn'] = w[:, ind_sort_pn]
+    new_var_dict['w_glo'] = var_dict['w_glo'][ind_sort_pn, :]
+
+    # KCs are not sorted
+    if 'w_or' in var_dict.keys():
+        new_var_dict['w_combined'] = np.dot(
+            new_var_dict['w_or'], new_var_dict['w_orn'])
+    return new_var_dict
 
 
-def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
+def _plot_weights(modeldir, var_name='w_orn', average=False,
                   vlim=None, binarized=False, title_keys=None, zoomin=False,
-                  multihead=False, ax_args=None):
+                  ax_args=None):
     """Plot weights."""
     # Load network at the end of training
-    var_dict = tools.load_pickle(modeldir)
+    var_dict = _load_sorted_pickle(modeldir)
+
     try:
-        if var_name == 'w_combined':
-            w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
-        else:
-            w_plot = var_dict[var_name]
+        w_plot = var_dict[var_name]
     except KeyError:
         # Weight doesn't exist, return
         return
@@ -305,35 +334,8 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
 
     if average:
         # Should only be used for w_orn
-        w_orn_by_pn = tools.reshape_worn(w_plot, 50)
+        w_orn_by_pn = tools.reshape_worn(w_plot, 50, mode='repeat')
         w_plot = w_orn_by_pn.mean(axis=0)
-
-    # Sort for visualization
-    if multihead:
-        import standard.analysis_multihead as analysis_multihead
-        data, data_norm = analysis_multihead._get_data(modeldir)
-        n_clusters = analysis_multihead._compute_silouette_score(data_norm)
-        groups = analysis_multihead._get_groups(data, data_norm,
-                                                n_clusters=n_clusters)
-        n_clusters = len(groups)
-        n_eachcluster = 10
-        # Sort KCs
-        short_groups = [g[:n_eachcluster] for g in groups]
-        w_plot = w_plot[:, np.concatenate(short_groups)]
-        w_orn = var_dict['w_orn']
-        ind_sort = np.argmax(w_orn, axis=1)  # Sort PNs
-        w_plot = w_plot[ind_sort, :]
-
-    elif sort_axis == 0:
-        ind_max = np.argmax(w_plot, axis=0)
-        ind_sort = np.argsort(ind_max)
-        w_plot = w_plot[:, ind_sort]
-    elif sort_axis == 1:
-        ind_max = np.argmax(w_plot, axis=1)
-        ind_sort = np.argsort(ind_max)
-        w_plot = w_plot[ind_sort, :]
-    else:
-        pass
 
     if var_name == 'w_glo':
         w_plot = w_plot[:, :20]
@@ -348,18 +350,9 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
 
     if not zoomin:
-        if multihead:
-            figsize = (2.2, 2.2)
-            rect = [0.15, 0.15, 0.65, 0.65]
-            rect_cb = [0.82, 0.15, 0.02, 0.65]
-            rect_bottom = [0.15, 0.12, 0.65, 0.02]
-            rect_left = [0.12, 0.15, 0.02, 0.65]
-        else:
-            figsize = (1.7, 1.7)
-            rect = [0.15, 0.15, 0.6, 0.6]
-            rect_cb = [0.77, 0.15, 0.02, 0.6]
-            rect_bottom = [0.15, 0.12, 0.6, 0.02]
-            rect_left = [0.12, 0.15, 0.02, 0.6]
+        figsize = (1.7, 1.7)
+        rect = [0.15, 0.15, 0.6, 0.6]
+        rect_cb = [0.77, 0.15, 0.02, 0.6]
     else:
         figsize = (5.0, 5.0)  # Matplotlib wouldn't render properly if small
         rect = [0.05, 0.05, 0.9, 0.9]
@@ -395,10 +388,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         ax.grid(which='minor', color='w', linestyle='-', linewidth=3)
     else:
         labelpad = -5
-        if multihead:
-            y_label, x_label = 'To Third layer neurons', ' From PNs'
-            labelpad = 13
-        elif var_name == 'w_orn':
+        if var_name == 'w_orn':
             y_label, x_label = 'To PNs', 'From ORNs'
         elif var_name == 'w_or':
             y_label, x_label = 'To ORNs', 'From ORs'
@@ -419,18 +409,11 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
                 v = getattr(config, title_key)
                 title += '\n' + tools.nicename(
                     title_key) + ':' + tools.nicename(v, 'lr')
-        if multihead:
-            title = 'PN-Third layer connectivity'
         ax.set_title(title, fontsize=7)
-
-        if multihead:
-            ax.set_xticks([])
-            ax.set_yticks([])
-        else:
-            ax.set_xticks([0, w_plot.shape[0] - 1, w_plot.shape[0]])
-            ax.set_xticklabels(['1', str(w_plot.shape[0]), ''])
-            ax.set_yticks([0, w_plot.shape[1] - 1, w_plot.shape[1]])
-            ax.set_yticklabels(['1', str(w_plot.shape[1]), ''])
+        ax.set_xticks([0, w_plot.shape[0] - 1, w_plot.shape[0]])
+        ax.set_xticklabels(['1', str(w_plot.shape[0]), ''])
+        ax.set_yticks([0, w_plot.shape[1] - 1, w_plot.shape[1]])
+        ax.set_yticklabels(['1', str(w_plot.shape[1]), ''])
         ax.tick_params('both', length=0)
 
         if ax_args is not None:
@@ -443,50 +426,8 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis=1, average=False,
         plt.tick_params(axis='both', which='major')
         plt.axis('tight')
 
-    if multihead:
-        def _plot_colorannot(rect, labels, colors,
-                             texts=None, orient='horizontal'):
-            """Plot color indicating groups"""
-            ax = fig.add_axes(rect)
-            for il, l in enumerate(np.unique(labels)):
-                color = colors[il]
-                ind_l = np.where(labels == l)[0][[0, -1]] + np.array([0, 1])
-                if orient == 'horizontal':
-                    ax.plot(ind_l, [0, 0], linewidth=4, solid_capstyle='butt',
-                            color=color)
-                    if texts is not None:
-                        ax.text(np.mean(ind_l), -1, texts[il], fontsize=7,
-                                ha='center', va='top', color=color)
-                else:
-                    ax.plot([0, 0], ind_l, linewidth=4, solid_capstyle='butt',
-                            color=color)
-                    if texts is not None:
-                        ax.text(-1, np.mean(ind_l), texts[il], fontsize=7,
-                                ha='right', va='center', color=color,
-                                rotation='vertical')
-            if orient == 'horizontal':
-                ax.set_xlim([0, len(labels)])
-                ax.set_ylim([-1, 1])
-            else:
-                ax.set_ylim([0, len(labels)])
-                ax.set_xlim([-1, 1])
-            ax.axis('off')
-
-        colors = np.array([[55, 126, 184], [228, 26, 28], [178, 178, 178]])/255
-        labels = np.array([0] * 5 + [1] * 5 + [2] * 40)  # From dataset
-        texts = ['Ap.', 'Av.', 'Neutral']
-        _plot_colorannot(rect_bottom, labels, colors, texts)
-        # Note: Reverse y axis
-        # Innate, flexible
-        colors = np.array([[245, 110, 128], [149, 0, 149], [0, 149, 149],
-                           [149, 149, 0]]) / 255
-        colors = colors[:n_clusters]
-        labels = np.repeat(np.arange(0, n_clusters)[::-1], n_eachcluster)
-        texts = ['Cluster {:d}'.format(i+1) for i in range(n_clusters)]
-        _plot_colorannot(rect_left, labels, colors, texts, orient='vertical')
-
-    var_name = var_name.replace('/','_')
-    var_name = var_name.replace(':','_')
+    var_name = var_name.replace('/', '_')
+    var_name = var_name.replace(':', '_')
     figname = '_' + var_name + '_' + tools.get_model_name(modeldir)
     if zoomin:
         figname = figname + '_zoom'
