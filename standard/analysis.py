@@ -435,8 +435,8 @@ def _plot_weights(modeldir, var_name='w_orn', average=False,
 
         if ax_args is not None:
             ax.update(ax_args)
-        if 'title' in ax_args.keys():
-            ax.set_title(ax_args['title'], fontsize=7)
+            if 'title' in ax_args.keys():
+                ax.set_title(ax_args['title'], fontsize=7)
 
         ax = fig.add_axes(rect_cb)
         cb = plt.colorbar(im, cax=ax, ticks=vlim)
