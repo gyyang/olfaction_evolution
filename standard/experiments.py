@@ -86,6 +86,7 @@ def standard_analysis(path):
 
 def _receptor_standard_config(config):
     """Set standard config for network with receptor layer."""
+    config.data_dir = './datasets/proto/relabel_200_100'
     config.receptor_layer = True
     config.ORN_NOISE_STD = 0.1
     config.kc_dropout_rate = 0.
@@ -127,10 +128,11 @@ def receptor_standard_analysis(path):
     analysis_pn2kc_training.plot_distribution(modeldir, xrange=0.5)
     analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
     # analysis_pn2kc_training.plot_log_distribution_movie(dir)
-    analysis_pn2kc_random.plot_distribution(dir)
-    analysis_pn2kc_random.claw_distribution(dir, shuffle_arg='random')
-    analysis_pn2kc_random.plot_cosine_similarity(dir, shuffle_arg='preserve')
-    analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
+    analysis_pn2kc_random.plot_distribution(modeldir)
+    analysis_pn2kc_random.claw_distribution(modeldir, shuffle_arg='random')
+    analysis_pn2kc_random.plot_cosine_similarity(
+        modeldir, shuffle_arg='preserve')  # This function is quite slow
+    analysis_pn2kc_random.pair_distribution(modeldir, shuffle_arg='preserve')
 
     # Compute glo-score metric for OR-ORN connectivity
     print('ORN score for OR-ORN connectivity',
