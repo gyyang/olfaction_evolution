@@ -148,12 +148,11 @@ def control_nonnegative():
 
 
 def control_nonnegative_analysis(path):
-    # sa.plot_weights(os.path.join(path, '000000'), sort_axis=1, average=False)
-    # sa.plot_weights(os.path.join(path, '000001'), sort_axis=1, average=False,
-    #                 positive_cmap=False, vlim=[-1, 1])
-    # for ix in range(0, 2):
-    #     standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='ortho')
-    #     standard.analysis_orn2pn.correlation_matrix(path, ix=ix, arg='corr')
+    for sign in [True, False]:
+        modeldir = tools.get_modeldirs(path, select_dict={
+            'sign_constraint_orn2pn': sign})[0]
+        sa.plot_weights(modeldir)
+        analysis_orn2pn.plot_distance_distribution(modeldir)
 
     ykeys = ['val_acc', 'glo_score', 'K_smart']
     sa.plot_progress(path, ykeys=ykeys, legend_key='sign_constraint_orn2pn')

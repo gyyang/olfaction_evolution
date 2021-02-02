@@ -351,6 +351,7 @@ def _plot_weights(modeldir, var_name='w_orn', average=False,
 
     if average:
         # Should only be used for w_orn
+        # Using repeat mode because _load_sorted_pickle changed w_orn
         w_orn_by_pn = tools.reshape_worn(w_plot, 50, mode='repeat')
         w_plot = w_orn_by_pn.mean(axis=0)
 
@@ -363,8 +364,15 @@ def _plot_weights(modeldir, var_name='w_orn', average=False,
 
     # w_max = np.max(abs(w_plot))
     w_max = np.percentile(abs(w_plot), 99)
+    _w_max = (np.round(w_max, decimals=1) if w_max > .1
+              else np.round(w_max, decimals=2))
+    positive_w = np.min(w_plot) > -1e-6  # all weights positive
+
     if not vlim:
-        vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
+        if positive_w:
+            vlim = [0, _w_max]
+        else:
+            vlim = [-_w_max, _w_max]
 
     if not zoomin:
         figsize = (1.7, 1.7)
@@ -380,8 +388,7 @@ def _plot_weights(modeldir, var_name='w_orn', average=False,
     ax = fig.add_axes(rect)
 
     cmap = plt.get_cmap('RdBu_r')
-    positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
-    if positive_cmap:
+    if positive_w:
         cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
 
     im = ax.imshow(w_plot.T, cmap=cmap, vmin=vlim[0], vmax=vlim[1],

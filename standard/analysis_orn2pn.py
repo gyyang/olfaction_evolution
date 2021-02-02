@@ -3,6 +3,7 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from sklearn.metrics.pairwise import cosine_similarity
 
 import tools
 import task
@@ -250,6 +251,7 @@ def _lesion_multiglomerular_pn(path, units):
         print(val_acc)
         return val_acc
 
+
 def multiglo_lesion(path, ix, ix_good, ix_bad):
     acc0 = _lesion_multiglomerular_pn(os.path.join(path,'0000' + str(ix)), None)
     acc1 = _lesion_multiglomerular_pn(os.path.join(path,'0000' + str(ix)), ix_good)
@@ -279,19 +281,20 @@ def multiglo_lesion(path, ix, ix_good, ix_bad):
     tools.save_fig(path, str = '_' + str(ix) + '_lesion')
 
 
-def correlation_matrix(path, ix, arg ='ortho', vlim=None):
-    w_orns = tools.load_pickles(path, 'w_orn')
-    w_orn = w_orns[ix]
+def correlation_matrix(modeldir, arg='ortho', vlim=None):
+    w_orn = tools.load_pickle(modeldir)['w_orn']
 
     out = np.zeros((w_orn.shape[1], w_orn.shape[1]))
     for i in range(w_orn.shape[1]):
         for j in range(w_orn.shape[1]):
-            x = np.dot(w_orn[:,i], w_orn[:,j])
-            y = np.corrcoef(w_orn[:,i], w_orn[:,j])[0,1]
+            x = np.dot(w_orn[:, i], w_orn[:, j])
+            y = np.corrcoef(w_orn[:, i], w_orn[:, j])[0, 1]
             if arg == 'ortho':
-                out[i,j] = x
+                out[i, j] = x
+            elif arg == 'corr':
+                out[i, j] = y
             else:
-                out[i,j] = y
+                raise ValueError('Unknown arg', arg)
 
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
@@ -300,13 +303,15 @@ def correlation_matrix(path, ix, arg ='ortho', vlim=None):
 
     max = np.max(abs(out))
     if not vlim:
-        vlim = np.round(max, decimals=1) if max > .1 else np.round(max, decimals=2)
-    im = ax.imshow(out, cmap='RdBu_r', vmin= -vlim, vmax=vlim, interpolation='none', origin='upper')
+        vlim = np.round(max, decimals=1) if max > .1 else np.round(max,
+                                                                   decimals=2)
+    im = ax.imshow(out, cmap='RdBu_r', vmin=-vlim, vmax=vlim,
+                   interpolation='none', origin='upper')
 
     title_txt = 'orthogonality' if arg == 'ortho' else 'correlation'
     plt.title('ORN-PN ' + title_txt)
-    ax.set_xlabel('PN', labelpad = -5)
-    ax.set_ylabel('PN', labelpad = -5)
+    ax.set_xlabel('PN', labelpad=-5)
+    ax.set_ylabel('PN', labelpad=-5)
 
     plt.axis('tight')
     for loc in ['bottom', 'top', 'left', 'right']:
@@ -324,4 +329,46 @@ def correlation_matrix(path, ix, arg ='ortho', vlim=None):
     plt.axis('tight')
 
     txt = '_' + title_txt + '_'
-    tools.save_fig(path, txt + str(ix))
+    tools.save_fig(tools.get_experiment_name(modeldir),
+                   tools.get_model_name(modeldir) + txt)
+
+
+def plot_distance_distribution(modeldir):
+    """Plot distribution of cosine distance"""
+    # Plot distribution of distance
+    w_orn = tools.load_pickle(modeldir)['w_orn']
+    # Average across neurons of same type
+    w_orn = tools.reshape_worn(w_orn, w_orn.shape[1]).mean(axis=0)
+
+    positive_w = w_orn.min() > 1e-6
+    if positive_w:
+        w_random = np.random.rand(w_orn.shape[0], 500)
+    else:
+        w_random = np.random.randn(w_orn.shape[0], 500)
+
+    def _get_corr(data):
+        """Get correlation bewteen data (N_sample, N_feature)."""
+        similarity_matrix = cosine_similarity(data)  # (N_PN, N_PN)
+        diag_mask = ~np.eye(similarity_matrix.shape[0], dtype=bool)
+        corrs = similarity_matrix[diag_mask]
+        return corrs
+
+    corrs = _get_corr(w_orn.T)
+    corrs_random = _get_corr(w_random.T)
+
+    bins = np.linspace(-1, 1, 51)
+    fig = plt.figure(figsize=(3, 1.5))
+    ax = fig.add_axes([.2, .35, .6, .55])
+    plt.hist(corrs, bins=bins, density=True, label='Trained', alpha=0.5)
+    plt.hist(corrs_random, bins=bins, density=True, label='Random', alpha=0.5)
+    ax.legend(fontsize=7, frameon=False)
+    plt.xlabel('Cosine distance')
+    plt.ylabel('Distribution')
+    plt.yticks([])
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    figname = 'ORNPNCosineDistance'
+    tools.save_fig(tools.get_experiment_name(modeldir),
+                   tools.get_model_name(modeldir) + figname)

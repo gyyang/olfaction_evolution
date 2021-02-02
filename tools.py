@@ -743,7 +743,7 @@ green = np.array([65,89,57])/255.  # From # 24
 def reshape_worn(w_orn, unique_orn, mode='tile'):
     """Reshape w_orn."""
     n_orn, n_pn = w_orn.shape
-    w_orn_by_pn = abs(w_orn)
+    w_orn_by_pn = w_orn
     n_duplicate_orn = n_orn // unique_orn
     if mode == 'repeat':
         w_orn_by_pn = np.reshape(w_orn_by_pn,

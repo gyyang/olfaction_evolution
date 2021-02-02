@@ -326,20 +326,6 @@ def pn_norm_analysis(path, ykeys=None):
     sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
                legend_key='pn_norm_pre')
 
-    # import tools
-    # rmax = tools.load_pickles(path, 'model/layer1/r_max:0')
-    # rho = tools.load_pickles(path, 'model/layer1/rho:0')
-    # m = tools.load_pickles(path, 'model/layer1/m:0')
-    # print(rmax)
-    # print(rho)
-    # print(m)
-    #
-    # analysis_activity.image_activity(path, 'glo')
-    # analysis_activity.image_activity(path, 'kc')
-    # analysis_activity.distribution_activity(path, 'glo')
-    # analysis_activity.distribution_activity(path, 'kc')
-    # analysis_activity.sparseness_activity(path, 'kc')
-
 
 def pn_norm_relabel_analysis(path):
     pn_norm_analysis(path)
