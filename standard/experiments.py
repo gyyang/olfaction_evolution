@@ -607,30 +607,42 @@ def multihead_relabel_analysis(path):
 
 
 def multihead_standard_analysis(path):
-    acc_min = 0.65
-    select_dict = {}
+    # Pre compute results for all networks
+    modeldirs = tools.get_modeldirs(path)
+    analysis_multihead.analyze_networks(modeldirs)
+
+    # Plot regular progress
+    select_dict = {'kc_dropout_rate': 0, 'pn_norm_pre': 'batch_norm'}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'],
                      legend_key='lr')
     sa.plot_xy(modeldirs,
                xkey='lin_bins', ykey='lin_hist', legend_key='lr')
 
-    # this acc is average of two heads
+    select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'],
+                     legend_key='kc_dropout_rate')
+
+    # Analyze many network results
+    acc_min = 0.65  # this acc is average of two heads
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
     modeldirs = tools.filter_modeldirs(
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
-    analysis_multihead.analyze_many_networks_lesion(modeldirs)
+    analysis_multihead.plot_silouette_score(modeldirs)
+    analysis_multihead.analyze_networks_lesion(modeldirs)
+    analysis_multihead.plot_number_neurons_cluster(modeldirs)
 
     # Plot example network
-    select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
+    select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm',
+                   'kc_dropout_rate': 0}
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
                                     select_dict=select_dict)
     modeldirs = tools.filter_modeldirs(
         modeldirs, exclude_badkc=True, exclude_badpeak=True)
     dir = modeldirs[0]
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
-    sa.plot_weights(dir)
+    analysis_multihead.plot_weights(dir)
     analysis_activity.distribution_activity(dir, ['glo', 'kc'])
     analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
     analysis_multihead.analyze_example_network(dir)
-

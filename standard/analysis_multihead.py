@@ -655,3 +655,190 @@ def _plot_hist(acc_plot, name, ytick_heads, plot_bar=False, plot_box=True):
     ax.set_ylim(ylim)
     ax.set_yticks(ytick)
     return fig
+
+
+def plot_weights(modeldir, var_name=None, average=False, vlim=None, **kwargs):
+    """Plot weights of a model."""
+    if var_name is None:
+        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo', 'w_copy']
+    elif isinstance(var_name, str):
+        var_name = [var_name]
+
+    for v in var_name:
+        _plot_weights(modeldir, v, average=average, vlim=vlim, **kwargs)
+
+
+def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
+                  vlim=None, title_keys=None,
+                  ax_args=None):
+    """Plot weights."""
+    # Load network at the end of training
+    var_dict = tools.load_pickle(modeldir)
+    try:
+        if var_name == 'w_combined':
+            w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
+        else:
+            w_plot = var_dict[var_name]
+    except KeyError:
+        # Weight doesn't exist, return
+        return
+    print('Plotting ' + var_name + ' from ' + modeldir)
+
+    if average:
+        # Should only be used for w_orn
+        assert var_name == 'w_orn'
+        w_orn_by_pn = tools.reshape_worn(w_plot, 50)
+        w_plot = w_orn_by_pn.mean(axis=0)
+
+    # Sort for visualization
+    if sort_axis == 'auto':
+        if var_name == 'w_glo':
+            # This is only done for w_glo shape (N_PN, N_KC)
+            import standard.analysis_multihead as analysis_multihead
+            results = analysis_multihead._load_results(modeldir)
+            groups = results['groups']
+            n_clusters = len(groups)
+            n_eachcluster = 10
+            # Select subsets of KCs by groups
+            short_groups = [g[:n_eachcluster] for g in groups]
+            w_plot = w_plot[:, np.concatenate(short_groups)]
+            # Sort PNs according to ORN strengths, ORNs are already ordered
+            w_orn = var_dict['w_orn']
+            ind_sort = np.argmax(w_orn, axis=1)
+            w_plot = w_plot[ind_sort, :]
+        elif var_name == 'w_orn':
+            sort_axis = 0  # sort output neurons
+
+    if sort_axis == 0:
+        # w_plot is (Input neurons, Output neurons)
+        # sort_axis=0 means sort output neurons by preferred input neurons
+        ind_max = np.argmax(w_plot, axis=0)  # To neurons's preferred inputs
+        # Sort output neurons by preferred input neurons
+        ind_sort = np.argsort(ind_max)
+        w_plot = w_plot[:, ind_sort]
+    elif sort_axis == 1:
+        # w_plot is (Input neurons, Output neurons)
+        # sort_axis=0 means sort input neurons by preferred output neurons
+        ind_max = np.argmax(w_plot, axis=1)
+        ind_sort = np.argsort(ind_max)
+        w_plot = w_plot[ind_sort, :]
+    else:
+        pass
+
+    # w_max = np.max(abs(w_plot))
+    w_max = np.percentile(abs(w_plot), 99)
+    if not vlim:
+        vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
+
+    figsize = (2.2, 2.2)
+    rect = [0.15, 0.15, 0.65, 0.65]
+    rect_cb = [0.82, 0.15, 0.02, 0.65]
+    rect_bottom = [0.15, 0.12, 0.65, 0.02]
+    rect_left = [0.12, 0.15, 0.02, 0.65]
+
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes(rect)
+
+    cmap = plt.get_cmap('RdBu_r')
+    positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
+    if positive_cmap:
+        cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
+
+    im = ax.imshow(w_plot.T, cmap=cmap, vmin=vlim[0], vmax=vlim[1],
+                   interpolation='nearest',
+                   extent=(-0.5, w_plot.shape[0]-0.5, w_plot.shape[1]-0.5,
+                           -0.5))
+
+    plt.axis('tight')
+    for loc in ['bottom', 'top', 'left', 'right']:
+        ax.spines[loc].set_visible(False)
+
+    labelpad = 13
+    if var_name == 'w_glo':
+        y_label, x_label = 'To Third layer neurons', ' From PNs'
+    elif var_name == 'w_orn':
+        y_label, x_label = 'To PNs', 'From ORNs'
+    elif var_name == 'w_or':
+        y_label, x_label = 'To ORNs', 'From ORs'
+    elif var_name == 'w_glo':
+        y_label, x_label = 'To KCs', 'From PNs'
+    elif var_name == 'w_combined':
+        y_label, x_label = 'To PNs', 'From ORs'
+    else:
+        y_label, x_label = '', ''
+    ax.set_ylabel(y_label, labelpad=labelpad)
+    ax.set_xlabel(x_label, labelpad=labelpad)
+    title = tools.nicename(var_name)
+    if title_keys is not None:
+        config = tools.load_config(modeldir)
+        if isinstance(title_keys, str):
+            title_keys = [title_keys]
+        for title_key in title_keys:
+            v = getattr(config, title_key)
+            title += '\n' + tools.nicename(
+                title_key) + ':' + tools.nicename(v, 'lr')
+    if var_name == 'w_glo':
+        title = 'PN-Third layer connectivity'
+    ax.set_title(title, fontsize=7)
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.tick_params('both', length=0)
+
+    if ax_args is not None:
+        ax.update(ax_args)
+
+    ax = fig.add_axes(rect_cb)
+    cb = plt.colorbar(im, cax=ax, ticks=vlim)
+    cb.outline.set_linewidth(0.5)
+    cb.set_label('Weight', labelpad=-7)
+    plt.tick_params(axis='both', which='major')
+    plt.axis('tight')
+
+    def _plot_colorannot(rect, labels, colors,
+                         texts=None, orient='horizontal'):
+        """Plot color indicating groups"""
+        ax = fig.add_axes(rect)
+        for il, l in enumerate(np.unique(labels)):
+            color = colors[il]
+            ind_l = np.where(labels == l)[0][[0, -1]] + np.array([0, 1])
+            if orient == 'horizontal':
+                ax.plot(ind_l, [0, 0], linewidth=4, solid_capstyle='butt',
+                        color=color)
+                if texts is not None:
+                    ax.text(np.mean(ind_l), -1, texts[il], fontsize=7,
+                            ha='center', va='top', color=color)
+            else:
+                ax.plot([0, 0], ind_l, linewidth=4, solid_capstyle='butt',
+                        color=color)
+                if texts is not None:
+                    ax.text(-1, np.mean(ind_l), texts[il], fontsize=7,
+                            ha='right', va='center', color=color,
+                            rotation='vertical')
+        if orient == 'horizontal':
+            ax.set_xlim([0, len(labels)])
+            ax.set_ylim([-1, 1])
+        else:
+            ax.set_ylim([0, len(labels)])
+            ax.set_xlim([-1, 1])
+        ax.axis('off')
+
+    colors = np.array([[55, 126, 184], [228, 26, 28], [178, 178, 178]])/255
+    labels = np.array([0] * 5 + [1] * 5 + [2] * 40)  # From dataset
+    texts = ['Ap.', 'Av.', 'Neutral']
+    _plot_colorannot(rect_bottom, labels, colors, texts)
+
+    if var_name == 'w_glo':
+        # Note: Reverse y axis
+        # Innate, flexible
+        colors = np.array([[245, 110, 128], [149, 0, 149], [0, 149, 149],
+                           [149, 149, 0]]) / 255
+        colors = colors[:n_clusters]
+        labels = np.repeat(np.arange(0, n_clusters)[::-1], n_eachcluster)
+        texts = ['Cluster {:d}'.format(i+1) for i in range(n_clusters)]
+        _plot_colorannot(rect_left, labels, colors, texts, orient='vertical')
+
+    var_name = var_name.replace('/','_')
+    var_name = var_name.replace(':','_')
+    figname = '_' + var_name + '_' + tools.get_model_name(modeldir)
+    tools.save_fig(tools.get_experiment_name(modeldir), figname)
