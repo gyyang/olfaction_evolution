@@ -1,6 +1,7 @@
 import sys
 import os
 import pickle
+from collections import defaultdict
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -92,7 +93,7 @@ def _get_data(modeldir, use_log=True, exclude_weak=True):
     return results
 
 
-def _compute_silouette_score(results, figpath=None, plot=False, name_pre=None):
+def _compute_silouette_score(results):
     """Compute silouette score.
 
     Args:
@@ -115,22 +116,36 @@ def _compute_silouette_score(results, figpath=None, plot=False, name_pre=None):
         score = silhouette_score(data_norm_use, labels)
         scores.append(score)
 
-    if plot:
-        fig = plt.figure(figsize=(1.5, 1.5))
-        ax = fig.add_axes([0.3, 0.3, 0.65, 0.65])
-        ax.plot(n_clusters, scores, 'o-', markersize=3)
-        plt.xlabel('Number of clusters')
-        plt.ylabel('Silouette score')
-        plt.xticks([2, 5, 10])
-        [ax.spines[s].set_visible(False) for s in ['right', 'top']]
-        name = 'silhouette_score'
-        if name_pre is not None:
-            name = name_pre + '_' + name
-        save_fig(figpath, name)
-        plt.close()
-
     optim_n_clusters = n_clusters[np.argmax(scores)]
-    return optim_n_clusters
+    results['optim_n_clusters'] = optim_n_clusters
+    results['silouette_n_clusters'] = n_clusters
+    results['silouette_scores'] = scores
+
+    return results
+
+
+def plot_silouette_score(modeldirs):
+    if isinstance(modeldirs, str):
+        modeldirs = [modeldirs]
+
+    fig = plt.figure(figsize=(1.5, 1.5))
+    ax = fig.add_axes([0.3, 0.3, 0.65, 0.55])
+    for modeldir in modeldirs:
+        results = _load_results(modeldir)
+        n_clusters = results['silouette_n_clusters']
+        scores = results['silouette_scores']
+        ax.plot(n_clusters, scores, 'o-', markersize=3)
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Silouette score')
+    plt.xticks([2, 5, 10])
+    [ax.spines[s].set_visible(False) for s in ['right', 'top']]
+    name = 'silhouette_score'
+    if len(modeldirs) == 1:
+        name = name + tools.get_model_name(modeldirs[0])
+    else:
+        ax.set_title('N={:d} models'.format(len(modeldirs)), fontsize=7)
+    save_fig(tools.get_experiment_name(modeldirs[0]), name)
+    plt.close()
 
 
 def _get_groups(results, n_clusters=2, sortmode='head2'):
@@ -306,13 +321,22 @@ def _plot_all_density(results, xind, yind, figpath=None,
     if normalize:
         norm_mean = np.mean(data_plot_kept, axis=0)
         norm_std = np.std(data_plot_kept, axis=0)
-        print(norm_std)
         data_plot = (data_plot - norm_mean) / norm_std
         data_plot_kept = (data_plot_kept - norm_mean) / norm_std
         xmin, xmax = (np.array([xmin, xmax]) - norm_mean[0]) / norm_std[0]
         ymin, ymax = (np.array([ymin, ymax]) - norm_mean[1]) / norm_std[1]
     
     X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+
+    # individual cluster normalized density
+    # Here group indices are original ones, so use original data_plot
+    Zs = list()
+    for j, group in enumerate(groups):
+        try:
+            Zs.append(_get_density(data_plot[group], X, Y))
+        except np.linalg.LinAlgError:
+            # when neurons have the same input degree, density is degenerate
+            Zs.append(_get_density(data_plot[group], X, Y, method='sklearn'))
     
     def add_text(ax):
         for i in range(len(groups)):
@@ -332,16 +356,6 @@ def _plot_all_density(results, xind, yind, figpath=None,
         if figpath:
             save_fig(figpath, name_pre)
 
-    # individual cluster normalized density
-    # Here group indices are original ones, so use original data_plot
-    Zs = list()
-    for j, group in enumerate(groups):
-        try:
-            Zs.append(_get_density(data_plot[group], X, Y))
-        except np.linalg.LinAlgError:
-            # when neurons have the same input degree, density is degenerate
-            Zs.append(_get_density(data_plot[group], X, Y, method='sklearn'))
-
     Zsum = 0
     for i, Z in enumerate(Zs):
         title = 'Cluster {:d} n={:d}'.format(i+1, len(groups[i]))
@@ -359,6 +373,17 @@ def _plot_all_density(results, xind, yind, figpath=None,
             results['n_clusters'])+'_group_sum')
 
 
+def _load_results(modeldir):
+    with open(os.path.join(modeldir, 'analysis_results.pkl'), 'rb') as f:
+        results = pickle.load(f)
+    return results
+
+
+def _save_results(results, modeldir):
+    with open(os.path.join(modeldir, 'analysis_results.pkl'), 'wb') as f:
+        pickle.dump(results, f)
+
+
 def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
     """Analyze example network for multi-head analysis."""
     model_name = tools.get_model_name(modeldir)
@@ -366,24 +391,23 @@ def analyze_example_network(modeldir, arg='multi_head', fix_cluster=None):
     figpath = os.path.join(rootpath, 'figures',
                            tools.get_experiment_name(modeldir))
 
-    with open(os.path.join(modeldir, 'analysis_results.pkl'), 'rb') as f:
-        results = pickle.load(f)
+    results = _load_results(modeldir)
 
     name_pre = model_name
     _plot_all_density(results, xind=0, yind=1,
-                      figpath=figpath, name_pre=name_pre, plot_sum_only=True)
+                      figpath=figpath, name_pre=name_pre)
     _plot_all_density(results, xind=2, yind=1,
-                      figpath=figpath, name_pre=name_pre, plot_sum_only=True)
+                      figpath=figpath, name_pre=name_pre)
 
-    # if arg == 'metatrain':
-    #     ytick_heads = (.5, .5)
-    # else:
-    #     ytick_heads = (0, .8)
-    # val_accs, val_acc2s = _get_lesion_acc(modeldir, groups, arg=arg)
-    # for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
-    #     fig = _plot_hist(val_acc[:, np.newaxis], head, ytick_heads)
-    #     save_fig(figpath,
-    #              model_name+'_cluster'+str(optim_n_clusters)+'_lesion'+head)
+    if arg == 'metatrain':
+        ytick_heads = (.5, .5)
+    else:
+        ytick_heads = (0, .8)
+    val_accs, val_acc2s = _get_lesion_acc(modeldir, results['groups'], arg=arg)
+    for head, val_acc in zip(['head1', 'head2'], [val_accs, val_acc2s]):
+        fig = _plot_hist(val_acc[:, np.newaxis], head, ytick_heads)
+        save_fig(figpath,
+                 model_name+'_cluster'+str(results['n_clusters'])+'_lesion'+head)
 
 
 def analyze_networks_lesion(modeldirs, arg='multi_head'):
@@ -397,17 +421,25 @@ def analyze_networks_lesion(modeldirs, arg='multi_head'):
 
     val_accs, val_acc2s = list(), list()
     for modeldir in modeldirs:
-        with open(os.path.join(modeldir, 'analysis_results.pkl'), 'rb') as f:
-            results = pickle.load(f)
+        results = _load_results(modeldir)
+
         groups = results['groups']
         if len(groups) != 2:
             # Merge all clusters before the last one
             # This is done so we can get two clusters for lesioning
             # Not a general method, but works here
-            results['groups'] = [np.concatenate(groups[:-1]), groups[-1]]
+            results['lesion_groups'] = [np.concatenate(groups[:-1]),
+                                        groups[-1]]
+        else:
+            results['lesion_groups'] = groups
 
         val_accs_tmp, val_acc2s_tmp = _get_lesion_acc(
-            modeldir, results['groups'], arg=arg)
+            modeldir, results['lesion_groups'], arg=arg)
+        print(modeldir)
+        print(val_accs_tmp, val_acc2s_tmp)
+        results['lesion_val_accs'] = val_accs_tmp
+        results['lesion_val_acc2s'] = val_acc2s_tmp
+        _save_results(results, modeldir)
 
         val_accs.append(val_accs_tmp)
         val_acc2s.append(val_acc2s_tmp)
@@ -426,10 +458,39 @@ def analyze_networks(modeldirs):
         config = tools.load_config(modeldir)
         print(config.pn_norm_pre, config.kc_dropout_rate, config.lr)
         results = _get_data(modeldir)
-        optim_n_clusters = _compute_silouette_score(results)
-        results = _get_groups(results, n_clusters=optim_n_clusters)
-        with open(os.path.join(modeldir, 'analysis_results.pkl'), 'wb') as f:
-            pickle.dump(results, f)
+        results = _compute_silouette_score(results)
+        results = _get_groups(results, n_clusters=results['optim_n_clusters'])
+        _save_results(results, modeldir)
+
+
+def plot_number_neurons_cluster(modeldirs):
+    if isinstance(modeldirs, str):
+        modeldirs = [modeldirs]
+
+    n_neurons = defaultdict(list)
+    for modeldir in modeldirs:
+        results = _load_results(modeldir)
+        groups = results['groups']
+        if len(groups) > 2:
+            continue
+        n_neurons['group1'].append(len(groups[0]))
+        n_neurons['group2'].append(len(groups[1]))
+
+    xticks = [20, 200, 2000]
+    fig, axs = plt.subplots(2, 1, figsize=(1.5, 2), sharex='all')
+    for i, group in enumerate(['group1', 'group2']):
+        ax = axs[i]
+        ax.hist(np.log(np.array(n_neurons[group])),
+                bins=np.linspace(np.log(20), np.log(3000), 15))
+        ax.set_xticks(np.log(xticks))
+        ax.set_xticklabels([str(xtick) for xtick in xticks])
+        [ax.spines[s].set_visible(False) for s in ['right', 'top']]
+        ax.set_title('Cluster ' + str(i+1), fontsize=7)
+        ax.set_ylabel('Models')
+        if i == 1:
+            ax.set_xlabel('Number of neurons')
+    plt.tight_layout()
+    save_fig(tools.get_experiment_name(modeldirs[0]), 'number_neurons_cluster')
 
 
 def lesion_analysis(config, units=None):
