@@ -200,12 +200,15 @@ def analyze_rnn_activity(modeldir, threshold=0.15, plot=True):
     N_ORN = config.N_PN * config.N_ORN_DUPLICATION
     w_orn = w_rnn[:N_ORN, active_ixs[1]]
     new_res = {'w_orn': w_orn, 'active_ixs': active_ixs}
-    if config.TIME_STEPS >= 2:
-        w_glo = w_rnn[active_ixs[-2], :][:, active_ixs[-1]]
+    if config.TIME_STEPS == 2:
+        w_glo = w_rnn[active_ixs[1], :][:, active_ixs[2]]
         new_res['w_glo'] = w_glo
-    if config.TIME_STEPS >= 3:
-        w_copy = w_rnn[active_ixs[1], :][:, active_ixs[2]]
-        new_res['w_copy'] = w_copy
+    if config.TIME_STEPS == 3:
+        w_step2to3 = w_rnn[active_ixs[1], :][:, active_ixs[2]]
+        w_step3to4 = w_rnn[active_ixs[2], :][:, active_ixs[3]]
+        new_res['w_glo'] = np.dot(w_step2to3, w_step3to4)
+        new_res['w_step2to3'] = w_step2to3
+        new_res['w_step3to4'] = w_step3to4
 
     res.update(new_res)
     tools.save_pickle(modeldir, res)
@@ -226,18 +229,26 @@ def analyze_rnn_weights(modeldir):
                              'title': 'Step 1-2 connectivity'})
 
     # Only plotted if exists
-    sa.plot_weights(modeldir, 'w_copy',
+    sa.plot_weights(modeldir, 'w_step2to3',
                     ax_args={'xlabel': 'From Step 2', 
                              'ylabel': 'To Step 3',
                              'title': 'Step 2-3 connectivity'})
 
+    sa.plot_weights(modeldir, 'w_step3to4',
+                    ax_args={'xlabel': 'From Step 3',
+                             'ylabel': 'To Step 4',
+                             'title': 'Step 3-4 connectivity'})
+
     n_step = config.TIME_STEPS
+    if n_step == 2:
+        title = 'Step 2-3 connectivity'
+    else:
+        title = 'Effective Step 2-{:d} connectivity'.format(n_step+1)
     sa.plot_weights(
         modeldir, 'w_glo',
-        ax_args={'xlabel': 'From Step ' + str(n_step), 
+        ax_args={'xlabel': 'From Step 2',
                  'ylabel': 'To Step ' + str(n_step + 1),
-                 'title': 'Step {:d}-{:d} connectivity'.format(n_step,
-                                                               n_step+1)})
+                 'title': title})
     analysis_pn2kc_training.plot_distribution(modeldir)
     analysis_pn2kc_training.plot_sparsity(modeldir)
 

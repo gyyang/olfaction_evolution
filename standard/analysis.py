@@ -272,7 +272,8 @@ def plot_weights(modeldir, var_name=None, average=False, vlim=None,
                  zoomin=False, **kwargs):
     """Plot weights of a model."""
     if var_name is None:
-        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo', 'w_copy']
+        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo',
+                    'w_step2to3', 'w_step3to4']
     elif isinstance(var_name, str):
         var_name = [var_name]
     for v in var_name:
@@ -305,11 +306,27 @@ def _load_sorted_pickle(modeldir):
         else:
             new_var_dict['w_orn'] = w
 
-    # Next sort PNs
-    w = new_var_dict['w_orn']  # ORN-PN weight
-    ind_sort_pn = np.argsort(np.argmax(w, axis=0))
-    new_var_dict['w_orn'] = w[:, ind_sort_pn]
-    new_var_dict['w_glo'] = var_dict['w_glo'][ind_sort_pn, :]
+    if 'w_step2to3' in var_dict.keys():
+        # Only used for RNN, Step=3 experiment
+        # Next sort PNs
+        w = new_var_dict['w_orn']  # ORN-PN weight
+        ind_sort_pn = np.argsort(np.argmax(w, axis=0))
+        new_var_dict['w_orn'] = w[:, ind_sort_pn]
+        new_var_dict['w_step2to3'] = var_dict['w_step2to3'][ind_sort_pn, :]
+
+        # Then sort copy layer
+        w = new_var_dict['w_step2to3']  # PN-copy layer weight
+        ind_sort_copy = np.argsort(np.argmax(w, axis=0))
+        new_var_dict['w_step2to3'] = w[:, ind_sort_copy]
+        new_var_dict['w_step3to4'] = var_dict['w_step3to4'][ind_sort_copy, :]
+        new_var_dict['w_glo'] = np.dot(new_var_dict['w_step2to3'],
+                                       new_var_dict['w_step3to4'])
+    else:
+        # Next sort PNs
+        w = new_var_dict['w_orn']  # ORN-PN weight
+        ind_sort_pn = np.argsort(np.argmax(w, axis=0))
+        new_var_dict['w_orn'] = w[:, ind_sort_pn]
+        new_var_dict['w_glo'] = var_dict['w_glo'][ind_sort_pn, :]
 
     # KCs are not sorted
     if 'w_or' in var_dict.keys():
@@ -418,6 +435,8 @@ def _plot_weights(modeldir, var_name='w_orn', average=False,
 
         if ax_args is not None:
             ax.update(ax_args)
+        if 'title' in ax_args.keys():
+            ax.set_title(ax_args['title'], fontsize=7)
 
         ax = fig.add_axes(rect_cb)
         cb = plt.colorbar(im, cax=ax, ticks=vlim)
