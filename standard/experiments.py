@@ -74,10 +74,9 @@ def standard_analysis(path):
     # analysis_pn2kc_training.plot_log_distribution_movie(dir)
 
     # pn-kc random
-    # analysis_pn2kc_random.plot_cosine_similarity(
-    #     dir, shuffle_arg='preserve', log=False)
     # analysis_pn2kc_random.plot_distribution(dir)
     # analysis_pn2kc_random.claw_distribution(dir, shuffle_arg='random')
+    # analysis_pn2kc_random.plot_cosine_similarity(dir, shuffle_arg='preserve')
     # analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
 
     # Activity
@@ -85,20 +84,63 @@ def standard_analysis(path):
     analysis_activity.sparseness_activity(path, ['glo', 'kc'])
 
 
-def receptor():
-    """Standard training setting with full network including receptors."""
-    config = FullConfig()
-
+def _receptor_standard_config(config):
+    """Set standard config for network with receptor layer."""
     config.receptor_layer = True
     config.ORN_NOISE_STD = 0.1
     config.kc_dropout_rate = 0.
     config.lr = 1e-4  # For receptor, this is the default LR
+
+    # This is the only combination of normalization that works, not sure why
     config.pn_norm_pre = None
     config.kc_norm_pre = 'batch_norm'
 
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
     config.kc_prune_weak_weights = True
     config.kc_prune_threshold = 1. / config.N_PN
+    return config
+
+
+def receptor_standard():
+    """Standard receptor setting for single network."""
+    config = FullConfig()
+    config.save_every_epoch = True
+    config = _receptor_standard_config(config)
+
+    config_ranges = OrderedDict()
+    config_ranges['dummy'] = [True]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def receptor_standard_analysis(path):
+    # Analyze default network
+    modeldir = tools.get_modeldirs(path)[0]
+    # accuracy
+    sa.plot_progress(modeldir, ykeys=['val_acc', 'K_smart'])
+
+    # weight matrices
+    sa.plot_weights(modeldir)
+    sa.plot_weights(modeldir, zoomin=True)
+
+    # pn-kc
+    analysis_pn2kc_training.plot_distribution(modeldir, xrange=0.5)
+    analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
+    # analysis_pn2kc_training.plot_log_distribution_movie(dir)
+    analysis_pn2kc_random.plot_distribution(dir)
+    analysis_pn2kc_random.claw_distribution(dir, shuffle_arg='random')
+    analysis_pn2kc_random.plot_cosine_similarity(dir, shuffle_arg='preserve')
+    analysis_pn2kc_random.pair_distribution(dir, shuffle_arg='preserve')
+
+    # Compute glo-score metric for OR-ORN connectivity
+    print('ORN score for OR-ORN connectivity',
+          tools.compute_glo_score(tools.load_pickle(modeldir)['w_or'], 50)[0])
+
+
+def receptor():
+    """Standard training setting with full network including receptors."""
+    config = FullConfig()
+    config = _receptor_standard_config(config)
 
     config_ranges = OrderedDict()
     config_ranges['lr'] = [5e-4, 2e-4, 1e-4, 5e-5, 2e-5]
@@ -111,7 +153,6 @@ def receptor():
 
 
 def receptor_analysis(path):
-    # This is the only combination of normalization that works, not sure why
     default = {'ORN_NOISE_STD': 0.1, 'kc_norm_pre': 'batch_norm',
                'pn_norm_pre': None, 'lr': 1e-4}
 
@@ -127,24 +168,6 @@ def receptor_analysis(path):
         sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
         sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
                    legend_key=xkey)
-
-    # Analyze default network
-    modeldir = tools.get_modeldirs(path, select_dict=default)[0]
-    # accuracy
-    sa.plot_progress(modeldir, ykeys=['val_acc', 'K_smart'])
-
-    # weight matrices
-    sa.plot_weights(modeldir)
-    sa.plot_weights(modeldir, zoomin=True)
-
-    # pn-kc
-    analysis_pn2kc_training.plot_distribution(modeldir, xrange=0.5)
-    analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
-    # analysis_pn2kc_training.plot_log_distribution_movie(dir)
-
-    # Compute glo-score metric for OR-ORN connectivity
-    print('ORN score for OR-ORN connectivity',
-          tools.compute_glo_score(tools.load_pickle(modeldir)['w_or'], 50)[0])
 
 
 def singlelayer():
@@ -169,54 +192,8 @@ def scaling_analysis(path):
         name_or_paths + ['dim', 'data'])
 
 
-def rnn():
-    config = RNNConfig()
-    config.max_epoch = 100
-    config.rec_dropout = True
-    config.rec_dropout_rate = 0.5
-    config.rec_norm_pre = None
-    config.diagonal = True
-    config.ORN_NOISE_STD = 0.0
-
-    config_ranges = OrderedDict()
-    config_ranges['TIME_STEPS'] = [2]
-    config_ranges['rec_dropout_rate'] = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def rnn_tf():
-    # TODO: To be removed in the future
-    config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-    config.model = 'rnn'
-
-    config.NEURONS = 2500
-    config.BATCH_NORM = False
-
-    config.dropout = True
-    config.dropout_rate = 0
-    config.DIAGONAL = True
-
-    config_ranges = OrderedDict()
-    config_ranges['TIME_STEPS'] = [1, 2, 3]
-    config_ranges['replicate_orn_with_tiling'] = [False, True, True]
-    config_ranges['N_ORN_DUPLICATION'] = [1, 10, 10]
-
-    configs = vary_config(config, config_ranges, mode='sequential')
-    return configs
-
-
-def rnn_analysis(path):
-    # sa.plot_progress(path, ykeys=['val_acc'], legend_key='TIME_STEPS')
-    # analysis_rnn.analyze_t0(path, dir_ix=0)
-    analysis_rnn.analyze_t_greater(path, dir_ix=1)
-    # analysis_rnn.analyze_t_greater(path, dir_ix=2)
-
-
 def rnn_relabel():
+    """Latest standard setup for RNN."""
     config = RNNConfig()
     config.data_dir = './datasets/proto/relabel_200_100'
     config.max_epoch = 100
@@ -281,61 +258,6 @@ def rnn_relabel_prune_analysis(path):
         sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
         sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
     sa.plot_results(path, xkey='lr', ykey='val_acc', loop_key='TIME_STEPS')
-
-
-def vary_kc_activity_fixed():
-    #TODO: use this one or the other one below
-    '''
-
-    :param argTest:
-    :return:
-    '''
-
-    config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-
-    config.direct_glo = True
-    config.pn_norm_pre = 'batch_norm'
-    config.save_every_epoch = True
-
-    config.train_pn2kc = False
-
-    # config.train_pn2kc = True
-    # config.sparse_pn2kc = False
-    # config.initial_pn2kc = .1
-    # config.extra_layer = True
-    # config.extra_layer_neurons = 200
-
-    config_ranges = OrderedDict()
-    config_ranges['kc_dropout_rate'] = [0, .5]
-    x = [100, 200, 500, 1000, 2000, 5000]
-    config_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-
-    return configs
-
-
-def vary_kc_activity_trainable():
-    ''''''
-    config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
-
-    config.direct_glo = True
-    config.pn_norm_pre = 'batch_norm'
-    config.save_every_epoch = True
-
-    # config.extra_layer = True
-    # config.extra_layer_neurons = 200
-
-    config_ranges = OrderedDict()
-    config_ranges['kc_dropout_rate'] = [0, .5]
-    x = [100, 200, 500, 1000, 2000, 5000]
-    config_ranges['data_dir'] = ['./datasets/proto/' + str(i) + '_100' for i in x]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
 
 
 def pn_norm():
