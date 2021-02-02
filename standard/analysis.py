@@ -296,7 +296,7 @@ def _load_sorted_pickle(modeldir):
     else:
         w = var_dict['w_orn']  # ORN-PN weight
         if config.N_ORN_DUPLICATION > 1:
-            n_orn = config.N_PN * config.N_ORN_DUPLICATION
+            n_orn = config.N_ORN * config.N_ORN_DUPLICATION
             assert w.shape[0] == n_orn
             # Reorder ORNs so the neurons of same type are adjacent
 

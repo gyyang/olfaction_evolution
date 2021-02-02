@@ -359,58 +359,8 @@ def control_pn2kc_prune_boolean_analysis(path):
     sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
 
 
-def control_vary_kc_prune(n_pn=50):
-    """Vary KC with pruning, train only PN-KC."""
-    config = FullConfig()
-    config.max_epoch = 1000
-
-    config.N_PN = n_pn
-    config.data_dir = './datasets/proto/orn'+str(n_pn)
-
-    config.N_ORN_DUPLICATION = 1
-    config.skip_orn2pn = True
-
-    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
-    config.kc_prune_weak_weights = True
-    config.kc_prune_threshold = 1./n_pn
-
-    # Heuristics
-    if n_pn > 50:
-        config.lr = 1e-4
-    else:
-        config.lr = 1e-3
-
-    config_ranges = OrderedDict()
-    config_ranges['N_KC'] = [int(n**2) for n in np.linspace(50, n_pn, 5)]
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def control_vary_kc_prune_analysis(path, n_pns=None):
-    ykeys = ['val_acc', 'K_smart']
-    n_pns = n_pns or [25]
-    for n_pn in n_pns:
-        cur_path = path + '_pn' + str(n_pn)
-        sa.plot_progress(cur_path, legend_key='N_KC', ykeys=ykeys)
-        sa.plot_results(cur_path, xkey='N_KC', ykey=ykeys,
-                        logx=True, figsize=(2.5, 1.5))
-
-
-def control_vary_kc_prune_relabel(n_pn=50):
-    new_configs = []
-    for config in control_vary_kc_prune(n_pn=n_pn):
-        config.data_dir = './datasets/proto/relabel_200_100'
-        config.max_epoch = 300
-        new_configs.append(config)
-
-    return new_configs
-
-
-def control_vary_kc_prune_relabel_analysis(path, n_pns=None):
-    control_vary_kc_prune_analysis(path, n_pns=n_pns)
-
-
 def control_vary_kc():
+    """Standard setup."""
     config = FullConfig()
     config.data_dir = './datasets/proto/relabel_200_100'
     config.max_epoch = 100
@@ -451,7 +401,7 @@ def control_vary_kc_analysis(path):
         sa.plot_weights(modeldir)
 
 
-def control_vary_pn():
+def _control_vary_pn():
     config = FullConfig()
     config.data_dir = './datasets/proto/relabel_200_100'
     config.max_epoch = 100
@@ -465,10 +415,19 @@ def control_vary_pn():
     n_pns = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
     config_ranges = OrderedDict()
     config_ranges['N_PN'] = n_pns
-    config_ranges['initial_pn2kc'] = [4. / n for n in n_pns]
-    config_ranges['kc_prune_threshold'] = [1. / n for n in n_pns]
-    configs = vary_config(config, config_ranges, mode='sequential')
+    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_vary_pn():
+    configs = _control_vary_pn()
+    new_configs = list()
+    for config in configs:
+        config.kc_prune_threshold = 1. / config.N_PN
+        config.initial_pn2kc = 4. / config.N_PN
+        new_configs.append(config)
+    return new_configs
 
 
 def control_vary_pn_analysis(path):
@@ -497,27 +456,6 @@ def control_vary_pn_analysis(path):
         modeldir, cutoff=.9, shuffle=False)
     analysis_orn2pn.multiglo_pn2kc_distribution(modeldir, ix_good, ix_bad)
     # analysis_orn2pn.multiglo_lesion(modeldir, ix_good, ix_bad)
-
-
-def control_vary_pn_relabel():
-    config = FullConfig()
-    config.data_dir = './datasets/proto/relabel_500_100'
-    config.max_epoch = 100
-
-    config.lr = 2e-4  # made smaller to improve separation
-    config.initial_pn2kc = 4. / config.N_PN  # for clarity
-    config.kc_prune_weak_weights = True
-    config.kc_prune_threshold = 1. / config.N_PN
-
-    config_ranges = OrderedDict()
-    config_ranges['N_PN'] = [20, 30, 40, 50, 75, 100, 150, 200, 500, 1000]
-    config_ranges['kc_dropout_rate'] = [0, 0.25, 0.5]
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def control_vary_pn_relabel_analysis(path):
-    control_vary_pn_analysis(path)
 
 
 #TODO
