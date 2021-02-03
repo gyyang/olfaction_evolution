@@ -32,7 +32,7 @@ use_torch = settings.use_torch
 
 
 def standard():
-    """Standard training setting"""
+    """Standard training setting of ORN-PN-KC-output network."""
     config = FullConfig()
     config.save_every_epoch = True
     config.kc_dropout_rate = 0.
@@ -103,7 +103,7 @@ def _receptor_standard_config(config):
 
 
 def receptor_standard():
-    """Standard receptor setting for single network."""
+    """Standard setting for training a single network with a receptor layer."""
     config = FullConfig()
     config.save_every_epoch = True
     config = _receptor_standard_config(config)
@@ -232,40 +232,8 @@ def rnn_relabel_analysis(path):
         analysis_rnn.analyze_rnn_weights(modeldir)
 
 
-def rnn_relabel_prune():
-    config = RNNConfig()
-    config.data_dir = './datasets/proto/relabel_200_100'
-    config.max_epoch = 100
-    config.rec_dropout = False
-    config.rec_dropout_rate = 0.0
-    config.rec_norm_pre = None
-    config.diagonal = False
-    config.ORN_NOISE_STD = 0.0
-
-    config.prune_weak_weights = True
-    config.prune_threshold = 1. / config.NEURONS
-    config.initial_rec = 4./config.NEURONS
-
-    config_ranges = OrderedDict()
-    config_ranges['TIME_STEPS'] = [1, 2, 3]
-    config_ranges['lr'] = [1e-3, 5e-4, 2e-4, 1e-4]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def rnn_relabel_prune_analysis(path):
-    for t in [1, 2, 3]:
-        select_dict = {'TIME_STEPS': t}
-        sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
-        sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
-    sa.plot_results(path, xkey='lr', ykey='val_acc', loop_key='TIME_STEPS')
-
-
 def pn_norm():
-    '''
-    Assesses the effect of PN normalization on glo score and performance
-    '''
+    """Assesses the effect of PN normalization on glo score and performance."""
     config = FullConfig()
     config.max_epoch = 100
     config.lr = 5e-4
@@ -294,6 +262,7 @@ def pn_norm():
 
 
 def pn_norm_relabel():
+    """Standard setting for assessing the effect of PN normalization."""
     configs = pn_norm()
     new_configs = list()
     for c in configs:
@@ -431,24 +400,28 @@ def vary_or_analysis(path, acc_min=0.):
     analysis_pn2kc_training.plot_all_K(path)
 
 
-def vary_or_prune_fixnkc_analysis(path, n_pn=None):
-    vary_or_analysis(path, n_pn)
+def vary_or_prune_fixnkc_analysis(path):
+    vary_or_analysis(path)
 
 
-def vary_or_prune_relabel_analysis(path, n_pn=None):
-    vary_or_analysis(path, n_pn, acc_min=0.5)
+def vary_or_prune_relabel_analysis(path):
+    vary_or_analysis(path)
 
 
-def vary_or_prune_relabel_corr_analysis(path, n_pn=None):
-    vary_or_analysis(path, n_pn, acc_min=0.5)
+def vary_or_prune_relabel_corr_analysis(path):
+    vary_or_analysis(path)
 
 
-def multihead():
-    """Multi-task classification."""
+def multihead_standard():
+    """Standard multi-task training with relabel datset and pruning."""
     config = FullConfig()
     config.max_epoch = 100
     config.N_ORN_DUPLICATION = 1
-    config.data_dir = './datasets/proto/multihead'
+    config.data_dir = './datasets/proto/multihead_relabel'
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
 
     config_ranges = OrderedDict()
     config_ranges['pn_norm_pre'] = [None, 'batch_norm']
@@ -457,63 +430,6 @@ def multihead():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
-
-
-def multihead_relabel():
-    """Multi-task with relabel datset."""
-    new_configs = list()
-    for cfg in multihead():
-        cfg.data_dir = './datasets/proto/multihead_relabel'
-        new_configs.append(cfg)
-    return new_configs
-
-
-def multihead_standard():
-    """Multi-task with relabel datset and pruning. Latest standard."""
-    new_configs = list()
-    for config in multihead():
-        config.data_dir = './datasets/proto/multihead_relabel'
-        n_pn = 50
-        config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
-        config.kc_prune_weak_weights = True
-        config.kc_prune_threshold = 1. / n_pn
-
-        new_configs.append(config)
-    return new_configs
-
-
-def multihead_analysis(path, acc_min=0.85):
-
-    select_dict = {'pn_norm_pre': 'batch_norm', 'initial_pn2kc': 0.1}
-    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'],
-                     legend_key='lr')
-    sa.plot_xy(modeldirs,
-               xkey='lin_bins', ykey='lin_hist', legend_key='lr')
-    # this acc is average of two heads
-    # modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
-    # modeldirs = tools.filter_modeldirs(
-    #     modeldirs, exclude_badkc=True)
-    #
-    # # TODO: This no longer works robustly, because there are more than 2
-    # #  clusters
-    # analysis_multihead.analyze_many_networks_lesion(modeldirs)
-    #
-    select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
-    modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
-                                    select_dict=select_dict)
-    modeldirs = tools.filter_modeldirs(
-        modeldirs, exclude_badpeak=True)
-    dir = modeldirs[0]
-    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
-    sa.plot_weights(dir)
-    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
-    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
-    analysis_multihead.analyze_example_network(dir, fix_cluster=3)
-
-
-def multihead_relabel_analysis(path):
-    multihead_analysis(path, acc_min=0.65)
 
 
 def multihead_standard_analysis(path):

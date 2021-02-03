@@ -30,46 +30,6 @@ except ImportError as e:
 use_torch = settings.use_torch
 
 
-def metalearn():
-    config = MetaConfig()
-    config.meta_lr = .001
-    config.N_CLASS = 10 #10
-    config.save_every_epoch = True
-    config.meta_batch_size = 32 #32
-    config.meta_num_samples_per_class = 8 #16
-    config.meta_print_interval = 500
-
-    config.replicate_orn_with_tiling = True
-    config.N_ORN_DUPLICATION = 10
-    config.output_max_lr = 2.0 #2.0
-
-    config.metatrain_iterations = 15000
-    config.pn_norm_pre = 'batch_norm'
-    config.kc_norm_pre = 'batch_norm'
-    config.initial_pn2kc = 0.05 #0.05
-
-    config.data_dir = './datasets/proto/meta_dataset'
-
-    config_ranges = OrderedDict()
-    config_ranges['dummy'] = [True]
-
-    configs = vary_config(config, config_ranges, mode='combinatorial')
-    return configs
-
-
-def metalearn_analysis(path):
-    import os
-    path = os.path.join(path, '000000','epoch','1000')
-    sa.plot_weights(path, var_name='w_orn', sort_axis=1, average=False)
-    sa.plot_weights(path, var_name='w_glo', sort_axis=-1)
-    analysis_pn2kc_training.plot_distribution(path, xrange=1)
-    analysis_pn2kc_training.plot_sparsity(path)
-    # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_orn', dir_ix = 0)
-    # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'w_glo', dir_ix= 1)
-    # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 0)
-    # analysis_metalearn.plot_weight_change_vs_meta_update_magnitude(path, 'model/layer3/kernel:0', dir_ix = 1)
-
-
 def _meta_standard_config(config):
     """Put here instead of default config for clarity."""
     config.data_dir = './datasets/proto/standard'
@@ -163,7 +123,7 @@ def meta_control_standard_analysis(path):
 
 
 def meta_vary_or(n_pn=50):
-    """Training networks with different number of PNs and vary hyperparams."""
+    """Standard settings for different number of PNs in meta-learning."""
     config = MetaConfig()
     config = _meta_standard_config(config)
     config.metatrain_iterations = 15000  # Train a bit longer
