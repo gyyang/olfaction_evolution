@@ -299,9 +299,8 @@ def _load_sorted_pickle(modeldir):
             n_orn = config.N_ORN * config.N_ORN_DUPLICATION
             assert w.shape[0] == n_orn
             # Reorder ORNs so the neurons of same type are adjacent
-
             ind_sort_orn = np.concatenate(
-                [range(i, n_orn, config.N_PN) for i in range(config.N_PN)])
+                [range(i, n_orn, config.N_ORN) for i in range(config.N_ORN)])
             new_var_dict['w_orn'] = w[ind_sort_orn, :]
         else:
             new_var_dict['w_orn'] = w
