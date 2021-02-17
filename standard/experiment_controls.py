@@ -676,13 +676,13 @@ def control_pn2kc_inhibition():
     config.max_epoch = 30
 
     config.initial_pn2kc = 4. / config.N_PN
-    # config.kc_prune_threshold = 1. / config.N_PN
+    config.kc_prune_threshold = 1. / config.N_PN
     config.kc_recinh = True
     config.kc_recinh_step = 10
+    config.kc_prune_weak_weights = True
 
     # Ranges of hyperparameters to loop over
     config_ranges = OrderedDict()
-    # config_ranges['kc_prune_weak_weights'] = [True, False]
     config_ranges['kc_recinh_coeff'] = list(np.arange(0, 1.01, 0.2))
     # config_ranges['kc_recinh_step'] = list(range(1, 10, 2))
     configs = vary_config(config, config_ranges, mode='combinatorial')
@@ -691,20 +691,19 @@ def control_pn2kc_inhibition():
 
 def control_pn2kc_inhibition_analysis(path):
     xkey = 'kc_recinh_coeff'
-    ykeys = ['val_acc', 'K_inferred']
+    ykeys = ['val_acc', 'K_inferred', 'glo_score']
     # loop_key = 'kc_recinh_step'
     loop_key = None
-    select_dict = {'kc_prune_weak_weights': False, 'kc_recinh_step': 9}
+    select_dict = {'kc_prune_weak_weights': True, 'kc_recinh_step': 10}
 
     modeldirs = tools.get_modeldirs(
         path, select_dict=select_dict, acc_min=0.5)
 
-    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key,
-                    figsize=(2.0, 1.2))
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
 
     sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
-               ax_args={'ylim': [0, 500]})
+               )
 
 
 def control_orn2pn_random():
