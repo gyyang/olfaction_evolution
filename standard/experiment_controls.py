@@ -665,15 +665,15 @@ def vary_apl_analysis(path):
         figname='lesion_apl_')
 
 
-
 def control_pn2kc_inhibition():
     """Assess impact of APL with recurrent inhibition.
 
     TODO: Remain to be added to manuscipt.
     """
     config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
-    config.max_epoch = 30
+    config.data_dir = './datasets/proto/relabel_200_100'
+    config.max_epoch = 100
+    config.kc_dropout_rate = 0.
 
     config.initial_pn2kc = 4. / config.N_PN
     config.kc_prune_threshold = 1. / config.N_PN
