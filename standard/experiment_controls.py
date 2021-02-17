@@ -699,8 +699,7 @@ def control_pn2kc_inhibition_analysis(path):
     modeldirs = tools.get_modeldirs(
         path, select_dict=select_dict, acc_min=0.5)
 
-    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key,
-                    figsize=(2.0, 1.2))
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
 
     sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
