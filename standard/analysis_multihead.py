@@ -136,7 +136,7 @@ def plot_silouette_score(modeldirs):
         scores = results['silouette_scores']
         ax.plot(n_clusters, scores, 'o-', markersize=3)
     plt.xlabel('Number of clusters')
-    plt.ylabel('Silouette score')
+    plt.ylabel('Silhouette score')
     plt.xticks([2, 5, 10])
     [ax.spines[s].set_visible(False) for s in ['right', 'top']]
     name = 'silhouette_score'

@@ -692,7 +692,6 @@ def control_pn2kc_inhibition():
 def control_pn2kc_inhibition_analysis(path):
     xkey = 'kc_recinh_coeff'
     ykeys = ['val_acc', 'K_inferred', 'glo_score']
-    # loop_key = 'kc_recinh_step'
     loop_key = None
     select_dict = {'kc_prune_weak_weights': True, 'kc_recinh_step': 10}
 
@@ -702,8 +701,7 @@ def control_pn2kc_inhibition_analysis(path):
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, loop_key=loop_key)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key=xkey)
 
-    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey,
-               )
+    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
 
 
 def control_orn2pn_random():
