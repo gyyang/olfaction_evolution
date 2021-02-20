@@ -362,7 +362,7 @@ def plot_distance_distribution(modeldir):
     plt.hist(corrs, bins=bins, density=True, label='Trained', alpha=0.5)
     plt.hist(corrs_random, bins=bins, density=True, label='Random', alpha=0.5)
     ax.legend(fontsize=7, frameon=False)
-    plt.xlabel('Cosine distance')
+    plt.xlabel('Cosine similarity')
     plt.ylabel('Distribution')
     plt.yticks([])
     ax.spines["right"].set_visible(False)

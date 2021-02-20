@@ -148,6 +148,21 @@ def control_nonnegative():
     return configs
 
 
+def control_nonnegative_receptor():
+    configs = control_nonnegative()
+    new_configs = list()
+    for config in configs:
+        config.receptor_layer = True
+        config.ORN_NOISE_STD = 0.1
+        config.lr = 1e-4  # For receptor, this is the default LR
+
+        # This is the only combination of normalization that works, not sure why
+        config.pn_norm_pre = None
+        config.kc_norm_pre = 'batch_norm'
+        new_configs.append(config)
+    return new_configs
+
+
 def control_nonnegative_analysis(path):
     for sign in [True, False]:
         modeldir = tools.get_modeldirs(path, select_dict={
@@ -397,7 +412,7 @@ def vary_orn_corr_nosign():
 
 def vary_orn_corr_analysis(path):
     xkey = 'orn_corr'
-    ykeys = ['val_acc', 'K_smart', 'glo_score']
+    ykeys = ['val_acc', 'glo_score', 'K_smart']
     sa.plot_results(path, xkey=xkey, ykey=ykeys)
     sa.plot_progress(path, legend_key=xkey, ykeys=ykeys)
     sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
@@ -446,7 +461,7 @@ def kc_norm():
 def kc_norm_analysis(path):
     select_dict = {'kc_prune_weak_weights': True}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    ykeys = ['val_acc', 'glo_score', 'K_smart']
+    ykeys = ['val_acc', 'K_smart', 'glo_score']
     xkey = 'kc_norm'
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
                     loop_key='kc_dropout_rate',
@@ -691,7 +706,7 @@ def control_pn2kc_inhibition():
 
 def control_pn2kc_inhibition_analysis(path):
     xkey = 'kc_recinh_coeff'
-    ykeys = ['val_acc', 'K_inferred', 'glo_score']
+    ykeys = ['val_acc', 'glo_score', 'K_inferred']
     loop_key = None
     select_dict = {'kc_prune_weak_weights': True, 'kc_recinh_step': 10}
 
