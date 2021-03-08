@@ -222,10 +222,10 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
 
 if __name__ == '__main__':
     # plot_task('standard', include_prototypes=True)
-    # plot_task('innate', include_prototypes=True)
-    # plot_task('innate2', include_prototypes=True)
+    plot_task('innate', include_prototypes=True)
+    plot_task('innate2', include_prototypes=True)
     # plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
     # plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
     # plot_task('relabel', include_prototypes=True)
     # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
-    plot_task('correlate', include_prototypes=True)
+    # plot_task('correlate', include_prototypes=True)

@@ -619,7 +619,7 @@ def _plot_hist(acc_plot, name, ytick_heads, plot_bar=False, plot_box=True):
         title = 'Valence'
 
     width = 0.5
-    fig = plt.figure(figsize=(1.2, 1.2))
+    fig = plt.figure(figsize=(1.5, 1.2))
     ax = fig.add_axes([0.35, 0.35, 0.6, 0.4])
     xlocs = np.arange(len(acc_plot))
     if plot_bar:
@@ -660,7 +660,8 @@ def _plot_hist(acc_plot, name, ytick_heads, plot_bar=False, plot_box=True):
 def plot_weights(modeldir, var_name=None, average=False, vlim=None, **kwargs):
     """Plot weights of a model."""
     if var_name is None:
-        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo', 'w_copy']
+        var_name = ['w_or', 'w_orn', 'w_combined', 'w_glo', 'w_copy',
+                    'w_out_all']
     elif isinstance(var_name, str):
         var_name = [var_name]
 
@@ -677,6 +678,11 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
     try:
         if var_name == 'w_combined':
             w_plot = np.dot(var_dict['w_or'], var_dict['w_orn'])
+        elif var_name == 'w_out_all':
+            # Shape (N_KC, N_out1), (N_KC, N_out2)
+            n_out1_show = 10  # Only showing a subset of out 1 units
+            w_plot = np.concatenate((var_dict['w_out'][:, :n_out1_show],
+                                     var_dict['w_out2']), axis=1)
         else:
             w_plot = var_dict[var_name]
     except KeyError:
@@ -692,20 +698,23 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
 
     # Sort for visualization
     if sort_axis == 'auto':
+        # This is only done for w_glo shape (N_PN, N_KC)
+        import standard.analysis_multihead as analysis_multihead
+        results = analysis_multihead._load_results(modeldir)
+        groups = results['groups']  # expansion layer groups
+        n_clusters = len(groups)
+        n_eachcluster = 10
+        # Select subsets of KCs by groups
+        short_groups = [g[:n_eachcluster] for g in groups]
+        kc_inds = np.concatenate(short_groups)
         if var_name == 'w_glo':
-            # This is only done for w_glo shape (N_PN, N_KC)
-            import standard.analysis_multihead as analysis_multihead
-            results = analysis_multihead._load_results(modeldir)
-            groups = results['groups']
-            n_clusters = len(groups)
-            n_eachcluster = 10
-            # Select subsets of KCs by groups
-            short_groups = [g[:n_eachcluster] for g in groups]
-            w_plot = w_plot[:, np.concatenate(short_groups)]
+            w_plot = w_plot[:, kc_inds]
             # Sort PNs according to ORN strengths, ORNs are already ordered
             w_orn = var_dict['w_orn']
             ind_sort = np.argmax(w_orn, axis=1)
             w_plot = w_plot[ind_sort, :]
+        elif var_name in ['w_out', 'w_out2', 'w_out_all']:
+            w_plot = w_plot[kc_inds, :]
         elif var_name == 'w_orn':
             sort_axis = 0  # sort output neurons
 
@@ -725,12 +734,18 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
     else:
         pass
 
+    positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
+
     # w_max = np.max(abs(w_plot))
     w_max = np.percentile(abs(w_plot), 99)
     if not vlim:
-        vlim = [0, np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)]
+        vmax = np.round(w_max, decimals=1) if w_max > .1 else np.round(w_max, decimals=2)
+        if positive_cmap:
+            vlim = [0, vmax]
+        else:
+            vlim = [-vmax, vmax]
 
-    figsize = (2.2, 2.2)
+    figsize = (1.8, 1.8)
     rect = [0.15, 0.15, 0.65, 0.65]
     rect_cb = [0.82, 0.15, 0.02, 0.65]
     rect_bottom = [0.15, 0.12, 0.65, 0.02]
@@ -740,7 +755,6 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
     ax = fig.add_axes(rect)
 
     cmap = plt.get_cmap('RdBu_r')
-    positive_cmap = np.min(w_plot) > -1e-6  # all weights positive
     if positive_cmap:
         cmap = tools.truncate_colormap(cmap, 0.5, 1.0)
 
@@ -755,7 +769,7 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
 
     labelpad = 13
     if var_name == 'w_glo':
-        y_label, x_label = 'To Third layer neurons', ' From PNs'
+        y_label, x_label = 'To Third-layer neurons', ' From PNs'
     elif var_name == 'w_orn':
         y_label, x_label = 'To PNs', 'From ORNs'
     elif var_name == 'w_or':
@@ -764,6 +778,12 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
         y_label, x_label = 'To KCs', 'From PNs'
     elif var_name == 'w_combined':
         y_label, x_label = 'To PNs', 'From ORs'
+    elif var_name == 'w_out':
+        y_label, x_label = 'To identity output', 'From Third-layer neurons'
+    elif var_name == 'w_out2':
+        y_label, x_label = 'To valence output', 'From Third-layer neurons'
+    elif var_name == 'w_out_all':
+        y_label, x_label = 'To outputs', 'From Third-layer neurons'
     else:
         y_label, x_label = '', ''
     ax.set_ylabel(y_label, labelpad=labelpad)
@@ -779,6 +799,8 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
                 title_key) + ':' + tools.nicename(v, 'lr')
     if var_name == 'w_glo':
         title = 'PN-Third layer connectivity'
+    if var_name == 'w_out_all':
+        title = 'Third layer-output connectivity'
     ax.set_title(title, fontsize=7)
 
     ax.set_xticks([])
@@ -823,22 +845,39 @@ def _plot_weights(modeldir, var_name='w_orn', sort_axis='auto', average=False,
             ax.set_xlim([-1, 1])
         ax.axis('off')
 
-    colors = np.array([[55, 126, 184], [228, 26, 28], [178, 178, 178]])/255
+    colors_valence = np.array([[55, 126, 184],
+                               [228, 26, 28],
+                               [178, 178, 178]])/255
+    # Innate, flexible
+    colors_cluster = np.array([[245, 110, 128],
+                               [149, 0, 149],
+                               [0, 149, 149],
+                               [149, 149, 0]]) / 255
+    colors_cluster = colors_cluster[:n_clusters]
+
     labels = np.array([0] * 5 + [1] * 5 + [2] * 40)  # From dataset
     texts = ['Ap.', 'Av.', 'Neutral']
-    _plot_colorannot(rect_bottom, labels, colors, texts)
+    if var_name not in ['w_out', 'w_out2', 'w_out_all']:
+        _plot_colorannot(rect_bottom, labels, colors_valence, texts)
+    else:
+        labels = np.repeat(np.arange(0, n_clusters), n_eachcluster)
+        texts = ['Cluster {:d}'.format(i+1) for i in range(n_clusters)]
+        _plot_colorannot(rect_bottom, labels, colors_cluster, texts)
 
     if var_name == 'w_glo':
         # Note: Reverse y axis
-        # Innate, flexible
-        colors = np.array([[245, 110, 128], [149, 0, 149], [0, 149, 149],
-                           [149, 149, 0]]) / 255
-        colors = colors[:n_clusters]
+        _colors_cluster = colors_cluster[:n_clusters]
         labels = np.repeat(np.arange(0, n_clusters)[::-1], n_eachcluster)
         texts = ['Cluster {:d}'.format(i+1) for i in range(n_clusters)]
-        _plot_colorannot(rect_left, labels, colors, texts, orient='vertical')
+        _plot_colorannot(rect_left, labels, colors_cluster, texts,
+                         orient='vertical')
+    if var_name == 'w_out_all':
+        labels = np.array([1] * 3 + [0] * n_out1_show)
+        texts = ['Identity', 'Valence']
+        _plot_colorannot(rect_left, labels, colors_cluster, texts,
+                         orient='vertical')
 
-    var_name = var_name.replace('/','_')
-    var_name = var_name.replace(':','_')
+    var_name = var_name.replace('/', '_')
+    var_name = var_name.replace(':', '_')
     figname = '_' + var_name + '_' + tools.get_model_name(modeldir)
     tools.save_fig(tools.get_experiment_name(modeldir), figname)

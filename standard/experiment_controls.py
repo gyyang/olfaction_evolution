@@ -277,7 +277,7 @@ def control_vary_kc_analysis(path):
 
     select_dict = {'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
-    sa.plot_results(modeldirs, xkey='N_KC', ykey=ykeys, show_ylabel=False,
+    sa.plot_results(modeldirs, xkey='N_KC', ykey=ykeys, show_ylabel=True,
                     ax_args={'xticks': xticks}, plot_actual_value=False)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='N_KC')
 
@@ -706,7 +706,7 @@ def control_pn2kc_inhibition():
 
 def control_pn2kc_inhibition_analysis(path):
     xkey = 'kc_recinh_coeff'
-    ykeys = ['val_acc', 'glo_score', 'K_inferred']
+    ykeys = ['val_acc', 'glo_score', 'K_inferred', 'coding_level']
     loop_key = None
     select_dict = {'kc_prune_weak_weights': True, 'kc_recinh_step': 10}
 
@@ -768,3 +768,19 @@ def control_orn2pn_random_analysis(path):
                                  legend_key='orn_random_alpha')
 
     sa.plot_results(path, xkey='orn_random_alpha', ykey='glo_score')
+
+
+def control_nonnegative_full():
+    """Assess impact of non-negativity in weights."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_100_100'
+
+    config.kc_dropout_rate = 0.
+    config.kc_prune_weak_weights = False
+
+    config_ranges = OrderedDict()
+    config_ranges['sign_constraint_orn2pn'] = [True, False]
+    config_ranges['sign_constraint_pn2kc'] = [True, False]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
