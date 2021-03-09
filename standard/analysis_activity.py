@@ -99,7 +99,7 @@ def load_activity_torch(save_path, lesion_kwargs=None):
 
     for key, val in results.items():
         try:
-            results[key] = val.numpy()
+            results[key] = val.cpu().numpy()
         except AttributeError:
             pass
         results[key] = np.array(results[key])

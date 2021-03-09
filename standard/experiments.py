@@ -220,9 +220,14 @@ def rnn_relabel():
 
 
 def rnn_relabel_analysis(path):
-    select_dict = {'diagonal': True, 'TIME_STEPS': 2}
-    sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
+    select_dict = {'diagonal': False, 'TIME_STEPS': 2}
     sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
+    sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr', select_dict=select_dict)
+
+    select_dict = {'diagonal': False, 'TIME_STEPS': 3}
+    sa.plot_results(path, xkey='lr', ykey='val_acc', select_dict=select_dict)
+    sa.plot_progress(path, ykeys=['val_acc'], legend_key='lr',
+                     select_dict=select_dict)
 
     # Specific analysis
     for step in [2, 3]:

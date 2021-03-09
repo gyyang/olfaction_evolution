@@ -166,10 +166,28 @@ def _plot_all_activity(rnn_activity, modeldir):
         ind_sort = np.argsort(mean_activity)[::-1]
         _easy_weights(rnn_activity[step, :100][:, ind_sort],
                       modeldir=modeldir, y_label='Odors', x_label='Neuron',
-                      title='Step='+str(step), c_label='Activity')
+                      title='Step='+str(step), c_label='Activity',
+                      extra_str='step='+str(step))
 
 
-def analyze_rnn_activity(modeldir, threshold=0.15, plot=True):
+def _easy_hist(data, step, modeldir):
+    fig = plt.figure(figsize=(3, 2))
+    ax = fig.add_axes([0.2, 0.3, .6, .6])
+    plt.hist(data, bins=100, log=True)
+    ax.set_ylabel('Number of neurons', fontsize=7)
+    ax.set_xlabel('Mean activity level', fontsize=7)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    plt.title('Step: {}'.format(step))
+    tools.save_fig(tools.get_experiment_name(modeldir),
+                   '_' + tools.get_model_name(modeldir) +
+                   '_activity_histogram' +
+                   '_step_' + str(step), dpi=400)
+
+
+def analyze_rnn_activity(modeldir, threshold=[0.25, 0.25, 0., 0], plot=True):
     """Analyze activity of RNN.
 
     Returns:
@@ -183,15 +201,16 @@ def analyze_rnn_activity(modeldir, threshold=0.15, plot=True):
     assert rnn_activity.shape[0] == config.TIME_STEPS + 1
 
     # Compute the number of active neurons at each step
-    mean_activity = np.mean(rnn_activity, axis=1)  # (Step, Neuron)
+    mean_activity_per_step = np.mean(rnn_activity, axis=1)  # (Step, Neuron)
 
     ixs = []
     active_ixs = []
-    for ma in mean_activity:
+    for step, ma in enumerate(mean_activity_per_step):
+        _easy_hist(ma, step, modeldir)
         ind_sort = np.argsort(ma)[::-1]
         ixs.append(ind_sort)
         # Threshold may not be robust
-        active_ixs.append(np.where(ma > threshold)[0])
+        active_ixs.append(np.where(ma > threshold[step])[0])
 
     # Store weights based on active indices
     res = tools.load_pickle(modeldir)  # (from, to)
