@@ -773,7 +773,6 @@ def control_orn2pn_random_analysis(path):
 def control_nonnegative_full():
     """Assess impact of non-negativity in weights."""
     config = FullConfig()
-    config.data_dir = './datasets/proto/relabel_100_100'
 
     config.kc_dropout_rate = 0.
     config.kc_prune_weak_weights = False

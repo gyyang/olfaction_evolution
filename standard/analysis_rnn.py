@@ -166,28 +166,31 @@ def _plot_all_activity(rnn_activity, modeldir):
         ind_sort = np.argsort(mean_activity)[::-1]
         _easy_weights(rnn_activity[step, :100][:, ind_sort],
                       modeldir=modeldir, y_label='Odors', x_label='Neuron',
-                      title='Step='+str(step), c_label='Activity',
-                      extra_str='step='+str(step))
+                      title='Step='+str(step+1), c_label='Activity',
+                      extra_str='step='+str(step+1))
 
 
-def _easy_hist(data, step, modeldir):
-    fig = plt.figure(figsize=(3, 2))
-    ax = fig.add_axes([0.2, 0.3, .6, .6])
+def _easy_hist(data, step, modeldir, threshold=None):
+    fig = plt.figure(figsize=(1.5, 1.2))
+    ax = fig.add_axes([0.2, 0.3, .7, .55])
     plt.hist(data, bins=100, log=True)
+    if threshold is not None:
+        plt.plot([threshold, threshold], [0, ax.get_ylim()[1]], '--',
+                 color='gray')
     ax.set_ylabel('Number of neurons', fontsize=7)
     ax.set_xlabel('Mean activity level', fontsize=7)
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    plt.title('Step: {}'.format(step))
+    plt.title('Step: {}'.format(step + 1))
     tools.save_fig(tools.get_experiment_name(modeldir),
                    '_' + tools.get_model_name(modeldir) +
                    '_activity_histogram' +
-                   '_step_' + str(step), dpi=400)
+                   '_step_' + str(step + 1), dpi=400)
 
 
-def analyze_rnn_activity(modeldir, threshold=[0.25, 0.25, 0., 0], plot=True):
+def analyze_rnn_activity(modeldir, plot=True):
     """Analyze activity of RNN.
 
     Returns:
@@ -203,14 +206,21 @@ def analyze_rnn_activity(modeldir, threshold=[0.25, 0.25, 0., 0], plot=True):
     # Compute the number of active neurons at each step
     mean_activity_per_step = np.mean(rnn_activity, axis=1)  # (Step, Neuron)
 
+    # TODO: Need auto-inference of thresholds
+    if config.TIME_STEPS == 2:
+        thresholds = [0.2] * 3
+    else:
+        thresholds = [0.2] * 4
+
     ixs = []
     active_ixs = []
     for step, ma in enumerate(mean_activity_per_step):
-        _easy_hist(ma, step, modeldir)
+        threshold = thresholds[step]
+        _easy_hist(ma, step, modeldir, threshold=threshold)
         ind_sort = np.argsort(ma)[::-1]
         ixs.append(ind_sort)
         # Threshold may not be robust
-        active_ixs.append(np.where(ma > threshold[step])[0])
+        active_ixs.append(np.where(ma > threshold)[0])
 
     # Store weights based on active indices
     res = tools.load_pickle(modeldir)  # (from, to)

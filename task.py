@@ -265,11 +265,11 @@ def _generate_proto_threshold(
 
     max_activation = 1
     if multi_head:
-        ratio = int(n_proto /  n_orn)
+        ratio = int(n_proto / n_orn)
         n_good_odor = n_bad_odor = n_proto_valence
-        p_good_odor = p_bad_odor = 1.0* (n_proto_valence/n_proto) * ratio
-        n_train_good = int(p_good_odor*n_train)
-        n_val_good = int(p_good_odor*n_val)
+        p_good_odor = p_bad_odor = 1.0 * (n_proto_valence/n_proto) * ratio
+        n_train_good = int(p_good_odor * n_train)
+        n_val_good = int(p_good_odor * n_val)
         n_train_bad = int(p_bad_odor * n_train)
         n_val_bad = int(p_bad_odor * n_val)
         n_train_neutral = n_train - n_train_good - n_train_bad
