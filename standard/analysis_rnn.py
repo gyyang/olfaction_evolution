@@ -137,12 +137,13 @@ def plot_num_active_neurons(active_ixs, modeldir):
 
     fig = plt.figure(figsize=(1.5, 1.2))
     ax = fig.add_axes([0.35, 0.3, .5, 0.6])
-    ax.plot(log_neurons_active, 'o-', markersize=3)
+    ax.plot(np.arange(len(neurons_active))+1, log_neurons_active, 'o-',
+            markersize=3)
     ax.set_xlabel('Steps')
     ax.set_ylabel('Active Neurons')
     ax.set_yticks(np.log(xticks))
     ax.set_yticklabels([str(x) for x in xticks])
-    ax.set_xticks(np.arange(len(neurons_active)))
+    ax.set_xticks(np.arange(len(neurons_active))+1)
 
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)

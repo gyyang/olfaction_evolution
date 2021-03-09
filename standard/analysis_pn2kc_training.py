@@ -65,16 +65,22 @@ def _compute_sparsity(w, dynamic_thres=False, visualize=False, thres=THRES):
 
 def plot_sparsity(modeldir, epoch=None, xrange=50, plot=True):
     model_name = tools.get_model_name(modeldir)
-
+    config = tools.load_config(modeldir)
     if epoch is not None and epoch != -1:
         modeldir = tools.get_modeldirs(os.path.join(modeldir, 'epoch'))[epoch]
 
+    if (('kc_prune_weak_weights' in dir(config) and
+         config.kc_prune_weak_weights)
+            or ('prune_weak_weights' in dir(config) and
+                config.prune_weak_weights)):
+        prune = True
+    else:
+        prune = False
+
     log = tools.load_log(modeldir)
     if 'sparsity_inferred' not in log:
-        config = tools.load_config(modeldir)
         w_glo = tools.load_pickle(modeldir)['w_glo']
-        if 'kc_prune_weak_weights' in dir(config) \
-                and config.kc_prune_weak_weights:
+        if prune:
             sparsity, thres_inferred = _compute_sparsity(
                 w_glo, dynamic_thres=False, thres=config.kc_prune_threshold)
         else:
@@ -91,22 +97,26 @@ def plot_sparsity(modeldir, epoch=None, xrange=50, plot=True):
 
         save_path = os.path.join(figpath, tools.get_experiment_name(modeldir))
         save_name = os.path.join(save_path, '_' + model_name + '_sparsity' + string)
-        _plot_sparsity(sparsity, save_name, xrange=xrange)
+        _plot_sparsity(sparsity, save_name, xrange=xrange,
+                       prune=prune)
     return sparsity
 
 
-def _plot_sparsity(data, savename, xrange=50, yrange=None):
+def _plot_sparsity(data, savename, xrange=50, yrange=None, prune=True):
     fig = plt.figure(figsize=FIGSIZE)
     ax = fig.add_axes(RECT)
     plt.hist(data, bins=xrange, range=[0, xrange], density=True, align='left')
-    # plt.plot([7, 7], [0, yrange], '--', color='gray')
-    ax.set_xlabel('Strong PN inputs per KC')
+    if prune:
+        xlabel = 'PN inputs per KC'
+    else:
+        xlabel = 'Strong PN inputs per KC'
+    ax.set_xlabel(xlabel)
     ax.set_ylabel('Fraction of KCs')
 
+    hist, _ = np.histogram(data, bins=xrange, range=[0, xrange],
+                           density=True)
+    vmax = np.max(hist)
     if yrange is None:
-        hist, _ = np.histogram(data, bins=xrange, range=[0, xrange],
-                               density=True)
-        vmax = np.max(hist)
         if vmax > 0.5:
             yrange = 1
         elif vmax > 0.25:
@@ -119,6 +129,10 @@ def _plot_sparsity(data, savename, xrange=50, yrange=None):
     ax.set_yticks([0, yrange])
     plt.ylim([0, yrange])
     plt.xlim([-1, xrange])
+    # Add text
+    plt.text(np.mean(data), vmax * 1.1, r'K = {:0.1f} ({:0.1f})'.format(
+        np.mean(data), np.std(data)))
+
     # plt.title(data[data>0].mean())
 
     ax.spines["right"].set_visible(False)

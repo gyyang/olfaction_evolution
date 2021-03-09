@@ -510,7 +510,7 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
         if not show_ylabel:
             figsize[0] -= 0.3
         if xkey in ['lr', 'N_KC', 'N_PN', 'spread_orn_activity',
-                    'n_trueclass_ratio']:
+                    'n_trueclass_ratio', 'kc_recinh_coeff']:
             figsize[0] += 0.3
         if xkey in ['orn_corr']:
             figsize[0] += 1.0

@@ -113,7 +113,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
             colors = ([np.array([178]*3)/255.] * 6 + 
             [np.array([228, 26, 28])/255.] + [np.array([55,126,184])/255.])
     elif mode == 'correlate':
-        orn_corr = 0.6
+        orn_corr = 0.8
         rng = np.random.RandomState(seed=1)
         proto_points = _sample_input(3, 2, rng=rng, corr=orn_corr) * 5
         texts = ['Class ' + i for i in ['A','B','C','D']]
@@ -156,7 +156,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     ax = fig.add_axes(ax_dim)
     plt.sca(ax)
 
-    if mode != 'innate2':
+    if mode not in ['innate', 'innate2', 'correlate']:
         vor = Voronoi(proto_points)
         voronoi_plot_2d(vor,
                         ax=ax,
@@ -222,10 +222,10 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
 
 if __name__ == '__main__':
     # plot_task('standard', include_prototypes=True)
-    # plot_task('innate', include_prototypes=True)
-    # plot_task('innate2', include_prototypes=True)
-    plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
-    plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
+    plot_task('innate', include_prototypes=True)
+    plot_task('innate2', include_prototypes=True)
+    # plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
+    # plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
     # plot_task('relabel', include_prototypes=True)
     # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
     # plot_task('correlate', include_prototypes=True)

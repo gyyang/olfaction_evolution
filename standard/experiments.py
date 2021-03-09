@@ -54,6 +54,7 @@ def standard_analysis(path):
 
     # accuracy
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'])
+    sa.plot_progress(modeldirs, ykeys=['bad_KC'])
 
     # weight matrices
     sa.plot_weights(dir)
@@ -290,6 +291,9 @@ def pn_norm_relabel_trainorn():
 def pn_norm_analysis(path, ykeys=None):
     select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    for pn_norm in ['layer_norm', 'fixed_activity']:
+        modeldirs = tools.exclude_modeldirs(modeldirs,
+                                            {'pn_norm_pre': pn_norm})
     if ykeys is None:
         ykeys = ['val_acc', 'K_smart']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
