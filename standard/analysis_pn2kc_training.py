@@ -124,7 +124,7 @@ def _plot_sparsity(data, savename, xrange=50, yrange=None, prune=True):
         else:
             yrange = 0.25
 
-    xticks = [1, 5, 15, 25, 50]
+    xticks = [0, 5, 15, 25, 50]
     ax.set_xticks(xticks)
     ax.set_yticks([0, yrange])
     plt.ylim([0, yrange])

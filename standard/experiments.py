@@ -295,7 +295,7 @@ def pn_norm_analysis(path, ykeys=None):
         modeldirs = tools.exclude_modeldirs(modeldirs,
                                             {'pn_norm_pre': pn_norm})
     if ykeys is None:
-        ykeys = ['val_acc', 'K_smart']
+        ykeys = ['val_acc', 'glo_score', 'K_smart']
     sa.plot_results(modeldirs, xkey='spread_orn_activity', ykey=ykeys,
                     loop_key='pn_norm_pre')
     select_dict.update({'spread_orn_activity': 0.3})
@@ -307,6 +307,7 @@ def pn_norm_analysis(path, ykeys=None):
 
 def pn_norm_relabel_analysis(path):
     pn_norm_analysis(path)
+    pn_norm_analysis(path, ykeys=['val_acc'])
 
 
 def pn_norm_relabel_trainorn_analysis(path):

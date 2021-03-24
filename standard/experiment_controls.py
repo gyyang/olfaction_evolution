@@ -783,3 +783,16 @@ def control_nonnegative_full():
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
+
+
+def control_nonnegative_full_analysis(path):
+    for modeldir in tools.get_modeldirs(path):
+        sa.plot_weights(modeldir)
+
+    modeldirs = tools.get_modeldirs(path, select_dict={
+        'sign_constraint_orn2pn': True})
+    ykeys = ['val_acc', 'glo_score', 'K_smart']
+    sa.plot_progress(modeldirs, ykeys=ykeys,
+                     legend_key='sign_constraint_pn2kc')
+    sa.plot_results(modeldirs, xkey='sign_constraint_pn2kc', ykey=ykeys)
+

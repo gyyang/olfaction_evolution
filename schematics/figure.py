@@ -82,6 +82,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         colors = [colors[i] for i in ind]
         texts = ['Class ' + labels[i] for i in ind]
         lim = 5
+        size = 150
     elif mode == 'relabel':
         proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], [4, 1], [4, 3]])
         ind = [0, 1, 2, 3, 2, 1]
@@ -129,11 +130,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     elif mode == 'correlate':
         rand_points = _sample_input(size, 2, rng=rng, corr=orn_corr) * 5
     elif mode == 'concentration':
-        if spread == 0:
-            nlim = lim
-        else:
-            nlim = lim/2
-        rand_points = np.random.uniform(low=0, high=nlim, size=[size, 2])
+        rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
         rand_points = _spread_orn_activity(rand_points, spread=spread)
     else:
         rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
@@ -166,15 +163,18 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
                         line_width=1)
 
     if mode == 'concentration':
-        proto_points *= lim
+        proto_points *= lim * 0.9
+        
+
+    if include_data:
+        s = 1. if mode == 'concentration' else 2
+        for c,p in zip(rand_colors, rand_points):
+            ax.scatter(p[0], p[1], color=c, s=s)
 
     if include_prototypes:
         for c,p in zip(colors, proto_points):
-            ax.scatter(p[0], p[1], color=c, s=15, marker= prototype_marker)
-
-    if include_data:
-        for c,p in zip(rand_colors, rand_points):
-            ax.scatter(p[0], p[1], color=c, s=2)
+            ax.scatter(p[0], p[1], color=c, s=15, marker=prototype_marker,
+                       edgecolor='black', linewidth=0.5)
 
     for i, (txt,p) in enumerate(zip(texts, proto_points)):
         if mode in ['innate', 'concentration']:
@@ -193,10 +193,17 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
             ax.annotate(txt, (p[0]-.3, p[1]-.35))
 
     plt.axis('square')
-    plt.xlim([0, lim])
-    plt.ylim([0, lim])
-    plt.xticks([0, lim], ['0', '1'])
-    plt.yticks([0, lim], ['0', '1'])
+    if mode == 'concentration':
+        lim *= 2
+        plt.xlim([0, lim])
+        plt.ylim([0, lim])
+        plt.xticks([0, lim], ['0', '2'])
+        plt.yticks([0, lim], ['0', '2'])
+    else:
+        plt.xlim([0, lim])
+        plt.ylim([0, lim])
+        plt.xticks([0, lim], ['0', '1'])
+        plt.yticks([0, lim], ['0', '1'])
     plt.xlabel('OR 1 Activity', labelpad=-5)
     
     if mode == 'metalearn':
@@ -222,10 +229,10 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
 
 if __name__ == '__main__':
     # plot_task('standard', include_prototypes=True)
-    plot_task('innate', include_prototypes=True)
-    plot_task('innate2', include_prototypes=True)
-    # plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
-    # plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
+    # plot_task('innate', include_prototypes=True)
+    # plot_task('innate2', include_prototypes=True)
+    plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
+    plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
     # plot_task('relabel', include_prototypes=True)
     # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
     # plot_task('correlate', include_prototypes=True)

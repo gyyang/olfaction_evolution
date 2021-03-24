@@ -181,12 +181,6 @@ def train(config, reload=False, save_everytrainloss=False):
         log['train_acc'].append(res['acc'])
         log['val_acc'].append(res_val['acc'])
 
-        ## debug
-        try:
-            print(list(model.layer1.pre_norm.named_parameters()))
-        except:
-            pass
-
         log = logging(log, model, config, res_val)
 
         if ep > 0:
