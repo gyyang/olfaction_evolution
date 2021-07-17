@@ -25,6 +25,153 @@ except ImportError as e:
 testing_epochs = 12
 
 
+def control_multihead_no_special_odors():
+    """Standard multi-task training with relabel datset and pruning."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/multihead_relabel_no_special_odors'
+
+    config.N_ORN_DUPLICATION = 1
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config.lr = 1e-3
+    config.kc_dropout_rate = 0
+
+    config_ranges = OrderedDict()
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm']
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_multihead_no_special_odors_analysis(path):
+    # Pre compute results for all networks
+    modeldirs = tools.get_modeldirs(path)
+    analysis_multihead.analyze_networks(modeldirs)
+
+    # Plot regular progress
+    select_dict = {'kc_dropout_rate': 0, 'pn_norm_pre': 'batch_norm'}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'],
+                     legend_key='lr')
+    sa.plot_xy(modeldirs,
+               xkey='lin_bins', ykey='lin_hist', legend_key='lr')
+
+    select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm'}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score', 'K_smart'],
+                     legend_key='kc_dropout_rate')
+
+    # Analyze many network results
+    acc_min = 0.65  # this acc is average of two heads
+    modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
+    modeldirs = tools.filter_modeldirs(
+        modeldirs, exclude_badkc=True, exclude_badpeak=True)
+    analysis_multihead.plot_silouette_score(modeldirs)
+    analysis_multihead.analyze_networks_lesion(modeldirs)
+    analysis_multihead.plot_number_neurons_cluster(modeldirs)
+
+    # Plot example network
+    # select_dict = {'lr': 5e-4, 'pn_norm_pre': 'batch_norm',
+    #                'kc_dropout_rate': 0}
+    modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
+                                    # select_dict=select_dict
+                                    )
+    modeldirs = tools.filter_modeldirs(
+        modeldirs, exclude_badkc=True, exclude_badpeak=True)
+    dir = modeldirs[0]
+    sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
+    analysis_multihead.plot_weights(dir)
+    analysis_activity.distribution_activity(dir, ['glo', 'kc'])
+    analysis_activity.sparseness_activity(dir, ['glo', 'kc'])
+    analysis_multihead.analyze_example_network(dir)
+
+
+def control_random_weights():
+    config = FullConfig()
+
+    config.N_ORN_DUPLICATION = 10
+    config.train_orn2pn = True
+    config.train_pn2kc = False
+    config.sparse_pn2kc = False
+    config.restricted_sparse_pn2kc = False
+
+    config.kc_dropout_rate = 0.
+
+    config_ranges = OrderedDict()
+    config_ranges['train_orn2pn'] = [False, True, False, True]
+    config_ranges['train_pn2kc'] = [False, False, True, True]
+    config_ranges['training_type'] = ['Neither', 'ORN2PN', 'PN2KC', 'Both']
+    configs = vary_config(config, config_ranges, mode='sequential')
+    return configs
+
+
+def control_random_weights_analysis(path):
+    xkey = 'training_type'
+    ykeys = 'val_acc'
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                    plot_actual_value=False,
+                    logx=True,
+                    show_cleanpn2kc=False,
+                    figsize=(3, 2))
+
+
+def control_stereotyped_sparse_pn2kc():
+    config = FullConfig()
+
+    config.N_ORN_DUPLICATION = 1
+    config.skip_orn2pn = True
+    config.train_pn2kc = False
+
+    config.kc_dropout_rate = 0.
+    config.restricted_sparse_pn2kc = True
+
+    config_ranges = OrderedDict()
+    config_ranges['n_restricted_patterns'] = [30, 100, 300, 1000, 3000]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_stereotyped_sparse_pn2kc_analysis(path):
+    xkey = 'n_restricted_patterns'
+    ykeys = 'val_acc'
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                    plot_actual_value=False,
+                    logx=True,
+                    show_cleanpn2kc=False)
+    for dir in modeldirs:
+        sa.plot_weights(dir, var_name='w_glo')
+
+
+def control_fix_multiglo():
+    config = FullConfig()
+
+    config.N_ORN_DUPLICATION = 1
+    config.train_orn2pn = False
+
+    config.kc_dropout_rate = 0.
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config_ranges = OrderedDict()
+    config_ranges['n_glo'] = [1, 2, 5, 10, 20]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_fix_multiglo_analysis(path):
+    xkey = 'n_glo'
+    ykeys = 'val_acc'
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys, plot_actual_value=False,
+                    show_cleanpn2kc=False)
+    for dir in modeldirs:
+        sa.plot_weights(dir, var_name='w_orn')
+
+
 def control_relabel():
     """Study the impact of relabeling dataset."""
     config = FullConfig()
@@ -244,6 +391,41 @@ def control_pn2kc_prune_boolean_analysis(path):
     ykeys = ['val_acc', 'K_smart']
     sa.plot_progress(path, ykeys=ykeys, legend_key=xkey)
     sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist', legend_key=xkey)
+
+
+def control_vary_kc_n_200():
+    """Standard vary the number of KC neurons."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_orn200'
+    config.N_PN = 200
+    config.skip_orn2pn = True
+    config.max_epoch = 8
+    # config.max_epoch = 100
+
+    config.lr = 5e-4  # made smaller to improve separation
+    config.initial_pn2kc = 4. / config.N_PN  # for clarity
+    config.kc_dropout_rate = 0.
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config_ranges = OrderedDict()
+    config_ranges['N_KC'] = [100, 300, 1000, 3000,
+                             10000, 30000, 100000, 300000]
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def control_vary_kc_n_200_analysis(path):
+    ykeys = ['val_acc', 'glo_score', 'K_smart']
+    xticks = [100, 1000, 10000, 1e5]
+
+    # All networks
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey='N_KC', ykey=ykeys,
+                    loop_key='kc_dropout_rate', ax_args={'xticks': xticks},
+                    logx=True)
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='N_KC')
 
 
 def control_vary_kc():

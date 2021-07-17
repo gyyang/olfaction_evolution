@@ -174,6 +174,24 @@ def make_multihead_relabel_dataset():
                     folder_name='multihead_relabel')
 
 
+def make_multihead_relabel_no_special_odors_dataset():
+    """Simultaneous classification of odor class and valence."""
+    task_config = task.input_ProtoConfig()
+
+    # Multihead
+    task_config.label_type = 'multi_head_sparse'
+    task_config.has_special_odors = False
+    task_config.n_proto_valence = 5
+
+    # Relabel
+    task_config.relabel = True
+    task_config.N_CLASS = 100
+    task_config.n_trueclass = 200
+
+    task.save_proto(config=task_config, seed=0,
+                    folder_name='multihead_relabel_no_special_odors')
+
+
 def make_vary_or_dataset():
     """Vary the number of olfactory receptors."""
     task_config = task.input_ProtoConfig()
