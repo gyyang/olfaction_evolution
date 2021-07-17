@@ -101,15 +101,17 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         figsize = (1.3, 1.3)
         ax_dim = [.2, .2, .6, .6]
     elif 'innate' in mode:
-        innate_point = np.array([8, 0])
-        innate_point2 = np.array([0, 8])
-        proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], 
-                                 [4, 1], [4, 3], innate_point, innate_point2])
+        innate_point = np.array([[1, 0]])
+        innate_point2 = np.array([[0, 1]])
+        neutral_proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], 
+                                         [4, 1], [4, 3]])/5.
+        proto_points = np.concatenate((neutral_proto_points, 
+                                       innate_point, innate_point2))
         ind = [0, 1, 2, 3, 2, 1, 4, 5]
         labels = ['A','B','C','D', 'E', 'F']
         colors = [colors[i] for i in ind]
         texts = ['Class ' + labels[i] for i in ind]
-        lim = 10
+        lim = 2
         if mode == 'innate2':
             colors = ([np.array([178]*3)/255.] * 6 + 
             [np.array([228, 26, 28])/255.] + [np.array([55,126,184])/255.])
@@ -123,10 +125,11 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         raise ValueError('Unknown mode: ', mode)
 
     if 'innate' in mode:
-        rand_points = np.random.uniform(low=0, high=5, size=[size, 2])
-        rand_innate_points = innate_point+np.random.uniform(low=0, high=2, size=[20, 2])
-        rand_innate_points2 = innate_point2+np.random.uniform(low=0, high=2, size=[20, 2])
-        rand_points = np.concatenate((rand_points, rand_innate_points, rand_innate_points2), axis=0)
+        rand_neutral_points = np.random.uniform(low=0, high=1, size=[size, 2])
+        rand_innate_points = innate_point+np.random.uniform(low=0, high=1, size=[20, 2])
+        rand_innate_points2 = innate_point2+np.random.uniform(low=0, high=1, size=[20, 2])
+        rand_points = np.concatenate((rand_neutral_points, 
+                                      rand_innate_points, rand_innate_points2), axis=0)
     elif mode == 'correlate':
         rand_points = _sample_input(size, 2, rng=rng, corr=orn_corr) * 5
     elif mode == 'concentration':
@@ -134,8 +137,15 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         rand_points = _spread_orn_activity(rand_points, spread=spread)
     else:
         rand_points = np.random.uniform(low=0, high=lim, size=[size, 2])
+    
     if mode == 'concentration':
         rand_labels = get_labels(proto_points, _normalize(rand_points))
+    elif 'innate' in mode:
+        rand_neutral_labels = get_labels(neutral_proto_points, rand_neutral_points)
+        rand_labels = np.concatenate((rand_neutral_labels,
+                                     [6]*len(rand_innate_points), 
+                                     [7]*len(rand_innate_points2)))
+        print(rand_labels)
     else:
         rand_labels = get_labels(proto_points, rand_points)
         
@@ -199,6 +209,11 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         plt.ylim([0, lim])
         plt.xticks([0, lim], ['0', '2'])
         plt.yticks([0, lim], ['0', '2'])
+    elif 'innate' in mode:
+        plt.xlim([0, lim])
+        plt.ylim([0, lim])
+        plt.xticks([0, lim])
+        plt.yticks([0, lim])
     else:
         plt.xlim([0, lim])
         plt.ylim([0, lim])
@@ -228,11 +243,11 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     
 
 if __name__ == '__main__':
-    # plot_task('standard', include_prototypes=True)
+    plot_task('standard', include_prototypes=True)
     # plot_task('innate', include_prototypes=True)
     # plot_task('innate2', include_prototypes=True)
-    plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
-    plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
+    # plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
+    # plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
     # plot_task('relabel', include_prototypes=True)
     # [plot_task('metalearn', include_prototypes=True, meta_ix=i) for i in range(3)]
     # plot_task('correlate', include_prototypes=True)

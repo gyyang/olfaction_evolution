@@ -706,7 +706,7 @@ def control_pn2kc_inhibition():
 
 def control_pn2kc_inhibition_analysis(path):
     xkey = 'kc_recinh_coeff'
-    ykeys = ['val_acc', 'glo_score', 'K_inferred', 'coding_level']
+    ykeys = ['val_acc', 'glo_score', 'K_inferred']
     loop_key = None
     select_dict = {'kc_prune_weak_weights': True, 'kc_recinh_step': 10}
 

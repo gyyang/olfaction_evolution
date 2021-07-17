@@ -222,11 +222,9 @@ def plot_progress(save_path, select_dict=None, alpha=1, exclude_dict=None,
         for j, (x, y, c) in enumerate(zip(xs, ys, colors)):
             if epoch_range:
                 x, y = x[epoch_range[0]:epoch_range[1]], y[epoch_range[0]:epoch_range[1]]
-            if show_cleanpn2kc:
-                if clean_pn2kc[j]:
-                    ax.plot(x, y, alpha=alpha, color=c, linewidth=1)
-                else:
-                    ax.plot(x, y, '--', alpha=alpha*0.5, color=c, linewidth=1)
+            if show_cleanpn2kc and ('K' in ykey) and (not clean_pn2kc[j]):
+                pass  # Not showing at all
+                # ax.plot(x, y, '--', alpha=alpha*0.5, color=c, linewidth=1)
             else:
                 ax.plot(x, y, alpha=alpha, color=c, linewidth=1)
 
@@ -543,27 +541,17 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
 
         y_plot = np.log(yvals) if logy else yvals
 
-        if show_cleanpn2kc:
-            # Plot clean pn2kc networks differently
-            line, = ax.plot(x_plot, y_plot, '-', color=color,
-                            label=label, **plot_args)
-            ax.plot(x_plot[clean_pn2kc], y_plot[clean_pn2kc],
-                    'o', markersize=3, color=line.get_color(), **plot_args)
-            ax.plot(x_plot[~clean_pn2kc], y_plot[~clean_pn2kc],
-                    'o', markersize=3, color='gray', **plot_args)
-        else:
-            ax.plot(x_plot, y_plot, 'o-', markersize=3, label=label,
-                    color=color, **plot_args)
-            # tools.pretty_box(yval_alls, x_plot, ax, color=color)
-            # TODO: TEMPORARY
-            # ax.plot(
-            #     x_plot+np.random.randn(*np.array(x_plot).shape)*0.03,
-            #     yval_alls+np.random.randn(*np.array(yval_alls).shape)*0.0,
-            #     'o', markersize=3, color=color)
+        _y_plot = y_plot.copy()
+        if show_cleanpn2kc and 'K' in _ykey:
+            _y_plot[~clean_pn2kc] = np.nan
+        ax.plot(x_plot, _y_plot, 'o-', markersize=3, label=label,
+                color=color, **plot_args)
 
         if plot_actual_value:
-            for x, y in zip(x_plot, y_plot):
+            for i, (x, y) in enumerate(zip(x_plot, y_plot)):
                 if y > ax.get_ylim()[-1]:
+                    continue
+                if show_cleanpn2kc and ('K' in _ykey) and (not clean_pn2kc[i]):
                     continue
                 if _ykey in ['val_acc', 'glo_score', 'coding_level']:
                     ytext = '{:0.2f}'.format(y)
