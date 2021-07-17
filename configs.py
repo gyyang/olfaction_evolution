@@ -164,6 +164,8 @@ class FullConfig(BaseConfig):
         self.sign_constraint_orn2pn = True
         # If True, PN --> KC connections are trainable
         self.train_orn2pn = True
+        # If > 0 and train_orn2pn is False, this dictates the number of connections each ORN sends to PN
+        self.n_glo = 0
         # If True, train a direct glomeruli-like connections
         self.skip_orn2pn = False  # Implements direct_glo in TF version
         # PN normalization before non_linearity
@@ -213,6 +215,10 @@ class FullConfig(BaseConfig):
         self.skip_pn2kc = False
         # number of inputs onto KCs
         self.kc_inputs = 7
+        # If True, pn2kc connections are not random but taken from a set of stereotyped connections
+        self.restricted_sparse_pn2kc = False
+        # Number of stereotyped pn2kc connection profiles
+        self.n_restricted_patterns = 50
         # multiplicative noise on PN to KC connectivity
         self.pn2kc_noise = False
         self.pn2kc_noise_value = 0.2

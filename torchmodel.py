@@ -13,6 +13,38 @@ from configs import FullConfig, SingleLayerConfig, RNNConfig
 import tools
 
 
+def get_multiglo_mask(nx, ny, nglo):
+    """Generates multiglomerular connections.
+
+    The mask will be of size (nx, ny), connections are 1/nglo, no connections
+    are 0. nglo dictates the number of glomeruli each ORN will connect to.
+
+    The sum of the mask values add up to 1.
+    """
+    assert nglo > 0 and nglo <= nx
+    mask = np.zeros((nx, ny))
+    val = 1. / nglo
+    mask[:, :nglo] = val
+    for i in range(nx):
+        mask[i,:] = np.roll(mask[i, :], shift=i)
+    return mask.astype(np.float32)
+
+
+def get_restricted_sparse_mask(nx, ny, n_on, n_patterns):
+    """Generates a sparse binary mask with a fixed set of patterns defined by
+    n_patterns. The number of connections per output neuron (ny) is defined by
+    n_on.
+    """
+    templates = np.zeros((nx, n_patterns))
+    templates[:n_on] = 1
+    for i in range(n_patterns):
+        np.random.shuffle(templates[:, i])  # shuffling in-place
+
+    ixs = np.random.randint(low=0, high=n_patterns, size=ny)
+    mask = templates[:, ixs]
+    return mask.astype(np.float32)
+
+
 def get_sparse_mask(nx, ny, non, complex=False, nOR=50):
     """Generate a binary mask.
 
@@ -373,6 +405,17 @@ class FullModel(CustomModule):
                             weight_norm=config.orn2pn_normalization,
                             )
 
+        if not config.train_orn2pn:
+            if config.n_glo > 0:
+                layer1_w = get_multiglo_mask(n_orn, config.N_PN, config.n_glo)
+                with torch.no_grad():
+                    self.layer1.weight = nn.Parameter(torch.from_numpy(
+                        layer1_w.T).float())
+                    self.layer1.weight.requires_grad = False
+            else:
+                self.layer1.weight.requires_grad = False
+
+
         if config.skip_orn2pn:
             init.eye_(self.layer1.weight.data)
             self.layer1.weight.requires_grad=False
@@ -399,11 +442,26 @@ class FullModel(CustomModule):
             self.layer2.bias.requires_grad = False
 
         if not config.train_pn2kc:
-            layer2_w = get_sparse_mask(config.N_PN, config.N_KC,
-                                       config.kc_inputs)
-            with torch.no_grad():
-                self.layer2.weight = nn.Parameter(torch.from_numpy(
-                    layer2_w.T).float())
+            if config.sparse_pn2kc:
+                layer2_w = get_sparse_mask(config.N_PN, config.N_KC,
+                                           config.kc_inputs)
+                with torch.no_grad():
+                    self.layer2.weight = nn.Parameter(torch.from_numpy(
+                        layer2_w.T).float())
+            elif config.restricted_sparse_pn2kc:
+                layer2_w = get_restricted_sparse_mask(
+                    config.N_PN,
+                    config.N_KC,
+                    config.kc_inputs,
+                    config.n_restricted_patterns)
+                with torch.no_grad():
+                    self.layer2.weight = nn.Parameter(torch.from_numpy(
+                        layer2_w.T).float())
+                    self.layer2.weight.requires_grad = False
+            else:
+                self.layer2.weight.requires_grad = False
+
+
 
         self.layer3 = nn.Linear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
