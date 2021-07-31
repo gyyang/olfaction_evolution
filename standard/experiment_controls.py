@@ -24,6 +24,32 @@ except ImportError as e:
 
 testing_epochs = 12
 
+def scratch():
+    config = FullConfig()
+    config.max_epoch = 1
+    config.kc_dropout_rate = 0.
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    config.lr = 1e-10
+
+    config_ranges = OrderedDict()
+    config_ranges['dummy'] = [True]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+def scratch_analysis(path):
+    modeldirs = tools.get_modeldirs(path)
+    dir = modeldirs[0]
+
+    # weight matrices
+    sa.plot_weights(dir)
+
+    # pn-kc
+    analysis_pn2kc_training.plot_distribution(dir, xrange=1.5)
+    analysis_pn2kc_training.plot_sparsity(dir, epoch=-1)
+
 
 def control_multihead_no_special_odors():
     """Standard multi-task training with relabel datset and pruning."""
@@ -147,6 +173,7 @@ def control_stereotyped_sparse_pn2kc_analysis(path):
 
 def control_fix_multiglo():
     config = FullConfig()
+    config.max_epoch = 30
 
     config.N_ORN_DUPLICATION = 1
     config.train_orn2pn = False
