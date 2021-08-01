@@ -139,8 +139,7 @@ def control_random_weights_analysis(path):
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
                     plot_actual_value=False,
                     logx=True,
-                    show_cleanpn2kc=False,
-                    figsize=(3, 2))
+                    show_cleanpn2kc=False)
 
 
 def control_stereotyped_sparse_pn2kc():
