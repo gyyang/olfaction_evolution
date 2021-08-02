@@ -89,10 +89,8 @@ def control_multihead_no_special_odors_analysis(path):
                      legend_key='kc_dropout_rate')
 
     # Analyze many network results
-    acc_min = 0.65  # this acc is average of two heads
+    acc_min = 0.5  # this acc is average of two heads
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min)
-    modeldirs = tools.filter_modeldirs(
-        modeldirs, exclude_badkc=True, exclude_badpeak=True)
     analysis_multihead.plot_silouette_score(modeldirs)
     analysis_multihead.analyze_networks_lesion(modeldirs)
     analysis_multihead.plot_number_neurons_cluster(modeldirs)
@@ -103,8 +101,6 @@ def control_multihead_no_special_odors_analysis(path):
     modeldirs = tools.get_modeldirs(path, acc_min=acc_min,
                                     # select_dict=select_dict
                                     )
-    modeldirs = tools.filter_modeldirs(
-        modeldirs, exclude_badkc=True, exclude_badpeak=True)
     dir = modeldirs[0]
     sa.plot_progress(modeldirs, ykeys=['val_acc', 'glo_score'])
     analysis_multihead.plot_weights(dir)
@@ -139,8 +135,7 @@ def control_random_weights_analysis(path):
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
                     plot_actual_value=False,
                     logx=True,
-                    show_cleanpn2kc=False,
-                    figsize=(3, 2))
+                    show_cleanpn2kc=False)
 
 
 def control_stereotyped_sparse_pn2kc():

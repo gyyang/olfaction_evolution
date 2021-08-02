@@ -639,8 +639,10 @@ nicename_dict = {
     'kc_out_sparse_mean': '% of Active KCs',
     'coding_level': '% of Active KCs',
     'N_CLASS': 'Number of Classes',
+    'n_glo': 'Number of ORs per PN',
     'n_trueclass': 'Number of Odor Prototypes',
     'n_trueclass_ratio': 'Odor Prototypes Per Class',
+    'n_restricted_patterns': 'N Stereotyped Patterns',
     'weight_perturb': 'Weight Perturb.',
     'lr': 'Learning rate',
     'train_kc_bias': 'Training KC bias',
@@ -683,6 +685,7 @@ nicename_dict = {
     'data_dir': 'Dataset',
     'fixed_activity': 'Fixed activity',
     'spread_orn_activity': 'ORN activity spread',
+    'training_type': 'Fixed Weights'
 }
 
 

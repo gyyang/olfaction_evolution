@@ -596,7 +596,8 @@ def plot_results(path, xkey, ykey, loop_key=None, select_dict=None,
             xticklabels = [nicename(x, mode=xkey) for x in xvals]
         ax.set_xticks(xticks)
         if i == ny - 1:
-            if xkey in ['kc_norm_pre', 'kc_norm_post', 'kc_norm']:
+            if xkey in ['kc_norm_pre', 'kc_norm_post', 'kc_norm',
+                        'training_type']:
                 ax.set_xticklabels(xticklabels, rotation=15, ha="right")
             else:
                 ax.set_xticklabels(xticklabels)
