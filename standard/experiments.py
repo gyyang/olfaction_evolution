@@ -281,7 +281,6 @@ def pn_norm_relabel_trainorn():
     for c in configs:
         c.data_dir = c.data_dir.replace('_spread', '_relabel_spread')
         c.skip_orn2pn = False
-        c.N_ORN_DUPLICATION = 10
         if c.seed == 0:
             new_configs.append(c)
     return new_configs

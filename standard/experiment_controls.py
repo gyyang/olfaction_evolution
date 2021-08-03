@@ -73,7 +73,7 @@ def control_multihead_no_special_odors():
 def control_multihead_no_special_odors_analysis(path):
     # Pre compute results for all networks
     modeldirs = tools.get_modeldirs(path)
-    analysis_multihead.analyze_networks(modeldirs)
+    analysis_multihead.analyze_networks(modeldirs, n_clusters=2)
 
     # Plot regular progress
     select_dict = {'kc_dropout_rate': 0, 'pn_norm_pre': 'batch_norm'}

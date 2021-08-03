@@ -452,14 +452,19 @@ def analyze_networks_lesion(modeldirs, arg='multi_head'):
         save_fig(figpath, 'population_lesion'+head)
 
 
-def analyze_networks(modeldirs):
+def analyze_networks(modeldirs, n_clusters=None):
+    """Analyze all networks for multi-head analysis."""
     for modeldir in modeldirs:
         print(modeldir)
         config = tools.load_config(modeldir)
         print(config.pn_norm_pre, config.kc_dropout_rate, config.lr)
         results = _get_data(modeldir)
         results = _compute_silouette_score(results)
-        results = _get_groups(results, n_clusters=results['optim_n_clusters'])
+        if n_clusters is None:
+            _n_clusters = results['optim_n_clusters']
+        else:
+            _n_clusters = n_clusters
+        results = _get_groups(results, n_clusters=_n_clusters)
         _save_results(results, modeldir)
 
 
