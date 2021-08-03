@@ -286,6 +286,29 @@ def pn_norm_relabel_trainorn():
     return new_configs
 
 
+def pn_norm_relabel_debug():
+    config = FullConfig()
+    config.max_epoch = 100
+    config.skip_orn2pn = False
+    config.N_ORN_DUPLICATION = 1
+
+    config.kc_dropout_rate = 0.
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    dataset_original = './datasets/proto/relabel_200_100'
+    dataset_spread = './datasets/proto/concentration_relabel_spread_0.00'
+    datasets = [dataset_original, dataset_spread]
+    config_ranges['data_dir'] = datasets
+    config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen']
+
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
 def pn_norm_analysis(path, ykeys=None):
     select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
