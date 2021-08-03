@@ -41,7 +41,7 @@ def _normalize(x):
     return x
 
 
-def plot_task(mode='standard', include_prototypes=False, include_data = True, 
+def plot_task(mode='standard', include_prototypes=False, include_data=True,
               prototype_marker = '^', meta_ix=0, spread=0):
     """Plot task schematic.
     
@@ -100,7 +100,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         size = 100
         figsize = (1.3, 1.3)
         ax_dim = [.2, .2, .6, .6]
-    elif 'innate' in mode:
+    elif mode in ['innate', 'innate2']:
         innate_point = np.array([[1, 0]])
         innate_point2 = np.array([[0, 1]])
         neutral_proto_points = np.array([[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5], 
@@ -115,6 +115,19 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         if mode == 'innate2':
             colors = ([np.array([178]*3)/255.] * 6 + 
             [np.array([228, 26, 28])/255.] + [np.array([55,126,184])/255.])
+    elif mode in ['innate_nospecial', 'innate2_nospecial']:
+        proto_points = np.array(
+            [[1, 1], [1.5, 3], [2.5, 4], [2.5, 2.5],
+             [4, 1], [4, 3]]) / 5.
+        ind = [0, 1, 2, 3, 2, 1, 4, 5]
+        labels = ['A', 'B', 'C', 'D', 'E', 'F']
+        colors = [colors[i] for i in ind]
+        texts = ['Class ' + labels[i] for i in ind]
+        lim = 1
+        if mode == 'innate2_nospecial':
+            colors = ([np.array([178] * 3) / 255.] * 4 +
+                      [np.array([228, 26, 28]) / 255.] + [
+                          np.array([55, 126, 184]) / 255.])
     elif mode == 'correlate':
         orn_corr = 0.8
         rng = np.random.RandomState(seed=1)
@@ -124,7 +137,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     else:
         raise ValueError('Unknown mode: ', mode)
 
-    if 'innate' in mode:
+    if mode in ['innate', 'innate2']:
         rand_neutral_points = np.random.uniform(low=0, high=1, size=[size, 2])
         rand_innate_points = innate_point+np.random.uniform(low=0, high=1, size=[20, 2])
         rand_innate_points2 = innate_point2+np.random.uniform(low=0, high=1, size=[20, 2])
@@ -140,7 +153,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     
     if mode == 'concentration':
         rand_labels = get_labels(proto_points, _normalize(rand_points))
-    elif 'innate' in mode:
+    elif mode in ['innate', 'innate2']:
         rand_neutral_labels = get_labels(neutral_proto_points, rand_neutral_points)
         rand_labels = np.concatenate((rand_neutral_labels,
                                      [6]*len(rand_innate_points), 
@@ -187,15 +200,8 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
                        edgecolor='black', linewidth=0.5)
 
     for i, (txt,p) in enumerate(zip(texts, proto_points)):
-        if mode in ['innate', 'concentration']:
-            pass
-# =============================================================================
-#             if i < 4:
-#                 ax.annotate(txt, (p[0]-.3, p[1]-.35))
-#             else:
-#                 ax.annotate(txt, (p[0]+0.3, p[1]+0.3))
-# =============================================================================
-        elif mode == 'innate2':
+        if mode in ['innate', 'innate2', 'innate_nospecial',
+                    'innate2_nospecial', 'concentration']:
             pass
         elif mode in ['metalearn', 'correlate']:
             ax.annotate(txt, (p[0], p[1]+.35), ha='center')
@@ -209,7 +215,7 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
         plt.ylim([0, lim])
         plt.xticks([0, lim], ['0', '2'])
         plt.yticks([0, lim], ['0', '2'])
-    elif 'innate' in mode:
+    elif mode in ['innate', 'innate2']:
         plt.xlim([0, lim])
         plt.ylim([0, lim])
         plt.xticks([0, lim])
@@ -243,9 +249,11 @@ def plot_task(mode='standard', include_prototypes=False, include_data = True,
     
 
 if __name__ == '__main__':
-    plot_task('standard', include_prototypes=True)
+    # plot_task('standard', include_prototypes=True)
     # plot_task('innate', include_prototypes=True)
     # plot_task('innate2', include_prototypes=True)
+    plot_task('innate_nospecial', include_prototypes=True)
+    plot_task('innate2_nospecial', include_prototypes=True)
     # plot_task('concentration', include_prototypes=True, include_data=True, spread=0)
     # plot_task('concentration', include_prototypes=True, include_data=True, spread=0.6)
     # plot_task('relabel', include_prototypes=True)
