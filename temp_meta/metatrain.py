@@ -248,6 +248,8 @@ def train(config: configs.MetaConfig):
         model.zero_grad()
 
         train_x_np, train_y_np = data_generator.generate('train')
+        if config.scramble_labels:
+            [np.random.shuffle(x) for x in train_y_np]
         train_x_torch = torch.from_numpy(train_x_np).float().to(device)
         train_t_torch = torch.from_numpy(train_y_np).long().to(device)
         
@@ -340,7 +342,7 @@ def main():
     config.save_every_epoch = False
     config.meta_batch_size = 32 #32
     config.meta_num_samples_per_class = 16 #16
-    config.meta_print_interval = 100
+    config.meta_print_interval = 250
 
     config.replicate_orn_with_tiling = True
     config.N_ORN_DUPLICATION = 10
@@ -348,16 +350,20 @@ def main():
     config.meta_update_lr = .2
     config.prune = False
 
-    config.metatrain_iterations = 300
+    config.metatrain_iterations = 10000
     config.pn_norm_pre = 'batch_norm'
     config.kc_norm_pre = 'batch_norm'
 
+    config.train_orn2pn = False
+    config.train_pn2kc = True
+
     config.kc_dropout = False
+    config.scramble_labels = False
 
     # config.data_dir = '../datasets/proto/meta_dataset'
-    config.data_dir = '../datasets/proto/standard'
-    # config.data_dir = '../datasets/proto/relabel_200_100'
-    config.save_path = '../files/torch_metalearn/000000'
+    # config.data_dir = '../datasets/proto/standard'
+    config.data_dir = '../datasets/proto/relabel_200_100'
+    config.save_path = '../files/torch_metalearn_/000000'
 
     try:
         shutil.rmtree(config.save_path)

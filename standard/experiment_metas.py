@@ -54,6 +54,29 @@ def _meta_standard_config(config):
     config.meta_trainable_lr = True
     return config
 
+def meta_random_weights():
+    config = MetaConfig()
+    config = _meta_standard_config(config)
+    config_ranges = OrderedDict()
+    config_ranges['train_pn2kc'] = [False, True]
+    configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+def meta_random_weights_analysis(path):
+    xkey = 'train_pn2kc'
+    ykeys = 'val_acc'
+    modeldirs = tools.get_modeldirs(path)
+    sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
+                    show_cleanpn2kc=False)
+    sa.plot_progress(modeldirs, ykeys=['train_post_loss',
+                                       'val_loss',
+                                       'val_acc',
+                                       'K_smart'])
+
+    modeldir = modeldirs[1]
+    sa.plot_weights(modeldir)
+    analysis_pn2kc_training.plot_distribution(modeldir, xrange=0.5)
+    analysis_pn2kc_training.plot_sparsity(modeldir, epoch=-1)
 
 def meta_standard():
     config = MetaConfig()
