@@ -359,4 +359,6 @@ class MetaConfig(FullConfig):
         self.output_max_lr = 0.2
         # trainable lr?
         self.meta_trainable_lr = False
+        # scramble training labels
+        self.scramble_labels = False
 

@@ -69,6 +69,7 @@ class Layer(mmods.MetaModule):
                  prune: bool = False,
                  dropout: bool = False,
                  dropout_rate: float = 0,
+                 train_weights: bool = False
                  ):
         super().__init__()
 
@@ -77,6 +78,8 @@ class Layer(mmods.MetaModule):
                                 out_features=out_features,
                                 sign_constraint=sign_constraint,
                                 prune=prune)
+        lin_mod.weight.requires_grad = train_weights
+
         modules += [(name + '_linear', lin_mod)]
 
         if pre_norm:
@@ -118,6 +121,7 @@ class Model(mmods.MetaModule):
                             prune=config.pn_prune_weak_weights,
                             dropout=config.pn_dropout,
                             dropout_rate=config.pn_dropout_rate,
+                            train_weights=config.train_orn2pn
                             )
 
         if config.skip_orn2pn:
@@ -133,6 +137,7 @@ class Model(mmods.MetaModule):
                             prune=config.kc_prune_weak_weights,
                             dropout=config.kc_dropout,
                             dropout_rate=config.kc_dropout_rate,
+                            train_weights=config.train_pn2kc
                             )
         self.layer3 = mmods.MetaLinear(config.N_KC, config.N_CLASS)
         self.loss = nn.CrossEntropyLoss()
