@@ -340,7 +340,7 @@ def standard_debug():
     datasets = [dataset_original, dataset_spread]
     config_ranges['data_dir'] = datasets
 
-    configs = vary_config(config, config_ranges, mode='control')
+    configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
 
 
