@@ -290,7 +290,7 @@ def pn_norm_relabel_debug():
     config = FullConfig()
     config.max_epoch = 100
     config.skip_orn2pn = False
-    config.N_ORN_DUPLICATION = 1
+    config.N_ORN_DUPLICATION = 10
 
     config.kc_dropout_rate = 0.
     config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
@@ -306,6 +306,41 @@ def pn_norm_relabel_debug():
     config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen']
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
+    return configs
+
+
+def pn_norm_relabel_debug_analysis(path, ykeys=None):
+    select_dict = {'kc_prune_weak_weights': True, 'kc_dropout_rate': 0.}
+    modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
+    if ykeys is None:
+        ykeys = ['val_acc', 'glo_score', 'K_smart']
+    sa.plot_results(modeldirs, xkey='data_dir', ykey=ykeys,
+                    loop_key='pn_norm_pre', figsize=(4, 4))
+    sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
+    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
+               legend_key='pn_norm_pre')
+
+
+def standard_debug():
+    """Control for standard ORN-PN-KC all trainable model."""
+    config = FullConfig()
+    config.data_dir = './datasets/proto/relabel_200_100'
+    config.max_epoch = 100
+    config.kc_dropout_rate = 0.
+
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+
+    # Ranges of hyperparameters to loop over
+    config_ranges = OrderedDict()
+    config_ranges['N_ORN_DUPLICATION'] = [1, 10]
+    dataset_original = './datasets/proto/relabel_200_100'
+    dataset_spread = './datasets/proto/concentration_relabel_spread_0.00'
+    datasets = [dataset_original, dataset_spread]
+    config_ranges['data_dir'] = datasets
+
+    configs = vary_config(config, config_ranges, mode='control')
     return configs
 
 
