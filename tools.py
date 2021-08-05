@@ -685,7 +685,8 @@ nicename_dict = {
     'data_dir': 'Dataset',
     'fixed_activity': 'Fixed activity',
     'spread_orn_activity': 'ORN activity spread',
-    'training_type': 'Fixed Weights'
+    'training_type': 'Fixed Weights',
+    'train_pn2kc': 'Train PN-KC weights',
 }
 
 

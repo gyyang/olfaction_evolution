@@ -257,7 +257,6 @@ def pn_norm():
     datasets = [dataset_base + '_{:0.2f}'.format(s) for s in spreads]
     config_ranges['data_dir'] = datasets
     config_ranges['pn_norm_pre'] = [None, 'batch_norm', 'olsen']
-    config_ranges['seed'] = [0, 1, 2]
 
     configs = vary_config(config, config_ranges, mode='combinatorial')
     return configs
@@ -281,8 +280,7 @@ def pn_norm_relabel_trainorn():
         c.skip_orn2pn = False
         c.N_ORN_DUPLICATION = 10
         c.max_epoch = 500
-        if c.seed == 0:
-            new_configs.append(c)
+        new_configs.append(c)
     return new_configs
 
 
@@ -304,7 +302,7 @@ def pn_norm_analysis(path, ykeys=None):
 
 
 def pn_norm_relabel_analysis(path):
-    pn_norm_analysis(path)
+    pn_norm_analysis(path, ykeys=['val_acc', 'K_smart'])
     pn_norm_analysis(path, ykeys=['val_acc'])
 
 
