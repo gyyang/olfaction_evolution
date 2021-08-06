@@ -30,18 +30,21 @@ def get_multiglo_mask(nx, ny, nglo):
     return mask.astype(np.float32)
 
 
-def get_correlated_sparse_mask(nx, ny, nglo, group=5):
+def get_correlated_sparse_mask(nx, ny, nglo, n_group=3):
     """Generates a sparse binary mask in which connections per kc can only be
     sampled from pns belonging to a given group.
     """
-    group_size = nx // group
+
+    group_size = int(np.ceil(nx / n_group))
     assert nglo <= group_size
+    ixs = np.arange(nx)
+    groups = [ixs[i*group_size:(i+1)*group_size] for i in range(n_group)]
 
     mask = np.zeros((nx, ny))
     val = 1. / nglo
     for i in range(ny):
-        g = np.random.randint(group)
-        group_members = range(g * group_size, (g+1) * group_size)
+        g = np.random.randint(n_group)
+        group_members = groups[g]
         ixs = np.random.choice(group_members, size=nglo, replace=False)
         mask[ixs, i] = val
     return mask.astype(np.float32)
