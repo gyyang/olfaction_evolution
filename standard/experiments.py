@@ -297,8 +297,13 @@ def pn_norm_analysis(path, ykeys=None):
     select_dict.update({'spread_orn_activity': 0.3})
     modeldirs = tools.get_modeldirs(path, select_dict=select_dict)
     sa.plot_progress(modeldirs, ykeys=ykeys, legend_key='pn_norm_pre')
-    sa.plot_xy(path, xkey='lin_bins', ykey='lin_hist',
+    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
                legend_key='pn_norm_pre')
+
+    modeldirs = tools.get_modeldirs(
+        path, select_dict={'pn_norm_pre': 'olsen'})
+    sa.plot_xy(modeldirs, xkey='lin_bins', ykey='lin_hist',
+               legend_key='spread_orn_activity')
 
 
 def pn_norm_relabel_analysis(path):
