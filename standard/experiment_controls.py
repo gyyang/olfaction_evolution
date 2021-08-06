@@ -147,7 +147,7 @@ def control_correlated_sparse_pn2kc():
 
     config_ranges = OrderedDict()
     config_ranges['sparse_pn2kc'] = [True, False]
-    config_ranges['sparse_correlated_pn2kc'] = [False, True]
+    config_ranges['correlated_sparse_mask'] = [False, True]
     config_ranges['PN-KC Connections'] = ['Sparse', 'Sparse + Correlated']
     configs = vary_config(config, config_ranges, mode='sequential')
     return configs
