@@ -116,7 +116,7 @@ def control_random_weights():
     config.train_orn2pn = True
     config.train_pn2kc = False
     config.sparse_pn2kc = False
-    config.restricted_sparse_pn2kc = False
+    config.correlated_sparse_mask = False
 
     config.kc_dropout_rate = 0.
 
@@ -138,30 +138,27 @@ def control_random_weights_analysis(path):
                     show_cleanpn2kc=False)
 
 
-def control_stereotyped_sparse_pn2kc():
+def control_correlated_sparse_pn2kc():
     config = FullConfig()
-
     config.N_ORN_DUPLICATION = 1
     config.skip_orn2pn = True
     config.train_pn2kc = False
-
     config.kc_dropout_rate = 0.
-    config.restricted_sparse_pn2kc = True
 
     config_ranges = OrderedDict()
-    config_ranges['n_restricted_patterns'] = [30, 100, 300, 1000, 3000]
-    configs = vary_config(config, config_ranges, mode='combinatorial')
+    config_ranges['sparse_pn2kc'] = [True, False]
+    config_ranges['sparse_correlated_pn2kc'] = [False, True]
+    config_ranges['PN-KC Connections'] = ['Sparse', 'Sparse + Correlated']
+    configs = vary_config(config, config_ranges, mode='sequential')
     return configs
 
 
-def control_stereotyped_sparse_pn2kc_analysis(path):
-    xkey = 'n_restricted_patterns'
+def control_correlated_sparse_pn2kc_analysis(path):
+    xkey = 'PN-KC Connections'
     ykeys = 'val_acc'
     modeldirs = tools.get_modeldirs(path)
     sa.plot_results(modeldirs, xkey=xkey, ykey=ykeys,
-                    plot_actual_value=False,
-                    logx=True,
-                    show_cleanpn2kc=False)
+                    plot_actual_value=False)
     for dir in modeldirs:
         sa.plot_weights(dir, var_name='w_glo')
 

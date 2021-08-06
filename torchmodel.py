@@ -30,18 +30,20 @@ def get_multiglo_mask(nx, ny, nglo):
     return mask.astype(np.float32)
 
 
-def get_restricted_sparse_mask(nx, ny, n_on, n_patterns):
-    """Generates a sparse binary mask with a fixed set of patterns defined by
-    n_patterns. The number of connections per output neuron (ny) is defined by
-    n_on.
+def get_correlated_sparse_mask(nx, ny, nglo, group=5):
+    """Generates a sparse binary mask in which connections per kc can only be
+    sampled from pns belonging to a given group.
     """
-    templates = np.zeros((nx, n_patterns))
-    templates[:n_on] = 1
-    for i in range(n_patterns):
-        np.random.shuffle(templates[:, i])  # shuffling in-place
+    group_size = nx // group
+    assert nglo <= group_size
 
-    ixs = np.random.randint(low=0, high=n_patterns, size=ny)
-    mask = templates[:, ixs]
+    mask = np.zeros((nx, ny))
+    val = 1. / nglo
+    for i in range(ny):
+        g = np.random.randint(group)
+        group_members = range(g * group_size, (g+1) * group_size)
+        ixs = np.random.choice(group_members, size=nglo, replace=False)
+        mask[ixs, i] = val
     return mask.astype(np.float32)
 
 
@@ -448,12 +450,12 @@ class FullModel(CustomModule):
                 with torch.no_grad():
                     self.layer2.weight = nn.Parameter(torch.from_numpy(
                         layer2_w.T).float())
-            elif config.restricted_sparse_pn2kc:
-                layer2_w = get_restricted_sparse_mask(
+                    self.layer2.weight.requires_grad = False
+            elif config.correlated_sparse_mask:
+                layer2_w = get_correlated_sparse_mask(
                     config.N_PN,
                     config.N_KC,
-                    config.kc_inputs,
-                    config.n_restricted_patterns)
+                    config.kc_inputs)
                 with torch.no_grad():
                     self.layer2.weight = nn.Parameter(torch.from_numpy(
                         layer2_w.T).float())
