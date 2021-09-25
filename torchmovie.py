@@ -8,7 +8,7 @@ import torch
 
 import task
 from torchmodel import FullModel
-from configs import FullConfig, SingleLayerConfig
+from configs import FullConfig
 import tools
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -39,11 +39,9 @@ def train(config, reload=False, save_everytrainloss=False):
     train_data = torch.from_numpy(train_x).float().to(device)
     train_target = torch.from_numpy(train_y).long().to(device)
 
-    n_save_every = 10
+    n_save_every = 20
     ind_orn = list(range(0, 500, 50)) + list(range(1, 500, 50)) + list(range(2, 500, 50))
-    n_save = int(config.max_epoch * config.n_train / config.batch_size / n_save_every)
-    weight_layer1 = np.zeros((n_save, 30, 50), dtype=np.float32)
-    weight_layer2 = np.zeros((n_save, 50, 30), dtype=np.float32)
+    weight_layer1, weight_layer2 = [], []
 
     k = 0
     for ep in range(config.max_epoch):
@@ -62,8 +60,8 @@ def train(config, reload=False, save_everytrainloss=False):
                 w_glo = model.w_glo
                 w_orn = model.w_orn
 
-                weight_layer1[k] = w_orn[ind_orn, :]
-                weight_layer2[k] = w_glo[:, :30]
+                weight_layer1.append(w_orn[ind_orn, :])
+                weight_layer2.append(w_glo[:, :30])
                 k += 1
 
             batch_indices = random_idx[idx:idx+batch_size]
@@ -75,23 +73,19 @@ def train(config, reload=False, save_everytrainloss=False):
             res['loss'].backward()
             optimizer.step()
 
-            
-
-    np.save(os.path.join(config.save_path, 'w_layer1'), weight_layer1)
-    np.save(os.path.join(config.save_path, 'w_layer2'), weight_layer2)
+    np.save(os.path.join(config.save_path, 'w_layer1'), np.array(weight_layer1))
+    np.save(os.path.join(config.save_path, 'w_layer2'), np.array(weight_layer2))
 
 
 def main_train():
     config = FullConfig()
-    config.data_dir = './datasets/proto/standard'
+    config.initial_pn2kc = 4. / config.N_PN  # explicitly set for clarity
+    config.kc_prune_weak_weights = True
+    config.kc_prune_threshold = 1. / config.N_PN
+    config.kc_dropout_rate = 0.5
     config.save_path = './files/movie'
-    config.initial_pn2kc = 0.06
-    config.train_pn2kc = True
-    config.sparse_pn2kc = False
-    config.pn_norm_pre = 'batch_norm'
     config.max_epoch = 10
     train(config)
-
 
 def main_plot(path):
     w1 = np.load(os.path.join(path, 'w_layer1.npy'))
@@ -111,7 +105,7 @@ def main_plot(path):
     w1 /= np.max(w1)
     w2 /= np.max(w2)
     
-    rect = [0.05, 0.05, 0.9, 0.9]
+    rect = [0.1, 0.1, 0.8, 0.8]
     fig = plt.figure(figsize=(7, 3))
     ax = fig.add_axes(rect)
     ax.set_xlim([-0.1, 2.1])
@@ -137,6 +131,13 @@ def main_plot(path):
     ax.scatter([0]*w1.shape[1], np.arange(w1.shape[1])*49/29., color=colors1[ind1], s=4)
     ax.scatter([2]*w2.shape[2], np.arange(w2.shape[2])*49/4., color=colors2, s=4)
 
+    y_text = 50
+    fontsize = 14
+    ax.text(-.05, y_text, 'ORNs', fontsize=fontsize)
+    ax.text(.95, y_text, 'PNs', fontsize=fontsize)
+    ax.text(1.95, y_text, 'KCs', fontsize=fontsize)
+    epoch_text = ax.text(1.85, -4, '0.00 Epochs', fontsize=fontsize)
+
     # initialization function: plot the background of each frame
 # =============================================================================
 #     def init():
@@ -155,6 +156,7 @@ def main_plot(path):
         c[:n1, 3] = w1_ / w1_.max()
         c[n1:, 3] = w2_ / w2_.max()
         lc.set_color(c)
+        epoch_text.set_text(f'{i/40.:0.2f} Epochs')
         return ax
     
     # call the animator.  blit=True means only re-draw the parts that have changed.
@@ -165,8 +167,8 @@ def main_plot(path):
     anim.save(os.path.join(path, 'movie.mp4'), writer=writer, dpi=200)
 
 if __name__ == '__main__':
-    # main_train()
-    path = './files/movie/metalearning'
+    main_train()
+    path = './files/movie'
     main_plot(path)
     w1 = np.load(os.path.join(path, 'w_layer1.npy'))
     w2 = np.load(os.path.join(path, 'w_layer2.npy'))    
