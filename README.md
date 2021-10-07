@@ -1,6 +1,9 @@
 # olfaction_evolution
 Studying how glomeruli can evolve from training.
 
+Quick start using this [jupyte notebook ](https://github.com/gyyang/olfaction_evolution/blob/master/notebooks/quickstart.ipynb)
+
+Note: The following will be cleaned up shortly.
 
 Figure 1: Standard network with a receptor layer
 
